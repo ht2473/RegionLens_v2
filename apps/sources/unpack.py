@@ -10,7 +10,7 @@ from __future__ import annotations
 import contextlib
 import os
 import shutil
-import subprocess  # запускается только bsdtar с путями из архива сборщика
+import subprocess  # nosec B404 — запускается только архиватор с путями из архива сборщика
 import zipfile
 from pathlib import Path, PurePosixPath
 
@@ -77,7 +77,7 @@ def _unrar(archive: Path, target: Path) -> None:
         raise UnpackError(
             "Для RAR нужен bsdtar (libarchive): пакет libarchive-tools или SOURCE_BSDTAR"
         )
-    result = subprocess.run(  # noqa: S603 - путь к программе из настроек, аргументы — пути
+    result = subprocess.run(  # noqa: S603  # nosec B603 - программа из настроек, аргументы — пути
         [tool, "-x", "-f", str(archive), "-C", str(target)],
         capture_output=True,
         check=False,

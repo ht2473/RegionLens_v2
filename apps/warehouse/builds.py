@@ -7,8 +7,7 @@
 from __future__ import annotations
 
 import logging
-import os
-import subprocess  # запускается только собственная команда manage.py
+import subprocess  # nosec B404 — запускается собственная команда проекта
 import sys
 import uuid
 from collections.abc import Callable, Iterator
@@ -248,13 +247,12 @@ def launch(run: EtlRun) -> None:
     """
     command = [sys.executable, str(settings.BASE_DIR / "manage.py"), "etl_build"]
     command += ["--run", str(run.pk)]
-    detached: dict[str, Any] = (
-        {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS}
-        if os.name == "nt"
-        else {"start_new_session": True}
-    )
+    detached: dict[str, Any] = {"start_new_session": True}
+    if sys.platform == "win32":
+        flags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+        detached = {"creationflags": flags}
     try:
-        subprocess.Popen(  # noqa: S603
+        subprocess.Popen(  # noqa: S603  # nosec B603 — запускается собственная команда проекта
             command,
             cwd=settings.BASE_DIR,
             stdin=subprocess.DEVNULL,

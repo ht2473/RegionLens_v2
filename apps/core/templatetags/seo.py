@@ -34,6 +34,6 @@ def json_ld(data: dict[str, Any] | None) -> str:
     encoded = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
     for char, replacement in ESCAPES.items():
         encoded = encoded.replace(char, replacement)
-    return mark_safe(  # noqa: S308 - содержимое собрано на сервере и экранировано выше
+    return mark_safe(  # noqa: S308  # nosec B308 B703 - собрано на сервере, экранировано выше
         f'<script type="application/ld+json">{encoded}</script>'
     )

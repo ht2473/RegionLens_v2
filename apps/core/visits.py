@@ -92,7 +92,7 @@ def mask_ip(value: str) -> str:
     try:
         address = ipaddress.ip_address(value)
     except ValueError:
-        return "0.0.0.0"  # noqa: S104 — заглушка вместо испорченного адреса
+        return "0.0.0.0"  # noqa: S104  # nosec B104 — заглушка вместо испорченного адреса
     prefix = 24 if isinstance(address, ipaddress.IPv4Address) else 64
     return str(ipaddress.ip_network(f"{address}/{prefix}", strict=False).network_address)
 

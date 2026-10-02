@@ -92,7 +92,7 @@ def enable_two_factor(request: HttpRequest, user: User, secret: str, step: int) 
 
 def disable_two_factor(request: HttpRequest | None, user: User) -> None:
     """Выключить вход с кодом и завершить прочие сеансы."""
-    user.totp_secret = ""
+    user.totp_secret = ""  # nosec B105 — ключ стирается, а не задаётся
     user.totp_enabled_at = None
     user.totp_last_step = 0
     user.recovery_codes = []

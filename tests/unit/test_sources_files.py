@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import io
-import os
 import stat
 import urllib.error
 import zipfile
@@ -40,7 +39,8 @@ class TestArchive:
         assert is_new
         assert record.path == "rosstat_bulletin/2026-09-24_info-stat-07-2026.zip"
         assert record.absolute_path.read_bytes() == b"release"
-        assert not os.access(record.absolute_path, os.W_OK)
+        # По правам файла, а не os.access: от имени root запись разрешена всегда.
+        assert not record.absolute_path.stat().st_mode & 0o222
 
         again, is_new = archive.store("rosstat_bulletin", "copy.zip", b"release")
         assert not is_new
