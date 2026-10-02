@@ -250,9 +250,9 @@ class Pipeline:
             )
 
         self._report(
-            f"Наблюдений: {profile.observation_count:,}, "
+            f"Наблюдений: {_number(profile.observation_count)}, "
             f"показателей: {profile.indicator_count}, "
-            f"период: {profile.first_year}–{profile.last_year}".replace(",", " ")
+            f"период: {profile.first_year}–{profile.last_year}"
         )
 
         self._report("Загрузка справочника территорий")
@@ -302,8 +302,9 @@ class Pipeline:
 
         value_quality = facts.observation_quality_summary(connection)
         self._report(
-            "Качество значений: наблюдений {observed:,}, "
-            "нет данных {no_data:,}, скрыто {hidden:,}".format(**value_quality).replace(",", " ")
+            f"Качество значений: наблюдений {_number(value_quality['observed'])}, "
+            f"нет данных {_number(value_quality['no_data'])}, "
+            f"скрыто {_number(value_quality['hidden'])}"
         )
 
         self._write_metadata(connection, profile, value_quality)
@@ -470,6 +471,11 @@ def _source_series(connection: duckdb.DuckDBPyConnection) -> dict[str, int]:
         raise EtlError(f"Ряды внешних источников: {error}") from error
     releases.refresh_edition_counters(connection)
     return statistics
+
+
+def _number(value: int) -> str:
+    """Число с пробелами между разрядами: «1 969 010»."""
+    return f"{value:,}".replace(",", " ")
 
 
 def replace_file(source_path: Path, target_path: Path) -> None:
