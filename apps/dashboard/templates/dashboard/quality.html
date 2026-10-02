@@ -1,0 +1,115 @@
+{% extends "dashboard/base.html" %}
+{% load i18n formatting %}
+
+{# Замечания проверок последней сборки склада. #}
+
+{% block admin_subtitle %}
+  <p class="page-header__subtitle">
+    {% blocktranslate trimmed %}
+      Проверки выполняются после каждой сборки склада; здесь — замечания последней.
+      Однотипные замечания обычно объясняются одной причиной — сменой методики источника.
+    {% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block admin_content %}
+
+  {% if breakdown %}
+    <section class="admin-tiles">
+      {% for row in breakdown %}
+        <div class="admin-tile">
+          <span class="admin-tile__value">{{ row.total|ru_number:0 }}</span>
+          <span class="admin-tile__label">{{ row.title }}</span>
+        </div>
+      {% endfor %}
+    </section>
+  {% endif %}
+
+  <form class="admin-filters" data-autosubmit method="get" action="{% url 'dashboard:quality' %}">
+    <div class="admin-filters__field">
+      <label class="admin-filters__label" for="severity">{% translate "Уровень" %}</label>
+      <select class="select" id="severity" name="severity">
+        <option value="">{% translate "Любой" %}</option>
+        {% for value, label in severities %}
+          <option value="{{ value }}" {% if value == selected_severity %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="admin-filters__field admin-filters__field--wide">
+      <label class="admin-filters__label" for="type">{% translate "Тип проверки" %}</label>
+      <select class="select" id="type" name="type">
+        <option value="">{% translate "Любой" %}</option>
+        {% for value, label in types %}
+          <option value="{{ value }}" {% if value == selected_type %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button class="button button--secondary" type="submit" data-autosubmit-button>{% translate "Применить" %}</button>
+  </form>
+
+  {% if checks %}
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Уровень" %}</th>
+              <th scope="col">{% translate "Тип" %}</th>
+              <th scope="col">{% translate "Описание" %}</th>
+              <th scope="col">{% translate "Ряд" %}</th>
+              <th scope="col">{% translate "Год" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for check in checks %}
+              <tr {% if check.severity == "error" %}class="is-highlighted"{% endif %}>
+                <td>
+                  {% if check.severity == "error" %}
+                    <span class="badge badge--negative">{{ check.get_severity_display }}</span>
+                  {% elif check.severity == "warning" %}
+                    <span class="badge badge--attention">{{ check.get_severity_display }}</span>
+                  {% else %}
+                    <span class="badge badge--neutral">{{ check.get_severity_display }}</span>
+                  {% endif %}
+                </td>
+                <td class="text-muted">{{ check.get_check_type_display }}</td>
+                <td>{{ check.display_message|truncatechars:110 }}</td>
+                <td class="text-muted" style="font-family: var(--font-mono); font-size: var(--text-2xs)">
+                  {{ check.series_key|default:"—" }}
+                  {% if check.territory_code %}<br>{{ check.territory_code }}{% endif %}
+                </td>
+                <td class="admin-table__numeric">{{ check.year|default:"—" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    {% if page_obj.has_other_pages %}
+      <nav class="pagination" aria-label="{% translate 'Постраничная навигация' %}">
+        <span class="pagination__pages">
+          {% if page_obj.has_previous %}
+            <a class="pagination__page" href="{% querystring page=page_obj.previous_page_number %}">←</a>
+          {% endif %}
+          <span class="pagination__page is-current">{{ page_obj.number }}</span>
+          {% if page_obj.has_next %}
+            <a class="pagination__page" href="{% querystring page=page_obj.next_page_number %}">→</a>
+          {% endif %}
+        </span>
+        <span class="text-muted">
+          {% blocktranslate with total=paginator.count %}Всего замечаний: {{ total }}{% endblocktranslate %}
+        </span>
+      </nav>
+    {% endif %}
+  {% else %}
+    <div class="empty-state">
+      <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-check"></use></svg>
+      <div class="empty-state__title">{% translate "Замечаний нет" %}</div>
+      <p class="empty-state__hint">
+        {% translate "Проверки выполняются при сборке склада: python manage.py etl_build --full" %}
+      </p>
+    </div>
+  {% endif %}
+
+{% endblock %}

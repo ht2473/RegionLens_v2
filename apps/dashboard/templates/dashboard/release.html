@@ -1,0 +1,108 @@
+{% extends "dashboard/base.html" %}
+{% load i18n formatting %}
+
+{# Карточка выпуска источника: файл в архиве, разбор по таблицам, изменения к прежнему. #}
+
+{% block admin_subtitle %}
+  <p class="page-header__subtitle">{{ release.source.title }} — {{ release.title }}</p>
+{% endblock %}
+
+{% block admin_content %}
+
+  {% if release.status == "failed" %}
+    <div class="callout callout--danger" role="alert">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Выпуск не разобран — склад остался прежним" %}</div>
+        <p>{{ release.error }}</p>
+      </div>
+    </div>
+  {% endif %}
+
+  <section class="card">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "Файл" %}</h2>
+      <span class="badge {% if release.status == 'parsed' %}badge--positive{% elif release.status == 'failed' %}badge--negative{% else %}badge--attention{% endif %}">{{ release.get_status_display }}</span>
+    </div>
+    <dl class="definition-list">
+      <dt>{% translate "Адрес" %}</dt>
+      <dd>{% if release.url %}<a href="{{ release.url }}" rel="noopener noreferrer">{{ release.url }}</a>{% else %}—{% endif %}</dd>
+      <dt>{% translate "Опубликован" %}</dt>
+      <dd>{{ release.published_on|date:"d.m.Y"|default:"—" }}</dd>
+      <dt>{% translate "Получен" %}</dt>
+      <dd>{{ release.fetched_at|date:"d.m.Y H:i" }}</dd>
+      <dt>{% translate "В архиве" %}</dt>
+      <dd><code>{{ release.archive_path }}</code> · {{ release.size_bytes|filesizeformat }}</dd>
+      <dt>SHA-256</dt>
+      <dd><code>{{ release.sha256 }}</code></dd>
+      <dt>{% translate "Разобран" %}</dt>
+      <dd>{{ release.parsed_at|date:"d.m.Y H:i"|default:"—" }}{% if release.parser_version %} · {% blocktranslate with version=release.parser_version %}разбор версии {{ version }}{% endblocktranslate %}{% endif %}</dd>
+    </dl>
+  </section>
+
+  {% if tables %}
+    <section class="card" style="margin-top: var(--space-5)">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Разбор по таблицам" %}</h2>
+        <span class="text-muted">{% blocktranslate with count=release.row_count|ru_number:0 %}значений: {{ count }}{% endblocktranslate %}</span>
+      </div>
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Показатель" %}</th>
+              <th scope="col">{% translate "Таблица и лист" %}</th>
+              <th scope="col" class="admin-table__numeric">{% translate "Годы" %}</th>
+              <th scope="col" class="admin-table__numeric">{% translate "Субъектов" %}</th>
+              <th scope="col" class="admin-table__numeric">{% translate "Значений" %}</th>
+              <th scope="col" class="admin-table__numeric">{% translate "Скрыто" %}</th>
+              <th scope="col">{% translate "Предварительные годы" %}</th>
+              <th scope="col">{% translate "Не распознано" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for measure, info in tables %}
+              <tr>
+                <td><code>{{ measure }}</code></td>
+                <td>
+                  {% if info.table %}{{ info.table }} · {% endif %}«{{ info.sheet }}»
+                  <div class="text-muted" style="font-size: var(--text-xs)">{{ info.title|truncatechars:90 }}</div>
+                </td>
+                <td class="admin-table__numeric">{{ info.years|join:"–" }}</td>
+                <td class="admin-table__numeric">{{ info.regions }}</td>
+                <td class="admin-table__numeric">{{ info.values|ru_number:0 }}</td>
+                <td class="admin-table__numeric">{{ info.hidden|ru_number:0 }}</td>
+                <td>{{ info.preliminary_years|join:", "|default:"—" }}</td>
+                <td class="text-muted" style="font-size: var(--text-xs)">{{ info.unmatched|join:"; "|default:"—" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% endif %}
+
+  {% if latest %}
+    <section class="card" style="margin-top: var(--space-5)">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Изменения к прежнему выпуску" %}</h2>
+      </div>
+      <p class="text-secondary">
+        {% if release.changes.previous %}
+          {% blocktranslate trimmed with previous=release.changes.previous count=release.changes.revised %}
+            Против выпуска {{ previous }} изменено значений: {{ count }}.
+          {% endblocktranslate %}
+        {% else %}
+          {% translate "Прежнего разобранного выпуска этого источника нет." %}
+        {% endif %}
+      </p>
+      <dl class="definition-list">
+        {% for measure, period in latest %}
+          <dt><code>{{ measure }}</code></dt>
+          <dd>{% blocktranslate with period=period %}последний период — {{ period }}{% endblocktranslate %}</dd>
+        {% endfor %}
+      </dl>
+    </section>
+  {% endif %}
+
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "dashboard/base.html" %}
+{% load i18n %}
+
+{# Подтверждение удаления неопубликованной записи содержимого. #}
+
+{% block admin_subtitle %}
+  <p class="page-header__subtitle">{{ entity_title }}</p>
+{% endblock %}
+
+{% block admin_content %}
+
+  <section class="card">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "Удалить запись?" %}</h2>
+    </div>
+
+    <p class="text-secondary">
+      {% blocktranslate trimmed with title=record %}
+        Запись «{{ title }}» будет удалена вместе со всеми языковыми версиями.
+        Действие необратимо.
+      {% endblocktranslate %}
+    </p>
+
+    <dl class="definition-list definition-list--compact">
+      <dt>{% translate "Адрес" %}</dt>
+      <dd><code>{{ record.slug }}</code></dd>
+
+      <dt>{% translate "Создана" %}</dt>
+      <dd class="numeric">{{ record.created_at|date:"d.m.Y H:i" }}</dd>
+    </dl>
+
+    <form method="post" style="margin-top: var(--space-5)">
+      {% csrf_token %}
+      <div style="display: flex; gap: var(--space-3)">
+        <button class="button button--danger" type="submit">{% translate "Удалить" %}</button>
+        <a class="button button--ghost" href="{% url 'dashboard:content' %}">{% translate "Отмена" %}</a>
+      </div>
+    </form>
+  </section>
+
+{% endblock %}

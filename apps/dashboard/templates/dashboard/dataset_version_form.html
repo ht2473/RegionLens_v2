@@ -1,0 +1,57 @@
+{% extends "dashboard/base.html" %}
+{% load i18n %}
+
+{# Правка сведений о версии набора; код, размер и контрольная сумма не правятся. #}
+
+{% block admin_subtitle %}
+  <p class="page-header__subtitle">{% translate "Версия набора данных" %}</p>
+{% endblock %}
+
+{% block admin_actions %}
+  <a class="button button--sm button--ghost" href="{% url 'dashboard:data' %}">
+    ← {% translate "К перечню версий" %}
+  </a>
+{% endblock %}
+
+{% block admin_content %}
+
+  <div class="admin-facts">
+    {% for label, value in readonly_facts %}
+      <div>
+        <div class="admin-facts__label">{{ label }}</div>
+        <div class="admin-facts__value">{{ value }}</div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <section class="card">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "Ссылка для цитирования" %}</h2>
+    </div>
+    <p class="text-secondary">{{ version.citation }}</p>
+    <div class="card__footer">
+      <p class="text-muted" style="font-size: var(--text-xs)">
+        {% blocktranslate trimmed %}
+          Собирается из полей ниже и показывается на странице «О наборе данных»
+          и в колонтитулах выгружаемых документов.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top: var(--space-5)">
+    <form method="post">
+      {% csrf_token %}
+
+      {% for field in form %}
+        {% include "partials/_field.html" with field=field %}
+      {% endfor %}
+
+      <div style="display: flex; gap: var(--space-3); margin-top: var(--space-4)">
+        <button class="button button--primary" type="submit">{% translate "Сохранить" %}</button>
+        <a class="button button--ghost" href="{% url 'dashboard:data' %}">{% translate "Отмена" %}</a>
+      </div>
+    </form>
+  </section>
+
+{% endblock %}

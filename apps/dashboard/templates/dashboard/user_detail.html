@@ -1,0 +1,177 @@
+{% extends "dashboard/base.html" %}
+{% load i18n formatting %}
+
+{# Карточка учётной записи: отдельные формы ролей, сведений, блокировки и сброса входа с кодом. #}
+
+{% block admin_subtitle %}
+  <p class="page-header__subtitle">
+    {{ account.email }}
+  </p>
+{% endblock %}
+
+{% block admin_actions %}
+  <a class="button button--sm button--ghost" href="{% url 'dashboard:user-list' %}">
+    ← {% translate "К перечню" %}
+  </a>
+{% endblock %}
+
+{% block admin_content %}
+
+  {% if not account.is_active %}
+    <div class="callout callout--danger">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Учётная запись заблокирована" %}</div>
+        <p>{% translate "Вход невозможен. Сохранённое пользователя остаётся на месте." %}</p>
+      </div>
+    </div>
+  {% endif %}
+
+  <section class="admin-tiles">
+    <div class="admin-tile">
+      <span class="admin-tile__value">{{ card.saved_queries }}</span>
+      <span class="admin-tile__label">{% translate "Видов экрана" %}</span>
+    </div>
+    <div class="admin-tile">
+      <span class="admin-tile__value">{{ card.favorites }}</span>
+      <span class="admin-tile__label">{% translate "Регионов и показателей" %}</span>
+    </div>
+    <div class="admin-tile">
+      <span class="admin-tile__value">{{ card.tickets }}</span>
+      <span class="admin-tile__label">{% translate "Обращений" %}</span>
+    </div>
+  </section>
+
+  <div class="grid grid--halves">
+
+    <section class="card">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Роли" %}</h2>
+        {% for label in account.role_labels %}<span class="badge badge--outline">{{ label }}</span>{% endfor %}
+      </div>
+
+      <form method="post" action="{% url 'dashboard:user-role' public_id=account.public_id %}">
+        {% csrf_token %}
+        <fieldset class="field role-choices">
+          <legend class="field__label">{% translate "Роли сверх «Пользователя»" %}</legend>
+          {% for choice in role_form.roles %}
+            <label class="checkbox">{{ choice.tag }} <span>{{ choice.choice_label }}</span></label>
+          {% endfor %}
+        </fieldset>
+
+        <div class="callout callout--info role-choices__help">
+          <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+          <div>
+            <div class="callout__title">{% translate "Что даёт роль" %}</div>
+            <ul class="role-choices__list">
+              {% for role in role_form.role_descriptions %}
+                <li><strong>{{ role.title }}</strong> — {{ role.description }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+
+        <button class="button button--primary" type="submit">{% translate "Сохранить роли" %}</button>
+      </form>
+
+      <div class="card__footer">
+        <p class="text-muted role-choices__note">
+          {% blocktranslate trimmed %}
+            Роли действуют сразу. С любой ролью панели вход требует одноразового кода:
+            пользователь включит его сам при первом переходе в панель.
+          {% endblocktranslate %}
+        </p>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Сведения" %}</h2>
+      </div>
+
+      <form method="post" action="{% url 'dashboard:user-profile' public_id=account.public_id %}">
+        {% csrf_token %}
+        {% for field in profile_form %}
+          {% include "partials/_field.html" with field=field %}
+        {% endfor %}
+        <button class="button button--secondary" type="submit">{% translate "Сохранить" %}</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Доступ" %}</h2>
+      </div>
+
+      <dl class="definition-list definition-list--compact">
+        <dt>{% translate "Регистрация" %}</dt>
+        <dd class="numeric">{{ account.created_at|date:"d.m.Y H:i" }}</dd>
+
+        <dt>{% translate "Последний вход" %}</dt>
+        <dd class="numeric">
+          {% if account.last_login %}{{ account.last_login|date:"d.m.Y H:i" }}{% else %}—{% endif %}
+        </dd>
+
+        <dt>{% translate "Последняя активность" %}</dt>
+        <dd class="numeric">
+          {% if account.last_seen_at %}{{ account.last_seen_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}
+        </dd>
+
+        <dt>{% translate "Вход с кодом" %}</dt>
+        <dd>
+          {% if account.two_factor_enabled %}
+            {% blocktranslate trimmed with date=account.totp_enabled_at|date:"d.m.Y" %}включён {{ date }}{% endblocktranslate %}
+          {% else %}
+            {% translate "выключен" %}
+          {% endif %}
+        </dd>
+
+        <dt>{% translate "Согласие на обработку" %}</dt>
+        <dd>
+          {% if account.consent_at %}
+            {% blocktranslate trimmed with given=account.consent_at|date:"d.m.Y H:i" revision=account.consent_revision|date:"d.m.Y" %}
+              дано {{ given }}, редакция от {{ revision }}
+            {% endblocktranslate %}
+          {% else %}
+            {% translate "не записано" %}
+          {% endif %}
+        </dd>
+      </dl>
+
+      {% if account.two_factor_enabled and not is_self %}
+        <form method="post" action="{% url 'dashboard:user-two-factor-reset' public_id=account.public_id %}"
+              class="role-choices__action">
+          {% csrf_token %}
+          <button class="button button--secondary" type="submit">
+            {% translate "Сбросить вход с кодом" %}
+          </button>
+          <p class="text-muted role-choices__note">
+            {% translate "Если пользователь потерял телефон и резервные коды. Его сеансы будут завершены." %}
+          </p>
+        </form>
+      {% endif %}
+
+      {% if not is_self %}
+        <form method="post" action="{% url 'dashboard:user-toggle' public_id=account.public_id %}"
+              style="margin-top: var(--space-4)">
+          {% csrf_token %}
+          {% if account.is_active %}
+            <button class="button button--danger" type="submit">
+              {% translate "Заблокировать учётную запись" %}
+            </button>
+          {% else %}
+            <button class="button button--primary" type="submit">
+              {% translate "Разблокировать учётную запись" %}
+            </button>
+          {% endif %}
+        </form>
+      {% else %}
+        <p class="text-muted" style="margin-top: var(--space-4); font-size: var(--text-xs)">
+          {% translate "Это ваша учётная запись: заблокировать её нельзя." %}
+        </p>
+      {% endif %}
+    </section>
+
+  </div>
+
+{% endblock %}

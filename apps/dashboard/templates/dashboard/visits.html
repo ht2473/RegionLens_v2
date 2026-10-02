@@ -1,0 +1,243 @@
+{% extends "dashboard/base.html" %}
+{% load i18n formatting %}
+
+{# Посещения по журналу веб-сервера: итоги, дни и месяцы, страницы, переходы, системы. #}
+
+{% block admin_subtitle %}
+  <p class="page-header__subtitle">
+    {% blocktranslate trimmed %}
+      Посещения по журналу веб-сервера, посчитанные GoAccess; счётчиков на страницах нет.
+      Посетитель — адрес и браузер за день; обходчики поисковых систем не считаются.
+    {% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block admin_actions %}
+  <a class="button button--sm button--secondary" href="{% url 'dashboard:visits-export' %}" download>
+    <svg aria-hidden="true"><use href="#icon-download"></use></svg>
+    {% translate "По дням (CSV)" %}
+  </a>
+{% endblock %}
+
+{% block admin_content %}
+
+  {% if beat and not beat.ok %}
+    <div class="callout callout--danger">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">
+          {% blocktranslate trimmed with time=beat.seen_at|date:"d.m.Y H:i" %}Пересчёт {{ time }} не удался{% endblocktranslate %}
+        </div>
+        <p>{{ beat.detail.error }}</p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if not summary %}
+    <div class="callout callout--info">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Статистики ещё нет" %}</div>
+        <p>
+          {% blocktranslate trimmed %}
+            Её пересчитывает таймер regionlens-visits раз в час; вручную — команда
+            <code>python manage.py visits</code> в контейнере web.
+          {% endblocktranslate %}
+        </p>
+      </div>
+    </div>
+  {% else %}
+
+    <section class="admin-tiles" aria-label="{% translate 'Итоги' %}">
+      {% if recent %}
+        <div class="admin-tile">
+          <span class="admin-tile__value">{{ recent.visitors|ru_number:0 }}</span>
+          <span class="admin-tile__label">
+            {% blocktranslate trimmed with days=recent.days %}Посетителей за {{ days }} дней{% endblocktranslate %}
+          </span>
+          <span class="admin-tile__hint">{% translate "сумма посетителей по дням" %}</span>
+        </div>
+        <div class="admin-tile">
+          <span class="admin-tile__value">{{ recent.hits|ru_number:0 }}</span>
+          <span class="admin-tile__label">
+            {% blocktranslate trimmed with days=recent.days %}Запросов за {{ days }} дней{% endblocktranslate %}
+          </span>
+          <span class="admin-tile__hint">{% translate "страницы и API, без статики" %}</span>
+        </div>
+      {% endif %}
+      <div class="admin-tile">
+        <span class="admin-tile__value">{{ summary.general.visitors|ru_number:0 }}</span>
+        <span class="admin-tile__label">{% translate "Посетителей за всё время" %}</span>
+        <span class="admin-tile__hint">
+          {% if summary.first_day %}
+            {% blocktranslate trimmed with day=summary.first_day|date:"d.m.Y" %}с {{ day }}{% endblocktranslate %}
+          {% endif %}
+        </span>
+      </div>
+      <div class="admin-tile {% if summary.general.not_found %}admin-tile--attention{% endif %}">
+        <span class="admin-tile__value">{{ summary.general.not_found|ru_number:0 }}</span>
+        <span class="admin-tile__label">{% translate "Адресов с ответом 404" %}</span>
+        <span class="admin-tile__hint">{% translate "перечень — ниже" %}</span>
+      </div>
+    </section>
+
+    {% if chart_option %}
+      <section class="card">
+        <div class="card__header">
+          <h2 class="card__title">{% translate "Посетители по дням" %}</h2>
+          {% if beat %}
+            <span class="text-muted">
+              {% blocktranslate trimmed with time=beat.seen_at|date:"d.m.Y H:i" %}пересчитано {{ time }}{% endblocktranslate %}
+            </span>
+          {% endif %}
+        </div>
+        <rl-chart class="chart chart--short" data-options="visits-option"></rl-chart>
+        {{ chart_option|json_script:"visits-option" }}
+      </section>
+    {% endif %}
+
+    <div class="cabinet-columns visits-columns">
+      <section class="card">
+        <div class="card__header">
+          <h2 class="card__title">{% translate "По месяцам" %}</h2>
+        </div>
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th scope="col">{% translate "Месяц" %}</th>
+                <th scope="col" class="admin-table__numeric">{% translate "Посетители" %}</th>
+                <th scope="col" class="admin-table__numeric">{% translate "Запросы" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in summary.months %}
+                <tr>
+                  <td>{{ row.start|date:"F Y" }}</td>
+                  <td class="admin-table__numeric">{{ row.visitors|ru_number:0 }}</td>
+                  <td class="admin-table__numeric">{{ row.hits|ru_number:0 }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card__header">
+          <h2 class="card__title">{% translate "Разделы сайта" %}</h2>
+        </div>
+        <dl class="admin-facts">
+          <div>
+            <dt class="admin-facts__label">{% translate "Русская версия" %}</dt>
+            <dd class="admin-facts__value">{{ summary.languages.ru|default:0|ru_number:0 }}</dd>
+          </div>
+          <div>
+            <dt class="admin-facts__label">{% translate "Английская версия" %}</dt>
+            <dd class="admin-facts__value">{{ summary.languages.en|default:0|ru_number:0 }}</dd>
+          </div>
+          <div>
+            <dt class="admin-facts__label">{% translate "Программный интерфейс" %}</dt>
+            <dd class="admin-facts__value">{{ summary.languages.api|default:0|ru_number:0 }}</dd>
+          </div>
+          <div>
+            <dt class="admin-facts__label">{% translate "Прочие адреса" %}</dt>
+            <dd class="admin-facts__value">{{ summary.languages.other|default:0|ru_number:0 }}</dd>
+          </div>
+        </dl>
+        <p class="text-muted visits-note">{% translate "Запросов страниц без статики, за всё время." %}</p>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Страницы" %}</h2>
+      </div>
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Адрес" %}</th>
+              <th scope="col" class="admin-table__numeric">{% translate "Запросы" %}</th>
+              <th scope="col" class="admin-table__numeric">{% translate "Посетители" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in summary.pages %}
+              <tr>
+                <td><code>{{ row.label|truncatechars:90 }}</code></td>
+                <td class="admin-table__numeric">{{ row.hits|ru_number:0 }}</td>
+                <td class="admin-table__numeric">{{ row.visitors|ru_number:0 }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" class="text-muted">{% translate "Запросов страниц нет" %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="cabinet-columns visits-columns">
+      <section class="card">
+        <div class="card__header">
+          <h2 class="card__title">{% translate "Переходы с других сайтов" %}</h2>
+        </div>
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <tbody>
+              {% for row in summary.referrers %}
+                <tr>
+                  <td>{{ row.label|truncatechars:60 }}</td>
+                  <td class="admin-table__numeric">{{ row.visitors|ru_number:0 }}</td>
+                </tr>
+              {% empty %}
+                <tr><td class="text-muted">{% translate "Переходов не было" %}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card__header">
+          <h2 class="card__title">{% translate "Не найдено (404)" %}</h2>
+        </div>
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <tbody>
+              {% for row in summary.not_found %}
+                <tr>
+                  <td><code>{{ row.label|truncatechars:60 }}</code></td>
+                  <td class="admin-table__numeric">{{ row.hits|ru_number:0 }}</td>
+                </tr>
+              {% empty %}
+                <tr><td class="text-muted">{% translate "Таких запросов не было" %}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div class="cabinet-columns visits-columns">
+      {% for block in shares %}
+        <section class="card">
+          <div class="card__header">
+            <h2 class="card__title">{{ block.title }}</h2>
+          </div>
+          <ul class="visits-shares">
+            {% for row in block.rows %}
+              <li>
+                <span>{{ row.label }}</span>
+                <span class="numeric">{{ row.share|percent }}</span>
+                <div class="admin-bar"><div class="admin-bar__fill" style="width: {% widthratio row.share 1 100 %}%"></div></div>
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endfor %}
+    </div>
+
+  {% endif %}
+
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{# Каркас панели управления: как у кабинета, со строкой-щитом над заголовком. #}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/cabinet.css' %}">
+  <link rel="stylesheet" href="{% static 'css/admin-panel.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page admin">
+
+  <header class="cabinet-head">
+    <div class="cabinet-head__text">
+      <p class="cabinet-head__kicker admin__kicker">
+        <svg aria-hidden="true"><use href="#icon-shield"></use></svg>
+        {% translate "Панель управления — изменения затрагивают всех пользователей" %}
+      </p>
+      <h1 class="cabinet-head__title">{% block admin_title %}{{ page_title }}{% endblock %}</h1>
+      {% block admin_subtitle %}{% endblock %}
+    </div>
+
+    <div class="admin__aside">
+      <div class="admin__actions">{% block admin_actions %}{% endblock %}</div>
+      <p class="admin__links">
+        <a href="{% url 'accounts:dashboard' %}">{% translate "В кабинет" %}</a>
+      </p>
+    </div>
+  </header>
+
+  <nav class="cabinet-tabs" aria-label="{% translate 'Разделы панели управления' %}">
+    {% for section in admin_sections %}
+      <a class="cabinet-tabs__tab" href="{{ section.url }}"
+         {% if section.active %}aria-current="page"{% endif %}
+         title="{{ section.hint }}">
+        {{ section.title }}
+      </a>
+    {% endfor %}
+  </nav>
+
+  <div class="admin__content">
+    {% block admin_content %}{% endblock %}
+  </div>
+
+</div>
+{% endblock %}

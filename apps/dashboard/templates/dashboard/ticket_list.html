@@ -1,0 +1,127 @@
+{% extends "dashboard/base.html" %}
+{% load i18n formatting %}
+
+{# Перечень обращений; по умолчанию — ждущие ответа. #}
+
+{% block admin_subtitle %}
+  <p class="page-header__subtitle">
+    {% blocktranslate trimmed %}
+      Ответ уходит письмом на адрес отправителя. Среднее время до ответа считается
+      только по тем обращениям, на которые ответили.
+    {% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block admin_content %}
+
+  <section class="admin-tiles">
+    <div class="admin-tile {% if statistics.open %}admin-tile--attention{% endif %}">
+      <span class="admin-tile__value">{{ statistics.open }}</span>
+      <span class="admin-tile__label">{% translate "Ждут ответа" %}</span>
+    </div>
+    <div class="admin-tile">
+      <span class="admin-tile__value">{{ statistics.answered }}</span>
+      <span class="admin-tile__label">{% translate "Отвечено" %}</span>
+    </div>
+    <div class="admin-tile">
+      <span class="admin-tile__value">
+        {% if statistics.avg_response_hours is not None %}{{ statistics.avg_response_hours|ru_number:1 }}{% else %}—{% endif %}
+      </span>
+      <span class="admin-tile__label">{% translate "Часов до ответа" %}</span>
+      <span class="admin-tile__hint">{% translate "в среднем" %}</span>
+    </div>
+    <div class="admin-tile">
+      <span class="admin-tile__value">{{ statistics.closed }}</span>
+      <span class="admin-tile__label">{% translate "Закрыто без ответа" %}</span>
+    </div>
+  </section>
+
+  <form class="admin-filters" data-autosubmit method="get" action="{% url 'dashboard:ticket-list' %}">
+    <div class="admin-filters__field">
+      <label class="admin-filters__label" for="status">{% translate "Состояние" %}</label>
+      <select class="select" id="status" name="status">
+        <option value="open" {% if selected_status == "open" %}selected{% endif %}>{% translate "Ждут ответа" %}</option>
+        <option value="" {% if not selected_status %}selected{% endif %}>{% translate "Все" %}</option>
+        {% for value, label in statuses %}
+          <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="admin-filters__field">
+      <label class="admin-filters__label" for="topic">{% translate "Тема" %}</label>
+      <select class="select" id="topic" name="topic">
+        <option value="">{% translate "Любая" %}</option>
+        {% for value, label in topics %}
+          <option value="{{ value }}" {% if value == selected_topic %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="admin-filters__field admin-filters__field--wide">
+      <label class="admin-filters__label" for="q">{% translate "Поиск" %}</label>
+      <input class="input" type="search" id="q" name="q" value="{{ query }}"
+             placeholder="{% translate 'Заголовок, текст или адрес отправителя' %}">
+    </div>
+
+    <button class="button button--secondary" type="submit">{% translate "Найти" %}</button>
+  </form>
+
+  {% if tickets %}
+    <div class="admin-table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th scope="col">№</th>
+            <th scope="col">{% translate "Обращение" %}</th>
+            <th scope="col">{% translate "Тема" %}</th>
+            <th scope="col">{% translate "Состояние" %}</th>
+            <th scope="col">{% translate "Поступило" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ticket in tickets %}
+            <tr {% if ticket.is_open %}class="is-highlighted"{% endif %}>
+              <td class="admin-table__numeric">{{ ticket.pk }}</td>
+              <td>
+                <a href="{{ ticket.manage_url }}">{{ ticket.subject|truncatechars:70 }}</a>
+                <div class="text-muted" style="font-size: var(--text-xs)">
+                  {{ ticket.contact_name }} · {{ ticket.contact_email }}
+                </div>
+              </td>
+              <td class="text-muted">{{ ticket.get_topic_display }}</td>
+              <td><span class="badge {{ ticket.status_badge }}">{{ ticket.get_status_display }}</span></td>
+              <td class="admin-table__numeric text-muted">{{ ticket.created_at|date:"d.m.Y H:i" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+      <nav class="pagination" aria-label="{% translate 'Постраничная навигация' %}">
+        <span class="pagination__pages">
+          {% if page_obj.has_previous %}
+            <a class="pagination__page" href="{% querystring page=page_obj.previous_page_number %}">←</a>
+          {% endif %}
+          <span class="pagination__page is-current">{{ page_obj.number }}</span>
+          {% if page_obj.has_next %}
+            <a class="pagination__page" href="{% querystring page=page_obj.next_page_number %}">→</a>
+          {% endif %}
+        </span>
+        <span class="text-muted">
+          {% blocktranslate with total=paginator.count %}Всего: {{ total }}{% endblocktranslate %}
+        </span>
+      </nav>
+    {% endif %}
+  {% else %}
+    <div class="empty-state">
+      <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-mail"></use></svg>
+      <div class="empty-state__title">{% translate "Обращений нет" %}</div>
+      <p class="empty-state__hint">
+        {% translate "Форма обратной связи доступна посетителям по адресу /feedback/." %}
+      </p>
+    </div>
+  {% endif %}
+
+{% endblock %}

@@ -1,0 +1,229 @@
+{% extends "dashboard/base.html" %}
+{% load i18n formatting %}
+
+{# Обзор системы: сначала то, что требует вмешательства, затем общие числа. #}
+
+{% block admin_subtitle %}
+  <p class="page-header__subtitle">
+    {% blocktranslate trimmed %}
+      Состояние данных, пользователей и служб. Подробности — во вкладках разделов.
+    {% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block admin_content %}
+
+  {% if attention %}
+    <section class="admin-attention" aria-label="{% translate 'Требует внимания' %}">
+      {% for item in attention %}
+        <div class="admin-attention__item admin-attention__item--{{ item.level }}">
+          <span class="admin-attention__title">{{ item.title }}</span>
+          <a class="button button--sm button--ghost" href="{% url item.url_name %}{% if item.query %}?{{ item.query }}{% endif %}">
+            {% translate "Открыть" %}
+          </a>
+          <span class="admin-attention__hint">{{ item.hint }}</span>
+        </div>
+      {% endfor %}
+    </section>
+  {% else %}
+    <div class="callout callout--info">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-check"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Вмешательства не требуется" %}</div>
+        <p>{% translate "Необработанных обращений, нерассмотренных ошибок и неудачных загрузок нет." %}</p>
+      </div>
+    </div>
+  {% endif %}
+
+  <section class="admin-tiles" aria-label="{% translate 'Сводные показатели' %}">
+    {% if can.users %}
+    <div class="admin-tile">
+      <span class="admin-tile__value">{{ metrics.users_total|ru_number:0 }}</span>
+      <span class="admin-tile__label">{% translate "Учётных записей" %}</span>
+      <span class="admin-tile__hint">
+        {% blocktranslate with new=metrics.users_new %}за неделю: +{{ new }}{% endblocktranslate %}
+      </span>
+    </div>
+
+    <div class="admin-tile">
+      <span class="admin-tile__value">{{ metrics.users_online|ru_number:0 }}</span>
+      <span class="admin-tile__label">{% translate "Работали за час" %}</span>
+      <span class="admin-tile__hint">{% translate "по отметке активности" %}</span>
+    </div>
+    {% endif %}
+
+    {% if can.tickets %}
+    <div class="admin-tile {% if metrics.tickets_open %}admin-tile--attention{% endif %}">
+      <span class="admin-tile__value">{{ metrics.tickets_open|ru_number:0 }}</span>
+      <span class="admin-tile__label">{% translate "Обращений ждут ответа" %}</span>
+      <span class="admin-tile__hint">
+        {% blocktranslate with count=metrics.tickets_total %}всего: {{ count }}{% endblocktranslate %}
+      </span>
+    </div>
+    {% endif %}
+
+    {% if can.data %}
+    <div class="admin-tile {% if metrics.quality_errors %}admin-tile--danger{% endif %}">
+      <span class="admin-tile__value">{{ metrics.quality_total|ru_number:0 }}</span>
+      <span class="admin-tile__label">{% translate "Замечаний последней сборки" %}</span>
+      <span class="admin-tile__hint">
+        {% blocktranslate with count=metrics.quality_errors %}из них ошибок: {{ count }}{% endblocktranslate %}
+      </span>
+    </div>
+    {% endif %}
+  </section>
+
+  <div class="grid grid--halves">
+
+    {% if can.data %}
+    <section class="card">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Аналитический склад" %}</h2>
+        {% if warehouse.exists and not warehouse.error %}
+          <span class="badge badge--positive">{% translate "готов" %}</span>
+        {% else %}
+          <span class="badge badge--negative">{% translate "недоступен" %}</span>
+        {% endif %}
+      </div>
+
+      {% if warehouse.summary %}
+        <dl class="definition-list definition-list--compact">
+          <dt>{% translate "Наблюдений" %}</dt>
+          <dd class="numeric">{{ warehouse.summary.observations|ru_number:0 }}</dd>
+
+          <dt>{% translate "Со значением" %}</dt>
+          <dd class="numeric">{{ warehouse.summary.values_present|ru_number:0 }}</dd>
+
+          <dt>{% translate "Рядов" %}</dt>
+          <dd class="numeric">
+            {{ warehouse.summary.series|ru_number:0 }}
+            <span class="text-muted">
+              ({% translate "пригодных" %}: {{ warehouse.summary.series_ready|ru_number:0 }})
+            </span>
+          </dd>
+
+          <dt>{% translate "Период" %}</dt>
+          <dd class="numeric">
+            {{ warehouse.summary.first_year }}–{{ warehouse.summary.last_year }}
+          </dd>
+
+          <dt>{% translate "Размер файла" %}</dt>
+          <dd class="numeric">{{ warehouse.size_mb }} {% translate "МБ" %}</dd>
+        </dl>
+      {% else %}
+        <div class="callout callout--warning">
+          <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+          <div>
+            <div class="callout__title">{% translate "Склад недоступен" %}</div>
+            <p>{{ warehouse.error }}</p>
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="card__footer">
+        <a href="{% url 'dashboard:data' %}">{% translate "Загрузка данных и версии" %} →</a>
+      </div>
+    </section>
+    {% endif %}
+
+    {% if can.users %}
+    <section class="card">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Роли пользователей" %}</h2>
+      </div>
+
+      {% for role in roles %}
+        <div style="margin-bottom: var(--space-3)">
+          <div class="card__meta">
+            <span>{{ role.title }}</span>
+            <span class="numeric">{{ role.count }}</span>
+          </div>
+          <div class="admin-bar">
+            <div class="admin-bar__fill" style="width: {% widthratio role.share 1 100 %}%"></div>
+          </div>
+        </div>
+      {% endfor %}
+
+      <div class="card__footer">
+        <a href="{% url 'dashboard:user-list' %}">{% translate "Все учётные записи" %} →</a>
+      </div>
+    </section>
+    {% endif %}
+
+    {% if can.tickets %}
+    <section class="card">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Обращения" %}</h2>
+      </div>
+
+      <dl class="definition-list definition-list--compact">
+        <dt>{% translate "Всего" %}</dt>
+        <dd class="numeric">{{ tickets.total }}</dd>
+
+        <dt>{% translate "Ждут ответа" %}</dt>
+        <dd class="numeric">{{ tickets.open }}</dd>
+
+        <dt>{% translate "Отвечено" %}</dt>
+        <dd class="numeric">{{ tickets.answered }}</dd>
+
+        <dt>{% translate "Среднее время до ответа" %}</dt>
+        <dd class="numeric">
+          {% if tickets.avg_response_hours is not None %}
+            {{ tickets.avg_response_hours|ru_number:1 }} {% translate "ч" %}
+          {% else %}
+            —
+          {% endif %}
+        </dd>
+      </dl>
+
+      <div class="card__footer">
+        <a href="{% url 'dashboard:ticket-list' %}">{% translate "Разбор обращений" %} →</a>
+      </div>
+    </section>
+    {% endif %}
+
+    {% if can.content %}
+    <section class="card">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Содержимое" %}</h2>
+      </div>
+
+      <dl class="definition-list definition-list--compact">
+        <dt>{% translate "Терминов глоссария" %}</dt>
+        <dd class="numeric">{{ content.terms }}</dd>
+
+        <dt>{% translate "Разделов методики" %}</dt>
+        <dd class="numeric">{{ content.sections }}</dd>
+      </dl>
+
+      <div class="card__footer">
+        <a href="{% url 'dashboard:content' %}">{% translate "Управление содержимым" %} →</a>
+      </div>
+    </section>
+    {% endif %}
+
+  </div>
+
+  {% if health and can.data %}
+    <section class="card" style="margin-top: var(--space-5)">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Состояние служб" %}</h2>
+      </div>
+      <div class="admin-health">
+        {% for check in health %}
+          <div class="admin-health__item {% if not check.ok %}admin-health__item--down{% endif %}">
+            <span class="admin-health__dot" aria-hidden="true"></span>
+            <div>
+              <div class="admin-health__title">
+                {% if check.url %}<a href="{{ check.url }}">{{ check.title }}</a>{% else %}{{ check.title }}{% endif %}
+              </div>
+              <div class="admin-health__detail">{{ check.detail }}</div>
+              {% if check.extra %}<div class="admin-health__extra">{{ check.extra }}</div>{% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+{% endblock %}

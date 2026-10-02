@@ -1,0 +1,80 @@
+{% extends "dashboard/base.html" %}
+{% load i18n formatting %}
+
+{# Правка одной языковой версии; точка у переключателя — заполнена ли версия. #}
+
+{% block admin_subtitle %}
+  <p class="page-header__subtitle">{{ entity_title }}</p>
+{% endblock %}
+
+{% block admin_actions %}
+  {% if public_url %}
+    <a class="button button--sm button--secondary" href="{{ public_url }}" target="_blank"
+       rel="noopener noreferrer">
+      {% translate "Посмотреть на сайте" %}
+    </a>
+  {% endif %}
+  <a class="button button--sm button--ghost" href="{% url 'dashboard:content' %}?tab={{ tab }}">
+    ← {% translate "К перечню" %}
+  </a>
+{% endblock %}
+
+{% block admin_content %}
+
+  <div class="lang-switch">
+    <span class="text-muted">{% translate "Язык версии" %}:</span>
+    {% for language in languages %}
+      <a class="lang-switch__option {% if language.active %}is-active{% endif %}"
+         href="?lang={{ language.code }}">
+        <span class="lang-switch__state {% if language.filled %}lang-switch__state--filled{% endif %}"
+              aria-hidden="true"></span>
+        {{ language.title }}
+      </a>
+    {% endfor %}
+    <span class="text-muted" style="font-size: var(--text-xs)">
+      {% blocktranslate trimmed %}
+        Заполненная точка означает, что версия на этом языке существует.
+      {% endblocktranslate %}
+    </span>
+  </div>
+
+  {% if view_count %}
+    <div class="admin-facts">
+      <div>
+        <div class="admin-facts__label">{% translate "Просмотров" %}</div>
+        <div class="admin-facts__value">{{ view_count|ru_number:0 }}</div>
+      </div>
+      <div>
+        <div class="admin-facts__label">{% translate "Время чтения" %}</div>
+        <div class="admin-facts__value">{{ record.reading_minutes }} {% translate "мин" %}</div>
+      </div>
+    </div>
+  {% endif %}
+
+  <section class="card">
+    <form method="post">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="callout callout--danger">
+          <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+          <div>{{ form.non_field_errors }}</div>
+        </div>
+      {% endif %}
+
+      {% for field in form %}
+        {% include "partials/_field.html" with field=field %}
+      {% endfor %}
+
+      <div style="display: flex; gap: var(--space-3); margin-top: var(--space-4)">
+        <button class="button button--primary" type="submit">
+          {% blocktranslate with lang=editing_language %}Сохранить версию «{{ lang }}»{% endblocktranslate %}
+        </button>
+        <a class="button button--ghost" href="{% url 'dashboard:content' %}?tab={{ tab }}">
+          {% translate "Отмена" %}
+        </a>
+      </div>
+    </form>
+  </section>
+
+{% endblock %}

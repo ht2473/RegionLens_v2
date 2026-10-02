@@ -1,0 +1,243 @@
+{% extends "dashboard/base.html" %}
+{% load i18n formatting %}
+
+{# Загрузка нового выпуска, версии набора, запуски сборки и команды ручной сборки. #}
+
+{% block admin_subtitle %}
+  <p class="page-header__subtitle">
+    {% blocktranslate trimmed %}
+      Какая версия набора действует, когда выполнялась сборка склада и чем она закончилась.
+    {% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block admin_actions %}
+  <a class="button button--secondary" href="{% url 'dashboard:quality' %}">
+    {% translate "Замечания проверок" %}
+  </a>
+{% endblock %}
+
+{% block admin_content %}
+
+  <section class="card">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "Аналитический склад" %}</h2>
+      {% if warehouse.exists and not warehouse.error %}
+        <span class="badge badge--positive">{% translate "готов" %}</span>
+      {% else %}
+        <span class="badge badge--negative">{% translate "недоступен" %}</span>
+      {% endif %}
+    </div>
+
+    {% if warehouse.summary %}
+      <div class="admin-facts">
+        <div>
+          <div class="admin-facts__label">{% translate "Наблюдений" %}</div>
+          <div class="admin-facts__value">{{ warehouse.summary.observations|ru_number:0 }}</div>
+        </div>
+        <div>
+          <div class="admin-facts__label">{% translate "Со значением" %}</div>
+          <div class="admin-facts__value">{{ warehouse.summary.values_present|ru_number:0 }}</div>
+        </div>
+        <div>
+          <div class="admin-facts__label">{% translate "Рядов" %}</div>
+          <div class="admin-facts__value">{{ warehouse.summary.series|ru_number:0 }}</div>
+        </div>
+        <div>
+          <div class="admin-facts__label">{% translate "Пригодных к анализу" %}</div>
+          <div class="admin-facts__value">{{ warehouse.summary.series_ready|ru_number:0 }}</div>
+        </div>
+        <div>
+          <div class="admin-facts__label">{% translate "Пересмотров" %}</div>
+          <div class="admin-facts__value">{{ warehouse.summary.revisions|ru_number:0 }}</div>
+        </div>
+        <div>
+          <div class="admin-facts__label">{% translate "Размер файла" %}</div>
+          <div class="admin-facts__value">{{ warehouse.size_mb }} {% translate "МБ" %}</div>
+        </div>
+      </div>
+    {% else %}
+      <div class="callout callout--warning">
+        <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+        <div>
+          <div class="callout__title">{% translate "Склад недоступен" %}</div>
+          <p>{{ warehouse.error }}</p>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="card__footer">
+      <p class="text-muted" style="font-size: var(--text-xs)">
+        {% translate "Файл" %}: <code>{{ warehouse.path }}</code>
+      </p>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top: var(--space-5)">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "Новый выпуск набора" %}</h2>
+    </div>
+
+    {% if active_run %}
+      <div class="callout callout--info" role="status">
+        <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+        <div>
+          <div class="callout__title">{% translate "Сборка склада уже идёт" %}</div>
+          <p>
+            <a href="{% url 'dashboard:etl-run' pk=active_run.pk %}">
+              {% blocktranslate with pk=active_run.pk %}Ход сборки — запуск № {{ pk }}{% endblocktranslate %}
+            </a>
+          </p>
+        </div>
+      </div>
+    {% else %}
+      <p class="text-secondary">
+        {% blocktranslate trimmed %}
+          Файл проверяется по составу атрибутов, и склад собирается отдельным процессом —
+          около полуминуты. Сайт работает на прежних данных, пока новый склад не собран
+          целиком; при неудаче прежние данные остаются.
+        {% endblocktranslate %}
+      </p>
+      <form method="post" action="{% url 'dashboard:data-upload' %}" enctype="multipart/form-data"
+            style="margin-top: var(--space-3)">
+        {% csrf_token %}
+        {% include "partials/_field.html" with field=upload_form.dataset %}
+        <button class="button button--primary" type="submit">{% translate "Загрузить и собрать склад" %}</button>
+      </form>
+    {% endif %}
+
+    <details class="card__footer">
+      <summary>{% translate "Команды для обслуживания вручную, на стенде" %}</summary>
+      <div class="admin-table-wrapper" style="margin-top: var(--space-3)">
+        <table class="admin-table">
+          <tbody>
+            {% for item in commands %}
+              <tr>
+                <td style="width: 30%">{{ item.title }}</td>
+                <td><code>{{ item.command }}</code></td>
+                <td class="text-muted">{{ item.hint }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <section class="card" style="margin-top: var(--space-5)">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "Версии набора данных" %}</h2>
+    </div>
+
+    {% if versions %}
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Версия" %}</th>
+              <th scope="col">{% translate "Опубликована" %}</th>
+              <th scope="col">{% translate "Наблюдений" %}</th>
+              <th scope="col">{% translate "Период" %}</th>
+              <th scope="col">{% translate "Загрузок" %}</th>
+              <th scope="col">{% translate "Состояние" %}</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for version in versions %}
+              <tr>
+                <td>
+                  <strong>{{ version.code }}</strong>
+                  <div class="text-muted" style="font-size: var(--text-xs)">
+                    {{ version.title|truncatechars:60 }}
+                  </div>
+                </td>
+                <td class="admin-table__numeric">{{ version.published_on|date:"d.m.Y" }}</td>
+                <td class="admin-table__numeric">{{ version.observation_count|ru_number:0 }}</td>
+                <td class="admin-table__numeric">{{ version.first_year }}–{{ version.last_year }}</td>
+                <td class="admin-table__numeric">{{ version.runs }}</td>
+                <td>
+                  {% if version.is_current %}
+                    <span class="badge badge--positive">{% translate "действует" %}</span>
+                  {% else %}
+                    <span class="badge badge--outline">{% translate "прежняя" %}</span>
+                  {% endif %}
+                </td>
+                <td class="admin-table__actions">
+                  <a class="button button--sm button--ghost"
+                     href="{% url 'dashboard:dataset-version-edit' code=version.code %}">
+                    {% translate "Править" %}
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted">
+        {% translate "Версии не зарегистрированы: сборка склада ещё не выполнялась." %}
+      </p>
+    {% endif %}
+  </section>
+
+  <section class="card" style="margin-top: var(--space-5)">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "История запусков загрузки" %}</h2>
+    </div>
+
+    {% if runs %}
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Начало" %}</th>
+              <th scope="col">{% translate "Режим" %}</th>
+              <th scope="col">{% translate "Состояние" %}</th>
+              <th scope="col">{% translate "Длительность" %}</th>
+              <th scope="col">{% translate "Наблюдений" %}</th>
+              <th scope="col">{% translate "Разрывов" %}</th>
+              <th scope="col">{% translate "Запустил" %}</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for run in runs %}
+              <tr {% if run.status == "failed" %}class="is-highlighted"{% endif %}>
+                <td class="admin-table__numeric">{{ run.started_at|date:"d.m.Y H:i" }}</td>
+                <td>{{ run.get_mode_display }}</td>
+                <td>
+                  {% if run.status == "success" %}
+                    <span class="badge badge--positive">{{ run.get_status_display }}</span>
+                  {% elif run.status == "failed" %}
+                    <span class="badge badge--negative">{{ run.get_status_display }}</span>
+                  {% elif run.status == "running" or run.status == "queued" %}
+                    <span class="badge badge--attention">{{ run.get_status_display }}</span>
+                  {% else %}
+                    <span class="badge badge--neutral">{{ run.get_status_display }}</span>
+                  {% endif %}
+                </td>
+                <td class="admin-table__numeric">
+                  {% if run.duration_seconds %}{{ run.duration_seconds|ru_number:1 }} {% translate "с" %}{% else %}—{% endif %}
+                </td>
+                <td class="admin-table__numeric">{{ run.observation_count|ru_number:0 }}</td>
+                <td class="admin-table__numeric">{{ run.break_count }}</td>
+                <td class="text-muted">
+                  {% if run.started_by %}{{ run.started_by.get_short_name }}{% else %}{% translate "командная строка" %}{% endif %}
+                </td>
+                <td class="admin-table__actions">
+                  <a class="button button--sm button--ghost" href="{% url 'dashboard:etl-run' pk=run.pk %}">
+                    {% translate "Журнал" %}
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted">{% translate "Запусков не зафиксировано." %}</p>
+    {% endif %}
+  </section>
+
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% comment %}
+  «Методика»: оглавление по блокам и разделы. Суть и формула раздела видны сразу, изложение
+  свёрнуто (details data-fold: static/js/ui/fold.js раскрывает его при переходе по якорю);
+  на телефоне свёрнуто и оглавление (data-fold-narrow).
+{% endcomment %}
+
+{% block meta_description %}{% translate "Формулы и правила, по которым RegionLens выполняет расчёты: подготовка данных, нормализация, взвешивание, статистические методы, неравенство и пространственный анализ." %}{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "Методика расчётов" %}</h1>
+      <p class="page-intro__lead">
+        {% blocktranslate trimmed %}
+          Как рассчитаны показатели и оценки на сайте: формула, условия применения,
+          ограничения и ссылка на инструмент.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  </header>
+
+  {% if blocks %}
+    <div class="methodology">
+      <nav class="methodology__toc" data-toc aria-label="{% translate 'Содержание методики' %}">
+        <details class="fold" data-fold-narrow open>
+          <summary>{% translate "Содержание" %} <svg class="fold__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg></summary>
+          <div class="methodology__toc-title">{% translate "Содержание" %}</div>
+          <ol class="methodology__toc-list">
+            {% for block in blocks %}
+              <li>
+                <span class="methodology__toc-block">{{ block.title }}</span>
+                <ul>
+                  {% for section in block.sections %}
+                    <li><a href="#{{ section.anchor }}">{{ section.title }}</a></li>
+                  {% endfor %}
+                </ul>
+              </li>
+            {% endfor %}
+          </ol>
+        </details>
+      </nav>
+
+      <div class="methodology__body">
+        {% for block in blocks %}
+          <section class="methodology__block">
+            <h2 class="methodology__block-title">{{ block.title }}</h2>
+
+            {% if block.code == "data" %}
+              <p class="methodology__block-note">
+                {% url 'catalog:sources' as sources_url %}
+                {% blocktranslate trimmed with url=sources_url %}
+                  Перечень изданий — на странице <a href="{{ url }}">«Источники данных»</a>.
+                {% endblocktranslate %}
+              </p>
+            {% endif %}
+
+            {% for section in block.sections %}
+              <article class="methodology__section" id="{{ section.anchor }}">
+                <h3 class="methodology__section-title">{{ section.title }}</h3>
+
+                {% if section.summary %}
+                  <p class="methodology__summary">{{ section.summary }}</p>
+                {% endif %}
+
+                {% if section.formula %}
+                  <pre class="methodology__formula" aria-label="{% translate 'Формула' %}">{{ section.formula }}</pre>
+                {% endif %}
+
+                {% if section.shown_in_original %}
+                  <p class="methodology__note">
+                    {% translate "Раздел приведён на языке оригинала (рус.): перевод готовится." %}
+                  </p>
+                {% endif %}
+
+                {% if section.body %}
+                  <details class="methodology__details" data-fold>
+                    <summary>
+                      {% translate "Подробнее" %}
+                      <svg class="fold__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
+                    </summary>
+                    <div class="prose">{{ section.body|linebreaks }}</div>
+                  </details>
+                {% endif %}
+
+                {% if section.references %}
+                  <div class="methodology__references">
+                    <div class="methodology__references-title">{% translate "Литература" %}</div>
+                    <ol>
+                      {% for reference, lang in section.references_with_lang %}<li lang="{{ lang }}">{{ reference }}</li>{% endfor %}
+                    </ol>
+                  </div>
+                {% endif %}
+
+                {% if section.tool_url %}
+                  <p class="methodology__tool">
+                    <a href="{{ section.tool_url }}">
+                      {% translate "Открыть инструмент" %}
+                      <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+                    </a>
+                  </p>
+                {% endif %}
+              </article>
+            {% endfor %}
+          </section>
+        {% endfor %}
+      </div>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-book"></use></svg>
+      <div class="empty-state__title">{% translate "Разделы методики не заполнены" %}</div>
+      <p class="empty-state__hint">
+        {% translate "Разделы появятся, когда администратор заполнит методику." %}
+      </p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

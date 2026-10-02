@@ -1,0 +1,174 @@
+{% extends "dashboard/base.html" %}
+{% load i18n formatting %}
+
+{# Карточка обращения; после ответа форма сменяется его текстом. #}
+
+{% block admin_subtitle %}
+  <p class="page-header__subtitle">
+    {{ ticket.get_topic_display }} ·
+    {{ ticket.contact_name }}{% if ticket.contact_email %} &lt;{{ ticket.contact_email }}&gt;{% endif %} ·
+    {{ ticket.created_at|date:"d.m.Y H:i" }}
+  </p>
+{% endblock %}
+
+{% block admin_actions %}
+  <a class="button button--sm button--ghost" href="{% url 'dashboard:ticket-list' %}">
+    ← {% translate "К перечню" %}
+  </a>
+{% endblock %}
+
+{% block admin_content %}
+
+  <div class="grid grid--halves">
+
+    <div>
+      <section class="card">
+        <div class="card__header">
+          <h2 class="card__title">{% translate "Обращение" %} № {{ ticket.pk }}</h2>
+          <span class="badge {{ ticket.status_badge }}">{{ ticket.get_status_display }}</span>
+        </div>
+
+        <div class="thread__body">{{ ticket.body }}</div>
+
+        {% if ticket.page_url %}
+          <div class="card__footer">
+            <p class="text-muted" style="font-size: var(--text-xs)">
+              {% translate "Отправлено со страницы" %}:
+              <a href="{{ ticket.page_url }}">{{ ticket.page_url|truncatechars:80 }}</a>
+            </p>
+          </div>
+        {% endif %}
+      </section>
+
+      {% if ticket.is_answered %}
+        <section class="card" style="margin-top: var(--space-5)">
+          <div class="card__header">
+            <h2 class="card__title">{% translate "Ответ" %}</h2>
+            <span class="badge {{ ticket.delivery_badge }}">{{ ticket.get_answer_delivery_display }}</span>
+          </div>
+          <div class="thread__body">{{ ticket.answer }}</div>
+          <div class="card__footer">
+            <p class="text-muted" style="font-size: var(--text-xs)">
+              {% blocktranslate trimmed with date=ticket.answered_at|date:"d.m.Y H:i" email=ticket.contact_email %}
+                Написан {{ date }} для {{ email }}
+              {% endblocktranslate %}{% if ticket.answered_by %} · {{ ticket.answered_by.get_short_name }}{% endif %}
+              {% if ticket.answer_sent_at %}
+                · {% blocktranslate trimmed with date=ticket.answer_sent_at|date:"d.m.Y H:i" %}письмо принято почтовым узлом {{ date }}{% endblocktranslate %}
+              {% endif %}
+            </p>
+            {% if ticket.answer_error and ticket.answer_delivery != "sent" %}
+              <p class="text-negative" style="font-size: var(--text-xs)">
+                {% blocktranslate trimmed with attempts=ticket.answer_attempts %}
+                  Попыток отправки: {{ attempts }}.
+                {% endblocktranslate %}
+                {{ ticket.answer_error }}
+              </p>
+            {% endif %}
+            {% if ticket.can_resend %}
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="resend">
+                <button class="button button--sm button--secondary" type="submit">
+                  {% translate "Отправить ещё раз" %}
+                </button>
+              </form>
+            {% endif %}
+          </div>
+        </section>
+      {% else %}
+        <section class="card" style="margin-top: var(--space-5)">
+          <div class="card__header">
+            <h2 class="card__title">{% translate "Ответить письмом" %}</h2>
+          </div>
+
+          {% if not ticket.can_reply %}
+            <p class="text-muted">
+              {% translate "Автор удалил учётную запись: адреса для ответа нет. Обращение можно закрыть." %}
+            </p>
+          {% else %}
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="answer">
+            {% include "partials/_field.html" with field=answer_form.answer %}
+
+            <button class="button button--primary" type="submit">
+              {% blocktranslate with email=ticket.contact_email %}Отправить на {{ email }}{% endblocktranslate %}
+            </button>
+            <p class="text-muted" style="margin-top: var(--space-2); font-size: var(--text-xs)">
+              {% blocktranslate trimmed %}
+                Ответ один: он уходит письмом, а обращению из учётной записи виден и в кабинете
+                автора. Если вопрос не исчерпан, автор напишет новое обращение.
+              {% endblocktranslate %}
+            </p>
+          </form>
+          {% endif %}
+
+          {% if ticket.is_open %}
+            <form class="card__footer" method="post">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="close">
+              <button class="button button--sm button--ghost" type="submit">
+                {% translate "Закрыть без ответа" %}
+              </button>
+              <span class="text-muted" style="font-size: var(--text-xs)">
+                {% translate "для рекламы, пустых и повторных обращений; автор не уведомляется" %}
+              </span>
+            </form>
+          {% endif %}
+        </section>
+      {% endif %}
+    </div>
+
+    <div>
+      <section class="card">
+        <div class="card__header">
+          <h2 class="card__title">{% translate "Сведения" %}</h2>
+        </div>
+
+        <dl class="definition-list definition-list--compact">
+          <dt>{% translate "Автор" %}</dt>
+          <dd>
+            {% if ticket.author %}
+              <a href="{% url 'dashboard:user-detail' public_id=ticket.author.public_id %}">
+                {{ ticket.author.get_short_name }}
+              </a>
+            {% else %}
+              <span class="text-muted">{% translate "без учётной записи" %}</span>
+            {% endif %}
+          </dd>
+
+          <dt>{% translate "Прежних обращений с этого адреса" %}</dt>
+          <dd class="numeric">
+            {% if author_tickets %}
+              <a href="{% url 'dashboard:ticket-list' %}?status=&amp;q={{ ticket.contact_email|urlencode }}">{{ author_tickets }}</a>
+            {% else %}
+              0
+            {% endif %}
+          </dd>
+
+          <dt>{% translate "Поступило" %}</dt>
+          <dd class="numeric">{{ ticket.created_at|date:"d.m.Y H:i" }}</dd>
+
+          <dt>{% translate "Ответ" %}</dt>
+          <dd class="numeric">
+            {% if ticket.answered_at %}
+              {{ ticket.answered_at|date:"d.m.Y H:i" }}
+              <span class="text-muted">({{ ticket.response_hours|ru_number:1 }} {% translate "ч" %})</span>
+            {% elif ticket.is_open %}
+              <span class="text-attention">
+                {% blocktranslate with hours=ticket.waiting_hours|ru_number:1 %}ждёт {{ hours }} ч{% endblocktranslate %}
+              </span>
+            {% else %}
+              <span class="text-muted">{% translate "не давался" %}</span>
+            {% endif %}
+          </dd>
+
+          <dt>{% translate "Адрес отправителя" %}</dt>
+          <dd class="numeric">{{ ticket.ip_address|default:"—" }}</dd>
+        </dl>
+      </section>
+    </div>
+
+  </div>
+
+{% endblock %}

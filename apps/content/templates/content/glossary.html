@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% comment %}
+  Глоссарий: термины по буквам, указатель всего алфавита. Поиск отбирает на странице,
+  без сценариев поиск и разделы отбирает сервер.
+{% endcomment %}
+
+{% block meta_description %}{% translate "Термины статистики и региональной экономики, применяемые в RegionLens: определения со ссылками на данные и методику расчёта." %}{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "Глоссарий" %}</h1>
+      <p class="page-intro__lead">
+        {% blocktranslate trimmed %}
+          Термины статистики и региональной экономики в том значении, в каком они
+          используются на сайте. Где возможно, определение связано с показателем
+          каталога и с разделом методики.
+        {% endblocktranslate %}
+      </p>
+
+      <form class="find-form" method="get" action="{% url 'content:glossary' %}" role="search">
+        {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+        <label class="find-field">
+          <svg aria-hidden="true"><use href="#icon-search"></use></svg>
+          <span class="visually-hidden">{% translate "Поиск по глоссарию" %}</span>
+          <input type="search" name="q" value="{{ query }}" autocomplete="off"
+                 data-filter-input="#glossary-groups" data-filter-empty="#glossary-empty"
+                 placeholder="{% translate 'Термин, синоним или часть определения' %}">
+        </label>
+      </form>
+
+      <ul class="choice-list glossary__categories" aria-label="{% translate 'Раздел глоссария' %}">
+        <li>
+          <a class="choice-chip"
+             href="{% url 'content:glossary' %}{% if query %}?q={{ query|urlencode }}{% endif %}"
+             {% if not selected_category %}aria-current="true"{% endif %}>{% translate "Все разделы" %}</a>
+        </li>
+        {% for value, label in categories %}
+          <li>
+            <a class="choice-chip"
+               href="?category={{ value }}{% if query %}&amp;q={{ query|urlencode }}{% endif %}"
+               {% if value == selected_category %}aria-current="true"{% endif %}>{{ label }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </header>
+
+  {% if groups %}
+    <nav class="glossary__alphabet" aria-label="{% translate 'Буквенный указатель' %}">
+      {% for entry in alphabet %}
+        {% if entry.available %}
+          <a class="glossary__letter" href="#letter-{{ entry.letter }}">{{ entry.letter }}</a>
+        {% else %}
+          <span class="glossary__letter is-disabled" aria-hidden="true">{{ entry.letter }}</span>
+        {% endif %}
+      {% endfor %}
+      <span class="glossary__total">
+        {% blocktranslate with total=total %}Терминов: {{ total }}{% endblocktranslate %}
+      </span>
+    </nav>
+
+    <div id="glossary-groups">
+      {% for group in groups %}
+        <section class="glossary__group" id="letter-{{ group.letter }}" data-filter-group>
+          <h2 class="glossary__group-letter">{{ group.letter }}</h2>
+
+          <dl class="glossary__terms">
+            {% for term in group.terms %}
+              <div class="glossary__term" id="{{ term.anchor }}" data-filter-item
+                   data-filter-text="{{ term.term }} {{ term.synonyms }} {{ term.short_definition }}">
+                <dt class="glossary__head">
+                  <span class="glossary__name">{{ term.term }}</span>
+                  <span class="glossary__category">{{ term.get_category_display }}</span>
+                  {% if term.synonyms %}
+                    <span class="glossary__synonyms">{% translate "Синонимы" %}: {% for synonym, lang in term.synonyms_with_lang %}<span lang="{{ lang }}">{{ synonym }}</span>{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+                  {% endif %}
+                </dt>
+                <dd class="glossary__body">
+                  <p class="glossary__short">{{ term.short_definition }}</p>
+
+                  {% if term.definition %}
+                    <div class="prose prose--compact">{{ term.definition|linebreaks }}</div>
+                  {% endif %}
+
+                  {% if term.shown_in_original %}
+                    <p class="glossary__note">
+                      {% translate "Определение приведено на языке оригинала (рус.): перевод готовится." %}
+                    </p>
+                  {% endif %}
+
+                  {% if term.indicator or term.methodology_section or term.related_terms.all %}
+                    <p class="glossary__links">
+                      {% if term.indicator %}
+                        <a href="{% url 'catalog:series-detail' slug=term.indicator.slug %}">
+                          {% translate "Показатель в каталоге" %}
+                        </a>
+                      {% endif %}
+                      {% if term.methodology_section %}
+                        <a href="{% url 'content:methodology' %}#{{ term.methodology_section.anchor }}">
+                          {% translate "Как это считается" %}
+                        </a>
+                      {% endif %}
+                      {% for related in term.related_terms.all %}
+                        <a href="#{{ related.anchor }}">{{ related.term }}</a>
+                      {% endfor %}
+                    </p>
+                  {% endif %}
+                </dd>
+              </div>
+            {% endfor %}
+          </dl>
+        </section>
+      {% endfor %}
+    </div>
+
+    {# Показывается сценарием отбора, если ничего не подошло. #}
+    <div class="empty-state" id="glossary-empty" hidden>
+      <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-bookmark"></use></svg>
+      <div class="empty-state__title">{% translate "Ничего не найдено" %}</div>
+      <p class="empty-state__hint">
+        {% blocktranslate trimmed %}
+          Попробуйте часть слова: поиск идёт по термину, синонимам и краткому определению.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-bookmark"></use></svg>
+      <div class="empty-state__title">
+        {% if query or selected_category %}
+          {% translate "Ничего не найдено" %}
+        {% else %}
+          {% translate "Глоссарий пока не заполнен" %}
+        {% endif %}
+      </div>
+      <p class="empty-state__hint">
+        {% if query or selected_category %}
+          {% blocktranslate trimmed %}
+            Попробуйте часть слова: поиск идёт по термину, синонимам и краткому определению.
+          {% endblocktranslate %}
+        {% else %}
+          {% translate "Термины появятся, когда администратор заполнит глоссарий." %}
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,230 @@
+{% extends "dashboard/base.html" %}
+{% load i18n formatting %}
+
+{# Внешние источники: состояние сбора, сверка связей рядов с набором и журнал выпусков. #}
+
+{% block admin_subtitle %}
+  <p class="page-header__subtitle">
+    {% blocktranslate trimmed %}
+      Откуда продолжаются ряды набора и берутся ряды Банка России и ФНС: когда проверялся
+      каждый источник, какие выпуски получены и разобраны и насколько значения изданий
+      Росстата совпадают с набором за общие годы.
+    {% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block admin_content %}
+
+  <section class="card">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "Источники" %}</h2>
+    </div>
+    <div class="admin-table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Источник" %}</th>
+            <th scope="col">{% translate "Последняя проверка" %}</th>
+            <th scope="col">{% translate "Последний выпуск" %}</th>
+            <th scope="col" class="admin-table__numeric">{% translate "Выпусков" %}</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in sources %}
+            {% with source=entry.source latest=entry.latest %}
+              <tr {% if not source.check_ok or entry.failed %}class="is-highlighted"{% endif %}>
+                <td>
+                  <strong>{{ source.title }}</strong>
+                  <div class="text-muted" style="font-size: var(--text-xs)">
+                    {{ source.publisher }} · <code>{{ source.code }}</code> ·
+                    <a href="{{ source.page_url }}" rel="noopener noreferrer">{% translate "страница" %}</a>
+                  </div>
+                </td>
+                <td>
+                  {% if source.is_running %}
+                    <span class="badge badge--attention">{% translate "идёт сбор" %}</span>
+                  {% elif source.checked_at %}
+                    {{ source.checked_at|date:"d.m.Y H:i" }}
+                    {% if not source.check_ok %}
+                      <div class="text-negative" style="font-size: var(--text-xs)">{{ source.check_error|truncatechars:160 }}</div>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted">{% translate "не проверялся" %}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if latest %}
+                    <a href="{% url 'dashboard:release' pk=latest.pk %}">{{ latest.code }}</a>
+                    <div class="text-muted" style="font-size: var(--text-xs)">
+                      {{ latest.title }}{% if latest.published_on %} · {{ latest.published_on|date:"d.m.Y" }}{% endif %}
+                    </div>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                  {% if entry.failed %}
+                    <div class="text-negative" style="font-size: var(--text-xs)">
+                      {% blocktranslate trimmed with count=entry.failed %}не разобрано: {{ count }}{% endblocktranslate %}
+                    </div>
+                  {% endif %}
+                </td>
+                <td class="admin-table__numeric">{{ entry.releases }}</td>
+                <td class="admin-table__actions">
+                  <form method="post" action="{% url 'dashboard:source-collect' code=source.code %}">
+                    {% csrf_token %}
+                    <button class="button button--sm button--secondary" type="submit"
+                            {% if source.is_running %}disabled{% endif %}>
+                      {% translate "Собрать сейчас" %}
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            {% endwith %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <details class="card__footer">
+      <summary>{% translate "Команды для обслуживания вручную, на стенде" %}</summary>
+      <div class="admin-table-wrapper" style="margin-top: var(--space-3)">
+        <table class="admin-table">
+          <tbody>
+            {% for item in commands %}
+              <tr>
+                <td style="width: 30%">{{ item.title }}</td>
+                <td><code>{{ item.command }}</code></td>
+                <td class="text-muted">{{ item.hint }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <section class="card" style="margin-top: var(--space-5)">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "Сшивка рядов с набором" %}</h2>
+    </div>
+    {% if links %}
+      <p class="text-secondary">
+        {% blocktranslate trimmed %}
+          Сверка — по трём общим годам перед последним годом набора. Связь условная, если
+          в допуске меньше 90 % пар «регион × год»: ряд продолжается, но на стыке стоит разрыв.
+          Редакция — выпуск заменяет значения набора как более поздняя публикация того же ряда.
+        {% endblocktranslate %}
+      </p>
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Ряд" %}</th>
+              <th scope="col">{% translate "Связь" %}</th>
+              <th scope="col" class="admin-table__numeric">{% translate "Годы из источника" %}</th>
+              <th scope="col" class="admin-table__numeric">{% translate "Сверка" %}</th>
+              <th scope="col" class="admin-table__numeric">{% translate "В допуске" %}</th>
+              <th scope="col" class="admin-table__numeric">{% translate "Наибольшее расхождение" %}</th>
+              <th scope="col" class="admin-table__numeric">{% translate "Уточнено значений набора" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in links %}
+              {% with link=row.link %}
+                <tr {% if link.is_conditional %}class="is-highlighted"{% endif %}>
+                  <td>
+                    {{ row.title }}
+                    <div class="text-muted" style="font-size: var(--text-xs)"><code>{{ link.series_key }}</code> · {{ link.method }}</div>
+                  </td>
+                  <td>
+                    {% if link.link == "conditional" %}
+                      <span class="badge badge--attention">{% translate "условная" %}</span>
+                    {% elif link.link == "revision" %}
+                      <span class="badge badge--neutral">{% translate "редакция" %}</span>
+                    {% else %}
+                      <span class="badge badge--positive">{% translate "полная" %}</span>
+                    {% endif %}
+                  </td>
+                  <td class="admin-table__numeric">
+                    {% if link.junction_year %}{{ link.junction_year }}{% if link.last_year != link.junction_year %}–{{ link.last_year }}{% endif %}{% else %}—{% endif %}
+                  </td>
+                  <td class="admin-table__numeric">
+                    {% if link.compared_from %}{{ link.compared_from }}–{{ link.compared_to }}{% else %}—{% endif %}
+                  </td>
+                  <td class="admin-table__numeric">
+                    {% if link.within_percent is not None %}{{ link.within_percent }} %{% else %}—{% endif %}
+                  </td>
+                  <td class="admin-table__numeric">
+                    {% if row.maximum is not None %}
+                      {% if row.unit == "points" %}{{ row.maximum|ru_number:2 }} {% translate "п." %}{% else %}{{ row.maximum|percent:1 }}{% endif %}
+                      <div class="text-muted" style="font-size: var(--text-xs)">{{ row.worst }}, {{ row.worst_year }}</div>
+                    {% else %}—{% endif %}
+                  </td>
+                  <td class="admin-table__numeric">{{ link.revised_count }}</td>
+                </tr>
+              {% endwith %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted">{% translate "Склад собран без выпусков источников." %}</p>
+    {% endif %}
+  </section>
+
+  <section class="card" style="margin-top: var(--space-5)">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "Журнал выпусков" %}</h2>
+    </div>
+    {% if releases %}
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Получен" %}</th>
+              <th scope="col">{% translate "Источник" %}</th>
+              <th scope="col">{% translate "Выпуск" %}</th>
+              <th scope="col">{% translate "Опубликован" %}</th>
+              <th scope="col" class="admin-table__numeric">{% translate "Размер" %}</th>
+              <th scope="col">{% translate "Состояние" %}</th>
+              <th scope="col" class="admin-table__numeric">{% translate "Значений" %}</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for release in releases %}
+              <tr {% if release.status == "failed" %}class="is-highlighted"{% endif %}>
+                <td class="admin-table__numeric">{{ release.fetched_at|date:"d.m.Y H:i" }}</td>
+                <td><code>{{ release.source.code }}</code></td>
+                <td>
+                  {{ release.code }}
+                  <div class="text-muted" style="font-size: var(--text-xs)">{{ release.title }}</div>
+                </td>
+                <td class="admin-table__numeric">{{ release.published_on|date:"d.m.Y" }}</td>
+                <td class="admin-table__numeric">{{ release.size_bytes|filesizeformat }}</td>
+                <td>
+                  {% if release.status == "parsed" %}
+                    <span class="badge badge--positive">{{ release.get_status_display }}</span>
+                  {% elif release.status == "failed" %}
+                    <span class="badge badge--negative">{{ release.get_status_display }}</span>
+                    <div class="text-negative" style="font-size: var(--text-xs)">{{ release.error|truncatechars:140 }}</div>
+                  {% else %}
+                    <span class="badge badge--attention">{{ release.get_status_display }}</span>
+                  {% endif %}
+                </td>
+                <td class="admin-table__numeric">{{ release.row_count|ru_number:0 }}</td>
+                <td class="admin-table__actions">
+                  <a class="button button--sm button--ghost" href="{% url 'dashboard:release' pk=release.pk %}">
+                    {% translate "Подробно" %}
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted">{% translate "Выпусков ещё не получено." %}</p>
+    {% endif %}
+  </section>
+
+{% endblock %}

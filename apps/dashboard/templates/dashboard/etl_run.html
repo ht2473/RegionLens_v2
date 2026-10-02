@@ -1,0 +1,158 @@
+{% extends "dashboard/base.html" %}
+{% load i18n formatting %}
+
+{# Карточка запуска сборки с полным журналом. Пока сборка идёт, фрагмент progress #}
+{# опрашивает себя; по окончании HX-Refresh перезагружает страницу. #}
+
+{% block admin_subtitle %}
+  <p class="page-header__subtitle">
+    {{ run.get_mode_display }} · {{ run.started_at|date:"d.m.Y H:i" }}
+  </p>
+{% endblock %}
+
+{% block admin_actions %}
+  <a class="button button--sm button--ghost" href="{% url 'dashboard:data' %}">
+    ← {% translate "К перечню запусков" %}
+  </a>
+{% endblock %}
+
+{% block admin_content %}
+
+  {% partialdef progress inline %}
+  <div id="run-progress"
+       {% if run.is_active %}hx-get="{% url 'dashboard:etl-run' pk=run.pk %}"
+       hx-trigger="every {{ poll_seconds }}s" hx-swap="outerHTML"{% endif %}>
+  {% if run.is_active %}
+    <div class="callout callout--info" role="status">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        <div class="callout__title">
+          {% if run.status == "queued" %}{% translate "Сборка запускается" %}{% else %}{% translate "Идёт сборка склада" %}{% endif %}
+        </div>
+        <p>{% blocktranslate trimmed %}
+          Страница обновляется сама. Сайт работает на прежних данных, пока новый склад
+          не собран целиком.
+        {% endblocktranslate %}</p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if run.status == "failed" %}
+    <div class="callout callout--danger">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Загрузка завершилась с ошибкой" %}</div>
+        <p>
+          {% if run.error_message %}
+            {{ run.error_message }}
+          {% else %}
+            {% translate "Причина не записана: смотрите журнал выполнения ниже." %}
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="admin-facts">
+    <div>
+      <div class="admin-facts__label">{% translate "Состояние" %}</div>
+      <div class="admin-facts__value">{{ run.get_status_display }}</div>
+    </div>
+    <div>
+      <div class="admin-facts__label">{% translate "Версия набора" %}</div>
+      <div class="admin-facts__value">
+        {% if run.dataset_version %}{{ run.dataset_version.code }}{% else %}—{% endif %}
+      </div>
+    </div>
+    <div>
+      <div class="admin-facts__label">{% translate "Длительность" %}</div>
+      <div class="admin-facts__value">
+        {% if run.duration_seconds %}{{ run.duration_seconds|ru_number:1 }} {% translate "с" %}{% else %}—{% endif %}
+      </div>
+    </div>
+    <div>
+      <div class="admin-facts__label">{% translate "Наблюдений загружено" %}</div>
+      <div class="admin-facts__value">{{ run.observation_count|ru_number:0 }}</div>
+    </div>
+    <div>
+      <div class="admin-facts__label">{% translate "Рядов" %}</div>
+      <div class="admin-facts__value">{{ run.series_count|ru_number:0 }}</div>
+    </div>
+    <div>
+      <div class="admin-facts__label">{% translate "Пересмотров" %}</div>
+      <div class="admin-facts__value">{{ run.revision_count|ru_number:0 }}</div>
+    </div>
+    <div>
+      <div class="admin-facts__label">{% translate "Разрывов сопоставимости" %}</div>
+      <div class="admin-facts__value">{{ run.break_count|ru_number:0 }}</div>
+    </div>
+    <div>
+      <div class="admin-facts__label">{% translate "Запустил" %}</div>
+      <div class="admin-facts__value">
+        {% if run.started_by %}{{ run.started_by.get_short_name }}{% else %}{% translate "командная строка" %}{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <section class="card" style="margin-top: var(--space-5)">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "Журнал выполнения" %}</h2>
+    </div>
+
+    {% if run.log %}
+      <pre class="admin-log">{{ run.log }}</pre>
+    {% else %}
+      <p class="text-muted">{% translate "Журнал пуст." %}</p>
+    {% endif %}
+  </section>
+  </div>
+  {% endpartialdef %}
+
+  {% if run.source_path %}
+    <section class="card" style="margin-top: var(--space-5)">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Источник" %}</h2>
+      </div>
+      <dl class="definition-list definition-list--compact">
+        <dt>{% translate "Файл" %}</dt>
+        <dd><code>{{ run.source_path }}</code></dd>
+
+        <dt>{% translate "Контрольная сумма" %}</dt>
+        <dd><code>{{ run.source_checksum|default:"—" }}</code></dd>
+      </dl>
+    </section>
+  {% endif %}
+
+  {% if checks %}
+    <section class="card" style="margin-top: var(--space-5)">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Замечания, найденные этим запуском" %}</h2>
+        <a class="button button--sm button--ghost" href="{% url 'dashboard:quality' %}">
+          {% blocktranslate with total=checks_total %}всего: {{ total }}{% endblocktranslate %}
+        </a>
+      </div>
+
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Уровень" %}</th>
+              <th scope="col">{% translate "Тип" %}</th>
+              <th scope="col">{% translate "Описание" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for check in checks %}
+              <tr>
+                <td>{{ check.get_severity_display }}</td>
+                <td class="text-muted">{{ check.get_check_type_display }}</td>
+                <td>{{ check.display_message|truncatechars:120 }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% endif %}
+
+{% endblock %}

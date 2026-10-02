@@ -1,0 +1,136 @@
+{% extends "dashboard/base.html" %}
+{% load i18n %}
+
+{# Содержимое: глоссарий и методика с отметкой полноты обоих языков. #}
+
+{% block admin_subtitle %}
+  <p class="page-header__subtitle">
+    {% blocktranslate trimmed %}
+      Черновики не видны читателям. Опубликованные записи удалить нельзя — на них могут
+      вести внешние ссылки; их снимают с публикации.
+    {% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block admin_actions %}
+  {% if active_tab == "glossary" %}
+    <a class="button button--sm button--primary" href="{% url 'dashboard:term-create' %}">
+      <svg aria-hidden="true"><use href="#icon-plus"></use></svg>
+      {% translate "Новый термин" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block admin_content %}
+
+  <section class="admin-tiles">
+    <div class="admin-tile">
+      <span class="admin-tile__value">{{ summary.terms_published }}</span>
+      <span class="admin-tile__label">{% translate "Терминов опубликовано" %}</span>
+      <span class="admin-tile__hint">{% translate "всего" %}: {{ summary.terms_total }}</span>
+    </div>
+    <div class="admin-tile">
+      <span class="admin-tile__value">{{ summary.sections_total }}</span>
+      <span class="admin-tile__label">{% translate "Разделов методики" %}</span>
+    </div>
+    <div class="admin-tile {% if summary.untranslated_terms or summary.untranslated_sections %}admin-tile--attention{% endif %}">
+      <span class="admin-tile__value">
+        {{ summary.untranslated_terms }}/{{ summary.untranslated_sections }}
+      </span>
+      <span class="admin-tile__label">{% translate "Без английской версии" %}</span>
+      <span class="admin-tile__hint">{% translate "термины / методика" %}</span>
+    </div>
+  </section>
+
+  <nav class="admin-tabs" aria-label="{% translate 'Виды содержимого' %}">
+    <a class="admin-tabs__tab {% if active_tab == 'glossary' %}is-active{% endif %}" href="?tab=glossary">
+      {% translate "Глоссарий" %}<span class="admin-tabs__count">{{ summary.terms_total }}</span>
+    </a>
+    <a class="admin-tabs__tab {% if active_tab == 'methodology' %}is-active{% endif %}" href="?tab=methodology">
+      {% translate "Методика" %}<span class="admin-tabs__count">{{ summary.sections_total }}</span>
+    </a>
+  </nav>
+
+  {% if rows %}
+    <div class="admin-table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Название" %}</th>
+            {% if active_tab == "methodology" %}
+              <th scope="col">{% translate "Блок" %}</th>
+              <th scope="col">{% translate "Порядок" %}</th>
+            {% endif %}
+            <th scope="col">{% translate "Показывается" %}</th>
+            <th scope="col">{% translate "Языки" %}</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr {% if not row.translated %}class="is-highlighted"{% endif %}>
+              <td>
+                <strong>{{ row.record }}</strong>
+                <div class="text-muted" style="font-size: var(--text-xs)">
+                  {% if active_tab == "methodology" %}{{ row.record.code }}{% else %}{{ row.record.slug }}{% endif %}
+                </div>
+              </td>
+
+              {% if active_tab == "methodology" %}
+                <td class="text-muted">{{ row.record.get_block_display }}</td>
+                <td class="admin-table__numeric">{{ row.record.display_order }}</td>
+              {% endif %}
+              <td>
+                {% if row.record.is_published %}
+                  <span class="badge badge--positive">{% translate "да" %}</span>
+                {% else %}
+                  <span class="badge badge--neutral">{% translate "нет" %}</span>
+                {% endif %}
+              </td>
+
+              <td>
+                {% for code in row.languages %}
+                  <span class="badge badge--outline">{{ code }}</span>
+                {% endfor %}
+                {% if not row.translated %}
+                  <span class="text-attention" style="font-size: var(--text-2xs)">
+                    {% translate "нет en" %}
+                  </span>
+                {% endif %}
+              </td>
+
+              <td class="admin-table__actions">
+                {% if active_tab == "methodology" %}
+                  <a class="button button--sm button--ghost"
+                     href="{% url 'dashboard:methodology-edit' code=row.record.code %}">
+                    {% translate "Править" %}
+                  </a>
+                {% else %}
+                  <a class="button button--sm button--ghost"
+                     href="{% url 'dashboard:term-edit' slug=row.record.slug %}">
+                    {% translate "Править" %}
+                  </a>
+                  {% if not row.record.is_published %}
+                    <a class="button button--sm button--ghost"
+                       href="{% url 'dashboard:term-delete' slug=row.record.slug %}">
+                      {% translate "Удалить" %}
+                    </a>
+                  {% endif %}
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-file-text"></use></svg>
+      <div class="empty-state__title">{% translate "Записей нет" %}</div>
+      <p class="empty-state__hint">
+        {% translate "Начальное наполнение: python manage.py seed_content" %}
+      </p>
+    </div>
+  {% endif %}
+
+{% endblock %}
