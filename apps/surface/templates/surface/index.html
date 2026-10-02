@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{# Рабочая поверхность: рейль выбора и холст с представлениями. #}
+{# Библиотека графиков догружается с первым графиком: карте она не нужна. #}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/surface.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+  {# Модули частей поверхности загружаются вместе с входным, а не после него. #}
+  <link rel="modulepreload" href="{% static 'js/elements/combobox.js' %}">
+  <link rel="modulepreload" href="{% static 'js/elements/time-slider.js' %}">
+  <link rel="modulepreload" href="{% static 'js/elements/choropleth.js' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+  {% include "surface/partials/_workspace.html" %}
+</div>
+{% endblock %}

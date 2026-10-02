@@ -1,0 +1,50 @@
+{% load i18n formatting %}
+{# Параметры построения карты: шкала, вид карты и режим сравнения лет. #}
+{% include "surface/partials/_scale.html" %}
+
+<div class="field">
+  <div class="field__label">{% translate "Вид карты" %}</div>
+  <div class="segmented" role="group">
+    <label class="segmented__option">
+      <input type="radio" name="mode" value="geo" {% if mode == 'geo' %}checked{% endif %}
+             {% if not boundaries_available %}disabled{% endif %}>
+      <span>{% translate "география" %}</span>
+    </label>
+    <label class="segmented__option">
+      <input type="radio" name="mode" value="tiles" {% if mode == 'tiles' %}checked{% endif %}>
+      <span>{% translate "плитки" %}</span>
+    </label>
+  </div>
+  <span class="field__hint">
+    {% blocktranslate trimmed %}
+      На плиточной карте все субъекты одинакового размера: площадь региона
+      не связана с величиной показателя.
+    {% endblocktranslate %}
+  </span>
+</div>
+
+{# Сравнение лет свёрнуто; включённое раскрывает блок само. #}
+<details class="rail-more" {% if compare_year %}open{% endif %}>
+  <summary class="rail-more__summary">
+    <span class="rail-more__label">{% translate "Сравнить с годом" %}</span>
+    <span class="rail-more__value" data-summary-of="map-compare">{% if compare_year %}{{ compare_year|year }}{% else %}{% translate "не сравнивать" %}{% endif %}</span>
+    <svg class="rail-more__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
+  </summary>
+
+  <div class="field">
+    <label class="visually-hidden" for="map-compare">{% translate "Сравнить с годом" %}</label>
+    <select class="select" id="map-compare" name="compare">
+      <option value="">{% translate "не сравнивать" %}</option>
+      {% for item in years %}
+        {% if item != year %}
+          <option value="{{ item|year }}" {% if item == compare_year %}selected{% endif %}>
+            {{ item|year }}
+          </option>
+        {% endif %}
+      {% endfor %}
+    </select>
+    <span class="field__hint">
+      {% translate "Карта покажет изменение значения между двумя годами" %}
+    </span>
+  </div>
+</details>

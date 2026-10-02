@@ -1,0 +1,81 @@
+{% load i18n formatting %}
+{# Предмет экрана: показатель и год, тема, единица; справа — Россия и середина регионов. #}
+{# Предмет экрана объявляется при пересчёте холста. #}
+<header class="surface-head{% if not subject.country and not subject.median %} surface-head--single{% endif %}"
+        data-announce-subject>
+  <div class="surface-head__text">
+    {% if subject %}
+      <p class="surface-head__kicker">
+        {{ subject.kicker }}{% if not subject.item.absolute %}{% if subject.item.polarity == "positive" %} · {% translate "рост — к лучшему" %}{% elif subject.item.polarity == "negative" %} · {% translate "рост — к худшему" %}{% endif %}{% endif %}
+      </p>
+      <h1 class="surface-head__title">
+        {{ subject.title }}{% if panel.code == "compare" and timeline_years %}, <span class="numeric">{{ timeline_years.0|year }}–{{ timeline_years|last|year }}</span>{% elif year %}, <span class="numeric">{{ year|year }}</span>{% endif %}
+      </h1>
+      <p class="surface-head__meta">
+        {% if subject.unit %}<span>{{ subject.unit }}</span>{% endif %}
+        {% if subject.item.is_money %}
+          <span title="{% translate 'Значения не пересчитаны на рост цен' %}">
+            {% if panel.code == "compare" %}
+              {% translate "в ценах каждого года" %}
+            {% elif year %}
+              {% blocktranslate trimmed with year=year|year %}в ценах {{ year }} года{% endblocktranslate %}
+            {% endif %}
+          </span>
+        {% endif %}
+        {% if subject.regions %}
+          <span>
+            {% blocktranslate trimmed with regions=subject.regions total=territory_count year=year|year %}
+              в {{ year }} году — значения по {{ regions }} регионам из {{ total }}
+            {% endblocktranslate %}
+          </span>
+        {% endif %}
+      </p>
+      {% if subject.origin and panel.code != "compare" %}
+        <p class="surface-head__origin">{{ subject.origin.text }}</p>
+      {% endif %}
+      <p class="surface-head__about">
+        <a href="{% url 'catalog:series-detail' slug=series.indicator.slug %}?series={{ series.key }}">
+          {% translate "О показателе: источник, разрывы, пересмотры" %}
+          <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+        </a>
+      </p>
+    {% else %}
+      <h1 class="surface-head__title">{% translate "Показатель не выбран" %}</h1>
+      <p class="surface-head__meta">{% translate "Выберите показатель в панели выбора" %}</p>
+    {% endif %}
+  </div>
+
+  {% if subject.country or subject.median %}
+    <dl class="surface-head__figures">
+      {% if subject.country %}
+        <div class="surface-head__figure">
+          <dt>{% blocktranslate trimmed with year=year|year %}Россия, {{ year }}{% endblocktranslate %}</dt>
+          <dd>
+            <span class="surface-head__value numeric">{{ subject.country }}</span>
+            {% if subject.unit %}<span class="surface-head__unit">{{ subject.unit }}</span>{% endif %}
+          </dd>
+        </div>
+      {% endif %}
+      {% if subject.median %}
+        <div class="surface-head__figure surface-head__figure--quiet">
+          <dt>{% translate "середина регионов" %}</dt>
+          <dd><span class="numeric">{{ subject.median }}</span></dd>
+        </div>
+      {% endif %}
+    </dl>
+  {% endif %}
+</header>
+
+{% if territories %}
+  <ul class="surface-chosen" aria-label="{% translate 'Отмеченные регионы' %}">
+    {% for territory in territories %}
+      <li>
+        <a class="surface-chosen__item" href="{% url 'catalog:territory-detail' slug=territory.slug %}"
+           data-territory="{{ territory.code }}"
+           title="{% translate 'Паспорт региона' %}">
+          {{ territory.name }}
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}

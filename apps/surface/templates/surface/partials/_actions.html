@@ -1,0 +1,13 @@
+{% load i18n workspace exports %}
+{# Действия над видом — сохранить, ссылка, выгрузка; панели — popover. #}
+<div class="surface-actions">
+  <span id="surface-indicator" class="htmx-indicator surface-actions__busy">
+    {% translate "Обновление…" %}
+  </span>
+  {% save_query_button panel.code %}
+  {% include "surface/partials/_share.html" %}
+  {% if series and year %}
+    {# Одно меню «Скачать»; вид выгрузки — от представления. #}
+    {% export_button panel.export_kind series=series.key year=year ascending=ascending title=series.full_title %}
+  {% endif %}
+</div>

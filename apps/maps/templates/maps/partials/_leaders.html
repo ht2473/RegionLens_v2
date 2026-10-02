@@ -1,0 +1,17 @@
+{% load i18n formatting %}
+{# Перечень крайних регионов карты; код связывает строку с регионом (static/js/lib/highlight.js). #}
+<ol class="leader-list leader-list--ranked">
+  {% for row in leaders %}
+    <li class="leader-list__item" data-rank="{{ row.rank }}" data-territory="{{ row.code }}">
+      <a class="leader-list__name" href="{{ row.href }}">{{ row.name }}</a>
+      <span class="leader-list__value numeric">{{ row.value }}</span>
+      <span class="leader-list__ratio numeric"
+            title="{% translate 'Отношение к значению по Российской Федерации' %}">{% if row.ratio %}×{{ row.ratio|ru_number:2 }}{% endif %}</span>
+      {% if row.share %}
+        <span class="leader-list__bar" style="--share: {{ row.share }}{% if row.colour %}; --bar: var({{ row.colour }}){% endif %}" aria-hidden="true"></span>
+      {% endif %}
+    </li>
+  {% empty %}
+    <li class="text-muted">{% translate "Нет данных" %}</li>
+  {% endfor %}
+</ol>

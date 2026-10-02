@@ -1,0 +1,13 @@
+{% load i18n %}
+{# Отбор по федеральному округу — в группе территорий; только у представлений, которые его понимают. #}
+<div class="field territory-district">
+  <label class="field__label" for="surface-district">{% translate "Федеральный округ" %}</label>
+  <select class="select" id="surface-district" name="district">
+    <option value="">{% translate "все округа" %}</option>
+    {% for item in districts %}
+      <option value="{{ item.code }}" {% if item.code == district %}selected{% endif %}>
+        {{ item.name }}
+      </option>
+    {% endfor %}
+  </select>
+</div>

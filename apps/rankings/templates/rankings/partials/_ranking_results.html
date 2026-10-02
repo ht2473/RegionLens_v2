@@ -1,0 +1,210 @@
+{% load i18n formatting %}
+{# Представление «рейтинг»: наибольшее движение, график позиций и полная таблица. #}
+
+{% if not series or not rows %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "Рейтинг по этому ряду не рассчитан" %}</p>
+    <p class="empty-state__hint">
+      {% translate "Выберите другой ряд наблюдений или другой год." %}
+    </p>
+  </div>
+{% else %}
+
+  {% if ranking_year_shifted %}
+    {# Рейтинг рассчитан не за все годы ряда: о подмене года сказано. #}
+    <div class="callout callout--info">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Показан ближайший рассчитанный год" %}</div>
+        <p style="margin: 0">
+          {% blocktranslate trimmed with chosen=year|stringformat:"d" shown=ranking_year|stringformat:"d" %}
+            За {{ chosen }} год рейтинг не рассчитан, поэтому показан {{ shown }}.
+            Карта и таблица при этом остаются на выбранном году.
+          {% endblocktranslate %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  {# --- Наибольшее движение: перечнями на бумаге, без карточек ------------------------ #}
+  {% if movers.risen or movers.fallen %}
+    <div class="surface-columns">
+      <section aria-labelledby="ranking-risen-title">
+        <div class="surface-block__head">
+          <h2 class="surface-block__title" id="ranking-risen-title">{% translate "Поднялись" %}</h2>
+          <span class="surface-block__note numeric">{{ period_start|year }} → {{ period_end|year }}</span>
+        </div>
+        <ol class="leader-list leader-list--ranked">
+          {% for item in movers.risen %}
+            <li class="leader-list__item" data-rank="{{ item.rank_desc }}" data-territory="{{ item.territory_code }}">
+              {% if item.slug %}
+                <a class="leader-list__name" href="{% url 'catalog:territory-detail' slug=item.slug %}">{{ item.name }}</a>
+              {% else %}
+                <span class="leader-list__name">{{ item.name }}</span>
+              {% endif %}
+              <span class="leader-list__value numeric">{{ item.value|ru_number:precision }}</span>
+              <span class="movement movement--up">
+                <svg aria-hidden="true"><use href="#icon-arrow-up"></use></svg>{{ item.movement }}
+              </span>
+            </li>
+          {% empty %}
+            <li class="text-muted">{% translate "Изменений нет" %}</li>
+          {% endfor %}
+        </ol>
+      </section>
+
+      <section aria-labelledby="ranking-fallen-title">
+        <div class="surface-block__head">
+          <h2 class="surface-block__title" id="ranking-fallen-title">{% translate "Опустились" %}</h2>
+          <span class="surface-block__note numeric">{{ period_start|year }} → {{ period_end|year }}</span>
+        </div>
+        <ol class="leader-list leader-list--ranked">
+          {% for item in movers.fallen %}
+            <li class="leader-list__item" data-rank="{{ item.rank_desc }}" data-territory="{{ item.territory_code }}">
+              {% if item.slug %}
+                <a class="leader-list__name" href="{% url 'catalog:territory-detail' slug=item.slug %}">{{ item.name }}</a>
+              {% else %}
+                <span class="leader-list__name">{{ item.name }}</span>
+              {% endif %}
+              <span class="leader-list__value numeric">{{ item.value|ru_number:precision }}</span>
+              <span class="movement movement--down">
+                <svg aria-hidden="true"><use href="#icon-arrow-down"></use></svg>{{ item.movement_abs }}
+              </span>
+            </li>
+          {% empty %}
+            <li class="text-muted">{% translate "Изменений нет" %}</li>
+          {% endfor %}
+        </ol>
+      </section>
+    </div>
+  {% endif %}
+
+  {# --- График движения позиций ---------------------------------------------------------- #}
+  {% if bump_option %}
+    <div class="chart-frame">
+      <div class="chart-frame__header">
+        <div>
+          <div class="chart-frame__title">{% translate "Движение позиций верхней части рейтинга" %}</div>
+          <div class="chart-frame__subtitle">
+            {% translate "Первое место — вверху" %} ·
+            {{ ranking_years.0|year }}–{{ ranking_years|last|year }}
+          </div>
+        </div>
+      </div>
+      <rl-chart class="chart chart--tall" data-options="ranking-bump-option"></rl-chart>
+      {{ bump_option|json_script:"ranking-bump-option" }}
+      <div class="chart-frame__footer">
+        {% blocktranslate trimmed %}
+          Обрыв линии означает, что в этом году субъект не участвовал в ранжировании:
+          значения по нему в источнике нет.
+        {% endblocktranslate %}
+        {% if selected_codes %}
+          · {% translate "выбранные территории показаны сплошной линией, даже если не входят в верхнюю часть" %}
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  {# --- Таблица рейтинга -------------------------------------------------------------------- #}
+  <section aria-labelledby="ranking-table-title">
+    <div class="surface-block__head">
+      <h2 class="surface-block__title" id="ranking-table-title">
+        {% blocktranslate trimmed with total=ranked_total %}Все места · {{ total }}{% endblocktranslate %}
+      </h2>
+      {% if statistics %}
+        <span class="surface-block__note">
+          {% blocktranslate trimmed with cv=statistics.coef_variation|percent decile=statistics.decile_ratio|ru_number:1 %}
+            коэффициент вариации — {{ cv }}, децильный — {{ decile }}
+          {% endblocktranslate %}
+        </span>
+      {% endif %}
+    </div>
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <caption class="visually-hidden">
+          {% blocktranslate trimmed with total=ranked_total %}
+            Позиции субъектов: {{ total }} строк
+          {% endblocktranslate %}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col" class="is-numeric">{% translate "Место" %}</th>
+            <th scope="col">{% translate "Субъект" %}</th>
+            <th scope="col">{% translate "Округ" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Значение" %}</th>
+            <th scope="col" class="is-numeric"
+                title="{% translate 'Отношение к значению по Российской Федерации' %}">
+              {% translate "К РФ" %}
+            </th>
+            {# Доля в сумме — только у складываемых величин. #}
+            {% if additive %}
+              <th scope="col" class="is-numeric"
+                  title="{% translate 'Доля субъекта в сумме по всем субъектам' %}">
+                {% translate "Доля" %}
+              </th>
+            {% endif %}
+            {% if previous_year %}
+              <th scope="col" class="is-numeric"
+                  title="{% translate 'Изменение позиции за период' %}">
+                {% translate "Изменение" %} {{ period_start|year }}→{{ period_end|year }}
+              </th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr data-territory="{{ row.territory_code }}"{% if row.selected %} class="is-selected"{% endif %}>
+              <td class="is-numeric data-table__rank">
+                {% if ascending %}{{ row.rank_asc }}{% else %}{{ row.rank_desc }}{% endif %}
+              </td>
+              <td>
+                <a href="{% url 'catalog:territory-detail' slug=row.slug %}">{{ row.name }}</a>
+              </td>
+              <td class="text-secondary" style="font-size: var(--text-xs)">
+                {{ row.district_name|default:"—" }}
+              </td>
+              <td class="is-numeric">{{ row.value|ru_number:precision }}</td>
+              <td class="is-numeric text-secondary">
+                {% if row.ratio_to_country %}×{{ row.ratio_to_country|ru_number:2 }}{% else %}—{% endif %}
+              </td>
+              {% if additive %}
+                <td class="is-numeric text-secondary">
+                  {% if row.share_of_total %}{{ row.share_of_total|percent:1 }}{% else %}—{% endif %}
+                </td>
+              {% endif %}
+              {% if previous_year %}
+                <td class="is-numeric">
+                  {% if row.movement is None %}
+                    <span class="movement movement--flat">—</span>
+                  {% elif row.movement > 0 %}
+                    <span class="movement movement--up">
+                      <svg aria-hidden="true"><use href="#icon-arrow-up"></use></svg>{{ row.movement }}
+                    </span>
+                  {% elif row.movement < 0 %}
+                    <span class="movement movement--down">
+                      <svg aria-hidden="true"><use href="#icon-arrow-down"></use></svg>{{ row.movement_abs }}
+                    </span>
+                  {% else %}
+                    <span class="movement movement--flat">0</span>
+                  {% endif %}
+                </td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if statistics %}
+      <p class="surface-block__footnote">
+        {% blocktranslate trimmed %}
+          Чем выше коэффициент вариации и децильный коэффициент, тем сильнее различаются
+          регионы: между соседними местами может лежать и двукратная разница, и доли
+          процента.
+        {% endblocktranslate %}
+      </p>
+    {% endif %}
+  </section>
+
+{% endif %}

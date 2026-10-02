@@ -1,0 +1,27 @@
+{% load i18n %}
+{# Рабочая область: рейль и холст; заменяется целиком при смене представления. #}
+<div id="surface" class="surface">
+
+  {% if not warehouse_ready %}
+    <h1 class="surface-head__title">{{ panel.heading }}</h1>
+    <div class="callout callout--warning">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Данные ещё не загружены" %}</div>
+        <p>{% translate "Страница заработает, когда администратор загрузит набор данных." %}</p>
+      </div>
+    </div>
+  {% else %}
+
+    <div class="workspace">
+      {% include "surface/partials/_rail.html" %}
+
+      <div class="workspace__content">
+        <div id="surface-main" class="canvas" data-announce="{% translate 'Холст обновлён' %}">
+          {% include "surface/partials/_main.html" %}
+        </div>
+      </div>
+    </div>
+
+  {% endif %}
+</div>

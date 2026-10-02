@@ -1,0 +1,19 @@
+{% load i18n %}
+{# Холст: вкладки с действиями, предмет экрана, представление и пояснение. #}
+{# Фрагмент при смене параметра в рейле — вместе с полосой вызова рейля. #}
+<div class="surface-bar">
+  {% include "surface/partials/_tabs.html" %}
+  {% include "surface/partials/_actions.html" %}
+</div>
+
+{% include "surface/partials/_subject.html" %}
+
+<div class="surface-canvas">
+  {% include panel.template %}
+</div>
+
+{# Чем полезно представление — мелко под холстом. #}
+<p class="surface-note">{{ panel.lead }}</p>
+
+{# Полоса вызова рейля на телефоне — в холсте: она повторяет предмет экрана. #}
+{% include "partials/_rail_dock.html" with rail_id="surface-rail" dock_title=dock_title dock_summary=dock_summary %}

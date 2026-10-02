@@ -1,0 +1,19 @@
+{% load i18n %}
+{# Параметры построения таблицы: порядок строк; отбор по округу — в группе территорий. #}
+<div class="field">
+  <div class="field__label">{% translate "Порядок строк" %}</div>
+  <div class="segmented" role="group">
+    {% for code, title in sorts.items %}
+      <label class="segmented__option">
+        <input type="radio" name="sort" value="{{ code }}"
+               {% if code == sort %}checked{% endif %}>
+        <span>{{ title }}</span>
+      </label>
+    {% endfor %}
+  </div>
+  <span class="field__hint">
+    {% blocktranslate trimmed %}
+      По названию — по алфавиту, по значению — от большего к меньшему.
+    {% endblocktranslate %}
+  </span>
+</div>

@@ -1,0 +1,93 @@
+{% load i18n %}
+{# Ссылка на текущий вид и запрос к программному интерфейсу с оговоркой об отличиях. #}
+<button type="button" class="button button--sm button--secondary no-print"
+        popovertarget="share-menu" aria-haspopup="dialog"
+        title="{% translate 'Адрес этого вида и запрос к программному интерфейсу' %}">
+  <svg aria-hidden="true"><use href="#icon-link"></use></svg>
+  {% translate "Ссылка" %}
+</button>
+
+{# Панель — popover. #}
+<div class="menu-popover share-menu no-print" id="share-menu" popover role="dialog"
+     aria-label="{% translate 'Ссылка на этот вид' %}">
+  <div class="share-field">
+    <label class="share-field__label" for="share-view-url">
+      {% translate "Ссылка на этот вид" %}
+    </label>
+    <div class="share-field__row">
+      {# Поле без имени, чтобы не попасть в запрос рейля. #}
+      <input class="input input--sm share-field__value" type="text" id="share-view-url"
+             value="{{ view_url }}" readonly spellcheck="false"
+             data-select-all>
+      <button type="button" class="button button--sm button--ghost"
+              data-copy="#share-view-url"
+              data-copy-done="{% translate 'Ссылка скопирована' %}">
+        <svg aria-hidden="true"><use href="#icon-copy"></use></svg>
+        {% translate "Копировать" %}
+      </button>
+    </div>
+    <p class="share-field__hint">
+      {% blocktranslate trimmed %}
+        Адрес описывает экран целиком: показатель, год, отмеченные территории
+        и параметры построения. Открытый заново, он покажет то же самое.
+      {% endblocktranslate %}
+    </p>
+  </div>
+
+  {# Ссылка для списка литературы с датой обращения и версией набора. #}
+  {% if citation %}
+    <div class="share-field">
+      <label class="share-field__label" for="share-citation">
+        {% translate "Ссылка для списка литературы" %}
+      </label>
+      <div class="share-field__row">
+        <input class="input input--sm share-field__value" type="text" id="share-citation"
+               value="{{ citation }}" readonly spellcheck="false"
+               data-select-all>
+        <button type="button" class="button button--sm button--ghost"
+                data-copy="#share-citation"
+                data-copy-done="{% translate 'Ссылка скопирована' %}">
+          <svg aria-hidden="true"><use href="#icon-copy"></use></svg>
+          {% translate "Копировать" %}
+        </button>
+      </div>
+      <p class="share-field__hint">
+        {% blocktranslate trimmed %}
+          Оформление по ГОСТ Р 7.0.108-2022. Дата обращения проставлена сегодняшняя,
+          источник и выпуск — те, по которым выполнен расчёт.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  {% endif %}
+
+  {% if api_request %}
+    <div class="share-field">
+      <label class="share-field__label" for="share-api-url">
+        {% translate "Запрос к программному интерфейсу" %} · {{ api_request.title }}
+      </label>
+      <div class="share-field__row">
+        <input class="input input--sm share-field__value" type="text" id="share-api-url"
+               value="{{ api_request.url }}" readonly spellcheck="false"
+               data-select-all>
+        <button type="button" class="button button--sm button--ghost"
+                data-copy="#share-api-url"
+                data-copy-done="{% translate 'Запрос скопирован' %}">
+          <svg aria-hidden="true"><use href="#icon-copy"></use></svg>
+          {% translate "Копировать" %}
+        </button>
+      </div>
+      <p class="share-field__hint">{{ api_request.note }}</p>
+      <div class="share-field__links">
+        <a href="{{ api_request.url }}" target="_blank" rel="noopener noreferrer">
+          {% translate "Выполнить в браузере" %}
+        </a>
+        <a href="{% url 'api:docs' %}">{% translate "Описание интерфейса" %}</a>
+      </div>
+      <p class="share-field__hint">
+        {% blocktranslate trimmed with rate=api_rate %}
+          Чтение открыто без ключа и без входа; предел — {{ rate }} с одного адреса.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  {% endif %}
+</div>

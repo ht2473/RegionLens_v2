@@ -1,0 +1,64 @@
+{% load i18n formatting %}
+{# Легенда картограммы с гистограммой распределения и названным способом разбиения. #}
+
+{% if classification %}
+  <div class="map-legend">
+    <div class="map-legend__header">
+      <span class="map-legend__title">
+        {% if compare_year %}
+          {% translate "Изменение значения" %}
+        {% else %}
+          {{ classification.method_label|capfirst }}
+        {% endif %}
+        · {% translate "классов" %}: {{ classification.class_count }}
+      </span>
+      {# Единица — из описания ряда: series.unit врёт у 642 рядов. #}
+      {% if subject.unit %}
+        <span class="map-legend__unit">{{ subject.unit }}</span>
+      {% endif %}
+    </div>
+
+    {% if histogram %}
+      <div class="map-legend__histogram" aria-hidden="true"
+           title="{% translate 'Распределение значений по шкале' %}">
+        {% for bin in histogram %}
+          <span class="map-legend__bar" style="height: {% widthratio bin.height 1 100 %}%"></span>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {# Класс — кнопка: наведение приглушает остальные классы на карте, щелчок оставляет выбранный. #}
+    <ul class="map-legend__classes">
+      {% for interval in intervals %}
+        <li>
+          <button type="button" class="map-legend__class" data-legend-class="{{ interval.index }}"
+                  aria-pressed="false"
+                  title="{% translate "Показать только этот класс" %}">
+            <span class="map-legend__swatch" style="background-color: var({{ interval.colour }})"></span>
+            <span class="map-legend__range numeric">
+              {{ interval.lower|ru_number }} — {{ interval.upper|ru_number }}
+            </span>
+            <span class="map-legend__count numeric"
+                  title="{% translate "субъектов в классе" %}: {{ interval.count }}">
+              {{ interval.count }}
+            </span>
+          </button>
+        </li>
+      {% endfor %}
+
+      {% if no_data_count %}
+        <li>
+          <span class="map-legend__class map-legend__class--static">
+            <span class="map-legend__swatch map-legend__swatch--no-data"></span>
+            <span class="map-legend__range">{% translate "нет данных" %}</span>
+            <span class="map-legend__count numeric">{{ no_data_count|ru_number:0 }}</span>
+          </span>
+        </li>
+      {% endif %}
+    </ul>
+  </div>
+{% else %}
+  <p class="text-muted" style="font-size: var(--text-xs); margin-top: var(--space-3)">
+    {% translate "Значений слишком мало, чтобы построить шкалу." %}
+  </p>
+{% endif %}

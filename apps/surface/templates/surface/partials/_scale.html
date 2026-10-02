@@ -1,0 +1,33 @@
+{% load i18n %}
+{# Параметры шкалы, общие у карты и распределения: способ разбиения и число классов. #}
+<div class="field">
+  <div class="field__label" id="surface-method-label">{% translate "Способ разбиения шкалы" %}</div>
+  <div class="segmented segmented--grid" role="radiogroup" aria-labelledby="surface-method-label">
+    {% for code, title in methods.items %}
+      <label class="segmented__option">
+        <input type="radio" name="method" value="{{ code }}"
+               {% if code == method %}checked{% endif %}
+               {% if compare_year %}disabled{% endif %}>
+        <span>{{ title|capfirst }}</span>
+      </label>
+    {% endfor %}
+  </div>
+  {% if compare_year %}
+    <span class="field__hint">
+      {% translate "В режиме сравнения лет шкала симметрична относительно нуля" %}
+    </span>
+  {% endif %}
+</div>
+
+<div class="field">
+  <div class="field__label" id="surface-classes-label">{% translate "Число классов" %}</div>
+  <div class="segmented segmented--fill" role="radiogroup" aria-labelledby="surface-classes-label">
+    {% for number in class_range %}
+      <label class="segmented__option">
+        <input type="radio" name="classes" value="{{ number }}"
+               {% if number == class_count %}checked{% endif %}>
+        <span class="numeric">{{ number }}</span>
+      </label>
+    {% endfor %}
+  </div>
+</div>

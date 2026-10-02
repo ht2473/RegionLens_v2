@@ -1,0 +1,41 @@
+{% load i18n formatting %}
+{# Выбор года — общий для всех представлений; ползунок в два ряда. #}
+<div class="field">
+  <label class="field__label" for="surface-year">{% translate "Год" %}</label>
+
+  {% if years|length > 1 %}
+    <rl-time-slider class="time-slider time-slider--stacked">
+      <div class="time-slider__head">
+        {# Оба значка в разметке, переключаются оформлением — без подскока строки. #}
+        <button type="button" class="icon-button time-slider__play" data-time-play
+                aria-pressed="false"
+                data-label-play="{% translate 'Воспроизвести по годам' %}"
+                data-label-stop="{% translate 'Остановить воспроизведение' %}"
+                aria-label="{% translate 'Воспроизвести по годам' %}"
+                title="{% translate 'Воспроизвести по годам' %}">
+          <svg class="time-slider__icon time-slider__icon--play" aria-hidden="true">
+            <use href="#icon-play"></use>
+          </svg>
+          <svg class="time-slider__icon time-slider__icon--stop" aria-hidden="true">
+            <use href="#icon-pause"></use>
+          </svg>
+        </button>
+        <span class="time-slider__value numeric">{{ year|year }}</span>
+        <span class="time-slider__bounds numeric">{{ years.0|year }}–{{ years|last|year }}</span>
+      </div>
+      <input class="time-slider__range" type="range" id="surface-year" name="year"
+             min="{{ years.0|year }}" max="{{ years|last|year }}" step="1" value="{{ year|year }}"
+             list="surface-years"
+             aria-label="{% translate 'Год' %}">
+      <datalist id="surface-years">
+        {% for item in years %}<option value="{{ item|year }}"></option>{% endfor %}
+      </datalist>
+    </rl-time-slider>
+  {% elif year %}
+    {# Один год: без ползунка, но с полем, чтобы вкладки его сохраняли. #}
+    <input type="hidden" name="year" value="{{ year|year }}">
+    <span class="field__hint numeric">{{ year|year }}</span>
+  {% else %}
+    <span class="field__hint">{% translate "У ряда нет годов со значениями" %}</span>
+  {% endif %}
+</div>

@@ -1,0 +1,16 @@
+{% load i18n %}
+{# Переключатель представлений: ссылки с текущим выбором; со сценариями заменяют рабочую область. #}
+<nav class="tabs tabs--surface" aria-label="{% translate 'Представление данных' %}">
+  {% for tab in tabs %}
+    <a class="tabs__tab{% if tab.active %} is-active{% endif %}"
+       href="{{ tab.url }}"
+       hx-get="{{ tab.url }}"
+       hx-target="#surface"
+       hx-swap="outerHTML transition:true"
+       hx-push-url="true"
+       {% if tab.active %}aria-current="page"{% endif %}>
+      <svg class="tabs__icon" aria-hidden="true"><use href="#icon-{{ tab.icon }}"></use></svg>
+      <span>{{ tab.title }}</span>
+    </a>
+  {% endfor %}
+</nav>

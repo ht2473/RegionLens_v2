@@ -1,0 +1,120 @@
+{% load i18n formatting %}
+{# Представление «распределение»: гистограмма в цветах классов карты, сводка, положение выбранных. #}
+
+{% if not series %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "Ряд наблюдений не выбран" %}</p>
+    <p class="empty-state__hint">{% translate "Выберите показатель в панели выбора." %}</p>
+  </div>
+{% elif not rows %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "По этому ряду нет данных в разрезе субъектов" %}</p>
+    <p class="empty-state__hint">{{ series.full_title }}</p>
+  </div>
+{% else %}
+
+  {# --- Гистограмма ---------------------------------------------------------------------- #}
+  {% if histogram_option %}
+    <div class="chart-frame">
+      <div class="chart-frame__header">
+        <div>
+          <h2 class="chart-frame__title">{% translate "Сколько субъектов на каждой ступени шкалы" %}</h2>
+          <div class="chart-frame__subtitle">
+            {{ year|year }} ·
+            {% blocktranslate trimmed with shown=valued_count %}
+              значение известно по {{ shown }} субъектам
+            {% endblocktranslate %}
+            {% if no_data_count %} · {% translate "без данных" %}: {{ no_data_count }}{% endif %}
+          </div>
+        </div>
+      </div>
+      <rl-chart class="chart chart--tall" data-options="distribution-histogram"></rl-chart>
+      {{ histogram_option|json_script:"distribution-histogram" }}
+      <div class="chart-frame__footer">
+        {% blocktranslate trimmed %}
+          По горизонтали отложены значения, по вертикали — число субъектов. Столбец
+          разобран на доли по классам шкалы, и тем же цветом класс закрашен на карте.
+          Разбор нужен потому, что интервал гистограммы и класс шкалы разной ширины:
+          у квантильной шкалы нижние классы узкие, и в первый столбец попадают
+          субъекты сразу из нескольких.
+        {% endblocktranslate %}
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="surface-columns">
+    {# --- Сводка распределения: числа на бумаге, без карточки ------------------------- #}
+    {% if statistics %}
+      <section aria-labelledby="distribution-summary-title">
+        <div class="surface-block__head">
+          <h2 class="surface-block__title" id="distribution-summary-title">{% translate "Сводка распределения" %}</h2>
+          <span class="surface-block__note">
+            {% blocktranslate trimmed with count=statistics.observations %}
+              {{ count }} субъектов со значением
+            {% endblocktranslate %}
+          </span>
+        </div>
+        <dl class="figure-list">
+          <div><dt>{% translate "Минимум" %}</dt><dd class="numeric">{{ statistics.min_value|ru_number:precision }}</dd></div>
+          <div><dt>{% translate "Первый квартиль" %}</dt><dd class="numeric">{{ statistics.p25_value|ru_number:precision }}</dd></div>
+          <div><dt>{% translate "Медиана" %}</dt><dd class="numeric">{{ statistics.median_value|ru_number:precision }}</dd></div>
+          <div><dt>{% translate "Третий квартиль" %}</dt><dd class="numeric">{{ statistics.p75_value|ru_number:precision }}</dd></div>
+          <div><dt>{% translate "Максимум" %}</dt><dd class="numeric">{{ statistics.max_value|ru_number:precision }}</dd></div>
+          <div><dt>{% translate "Российская Федерация" %}</dt><dd class="numeric">{{ statistics.country_value|ru_number:precision }}</dd></div>
+          <div>
+            <dt title="{% translate 'Отношение стандартного отклонения к среднему' %}">{% translate "Коэффициент вариации" %}</dt>
+            <dd class="numeric">{{ statistics.coef_variation|percent }}</dd>
+          </div>
+          <div>
+            <dt title="{% translate 'Отношение девятого дециля к первому' %}">{% translate "Децильный коэффициент" %}</dt>
+            <dd class="numeric">{{ statistics.decile_ratio|ru_number:1 }}</dd>
+          </div>
+        </dl>
+      </section>
+    {% endif %}
+
+    {# --- Положение отмеченных регионов ------------------------------------------------- #}
+    <section aria-labelledby="distribution-positions-title">
+      <div class="surface-block__head">
+        <h2 class="surface-block__title" id="distribution-positions-title">{% translate "Отмеченные регионы" %}</h2>
+        <span class="surface-block__note numeric">{{ year|year }}</span>
+      </div>
+
+      {% if positions %}
+        <ul class="position-list">
+          {% for item in positions %}
+            <li class="position-list__item" data-territory="{{ item.code }}">
+              <span class="position-list__swatch"
+                    style="background-color: var({{ item.colour|default:'--border-subtle' }})"
+                    aria-hidden="true"></span>
+              <a class="position-list__name" href="{{ item.href }}">{{ item.name }}</a>
+              <span class="position-list__value numeric">{{ item.value|ru_number:precision }}</span>
+              <span class="position-list__share">
+                {% if item.share_below is not None %}
+                  {% blocktranslate trimmed with share=item.share_below %}
+                    выше {{ share }} % субъектов
+                  {% endblocktranslate %}
+                {% else %}
+                  {% translate "положение неизвестно" %}
+                {% endif %}
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+        <p class="surface-block__footnote">
+          {% blocktranslate trimmed %}
+            Доля регионов с меньшим значением точнее места: соседние места могут отличаться
+            и на доли процента, и в разы.
+          {% endblocktranslate %}
+        </p>
+      {% else %}
+        <p class="surface-block__footnote">
+          {% translate "Отметьте регионы в панели выбора — их место в распределении будет показано здесь." %}
+        </p>
+      {% endif %}
+    </section>
+  </div>
+
+{% endif %}

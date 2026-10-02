@@ -1,0 +1,43 @@
+{% load i18n formatting %}
+{# Параметры рейтинга: порядок и свёрнутый год сравнения; отбор по округу — в территориях. #}
+<div class="field">
+  <div class="field__label">{% translate "Порядок" %}</div>
+  <div class="segmented" role="group">
+    <label class="segmented__option">
+      <input type="radio" name="order" value="desc" {% if not ascending %}checked{% endif %}>
+      <span>{% translate "по убыванию" %}</span>
+    </label>
+    <label class="segmented__option">
+      <input type="radio" name="order" value="asc" {% if ascending %}checked{% endif %}>
+      <span>{% translate "по возрастанию" %}</span>
+    </label>
+  </div>
+  <span class="field__hint">
+    {% blocktranslate trimmed %}
+      Для показателей-дестимуляторов (безработица, бедность) осмыслен порядок
+      по возрастанию.
+    {% endblocktranslate %}
+  </span>
+</div>
+
+<details class="rail-more">
+  <summary class="rail-more__summary">
+    <span class="rail-more__label">{% translate "Сравнить позиции с годом" %}</span>
+    <span class="rail-more__value" data-summary-of="ranking-base">{{ previous_year|year }}</span>
+    <svg class="rail-more__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
+  </summary>
+
+  <div class="field">
+    <label class="visually-hidden" for="ranking-base">{% translate "Сравнить позиции с годом" %}</label>
+    <select class="select" id="ranking-base" name="base">
+      {% for item in ranking_years reversed %}
+        {% if item != ranking_year %}
+          <option value="{{ item|year }}" {% if item == previous_year %}selected{% endif %}>
+            {{ item|year }}
+          </option>
+        {% endif %}
+      {% endfor %}
+    </select>
+    <span class="field__hint">{% translate "Определяет столбец изменения позиции" %}</span>
+  </div>
+</details>

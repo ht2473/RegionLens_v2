@@ -1,0 +1,109 @@
+{% load i18n formatting %}
+{# Представление «таблица»: все субъекты справочника; причина пропуска названа пометкой. #}
+
+{% if not series %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "Ряд наблюдений не выбран" %}</p>
+    <p class="empty-state__hint">{% translate "Выберите показатель в панели выбора." %}</p>
+  </div>
+{% elif not table_rows %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "По этому отбору строк нет" %}</p>
+    <p class="empty-state__hint">{% translate "Снимите отбор по федеральному округу." %}</p>
+  </div>
+{% else %}
+
+  <div class="surface-block__head">
+    <h2 class="surface-block__title">
+      {% blocktranslate trimmed with shown=table_rows|length %}Все регионы · {{ shown }}{% endblocktranslate %}
+    </h2>
+    {% if missing_count %}
+      <span class="surface-block__note">
+        {% blocktranslate trimmed with missing=missing_count %}
+          без значения: {{ missing }} — они в таблице, с пометкой почему
+        {% endblocktranslate %}
+      </span>
+    {% endif %}
+  </div>
+
+  <div class="data-table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Субъект" %}</th>
+          {# Округ — второстепенный столбец, на телефоне скрыт (data-table__aside). #}
+          <th scope="col" class="data-table__aside">{% translate "Округ" %}</th>
+          <th scope="col" class="is-numeric">{% translate "Значение" %}</th>
+          <th scope="col" class="is-numeric">{% translate "Место" %}</th>
+          <th scope="col" class="is-numeric"
+              title="{% translate 'Доля субъектов со значением ниже' %}">
+            {% translate "Положение" %}
+          </th>
+          {% if not additive %}
+            <th scope="col" class="is-numeric"
+                title="{% translate 'Отношение к значению по Российской Федерации' %}">
+              {% translate "К РФ" %}
+            </th>
+          {% endif %}
+          <th scope="col">{% translate "Пометка" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in table_rows %}
+          <tr data-territory="{{ row.code }}"{% if row.selected %} class="is-selected"{% endif %}>
+            <td class="data-table__name">
+              <span class="table-swatch"
+                    style="background-color: var({{ row.colour|default:'--no-data-fill' }})"
+                    aria-hidden="true"></span>
+              <a href="{% url 'catalog:territory-detail' slug=row.slug %}">{{ row.name }}</a>
+            </td>
+            <td class="data-table__aside text-secondary" style="font-size: var(--text-xs)">
+              {{ row.district_name|default:"—" }}
+            </td>
+            <td class="is-numeric">
+              {% if row.value is not None %}{{ row.value|ru_number:precision }}{% else %}—{% endif %}
+            </td>
+            <td class="is-numeric text-secondary">{{ row.rank|default:"—" }}</td>
+            <td class="is-numeric text-secondary">
+              {% if row.percentile is not None %}{{ row.percentile|percent:0 }}{% else %}—{% endif %}
+            </td>
+            {% if not additive %}
+              <td class="is-numeric text-secondary">
+                {% if row.ratio_to_country %}×{{ row.ratio_to_country|ru_number:2 }}{% else %}—{% endif %}
+              </td>
+            {% endif %}
+            <td class="text-muted" style="font-size: var(--text-xs)">{{ row.note|default:"" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      {% if statistics %}
+        <tfoot>
+          <tr>
+            <th scope="row">{% translate "Российская Федерация" %}</th>
+            <td class="data-table__aside text-secondary" style="font-size: var(--text-xs)">—</td>
+            <td class="is-numeric">{{ statistics.country_value|ru_number:precision }}</td>
+            <td class="is-numeric text-secondary">—</td>
+            <td class="is-numeric text-secondary">—</td>
+            {% if not additive %}<td class="is-numeric text-secondary">×1,00</td>{% endif %}
+            <td class="text-muted" style="font-size: var(--text-xs)">
+              {% translate "значение по стране, а не сумма по субъектам" %}
+            </td>
+          </tr>
+        </tfoot>
+      {% endif %}
+    </table>
+  </div>
+
+  <p class="surface-block__footnote">
+    {% blocktranslate trimmed %}
+      «Нет данных в источнике» и «значение скрыто» — разные пометки исходного сборника:
+      в первом случае наблюдения не было, во втором его не публикуют. «Нет в источнике за этот год» означает, что за этот год субъекта в источнике нет вовсе.
+      Ни один из трёх случаев не равен нулю.
+    {% endblocktranslate %}
+    {# Разбор пометок пропусков. #}
+    <a href="{% url 'catalog:dataset' %}">{% translate "Полнота и проверки по всему набору" %}</a>
+  </p>
+
+{% endif %}

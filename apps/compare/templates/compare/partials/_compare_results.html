@@ -1,0 +1,240 @@
+{% load i18n formatting %}
+{# Представление «динамика»: линии ряда, затем профиль и таблица различий по ключевым показателям. #}
+
+{% if not compared %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-compare"></use></svg>
+    <p class="empty-state__title">{% translate "Выберите территории для сравнения" %}</p>
+    <p class="empty-state__hint">
+      {% translate "Отметьте два и более субъекта в панели выбора." %}
+    </p>
+  </div>
+{% else %}
+
+  {% if compared_by_default %}
+    <div class="callout callout--info">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Показан набор по умолчанию" %}</div>
+        <p style="margin: 0">
+          {% translate "Территории не выбраны, поэтому взяты субъекты из разных федеральных округов. Отметьте свои в панели выбора — выбор сохранится и на карте, и в рейтинге." %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  {# --- Динамика -------------------------------------------------------------------------- #}
+  {% if timeline_option %}
+    <div class="chart-frame">
+      <div class="chart-frame__header">
+        <div>
+          <div class="chart-frame__title">{% translate "Динамика по выбранным территориям" %}</div>
+          <div class="chart-frame__subtitle">
+            {{ timeline_years.0|year }}–{{ timeline_years|last|year }}
+            {% if timeline_base_year %}
+              · {% blocktranslate trimmed with base=timeline_base_year|stringformat:"d" %}
+                  {{ base }} год принят за 100
+                {% endblocktranslate %}
+            {% elif subject.unit %}
+              · {{ subject.unit }}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% if timeline_breaks %}
+        {# Предупреждение о разрывах — над графиком. #}
+        <div class="callout {% if timeline_trimmed %}callout--info{% else %}callout--warning{% endif %}"
+             style="margin-bottom: var(--space-3)">
+          <svg class="callout__icon" aria-hidden="true">
+            <use href="#icon-{% if timeline_trimmed %}info{% else %}alert{% endif %}"></use>
+          </svg>
+          <div>
+            {% if timeline_trimmed %}
+              <div class="callout__title">
+                {% blocktranslate trimmed with since=comparable_from|stringformat:"d" %}
+                  Показан сопоставимый отрезок: с {{ since }} года
+                {% endblocktranslate %}
+              </div>
+              <p style="margin: 0">
+                {% translate "Значения до последнего разрыва получены по другой методике и в этот отрезок не входят." %}
+              </p>
+            {% else %}
+              <div class="callout__title">{% translate "Ряд пересекают разрывы сопоставимости" %}</div>
+              <p style="margin: 0 0 var(--space-2)">
+                {% translate "Значения до и после отметки получены по разной методике, и сравнивать их напрямую нельзя." %}
+              </p>
+            {% endif %}
+
+            <ul class="break-list">
+              {% for item in timeline_breaks_shown %}
+                {# Примечание источника — подсказкой: оно длинное и повторяется по годам. #}
+                <li class="break-list__item" title="{{ item.description }}">
+                  <span class="break-list__year numeric">{{ item.year|year }}</span>
+                  <span>
+                    {{ item.kind }}
+                    {% if item.territory %} · {{ item.territory }}{% endif %}
+                  </span>
+                </li>
+              {% endfor %}
+              {% if timeline_breaks_hidden %}
+                <li class="break-list__item">
+                  <span class="break-list__year">—</span>
+                  <span class="break-list__note">
+                    {% blocktranslate trimmed with hidden=timeline_breaks_hidden %}
+                      и ещё {{ hidden }} раньше — все перечислены в карточке показателя
+                    {% endblocktranslate %}
+                  </span>
+                </li>
+              {% endif %}
+            </ul>
+
+            {% if series %}
+              <p class="break-list__source">
+                <a href="{% url 'catalog:series-detail' slug=series.indicator.slug %}?series={{ series.key }}">
+                  {% translate "Пояснения источника и полный перечень разрывов — в карточке показателя" %}
+                </a>
+              </p>
+            {% endif %}
+
+            {% if timeline_trimmed %}
+              <a class="button button--sm button--ghost" href="{{ span_all_url }}"
+                 hx-get="{{ span_all_url }}" hx-target="#surface" hx-swap="outerHTML"
+                 hx-push-url="true">
+                {% translate "Показать весь ряд" %}
+              </a>
+            {% elif comparable_from %}
+              {# Заменяется рабочая область: рейль должен унести отрезок с собой. #}
+              <a class="button button--sm button--secondary button--wrap"
+                 href="{{ span_comparable_url }}"
+                 hx-get="{{ span_comparable_url }}" hx-target="#surface" hx-swap="outerHTML"
+                 hx-push-url="true">
+                {% blocktranslate trimmed with since=comparable_from|stringformat:"d" %}
+                  Показать только сопоставимый отрезок: с {{ since }} года
+                {% endblocktranslate %}
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if timeline_base_missing %}
+        <div class="callout callout--warning" style="margin-bottom: var(--space-3)">
+          <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+          <div>
+            <div class="callout__title">{% translate "Общего базового года нет" %}</div>
+            <p style="margin: 0">
+              {% translate "Ни в одном году значение не известно сразу по всем выбранным субъектам, поэтому приводить не от чего: показаны значения как есть." %}
+            </p>
+          </div>
+        </div>
+      {% endif %}
+      <rl-chart class="chart chart--tall" data-options="compare-timeline-option"></rl-chart>
+      {{ timeline_option|json_script:"compare-timeline-option" }}
+      <div class="chart-frame__footer">
+        {% translate "Пунктиром отмечен год из общего выбора: карта, рейтинг и таблица показывают именно его." %}
+        {% if timeline_breaks %}
+          {% translate "Отметками цвета внимания показаны годы разрывов сопоставимости." %}
+        {% endif %}
+      </div>
+    </div>
+  {% elif series %}
+    <div class="empty-state">
+      <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+      <p class="empty-state__title">{% translate "По этому ряду нет значений у выбранных территорий" %}</p>
+      <p class="empty-state__hint">{{ series.full_title }}</p>
+    </div>
+  {% endif %}
+
+  {# --- Профиль ------------------------------------------------------------------------- #}
+  {% if radar_option %}
+    <div class="chart-frame">
+      <div class="chart-frame__header">
+        <div>
+          <div class="chart-frame__title">{% translate "Профиль по ключевым показателям" %}</div>
+          <div class="chart-frame__subtitle">
+            {% translate "По осям — положение в рейтинге страны: 100 — лучшее, 0 — худшее" %}
+          </div>
+        </div>
+      </div>
+      <rl-chart class="chart chart--tall" data-options="compare-radar-option"></rl-chart>
+      {{ radar_option|json_script:"compare-radar-option" }}
+      <div class="chart-frame__footer">
+        {% blocktranslate trimmed %}
+          Шкала осей — положение среди субъектов с учётом направленности показателя:
+          у безработицы и бедности лучшим считается низкое значение. Показатели
+          с неопределённой направленностью на диаграмму не выведены.
+        {% endblocktranslate %}
+      </div>
+    </div>
+  {% endif %}
+
+  {# --- Таблица различий -------------------------------------------------------------------- #}
+  {% if profile_rows %}
+    <section aria-labelledby="compare-profile-title">
+      <div class="surface-block__head">
+        <h2 class="surface-block__title" id="compare-profile-title">{% translate "Таблица различий" %}</h2>
+        <span class="surface-block__note">
+          {% translate "Последнее доступное значение и место среди субъектов" %}
+        </span>
+      </div>
+
+      <div class="data-table-wrapper">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Показатель" %}</th>
+              {% for territory in compared %}
+                <th scope="col" data-territory="{{ territory.code }}">
+                  {{ territory.short_code|default:territory.name }}
+                </th>
+              {% endfor %}
+              <th scope="col">{% translate "РФ" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in profile_rows %}
+              <tr>
+                <th scope="row">
+                  {{ row.series.short_title }}
+                  <span class="matrix-table__position">{{ row.series.unit_label }}</span>
+                </th>
+                {% for cell in row.cells %}
+                  <td>
+                    {% if cell.cell %}
+                      {{ cell.cell.value|ru_number:row.series.precision }}
+                      <span class="matrix-table__position">
+                        {% if cell.cell.rank_desc %}
+                          {{ cell.cell.rank_desc }} {% translate "место" %} ·
+                        {% endif %}
+                        {{ cell.cell.year|year }}
+                      </span>
+                    {% else %}
+                      <span class="text-muted">—</span>
+                    {% endif %}
+                  </td>
+                {% endfor %}
+                <td>
+                  {% if row.country %}
+                    {{ row.country.value|ru_number:row.series.precision }}
+                    <span class="matrix-table__position">{{ row.country.year|year }}</span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <p class="surface-block__footnote">
+        {% blocktranslate trimmed %}
+          Год указан у каждой величины отдельно: последний доступный год у разных рядов
+          не совпадает, и приведение всех значений к одному году потребовало бы
+          отбросить более свежие данные.
+        {% endblocktranslate %}
+      </p>
+    </section>
+  {% endif %}
+
+{% endif %}

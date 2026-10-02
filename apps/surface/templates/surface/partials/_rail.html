@@ -1,0 +1,41 @@
+{% load i18n %}
+{# Рейль выбора: общий выбор, затем параметры построения; применяется сразу. #}
+{# Рейль — сама форма: холст несёт свои формы, а вложенные формы недопустимы. #}
+<form class="filter-rail" id="surface-rail"
+      aria-label="{% translate 'Выбор и параметры построения' %}"
+      hx-get="{{ panel.url }}"
+      hx-target="#surface-main"
+      hx-push-url="true"
+      hx-trigger="change"
+      hx-swap="innerHTML transition:true"
+      hx-indicator="#surface-main">
+
+  {% translate "Выбор и параметры" as rail_title %}
+  {% include "partials/_rail_sheet_head.html" with sheet_title=rail_title %}
+
+  <div class="filter-rail__group">
+    {% include "partials/_series_select.html" %}
+  </div>
+
+  <div class="filter-rail__group">
+    {% include "surface/partials/_year.html" %}
+  </div>
+
+  <div class="filter-rail__group">
+    {% include "surface/partials/_territories.html" %}
+  </div>
+
+  {% if panel.rail_template %}
+    <div class="filter-rail__group">
+      <div class="filter-rail__title">{% translate "Построение" %}</div>
+      {% include panel.rail_template %}
+    </div>
+  {% endif %}
+
+  <div class="filter-rail__foot">
+    <a class="filter-rail__reset" href="{{ panel.url }}">
+      <svg aria-hidden="true"><use href="#icon-refresh"></use></svg>
+      {% translate "Сбросить выбор и параметры" %}
+    </a>
+  </div>
+</form>

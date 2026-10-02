@@ -1,0 +1,98 @@
+{% load i18n %}
+{# Географическая картограмма, собранная в apps/maps/cartogram.py; контуры — в defs, врезки — use. #}
+{# plain — без подписей значений (живая карта и карта-указатель). #}
+{# role="group": внутри ссылки на паспорта, роль img скрыла бы их от программ чтения. #}
+
+<div class="geo-map-wrapper">
+  <svg class="geo-map" viewBox="{{ geo_map.view_box }}" role="group"
+       preserveAspectRatio="xMidYMid meet" aria-label="{{ geo_caption }}"
+       data-geo-map>
+    <defs>
+      {# Штриховка «нет данных». #}
+      <pattern id="{{ geo_map.no_data_pattern }}" width="10" height="10"
+               patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <rect width="10" height="10" fill="var(--no-data-fill)"></rect>
+        <line x1="0" y1="0" x2="0" y2="10"
+              stroke="var(--no-data-stroke)" stroke-width="3.2"></line>
+      </pattern>
+
+      {# Обводка — в единицах экрана: во врезках чертёж увеличен. #}
+      {% for item in geo_map.definitions %}<path id="{{ item.id }}" d="{{ item.path }}" vector-effect="non-scaling-stroke"></path>{% endfor %}
+
+      {% for inset in geo_map.insets %}
+        <clipPath id="{{ inset.clip }}">
+          <rect x="{{ inset.x }}" y="{{ inset.y }}"
+                width="{{ inset.width }}" height="{{ inset.height }}" rx="6"></rect>
+        </clipPath>
+      {% endfor %}
+    </defs>
+
+    <rect class="geo-map__backdrop" x="0" y="0"
+          width="{{ geo_map.width }}" height="{{ geo_map.map_height }}" rx="8"></rect>
+
+    {# Внешняя граница страны — та же геометрия толстой линией под заливками. #}
+    <g class="geo-map__outline" fill="none" aria-hidden="true">
+      {% for region in geo_map.regions %}<use href="{{ region.reference }}"></use>{% endfor %}
+    </g>
+
+    <g class="geo-map__regions" fill-rule="evenodd">
+      {% for region in geo_map.regions %}
+        <a class="geo-map__region{% if region.selected %} is-selected{% endif %}"
+           href="{{ region.href }}" data-region="{{ region.code }}"
+           data-territory="{{ region.code }}"
+           data-class="{{ region.class_index }}">
+          <title>{{ region.title }}</title>
+          <use href="{{ region.reference }}" fill="{{ region.fill }}"></use>
+        </a>
+      {% endfor %}
+    </g>
+
+    {# --- Врезки ------------------------------------------------------------------- #}
+    {% for inset in geo_map.insets %}
+      <g class="geo-map__inset">
+        <rect class="geo-map__inset-backdrop" x="{{ inset.x }}" y="{{ inset.y }}"
+              width="{{ inset.width }}" height="{{ inset.height }}" rx="6"></rect>
+        <g clip-path="url(#{{ inset.clip }})">
+          <g transform="{{ inset.transform }}" fill-rule="evenodd">
+            {% for region in inset.regions %}
+              <a class="geo-map__region{% if region.selected %} is-selected{% endif %}"
+                 href="{{ region.href }}" tabindex="-1" data-region="{{ region.code }}"
+                 data-territory="{{ region.code }}"
+                 data-class="{{ region.class_index }}">
+                <title>{{ region.title }}</title>
+                <use href="{{ region.reference }}" fill="{{ region.fill }}"></use>
+              </a>
+            {% endfor %}
+          </g>
+        </g>
+        <rect class="geo-map__inset-frame" x="{{ inset.x }}" y="{{ inset.y }}"
+              width="{{ inset.width }}" height="{{ inset.height }}" rx="6"></rect>
+        {% for label in inset.labels %}
+          <text class="geo-map__code{% if label.light and not plain %} geo-map__code--light{% endif %}{% if label.selected %} is-selected{% endif %}"
+                x="{{ label.x }}" y="{{ label.y }}" text-anchor="middle" aria-hidden="true">
+            <tspan x="{{ label.x }}">{{ label.text }}</tspan>
+            {% if label.value and not plain %}
+              <tspan class="geo-map__code-value numeric" x="{{ label.x }}" dy="19">{{ label.value }}</tspan>
+            {% endif %}
+          </text>
+        {% endfor %}
+        <text class="geo-map__caption" x="{{ inset.caption_x }}" y="{{ inset.caption_y }}"
+              text-anchor="middle" aria-hidden="true">{{ inset.title }}</text>
+      </g>
+    {% endfor %}
+
+    {# --- Подписи выбранных субъектов; отодвинутая подпись соединена чертой ---------- #}
+    {% if not plain %}{% for label in geo_map.labels %}
+      {% if label.leader %}
+        <line class="geo-map__leader" x1="{{ label.origin_x }}" y1="{{ label.origin_y }}"
+              x2="{{ label.x }}" y2="{{ label.y }}" aria-hidden="true"></line>
+      {% endif %}
+      <text class="geo-map__label{% if label.selected %} is-selected{% endif %}"
+            x="{{ label.x }}" y="{{ label.y }}" text-anchor="{{ label.place }}"
+            aria-hidden="true">
+        <tspan x="{{ label.x }}" dy="-6">{{ label.name }}</tspan>
+        <tspan class="geo-map__label-value numeric" x="{{ label.x }}" dy="32">{{ label.value }}</tspan>
+      </text>
+    {% endfor %}{% endif %}
+  </svg>
+</div>

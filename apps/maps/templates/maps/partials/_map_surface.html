@@ -1,0 +1,84 @@
+{% load i18n formatting %}
+{# Представление «карта»: карта, легенда и крайние территории. #}
+
+{% if not series %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "Нет рядов, пригодных для картограммы" %}</p>
+    <p class="empty-state__hint">
+      {% translate "Страница заработает, когда администратор загрузит набор данных." %}
+    </p>
+  </div>
+{% elif not rows %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "По этому ряду нет данных в разрезе субъектов" %}</p>
+    <p class="empty-state__hint">{{ series.full_title }}</p>
+  </div>
+{% else %}
+
+  {# <rl-choropleth>: разбор карты по классам легенды и сохранение чертежа. #}
+  <rl-choropleth class="chart-frame">
+    {% if compare_year %}
+      <div class="chart-frame__header">
+        <div>
+          <div class="chart-frame__title">{% translate "Изменение значения" %}</div>
+          <div class="chart-frame__subtitle">
+            {% blocktranslate trimmed with start=period_start|stringformat:"d" end=period_end|stringformat:"d" %}
+              С {{ start }} по {{ end }} год
+            {% endblocktranslate %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    {# --- Поверхность карты ------------------------------------------------------------ #}
+    {% if mode == 'geo' and geo_map %}
+      {% include "maps/partials/_geo_map.html" %}
+    {% else %}
+      {% include "partials/_tile_map.html" with tile_rows=rows tile_caption=tile_caption %}
+    {% endif %}
+
+    {# --- Легенда ------------------------------------------------------------------------ #}
+    {% include "maps/partials/_legend.html" %}
+
+    <div class="chart-frame__footer">
+      {% if mode == 'geo' and geo_map %}
+        {% translate "Равновеликая проекция: площадь региона на карте пропорциональна настоящей. Малые регионы вынесены во врезки." %}
+        {% if boundaries_meta %}{% translate "Границы регионов — Natural Earth, общественное достояние." %}{% endif %}
+      {% else %}
+        {% blocktranslate trimmed with placed=tile_grid.placed %}
+          Схематичная карта: {{ placed }} равных плиток, по одной на субъект. Взаимное
+          расположение сохранено, площадь и форма — нет.
+        {% endblocktranslate %}
+      {% endif %}
+      {% if no_data_count %}
+        · {% translate "штриховкой показаны субъекты без данных" %}: {{ no_data_count }}
+      {% endif %}
+      {% if selected_codes %}
+        · {% translate "выбранные территории подписаны на карте вместе с крайними значениями" %}
+      {% endif %}
+    </div>
+  </rl-choropleth>
+
+  {# --- Крайние значения: на бумаге, без карточек ------------------------------------- #}
+  <div class="surface-columns">
+    <section aria-labelledby="map-top-title">
+      <div class="surface-block__head">
+        <h2 class="surface-block__title" id="map-top-title">{% translate "Больше всего" %}</h2>
+        {% if leaders_top.0.ratio %}
+          <span class="surface-block__note">{% translate "× — отношение к значению по России" %}</span>
+        {% endif %}
+      </div>
+      {% include "maps/partials/_leaders.html" with leaders=leaders_top %}
+    </section>
+
+    <section aria-labelledby="map-bottom-title">
+      <div class="surface-block__head">
+        <h2 class="surface-block__title" id="map-bottom-title">{% translate "Меньше всего" %}</h2>
+      </div>
+      {% include "maps/partials/_leaders.html" with leaders=leaders_bottom %}
+    </section>
+  </div>
+
+{% endif %}

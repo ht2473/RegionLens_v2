@@ -1,0 +1,5 @@
+{% load i18n %}
+{# Ответ на смену представления: рабочая область, title (HTMX берёт его сам) и «хлебные крошки». #}
+<title>{{ page_title }} — {{ project.name }}</title>
+{% include "surface/partials/_workspace.html" %}
+{% include "partials/_breadcrumbs.html" with oob=True %}
