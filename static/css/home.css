@@ -1,0 +1,373 @@
+/* Витрина: раскладка первого экрана с живой картой и разделы ниже; части карты — live-map.css. */
+
+.home {
+  padding-top: var(--space-6);
+}
+
+.home__notice {
+  margin-bottom: var(--space-6);
+}
+
+.home__title {
+  margin-bottom: var(--space-10);
+  font-size: var(--text-3xl);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* --- Мой регион: полоса над живой картой ------------------------------------------------ */
+
+.home-region {
+  display: grid;
+  grid-template-columns: minmax(0, 25rem) minmax(0, 1fr);
+  gap: var(--space-5) var(--space-10);
+  align-items: start;
+  margin-bottom: var(--space-10);
+  padding-bottom: var(--space-8);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.home-region__kicker {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.home-region__title {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+}
+
+.home-region__title a {
+  color: var(--text-primary);
+}
+
+.home-region__summary {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-3) 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.home-region__now {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(13rem, 100%), 1fr));
+  gap: var(--space-4) var(--space-6);
+  margin: 0;
+}
+
+.home-region__figure {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  padding-top: var(--space-3);
+  border-top: 2px solid var(--border-accent);
+}
+
+.home-region__figure dt {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+}
+
+.home-region__figure dd {
+  margin: 0;
+}
+
+.home-region__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+}
+
+.home-region__value .numeric {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.home-region__unit,
+.home-region__period {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+@media (max-width: 1023px) {
+  .home-region {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --- Живая карта ----------------------------------------------------------------------- */
+
+.live-map {
+  display: grid;
+  grid-template-columns: minmax(0, 25rem) minmax(0, 1fr);
+  grid-template-areas:
+    "head    map"
+    "find    map"
+    "choices map"
+    "card    map"
+    "legend  map"
+    "note    map";
+  grid-template-rows: repeat(5, auto) 1fr;
+  column-gap: var(--space-10);
+  row-gap: var(--space-5);
+  align-items: start;
+  margin-bottom: var(--space-16);
+}
+
+.live-map__head {
+  grid-area: head;
+}
+
+.live-map__find {
+  grid-area: find;
+}
+
+.live-map__choices {
+  grid-area: choices;
+}
+
+.live-map__card {
+  grid-area: card;
+}
+
+.live-map__legend {
+  grid-area: legend;
+}
+
+.live-map__note {
+  grid-area: note;
+}
+
+.live-map__figure {
+  grid-area: map;
+}
+
+.live-map__kicker {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.live-map__title {
+  margin: var(--space-2) 0 var(--space-3);
+  font-size: clamp(var(--text-2xl), 3.4vw, var(--text-4xl));
+  font-weight: var(--weight-bold);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.live-map__lead {
+  margin: 0;
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.live-map__lead b {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+
+/* --- Разделы ниже карты --------------------------------------------------------------- */
+
+/* Вопросы с готовым ответом. */
+.question-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.question-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--space-5) var(--space-6) var(--space-5);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.question-card:hover {
+  border-color: var(--border-accent);
+  text-decoration: none;
+  color: var(--text-primary);
+}
+
+.question-card__title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
+}
+
+.question-card__answer {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-4) 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+}
+
+.question-card__answer li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.question-card__place {
+  width: 1ch;
+  color: var(--text-muted);
+}
+
+.question-card__name {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.question-card__value {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.question-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: auto;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.question-card__more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-accent);
+}
+
+.question-card__more svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Три входа вглубь. */
+.entry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+.entry-card {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  padding: var(--space-5) var(--space-6) var(--space-6);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.entry-card:hover {
+  border-color: var(--border-accent);
+  text-decoration: none;
+  color: var(--text-primary);
+}
+
+.entry-card__kicker {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.entry-card__title {
+  margin-bottom: var(--space-1);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+}
+
+.entry-card__text {
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+}
+
+/* --- Узкие экраны ---------------------------------------------------------------------- */
+
+@media (max-width: 1180px) {
+  .live-map {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "head"
+      "find"
+      "choices"
+      "map"
+      "card"
+      "legend"
+      "note";
+    grid-template-rows: none;
+  }
+
+  .question-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .live-map {
+    row-gap: var(--space-4);
+    margin-bottom: var(--space-12);
+  }
+
+  /* Выбор показателя — полоса с прокруткой вбок, чтобы карта осталась на первом экране. */
+  .live-map__choices .choice-list {
+    flex-wrap: nowrap;
+    margin-inline: calc(-1 * var(--page-gutter));
+    padding-inline: var(--page-gutter);
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: var(--page-gutter);
+    scrollbar-width: none;
+  }
+
+  .live-map__choices .choice-list > li {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+
+  .live-map__choices .choice-chip {
+    white-space: nowrap;
+  }
+
+  .question-grid,
+  .entry-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

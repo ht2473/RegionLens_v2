@@ -1,0 +1,47 @@
+{% load i18n formatting %}
+{# Карта в своей карточке, перебор годов и подпись с отметками разрывов. #}
+<figure class="live-map__figure">
+  <div class="live-map__canvas">
+    {% include "maps/partials/_geo_map.html" with geo_map=live.geo_map geo_caption=live.series.short_title plain=True %}
+  </div>
+
+  {% if live.years|length > 1 %}
+    {# Перебор годов — при нескольких годах; скрыт, пока элемент карты не определён. #}
+    <div class="live-map__time">
+      <button type="button" class="button button--primary live-map__play" data-live="play"
+              aria-pressed="false">
+        <svg class="live-map__play-icon" aria-hidden="true"><use href="#icon-play"></use></svg>
+        <svg class="live-map__pause-icon" aria-hidden="true"><use href="#icon-pause"></use></svg>
+        <span data-live="play-label">{% translate "Показать по годам" %}</span>
+      </button>
+      <output class="live-map__year numeric" data-live="year-output">{{ live.year }}</output>
+      <div class="live-map__range">
+        <span class="live-map__range-end numeric">{{ live.first_year }}</span>
+        <div class="live-map__track">
+          <input type="range" min="{{ live.first_year }}" max="{{ live.last_year }}" step="1"
+                 value="{{ live.year }}" aria-label="{% translate 'Год' %}" data-live="range">
+          {% for mark in live.breaks %}
+            <span class="live-map__break" style="--offset: {{ mark.offset }}"
+                  title="{{ mark.title }}"></span>
+          {% endfor %}
+        </div>
+        <span class="live-map__range-end numeric">{{ live.last_year }}</span>
+      </div>
+    </div>
+  {% endif %}
+
+  <figcaption class="live-map__caption">
+    {% if live.breaks %}
+      <span class="live-map__break-key">
+        <span class="live-map__break live-map__break--key" aria-hidden="true"></span>
+        {% blocktranslate trimmed with years=live.break_years %}
+          разрыв сопоставимости ({{ years }}): менялась методика или круг наблюдения, и значения до и после сравниваются с оговоркой.
+        {% endblocktranslate %}
+      </span>
+    {% endif %}
+    {% blocktranslate trimmed %}
+      Равновеликая проекция: площадь региона на карте пропорциональна настоящей.
+      Малые регионы вынесены во врезки.
+    {% endblocktranslate %}
+  </figcaption>
+</figure>

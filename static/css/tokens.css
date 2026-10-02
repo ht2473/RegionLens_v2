@@ -1,0 +1,233 @@
+/* Маркеры оформления: цвета, размеры, отступы, типографика. Облик «тёплая бумага».
+   Цвет записан один раз через light-dark(): ветвь выбирает color-scheme. В переменной
+   light-dark() не раскрывается — графикам действующую ветвь отдаёт static/js/lib/tokens.js. */
+
+:root {
+  /* --- Семантические цвета ------------------------------------------------------------ */
+  --surface-base: light-dark(#f6f3ee, #191714);
+  --surface-raised: light-dark(#ffffff, #221f1b);
+  --surface-sunken: light-dark(#efe9df, #100e0c);
+  --surface-overlay: light-dark(#ffffff, #26221d);
+  --surface-inverse: light-dark(#2a2724, #f0eae0);
+  --surface-accent-soft: light-dark(#f6ebd5, #33291a);
+
+  --border-subtle: light-dark(#e7dfd2, #3a342b);
+  --border-strong: light-dark(#d5c9b6, #4a4238);
+  --border-accent: light-dark(#a8751a, #e7b65c);
+
+  --text-primary: light-dark(#2a2724, #f0eae0);
+  --text-secondary: light-dark(#534d46, #c3baac);
+  /* Приглушённый — 6 : 1 к бумаге (светлая) и к карточке (тёмная). */
+  --text-muted: light-dark(#635b52, #a59c8e);
+  --text-inverse: light-dark(#fbf9f5, #191714);
+  /* Ссылки синие: медовый на светлом фоне даёт контраст 4,0 — ниже нормы 4,5 для текста. */
+  --text-accent: light-dark(#1851a7, #93b6e8);
+  --text-on-accent: light-dark(#ffffff, #191714);
+
+  --accent: light-dark(#a8751a, #e7b65c);
+  --accent-hover: light-dark(#8c6014, #f2c97e);
+  --accent-quiet: light-dark(#f1e3c8, #3a2f1c);
+  /* Текстовая ступень главного цвета: подпись у конца линии, набранная им,
+     читается как продолжение линии (см. --series-N-ink). */
+  --accent-ink: light-dark(#976500, #e7b65c);
+  /* Столбцы знака «Линза»: ступени шкалы карты, в тёмной теме светлее. */
+  --brand-bar-1: light-dark(#e4d292, #e3d18c);
+  --brand-bar-2: light-dark(#34a160, #5bbd74);
+  --brand-bar-3: light-dark(#077e63, #2f9b79);
+
+  --attention: light-dark(#8c6004, #dca85c);
+  --attention-soft: light-dark(#f7ebd2, #352a17);
+  --positive: light-dark(#117537, #79be81);
+  --positive-soft: light-dark(#e3efe1, #1d2a1d);
+  --negative: light-dark(#b33025, #e8897a);
+  --negative-soft: light-dark(#f8e6e1, #33201c);
+  --neutral-soft: light-dark(#efe9df, #2a261f);
+  /* Края полоски места: зоны 15 % худших и лучших. */
+  --zone-bad: light-dark(#f6c3bb, #59302b);
+  --zone-good: light-dark(#b9e0c0, #27492e);
+  /* QR-код ключа входа: тёмные модули на светлом поле в обеих темах. */
+  --qr-paper: light-dark(#ffffff, #f6f3ee);
+  --qr-ink: light-dark(#191714, #191714);
+
+  /* --- Цвета данных -------------------------------------------------------------------
+     Последовательная шкала от песочного к зелёному, светлота монотонно убывает; нижняя
+     ступень отодвинута от подложки карты. Проверяется tests/unit/test_palette.py. */
+  --scale-seq-1: light-dark(#e4d292, #2d3125);
+  --scale-seq-2: light-dark(#c9c36d, #35432f);
+  --scale-seq-3: light-dark(#99b95f, #395939);
+  --scale-seq-4: light-dark(#60b054, #416f4f);
+  --scale-seq-5: light-dark(#34a160, #478466);
+  --scale-seq-6: light-dark(#138f67, #529e80);
+  --scale-seq-7: light-dark(#077e63, #77b6a1);
+
+  /* Расходящаяся шкала для отклонений от среднего и темпов изменения: ниже — тёплый
+     охристый, выше — зелёный. Нулевая ступень отодвинута от подложки. */
+  --scale-div-neg-3: light-dark(#a47200, #c9a971);
+  --scale-div-neg-2: light-dark(#ce9d2e, #a48146);
+  --scale-div-neg-1: light-dark(#e0cc9a, #655130);
+  --scale-div-zero: light-dark(#e1dcce, #33312b);
+  --scale-div-pos-1: light-dark(#9dd38b, #385831);
+  --scale-div-pos-2: light-dark(#17ac5d, #468862);
+  --scale-div-pos-3: light-dark(#057f61, #7abba5);
+
+  /* Палитра рядов: восемь оттенков с контрастом к карточке не ниже 3 : 1. */
+  --series-1: light-dark(#c27b02, #e7b65c);
+  --series-2: light-dark(#2c77db, #8fb4ea);
+  --series-3: light-dark(#21964a, #7fc08a);
+  --series-4: light-dark(#da563f, #e89078);
+  --series-5: light-dark(#935aca, #c09ae6);
+  --series-6: light-dark(#08929e, #71bccd);
+  --series-7: light-dark(#cc4d87, #e08bb6);
+  --series-8: light-dark(#7a7066, #b1a798);
+
+  /* Текстовая ступень тех же цветов для подписей у концов линий: 4,5 : 1 для мелкого
+     текста; в тёмной теме совпадает с линией. */
+  --series-1-ink: light-dark(#a45f00, #e7b65c);
+  --series-2-ink: light-dark(#216dd0, #8fb4ea);
+  --series-3-ink: light-dark(#008136, #7fc08a);
+  --series-4-ink: light-dark(#c5432d, #e89078);
+  --series-5-ink: light-dark(#8e54c4, #c09ae6);
+  --series-6-ink: light-dark(#007b87, #71bccd);
+  --series-7-ink: light-dark(#be407b, #e08bb6);
+  --series-8-ink: light-dark(#786e64, #b1a798);
+
+  /* Обозначение отсутствия данных: штриховка, а не цвет из шкалы. */
+  --no-data-fill: light-dark(#e2dace, #2a261f);
+  --no-data-stroke: light-dark(#c9bda9, #3f3830);
+  /* Метка «значение скрыто» — заметнее заливки карты. */
+  --hidden-mark: light-dark(#7b6a9a, #b3a3d1);
+
+  /* Картограмма: подложка, граница субъекта (контраст — к соседнему классу) и рамка врезки. */
+  --map-backdrop: light-dark(#f0ebe1, #201d19);
+  --map-border: light-dark(rgb(42 39 36 / 0.36), rgb(240 234 224 / 0.55));
+  --map-frame: var(--border-strong);
+  --map-label: light-dark(#2a2724, #f0eae0);
+  --map-label-halo: light-dark(rgb(255 255 255 / 0.85), rgb(25 23 20 / 0.85));
+  /* Подпись на заливке шкалы; в тёмной теме светлота шкалы идёт в обратную сторону. */
+  --map-label-on-low: light-dark(#3a3631, #f0eae0);
+  --map-label-on-high: light-dark(#ffffff, #1a1815);
+  --map-label-on-high-halo: light-dark(rgb(0 0 0 / 0.45), rgb(255 255 255 / 0.55));
+  /* Карта-указатель паспорта: суша без данных и выбранный регион. */
+  --map-land: light-dark(#ddd3c2, #3a342b);
+  --map-focus: var(--accent);
+
+  /* --- Типографика ------------------------------------------------------------------
+     Onest — интерфейс и числа; Roboto Condensed — подписи карты и плотные таблицы
+     (на 16 % уже); моноширинное — код. Табличные цифры — только в столбцах (base.css). */
+  --font-sans: "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-narrow: "Roboto Condensed", var(--font-sans);
+  --font-numeric: var(--font-sans);
+  --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+
+  --text-2xs: 0.6875rem; /* 11px — подписи осей, служебные пометки */
+  --text-xs: 0.75rem;    /* 12px — вспомогательный текст, метки */
+  --text-sm: 0.8125rem;  /* 13px — таблицы, плотные списки */
+  --text-base: 0.9375rem;/* 15px — основной текст интерфейса */
+  --text-md: 1rem;       /* 16px — текст статей */
+  --text-lg: 1.125rem;   /* 18px */
+  --text-xl: 1.375rem;   /* 22px */
+  --text-2xl: 1.75rem;   /* 28px */
+  --text-3xl: 2.25rem;   /* 36px */
+  --text-4xl: 3rem;      /* 48px — крупные числовые значения */
+
+  --leading-tight: 1.2;
+  --leading-snug: 1.35;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.7;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.02em;
+  --tracking-caps: 0.06em;
+
+  /* --- Сетка и отступы: шаг 4 px ----------------------------------------------------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-pill: 999px;
+
+  /* --- Тени: только у всплывающих слоёв, тёплого оттенка ------------------------------ */
+  --shadow-sm: 0 1px 2px rgb(42 39 36 / 0.06);
+  --shadow-md: 0 6px 18px rgb(42 39 36 / 0.1);
+  --shadow-lg: 0 18px 44px rgb(42 39 36 / 0.16);
+  --shadow-focus: 0 0 0 3px rgb(168 117 26 / 0.35);
+  /* Затемнение под модальным окном и нижним листом. */
+  --scrim: light-dark(rgb(42 39 36 / 0.42), rgb(0 0 0 / 0.56));
+  /* Тень у края прокручиваемой обоймы — для градиента, а не box-shadow. */
+  --shadow-edge: rgb(42 39 36 / 0.18);
+
+  /* --- Размеры каркаса --------------------------------------------------------------- */
+  --header-height: 64px;
+  --breadcrumbs-height: 40px;
+  --filter-rail-width: 300px;
+  /* Высота полосы вызова листа на телефоне; ею же — нижний отступ страницы. */
+  --rail-dock-height: 56px;
+  /* Высота органов управления шапки: поиск, язык, тема, вход. */
+  --control-height: 40px;
+  --content-max-width: 1440px;
+  --content-narrow-width: 760px;
+  /* Поле у краёв окна — одно для содержимого, шапки и полос с прокруткой вбок. */
+  --page-gutter: var(--space-4);
+
+  /* --- Слои ---------------------------------------------------------------------------
+     Литеральных z-index в компонентах нет. Popover и dialog — в верхнем слое браузера;
+     ступени нужны нижнему листу рейля и уведомлениям. */
+  --z-base: 1;
+  --z-sticky: 100;
+  --z-header: 200;
+  --z-drawer: 300;
+  --z-overlay: 400;
+  --z-toast: 600;
+
+  /* --- Движение ---------------------------------------------------------------------- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --duration-slow: 320ms;
+
+  color-scheme: light;
+}
+
+/* На телефоне поле уже. */
+@media (max-width: 639px) {
+  :root {
+    --page-gutter: var(--space-3);
+  }
+}
+
+/* --- Тёмная тема по системной настройке ----------------------------------------------
+   Правило не применяется, если пользователь явно выбрал светлую тему. Значения цветов
+   не повторяются: ветвь light-dark() выбирается свойством color-scheme. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+  }
+}
+
+/* --- Тёмная тема по явному выбору пользователя ---------------------------------------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* --- Светлая тема по явному выбору ---------------------------------------------------- */
+:root[data-theme="light"] {
+  color-scheme: light;
+}

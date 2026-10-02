@@ -1,0 +1,17 @@
+{% extends "errors/page.html" %}
+{% load i18n %}
+
+{% block error_title %}{% translate "Форма устарела" %}{% endblock %}
+{% block error_code %}403{% endblock %}
+{% block error_heading %}{% translate "Форма устарела" %}{% endblock %}
+
+{% block error_lead %}
+  {% blocktranslate trimmed %}
+    Страница была открыта давно, или браузер не принимает cookie. Обновите страницу
+    и отправьте форму ещё раз.
+  {% endblocktranslate %}
+{% endblock %}
+
+{% block error_actions %}
+  <a class="button button--primary" href="{% url 'core:home' %}">{% translate "На главную" %}</a>
+{% endblock %}

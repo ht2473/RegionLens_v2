@@ -1,0 +1,21 @@
+{% load i18n %}
+{# Поле формы: подпись, поле, подсказка, ошибки; у флажка подпись справа. #}
+{% if field.field.widget.input_type == "checkbox" %}
+  <div class="field field--checkbox">
+    <label class="checkbox">
+      {{ field }}
+      <span>{{ field.label }}</span>
+    </label>
+    {% if field.help_text %}<span class="field__hint">{{ field.help_text }}</span>{% endif %}
+    {% for error in field.errors %}<span class="field__error">{{ error }}</span>{% endfor %}
+  </div>
+{% else %}
+  <div class="field">
+    <label class="field__label" for="{{ field.id_for_label }}">
+      {{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}
+    </label>
+    {{ field }}
+    {% if field.help_text %}<span class="field__hint">{{ field.help_text }}</span>{% endif %}
+    {% for error in field.errors %}<span class="field__error">{{ error }}</span>{% endfor %}
+  </div>
+{% endif %}

@@ -1,0 +1,3459 @@
+/* Компоненты интерфейса. Пропуск, скрытое значение и разрыв сопоставимости
+   имеют собственные признаки и не сливаются с обычными значениями. */
+
+/* --- Кнопки ---------------------------------------------------------------------------- */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.button:hover {
+  text-decoration: none;
+}
+
+/* Подпись кнопки не переносится; подпись-фраза с числом переносится по словам явно. */
+.button--wrap {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.button--primary {
+  background-color: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.button--primary:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+  color: var(--text-on-accent);
+}
+
+.button--secondary {
+  background-color: var(--surface-raised);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.button--secondary:hover:not(:disabled) {
+  background-color: var(--surface-sunken);
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+
+.button--ghost {
+  background-color: transparent;
+  color: var(--text-secondary);
+}
+
+.button--ghost:hover:not(:disabled) {
+  background-color: var(--surface-sunken);
+  color: var(--text-primary);
+}
+
+.button--danger {
+  background-color: var(--negative);
+  color: var(--text-on-accent);
+}
+
+.button--sm {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+}
+
+.button--lg {
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-base);
+}
+
+.button--block {
+  width: 100%;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  transition: background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.icon-button:hover {
+  background-color: var(--surface-sunken);
+  color: var(--text-primary);
+}
+
+.icon-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* --- Карточки ---------------------------------------------------------------------------- */
+
+.card {
+  padding: var(--space-4);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.card__title {
+  font-size: var(--text-base);
+  font-family: var(--font-sans);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-normal);
+}
+
+.card__meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.card__footer {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* --- Плитка ключевого показателя: значение, единица, изменение, место ----------------------- */
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  min-width: 0;
+}
+
+.kpi__label {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: var(--leading-snug);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Единица переносится под число, если не помещается рядом; само число не разрывается. */
+.kpi__value {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-width: 0;
+  font-family: var(--font-numeric);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-medium);
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+
+/* На телефоне крупное число — на ступень мельче, чтобы не выходило за плитку. Правило
+   здесь, а не в layout.css: эта таблица подключается позже и перебила бы его. */
+@media (max-width: 639px) {
+  .kpi__value {
+    font-size: var(--text-lg);
+  }
+}
+
+.kpi__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* На телефоне положение — отдельной строкой: в одну с годом и изменением не помещается. */
+@media (max-width: 639px) {
+  .kpi__footer {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .kpi__footer > .text-muted {
+    flex-basis: 100%;
+  }
+}
+
+/* Изменение показателя: цвет — оценка, заданная сервером, а не направление. */
+
+/* --- Пилюли выбора: один из нескольких или короткий перечень ссылок ------------------------ */
+.choice-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.choice-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.375rem;
+  padding: var(--space-1) var(--space-4);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.choice-chip:hover {
+  border-color: var(--border-accent);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.choice-chip[aria-current="true"] {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-accent);
+}
+
+/* --- Плитка показателя: название, значение, выводы словами и ход; главная и паспорт ------ */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.stat-tile__title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+}
+
+a.stat-tile__title:hover {
+  color: var(--text-accent);
+}
+
+.stat-tile__value {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  margin: var(--space-2) 0 0;
+}
+
+.stat-tile__value .numeric {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+/* Мелкие пометки при числах — начертанием 500: тонкие читаются слабо. */
+.stat-tile__unit {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+}
+
+/* Выводы словами: положение, место, сравнение со страной, изменение. */
+.stat-tile__facts {
+  display: grid;
+  gap: 2px;
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.stat-tile__facts .verdict {
+  font-weight: var(--weight-semibold);
+}
+
+.stat-tile__foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: auto;
+  padding-top: var(--space-3);
+}
+
+.stat-tile__change {
+  display: grid;
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.stat-tile__delta {
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.stat-tile__period {
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+}
+
+/* «Что сейчас»: период и источник месячного значения — паспорт, кабинет. */
+
+.now-tile__period {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+}
+
+.now-tile__source {
+  margin: auto 0 0;
+  padding-top: var(--space-3);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+}
+
+@media (max-width: 1180px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --- Перечень крайних регионов с полоской в долю наибольшего значения ------------------- */
+
+.leader-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: leader;
+}
+
+.leader-list__item {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0 var(--space-3);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--border-subtle);
+  counter-increment: leader;
+}
+
+.leader-list__item::before {
+  content: counter(leader);
+  font-family: var(--font-numeric);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.leader-list__name {
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+}
+
+a.leader-list__name:hover {
+  color: var(--text-accent);
+}
+
+.leader-list__value {
+  font-weight: var(--weight-bold);
+  white-space: nowrap;
+}
+
+.leader-list__bar {
+  grid-column: 2 / -1;
+  width: calc(var(--share, 0) * 100%);
+  min-width: 2px;
+  height: 0.3125rem;
+  margin-top: var(--space-1);
+  border-radius: var(--radius-pill);
+  background-color: var(--bar, var(--text-muted));
+  /* Обводка — чтобы полоска нижнего класса не сливалась с подложкой. */
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+/* Вариант рабочей поверхности: место среди регионов и отношение к России. */
+.leader-list--ranked .leader-list__item {
+  grid-template-columns: 1.75rem minmax(0, 1fr) auto auto;
+}
+
+.leader-list--ranked .leader-list__item::before {
+  content: attr(data-rank);
+}
+
+.leader-list__ratio {
+  min-width: 3.25rem;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.leader-list--ranked .leader-list__bar {
+  grid-column: 2 / -1;
+}
+
+.leader-list__item.is-highlighted {
+  background-color: var(--surface-sunken);
+}
+
+/* Миниатюрный график: нарисован сервером (apps/core/charts.py, sparkline_path),
+   пропуск разрывает линию. */
+.sparkline {
+  flex-shrink: 0;
+  width: 7.5rem;
+  height: 2rem;
+  overflow: visible;
+}
+
+.sparkline__line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.75;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Точка на конце — отрезок нулевой длины с круглым концом: окружность в растянутом
+   чертеже стала бы овалом. */
+.sparkline__end {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 6;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Полоска места; положение задаёт сервер (--at, доля). */
+.rank-strip {
+  --mark: 0.75rem;
+
+  position: relative;
+  height: var(--mark);
+  margin: var(--space-3) 0 var(--space-1);
+}
+
+.rank-strip__track {
+  position: absolute;
+  inset: 50% 0 auto;
+  height: 0.375rem;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background-color: var(--border-strong);
+  transform: translateY(-50%);
+}
+
+.rank-strip--assessed .rank-strip__track::before,
+.rank-strip--assessed .rank-strip__track::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  width: 15%;
+}
+
+.rank-strip--assessed .rank-strip__track::before {
+  inset-inline-start: 0;
+  background-color: var(--zone-bad);
+}
+
+.rank-strip--assessed .rank-strip__track::after {
+  inset-inline-end: 0;
+  background-color: var(--zone-good);
+}
+
+.rank-strip__mark {
+  position: absolute;
+  top: 50%;
+  inset-inline-start: calc(var(--mark) / 2 + (100% - var(--mark)) * var(--at, 0.5));
+  width: var(--mark);
+  height: var(--mark);
+  border-radius: 50%;
+  background-color: var(--text-secondary);
+  box-shadow: 0 0 0 2px var(--surface-raised);
+  transform: translate(-50%, -50%);
+}
+
+.rank-strip__mark--good {
+  background-color: var(--positive);
+}
+
+.rank-strip__mark--bad {
+  background-color: var(--negative);
+}
+
+.rank-strip__ends {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+}
+
+/* --- Значки и метки ------------------------------------------------------------------------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0.15em 0.6em;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.badge--neutral {
+  background-color: var(--neutral-soft);
+  color: var(--text-secondary);
+}
+
+/* Пометка ненормированной величины — приглушена: она у половины перечня. */
+.series-mark {
+  flex-shrink: 0;
+  margin-left: var(--space-2);
+  padding: 0.05em 0.45em;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-2xs);
+  line-height: 1.5;
+  white-space: nowrap;
+  color: var(--text-muted);
+  overflow-wrap: normal;
+}
+
+/* Пометка значения из внешнего источника: «предв.», «расчёт»; пояснение — в подсказке. */
+.origin-mark {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--attention);
+}
+
+.badge--accent {
+  background-color: var(--surface-accent-soft);
+  color: var(--text-accent);
+}
+
+.badge--attention {
+  background-color: var(--attention-soft);
+  color: var(--attention);
+}
+
+.badge--positive {
+  background-color: var(--positive-soft);
+  color: var(--positive);
+}
+
+.badge--negative {
+  background-color: var(--negative-soft);
+  color: var(--negative);
+}
+
+.badge--outline {
+  background-color: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-secondary);
+}
+
+/* --- Индикаторы качества данных: состояния пропуска различаются и подписаны ------------------ */
+
+.quality-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+
+/* Наблюдение — нейтральной точкой: заметны отклонения. От «нет данных» отличается
+   светлотой в обеих темах. */
+.quality-dot--observed {
+  background-color: var(--text-secondary);
+}
+
+.quality-dot--no-data {
+  background-color: var(--no-data-stroke);
+}
+
+.quality-dot--hidden {
+  background-color: var(--hidden-mark);
+}
+
+/* Полоса покрытия ряда: доля субъектов и лет, по которым есть данные. */
+.coverage-meter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.coverage-meter__track {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 48px;
+  height: 4px;
+  background-color: var(--surface-sunken);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.coverage-meter__fill {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  /* Заливка нейтральная: цвет внимания у недостаточного покрытия выделяется на её фоне. */
+  background-color: var(--text-muted);
+  border-radius: var(--radius-pill);
+}
+
+.coverage-meter__fill--low {
+  background-color: var(--attention);
+}
+
+.coverage-meter__value {
+  font-family: var(--font-numeric);
+  min-width: 3.5ch;
+  text-align: right;
+}
+
+/* --- Выноска ---------------------------------------------------------------------------------
+   Используется для методических примечаний Росстата и предупреждений о сопоставимости. */
+
+.callout {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-left-width: 3px;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-raised);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+/* min-width: 0 — иначе длинное неразрывное слово растягивает сноску и страницу. */
+.callout > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.callout__icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 0.1em;
+}
+
+.callout__title {
+  font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-1);
+}
+
+.callout--info {
+  border-left-color: var(--accent);
+}
+
+.callout--info .callout__icon {
+  color: var(--accent);
+}
+
+.callout--warning {
+  border-left-color: var(--attention);
+  background-color: var(--attention-soft);
+}
+
+.callout--warning .callout__icon {
+  color: var(--attention);
+}
+
+/* Перечень разрывов в предупреждении: год отдельным столбцом, как отметки на графике. */
+.break-list {
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-xs);
+}
+
+.break-list__item {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+}
+
+.break-list__year {
+  font-family: var(--font-numeric);
+  color: var(--text-secondary);
+}
+
+/* Пояснение — второй строкой записи. */
+.break-list__note {
+  display: block;
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+}
+
+.break-list__source {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-xs);
+}
+
+.callout--danger {
+  border-left-color: var(--negative);
+  background-color: var(--negative-soft);
+}
+
+.callout--methodology {
+  border-left-color: var(--border-strong);
+  background-color: var(--surface-sunken);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+/* --- Формы ------------------------------------------------------------------------------------ */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Отступ между полями: иначе подсказка читается продолжением следующей подписи. */
+.field + .field {
+  margin-top: var(--space-4);
+}
+
+.field__label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+}
+
+.field__hint {
+  /* Подсказка — отдельной строкой; внутри .field промежуток задаёт раскладка. */
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  color: var(--text-muted);
+}
+
+.field > .field__hint {
+  margin-top: 0;
+}
+
+.field__error {
+  font-size: var(--text-xs);
+  color: var(--negative);
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  transition: border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--shadow-focus);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.select {
+  appearance: none;
+  padding-right: var(--space-8);
+  /* Стрелка нарисована фоном, чтобы не зависеть от системного оформления. */
+  background-image: linear-gradient(45deg, transparent 50%, currentcolor 50%),
+    linear-gradient(135deg, currentcolor 50%, transparent 50%);
+  background-position: calc(100% - 16px) calc(50% + 1px), calc(100% - 11px) calc(50% + 1px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-field__icon {
+  position: absolute;
+  left: var(--space-3);
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.search-field .input {
+  padding-left: var(--space-8);
+}
+
+/* Уменьшенное поле поиска для рейля. */
+.search-field--sm .search-field__icon {
+  left: var(--space-2);
+  width: 14px;
+  height: 14px;
+}
+
+.search-field--sm .input {
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-6);
+  font-size: var(--text-xs);
+}
+
+.checkbox,
+.radio {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.checkbox input,
+.radio input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.checkbox__count {
+  margin-left: auto;
+  font-family: var(--font-numeric);
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+  /* Счётчик не переносится и не сжимается. */
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Сегментированный переключатель: ссылки с is-active или радиокнопки. Радиокнопка скрыта,
+   но остаётся в порядке фокуса; выбранное показывает подложка подписи. */
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  background-color: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.segmented__option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.segmented__option:hover {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.segmented__option.is-active {
+  background-color: var(--surface-raised);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.segmented__option input[type="radio"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.segmented__option:has(input[type="radio"]:checked) {
+  background-color: var(--surface-raised);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.segmented__option:has(input[type="radio"]:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.segmented__option:has(input[type="radio"]:disabled) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Переключатель во всю ширину с равными долями — число классов шкалы в рейле. */
+.segmented--fill {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+}
+
+/* Переключатель сеткой в две колонки: подписи способов шкалы в строку рейля не помещаются. */
+.segmented--grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.segmented--fill .segmented__option,
+.segmented--grid .segmented__option {
+  justify-content: center;
+  min-height: 2rem;
+  text-align: center;
+  white-space: normal;
+  line-height: var(--leading-snug);
+}
+
+/* --- Таблица данных: числа — по правому краю, моноширинным ------------------------------------- */
+
+/* Обойма прокручивается вбок, у края — тень: два градиента прокручиваются с содержимым
+   (background-attachment: local) и закрывают два неподвижных, пока содержимое у края. */
+.data-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-raised);
+  background-image:
+    linear-gradient(to right, var(--surface-raised) 60%, transparent),
+    linear-gradient(to left, var(--surface-raised) 60%, transparent),
+    linear-gradient(to right, var(--shadow-edge), transparent),
+    linear-gradient(to left, var(--shadow-edge), transparent);
+  background-position: left center, right center, left center, right center;
+  background-repeat: no-repeat;
+  background-size: 32px 100%, 32px 100%, 12px 100%, 12px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+
+/* Таблица — узким начертанием: оно отдаёт 16 % ширины; числа остаются моноширинными. */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-narrow);
+  font-size: var(--text-sm);
+}
+
+/* Шапка — обычным кеглем основного начертания. */
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  padding: var(--space-3);
+  background-color: var(--surface-sunken);
+  border-bottom: 1px solid var(--border-strong);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.data-table tbody th,
+.data-table tbody td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: top;
+}
+
+/* Заголовок строки (th scope="row") выровнен как ячейки, а не по центру. */
+.data-table tbody th {
+  font-weight: var(--weight-semibold);
+  text-align: left;
+}
+
+.data-table tbody tr:last-child th,
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* На телефоне длинные названия держат наименьшую ширину, остальное прокручивается. */
+@media (max-width: 639px) {
+  .data-table__long {
+    min-width: 15rem;
+  }
+
+  .data-table__name {
+    min-width: 9rem;
+  }
+
+  .data-table .data-table__aside {
+    display: none;
+  }
+}
+
+.data-table tbody tr:hover {
+  background-color: var(--surface-sunken);
+}
+
+/* Строка, выбранная для сравнения, — полосой слева: заливка означает выделенное значение. */
+.data-table tbody tr.is-selected {
+  background-color: var(--surface-accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* Итоговая строка («Российская Федерация»). */
+.data-table tfoot th,
+.data-table tfoot td {
+  padding: var(--space-3);
+  background-color: var(--surface-sunken);
+  border-top: 1px solid var(--border-strong);
+  font-weight: var(--weight-semibold);
+  text-align: left;
+  vertical-align: top;
+}
+
+.data-table th.is-numeric,
+.data-table td.is-numeric {
+  text-align: right;
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.data-table__rank {
+  font-family: var(--font-numeric);
+  color: var(--text-muted);
+  width: 3.5rem;
+}
+
+/* --- Постраничная навигация ------------------------------------------------------------------------ */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.pagination__pages {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.pagination__page {
+  min-width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: var(--font-numeric);
+}
+
+.pagination__page:hover {
+  background-color: var(--surface-sunken);
+  text-decoration: none;
+}
+
+.pagination__page.is-current {
+  background-color: var(--accent);
+  color: var(--text-on-accent);
+}
+
+/* --- Пустое состояние -------------------------------------------------------------------------------- */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-12) var(--space-4);
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.empty-state__icon {
+  width: 40px;
+  height: 40px;
+  color: var(--text-muted);
+}
+
+.empty-state__title {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.empty-state__hint {
+  font-size: var(--text-sm);
+  max-width: 46ch;
+}
+
+/* --- Страница ошибки ------------------------------------------------------------------------------ */
+
+.error-page {
+  max-width: 44rem;
+  padding-block: var(--space-10) var(--space-12);
+}
+
+.error-page__brand {
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.error-page__code {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-numeric);
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  color: var(--accent-ink);
+}
+
+.error-page__title {
+  margin: 0 0 var(--space-3);
+  font-size: clamp(var(--text-2xl), 3.4vw, var(--text-3xl));
+  font-weight: var(--weight-bold);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.error-page__lead {
+  max-width: 56ch;
+  margin: 0 0 var(--space-6);
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.error-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* --- Загрузка ------------------------------------------------------------------------------------------ */
+
+/* Индикатор фоновой загрузки HTMX: появляется только при активном запросе. */
+.htmx-indicator {
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+  opacity: 1;
+}
+
+.htmx-request .fade-on-load {
+  opacity: 0.45;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+/* --- Холст во время пересчёта: приглушён, не принимает нажатий, сверху полоса хода -------- */
+
+.canvas {
+  position: relative;
+}
+
+.canvas.htmx-request::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-base);
+  background-color: var(--surface-base);
+  opacity: 0.6;
+}
+
+.canvas.htmx-request::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: var(--z-sticky);
+  height: 2px;
+  border-radius: 1px;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--accent) 35%,
+    var(--accent) 65%,
+    transparent 100%
+  );
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: canvas-progress 1.1s var(--ease-out) infinite;
+}
+
+@keyframes canvas-progress {
+  from {
+    background-position: -40% 0;
+  }
+  to {
+    background-position: 140% 0;
+  }
+}
+
+/* Плавный переход между представлениями и расчётами; без движения — правилом в base.css. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--duration-normal);
+}
+
+/* --- Всплывающая подсказка ------------------------------------------------------------------------------ */
+
+.tooltip {
+  position: absolute;
+  z-index: var(--z-overlay);
+  max-width: 320px;
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--surface-inverse);
+  color: var(--text-inverse);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+}
+
+/* --- Уведомления ------------------------------------------------------------------------------------------ */
+
+.toast-region {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 380px;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--text-sm);
+  animation: toast-in var(--duration-normal) var(--ease-out);
+}
+
+.toast--success {
+  border-left-color: var(--positive);
+}
+
+.toast--warning {
+  border-left-color: var(--attention);
+}
+
+.toast--error {
+  border-left-color: var(--negative);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Быстрый переход: окно <dialog> на весь экран служит затемнением (фоном, не ::backdrop) --- */
+
+.palette-dialog {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 12vh var(--space-4) 0;
+  border: 0;
+  background-color: var(--scrim);
+  color: var(--text-primary);
+}
+
+.palette-dialog[open] {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.palette-dialog::backdrop {
+  background: transparent;
+}
+
+.palette {
+  width: min(640px, calc(100vw - 2 * var(--space-4)));
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--surface-overlay);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.palette__input {
+  width: 100%;
+  padding: var(--space-4);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-md);
+}
+
+.palette__input:focus {
+  outline: none;
+}
+
+.palette__results {
+  overflow-y: auto;
+  padding: var(--space-2);
+}
+
+.palette__group-title {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.palette__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.palette__item:hover,
+.palette__item.is-selected {
+  background-color: var(--surface-accent-soft);
+  text-decoration: none;
+}
+
+.palette__item-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+}
+
+.palette__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+}
+
+.palette__hint {
+  margin: 0;
+  padding: 0 var(--space-3) var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* Кнопка быстрого перехода в шапке. */
+.palette-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 320px;
+  height: var(--control-height);
+  padding: 0 var(--space-4);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  font-size: var(--text-base);
+  text-align: left;
+}
+
+.palette-trigger:hover {
+  border-color: var(--accent);
+  color: var(--text-secondary);
+}
+
+/* --- Поиск полем-пилюлей; кнопка «Найти» — только при переходе на другую страницу ---------- */
+
+.find-form {
+  display: flex;
+  gap: var(--space-2);
+  max-width: 44rem;
+}
+
+.find-field {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  height: 3.5rem;
+  padding: 0 var(--space-5);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.find-field:focus-within {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-focus);
+}
+
+.find-field svg {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.find-field input {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-md);
+  color: var(--text-primary);
+}
+
+.find-field input::placeholder {
+  color: var(--text-muted);
+}
+
+.find-form__submit {
+  height: 3.5rem;
+  padding-inline: var(--space-6);
+  border-radius: var(--radius-pill);
+}
+
+/* Строка под полем: пример запроса и ссылка дальше. */
+.find-form__hint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.find-form__hint a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: var(--weight-semibold);
+}
+
+.find-form__hint svg {
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 720px) {
+  .find-form__submit {
+    padding-inline: var(--space-4);
+  }
+
+  .find-form__hint {
+    padding-left: 0;
+  }
+}
+
+/* --- Крупные числа с подписью, без карточек; --row — в строку с переносом ------------------ */
+
+.figure-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin: 0;
+}
+
+.figure-list--row {
+  flex-flow: row wrap;
+  gap: var(--space-5) var(--space-12);
+}
+
+.figure-list > div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-1);
+}
+
+.figure-list dt {
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+}
+
+.figure-list dd {
+  margin: 0;
+  font-family: var(--font-numeric);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-semibold);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+@media (max-width: 720px) {
+  .figure-list dd {
+    font-size: var(--text-2xl);
+  }
+}
+
+/* --- Оглавление пилюлями, закреплённое под строкой пути (data-toc) ---------------------------------
+   Разделам нужен отступ прокрутки .toc-target, иначе заголовок уедет под оглавление. */
+
+.toc-pills {
+  position: sticky;
+  top: calc(var(--header-height) + var(--breadcrumbs-height));
+  z-index: var(--z-sticky);
+  margin: 0 0 var(--space-10);
+  padding-block: var(--space-3);
+  background-color: var(--surface-base);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.toc-pills ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Стрелки прокрутки полосы: ставит static/js/ui/toc.js, видны, пока есть скрытые пилюли. */
+.toc-pills__arrow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: var(--z-base);
+  display: flex;
+  align-items: center;
+  width: var(--space-12);
+  padding: 0 var(--space-2);
+  border: 0;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.toc-pills__arrow[hidden] {
+  display: none;
+}
+
+.toc-pills__arrow:hover {
+  color: var(--text-primary);
+}
+
+.toc-pills__arrow svg {
+  width: 18px;
+  height: 18px;
+}
+
+.toc-pills__arrow--back {
+  left: 0;
+  justify-content: flex-start;
+  background: linear-gradient(to right, var(--surface-base) 60%, transparent);
+}
+
+.toc-pills__arrow--back svg {
+  transform: rotate(90deg);
+}
+
+.toc-pills__arrow--forward {
+  right: 0;
+  justify-content: flex-end;
+  background: linear-gradient(to left, var(--surface-base) 60%, transparent);
+}
+
+.toc-pills__arrow--forward svg {
+  transform: rotate(-90deg);
+}
+
+.toc-pills a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 2.25rem;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.toc-pills a:hover {
+  border-color: var(--border-accent);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.toc-pills a.is-current {
+  background-color: var(--surface-accent-soft);
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.toc-pills__count {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+}
+
+/* Отступ заголовка раздела после перехода: --toc-offset ставит сценарий оглавления
+   по настоящей высоте полосы (static/js/ui/toc.js); без сценариев — расчётный. */
+.toc-target {
+  scroll-margin-top: var(
+    --toc-offset,
+    calc(var(--header-height) + var(--breadcrumbs-height) + var(--space-16) + var(--space-6))
+  );
+}
+
+/* На широком экране пилюли переносятся на вторую строку, на телефоне — прокрутка вбок. */
+@media (max-width: 720px) {
+  .toc-pills {
+    margin-inline: calc(-1 * var(--page-gutter));
+    padding-inline: var(--page-gutter);
+  }
+
+  .toc-pills ul {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+}
+
+/* --- Свёрнутое на телефоне: details.fold[data-fold-narrow] раскрыт в разметке, ------------
+   на телефоне его сворачивает static/js/ui/fold.js; граница — как в fold.js. */
+
+.fold > summary {
+  display: none;
+}
+
+/* Стрелка свёрнутого блока — на любой ширине (и у data-fold); без перехода. */
+.fold__chevron {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 639px) {
+  .fold > summary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 2.75rem;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--text-accent);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .fold > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .fold[open] > summary .fold__chevron {
+    rotate: 180deg;
+  }
+
+  .fold[open] > summary .fold__closed,
+  .fold:not([open]) > summary .fold__opened {
+    display: none;
+  }
+}
+
+/* До fold.js блок на телефоне уже выглядит свёрнутым: сценарий-модуль выполняется после
+   первой отрисовки, и раскрытый в разметке блок сворачивался бы на глазах, сдвигая
+   страницу. Без сценариев правило не действует — блок остаётся раскрытым. */
+@media (max-width: 639px) and (scripting: enabled) {
+  .fold[data-fold-narrow][open]:not([data-folded]) > :not(summary),
+  .fold[data-fold-narrow][open]:not([data-folded]) > summary .fold__opened {
+    display: none;
+  }
+
+  .fold[data-fold-narrow][open]:not([data-folded]) > summary .fold__closed {
+    display: inline;
+  }
+
+  .fold[data-fold-narrow][open]:not([data-folded]) > summary .fold__chevron {
+    rotate: none;
+  }
+}
+
+/* --- Вкладки ------------------------------------------------------------------------------------------------ */
+
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: var(--space-4);
+  overflow-x: auto;
+}
+
+.tabs__tab {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+
+.tabs__tab:hover {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.tabs__tab.is-active {
+  border-bottom-color: var(--accent);
+  color: var(--text-accent);
+}
+
+/* --- Список характеристик -------------------------------------------------------------------------------------- */
+
+.definition-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  margin: 0;
+}
+
+.definition-list dt {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.definition-list dd {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+/* --- Область графика ------------------------------------------------------------------------------------------- */
+
+/* Пользовательские элементы строчные по умолчанию; правило по тегу слабее классов. */
+rl-chart,
+rl-choropleth,
+rl-combobox,
+rl-time-slider {
+  display: block;
+}
+
+.chart {
+  position: relative;
+  width: 100%;
+  min-height: 320px;
+}
+
+/* Кнопка сохранения картинки: почти прозрачна до наведения, при фокусе видна. */
+
+.chart-save {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: var(--z-base);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--text-2xs);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.chart-save svg {
+  width: 13px;
+  height: 13px;
+}
+
+.chart:hover .chart-save,
+.geo-map-wrapper:hover .chart-save,
+.chart-save:focus-visible {
+  opacity: 1;
+}
+
+.chart-save:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+/* Без указателя кнопка видна постоянно. */
+@media (hover: none) {
+  .chart-save {
+    opacity: 1;
+  }
+}
+
+/* Кнопка в строке заголовка рамки графика — видна всегда и ничего не закрывает. */
+.chart-save.chart-save--inline {
+  position: static;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-inline-start: auto;
+  opacity: 1;
+}
+
+.chart--tall {
+  min-height: 460px;
+}
+
+.chart--short {
+  min-height: 200px;
+}
+
+/* Рамка графика или карты. */
+.chart-frame {
+  padding: var(--space-5);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.chart-frame__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.chart-frame__title {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+
+.chart-frame__subtitle {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.chart-frame__footer {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+}
+
+/* Подпись приглушённая — ссылка в ней подчёркнута, как в .text-muted (base.css). */
+.chart-frame__footer a {
+  text-decoration: underline;
+}
+
+/* Легенда обозначений качества данных под графиком. */
+.data-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+}
+
+.data-legend__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* --- Переключатель темы и языка ---------------------------------------------------------------------------------- */
+
+/* Переключатель темы: три состояния; выбранное — заливкой и aria-pressed. */
+.mobile-nav__theme {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0 var(--space-3);
+}
+
+.mobile-nav__theme-label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* Тема и язык — сегментные переключатели постоянного размера. */
+.theme-switch,
+.language-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: var(--control-height);
+  padding: 3px;
+  background-color: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+}
+
+.theme-switch__option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.theme-switch__option svg {
+  width: 16px;
+  height: 16px;
+}
+
+.theme-switch__option:hover {
+  color: var(--text-primary);
+}
+
+.theme-switch__option[aria-pressed="true"] {
+  background-color: var(--surface-raised);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.language-switch__option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 100%;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.language-switch__option:hover {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.language-switch__option.is-active {
+  background-color: var(--surface-raised);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* --- Картограмма: SVG с сервера, размеры — в единицах чертежа (кегль крупнее привычного) --- */
+
+/* Карта во всю ширину; на узком экране прокручивается вбок, а не сжимается. */
+.geo-map-wrapper {
+  position: relative;
+  overflow-x: auto;
+}
+
+.geo-map {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: var(--space-2) 0;
+}
+
+/* Подложка карты отличается светлотой от нижнего класса шкалы. */
+.geo-map__backdrop,
+.geo-map__inset-backdrop {
+  fill: var(--map-backdrop);
+}
+
+/* Внешняя граница страны — та же геометрия толстой линией под заливками. */
+.geo-map__outline {
+  stroke: var(--map-border);
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+}
+
+.geo-map__region {
+  cursor: pointer;
+}
+
+.geo-map__region use {
+  stroke: var(--map-border);
+  stroke-width: 0.75;
+  stroke-linejoin: round;
+  transition:
+    stroke var(--duration-fast) var(--ease-out),
+    fill-opacity var(--duration-fast) var(--ease-out);
+}
+
+.geo-map__region:hover use,
+.geo-map__region:focus-visible use {
+  stroke: var(--text-primary);
+  stroke-width: 1.8;
+}
+
+.geo-map__region:focus-visible {
+  outline: none;
+}
+
+.geo-map__region.is-selected use {
+  stroke: var(--accent);
+  stroke-width: 2.2;
+}
+
+/* Приглушение при разборе легенды: гаснет заливка остальных классов, но не граница. */
+.geo-map__region.is-muted use {
+  fill-opacity: 0.2;
+  stroke-opacity: 0.45;
+}
+
+.geo-map__inset-frame {
+  fill: none;
+  stroke: var(--map-frame);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.geo-map__caption {
+  font-family: var(--font-narrow);
+  font-size: 26px;
+  font-weight: var(--weight-semibold);
+  fill: var(--text-secondary);
+}
+
+/* Сокращение субъекта во врезке с обводкой цветом подложки. */
+.geo-map__code {
+  font-family: var(--font-narrow);
+  font-size: 19px;
+  font-weight: var(--weight-semibold);
+  fill: var(--map-label-on-low);
+  paint-order: stroke fill;
+  stroke: var(--map-label-halo);
+  stroke-width: 4;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.geo-map__code--light {
+  fill: var(--map-label-on-high);
+  stroke: var(--map-label-on-high-halo);
+}
+
+/* Выделенный субъект — акцентным цветом; на тёмных ступенях подпись светлая. */
+.geo-map__code.is-selected {
+  fill: var(--text-accent);
+}
+
+.geo-map__code--light.is-selected {
+  fill: var(--map-label-on-high);
+}
+
+.geo-map__code-value {
+  font-weight: var(--weight-regular);
+  font-size: 17px;
+}
+
+/* Подпись значения: обводка цветом подложки, узкое начертание — меньше расталкивания. */
+.geo-map__label {
+  font-family: var(--font-narrow);
+  font-size: 28px;
+  font-weight: var(--weight-semibold);
+  fill: var(--map-label);
+  paint-order: stroke fill;
+  stroke: var(--map-label-halo);
+  stroke-width: 7;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.geo-map__leader {
+  stroke: var(--map-label);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.6;
+  vector-effect: non-scaling-stroke;
+}
+
+.geo-map__label.is-selected {
+  fill: var(--text-accent);
+}
+
+.geo-map__label-value {
+  font-weight: var(--weight-regular);
+}
+
+.tile-map {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 62vh;
+  margin: var(--space-2) 0;
+}
+
+.tile-map__cell {
+  cursor: pointer;
+}
+
+.tile-map__cell rect {
+  stroke: var(--surface-raised);
+  stroke-width: 0.35;
+  transition: stroke var(--duration-fast) var(--ease-out);
+}
+
+.tile-map__cell:hover rect,
+.tile-map__cell:focus-visible rect {
+  stroke: var(--text-primary);
+  stroke-width: 0.7;
+}
+
+.tile-map__cell:focus-visible {
+  outline: none;
+}
+
+.tile-map__label {
+  font-family: var(--font-narrow);
+  font-size: 2.6px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.02px;
+  fill: var(--map-label-on-low);
+  pointer-events: none;
+}
+
+/* На тёмных ступенях шкалы тёмная подпись нечитаема. */
+.tile-map__label--light {
+  fill: var(--map-label-on-high);
+}
+
+/* --- Соответствие номеров на осях матрицы связей названиям --------------------------------- */
+
+.matrix-key {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-2xs);
+  color: var(--text-secondary);
+}
+
+.matrix-key__item {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.matrix-key__number {
+  flex-shrink: 0;
+  min-width: 1.4em;
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* --- Легенда карты ------------------------------------------------------------------------------------------------ */
+
+/* Легенда картограммы — узким начертанием, числа моноширинные; единица — рядом с названием. */
+.map-legend {
+  font-family: var(--font-narrow);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.map-legend__header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.map-legend__title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.map-legend__unit {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.map-legend__unit::before {
+  content: "· ";
+}
+
+/* Гистограмма распределения под легендой. */
+.map-legend__histogram {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 34px;
+  margin-bottom: var(--space-2);
+}
+
+.map-legend__bar {
+  flex: 1 1 0;
+  min-height: 1px;
+  background-color: var(--border-strong);
+  border-radius: 1px 1px 0 0;
+}
+
+.map-legend__classes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Класс легенды — пилюля: наведение приглушает на карте остальные классы, нажатие
+   оставляет выбранный. */
+.map-legend__class {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  font-family: inherit;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.map-legend__class--static {
+  cursor: default;
+}
+
+.map-legend__class:hover,
+.map-legend__class:focus-visible,
+.map-legend__class.is-active {
+  background-color: var(--surface-sunken);
+  color: var(--text-primary);
+}
+
+.map-legend__class[aria-pressed="true"] {
+  background-color: var(--surface-accent-soft);
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.map-legend__classes li {
+  display: flex;
+}
+
+.map-legend__swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  vertical-align: -1px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+}
+
+/* Метка перед текстом заголовка или подписи — с отступом, а не вплотную. */
+.card__title > .map-legend__swatch {
+  margin-inline-end: var(--space-2);
+}
+
+.map-legend__swatch--no-data {
+  background-color: var(--no-data-fill);
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 2px,
+    var(--no-data-stroke) 2px,
+    var(--no-data-stroke) 3px
+  );
+}
+
+.map-legend__count {
+  color: var(--text-muted);
+}
+
+/* --- Ползунок времени --------------------------------------------------------------------------------------------- */
+
+.time-slider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.time-slider__range {
+  flex: 1 1 auto;
+  accent-color: var(--accent);
+}
+
+.time-slider__value {
+  min-width: 4ch;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.time-slider__bounds {
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+}
+
+/* Кнопка воспроизведения показывает действие: во время перебора — знак остановки. */
+
+.time-slider__icon--stop {
+  display: none;
+}
+
+[data-time-play].is-playing .time-slider__icon--play {
+  display: none;
+}
+
+[data-time-play].is-playing .time-slider__icon--stop {
+  display: block;
+}
+
+[data-time-play].is-playing {
+  color: var(--text-on-accent);
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* --- Перечень позиций рейтинга ------------------------------------------------------------------------------------ */
+
+.rank-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rank-list__item {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr auto auto;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+}
+
+.rank-list__item:last-child {
+  border-bottom: none;
+}
+
+.rank-list__place {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.rank-list__value {
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+.rank-list__ratio {
+  min-width: 5ch;
+  text-align: right;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+/* --- Изменение позиции -------------------------------------------------------------------------------------------- */
+
+.movement {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.movement--up {
+  color: var(--positive);
+}
+
+.movement--down {
+  color: var(--negative);
+}
+
+.movement--flat {
+  color: var(--text-muted);
+}
+
+.movement svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* --- Компактный перечень определений ------------------------------------------------------------------------------ */
+
+.definition-list--compact dt,
+.definition-list--compact dd {
+  padding: var(--space-1) 0;
+  font-size: var(--text-xs);
+}
+
+/* --- Свёрнутые части рейля: заголовок-подпись с текущим значением ------------------------ */
+
+.rail-more {
+  margin-top: var(--space-4);
+}
+
+.territory-list {
+  margin-top: var(--space-2);
+}
+
+.rail-more__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block: var(--space-2);
+  list-style: none;
+  cursor: pointer;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  border-radius: var(--radius-xs);
+}
+
+.rail-more__summary::-webkit-details-marker {
+  display: none;
+}
+
+.rail-more__summary:hover {
+  color: var(--text-primary);
+}
+
+.rail-more__summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.rail-more__label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.rail-more__value {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.rail-more__chevron {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+details[open] > .rail-more__summary .rail-more__chevron {
+  transform: rotate(180deg);
+}
+
+details[open] > .rail-more__summary {
+  margin-bottom: var(--space-2);
+}
+
+.territory-district {
+  margin-bottom: var(--space-3);
+}
+
+.territory-search {
+  margin-bottom: 0;
+}
+
+.territory-picker {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: var(--space-2);
+}
+
+.territory-picker__group {
+  margin-bottom: var(--space-3);
+}
+
+.territory-picker__title {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-base);
+  padding: var(--space-1) 0;
+  /* Закреплённый заголовок группы — цветом панели. */
+  background-color: var(--surface-sunken);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+/* --- Таблица различий --------------------------------------------------------------------------------------------- */
+
+.matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.matrix-table th,
+.matrix-table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.matrix-table th:first-child,
+.matrix-table td:first-child {
+  text-align: left;
+  font-variant-numeric: normal;
+}
+
+.matrix-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-base);
+  background-color: var(--surface-raised);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+.matrix-table__position {
+  display: block;
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+}
+
+/* На телефоне столбцы держат ширину, таблица прокручивается вбок. */
+@media (max-width: 639px) {
+  .matrix-table th:first-child:not(.data-table__long) {
+    min-width: 9rem;
+  }
+
+  .matrix-table td {
+    min-width: 5.5rem;
+  }
+}
+
+/* --- Паспорт территории ------------------------------------------------------------------------------------------- */
+
+/* Вывод словами; цвет оценки задаёт сервер. */
+.verdict--good {
+  color: var(--positive);
+}
+
+.verdict--bad {
+  color: var(--negative);
+}
+
+.verdict--neutral {
+  color: var(--text-secondary);
+}
+
+/* --- Оглавление тем паспорта ---------------------------------------------------------------- */
+
+/* Короткий перечень ссылок на темы таблицы, переносится по строкам. */
+.theme-index ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-6);
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+/* --- Похожие регионы ------------------------------------------------------------------------- */
+
+/* Похожий регион: название и расстояние, чем расходятся — второй строкой. */
+.similar-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Подпись столбцов над перечнем. */
+.similar-list__head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0;
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--border-strong);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.similar-list__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+}
+
+.similar-list__item:last-child {
+  border-bottom: none;
+}
+
+.similar-list__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.similar-list__distance {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.similar-list__apart {
+  grid-column: 1 / -1;
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+}
+
+.similar-list__features {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-5);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+/* Раскрывающееся пояснение с заголовком-ссылкой. */
+.disclosure > summary {
+  cursor: pointer;
+  font-size: var(--text-xs);
+  color: var(--text-accent);
+}
+
+/* Карты на узком экране: подписи важнее, чем умещение по ширине. */
+.tile-map-wrapper {
+  overflow-x: auto;
+}
+
+@media (max-width: 720px) {
+  .tile-map {
+    min-width: 620px;
+    max-height: none;
+  }
+
+  .geo-map {
+    min-width: 720px;
+  }
+}
+
+/* --- Меню пользователя в шапке ----------------------------------------------------------------- */
+
+.user-menu {
+  position: relative;
+}
+
+.user-menu__trigger {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  max-width: 12rem;
+  height: var(--control-height);
+  padding: 0 var(--space-4);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.user-menu__trigger:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.user-menu__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Панель — всплывающий слой браузера (.menu-popover ниже); здесь — ширина и плотность. */
+.menu-popover.user-menu__panel {
+  width: 15rem;
+}
+
+.menu-popover.user-menu__panel:popover-open {
+  gap: 0;
+  padding: var(--space-2);
+}
+
+.user-menu__header {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.user-menu__item {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.user-menu__item:hover {
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+}
+
+.user-menu__form {
+  margin: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.user-menu__form button {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.user-menu__form button:hover {
+  background: var(--surface-sunken);
+  color: var(--negative);
+}
+
+/* --- Поле выбора с поиском <rl-combobox>; select скрывается, только когда элемент определён -- */
+
+.combobox {
+  position: relative;
+}
+
+/* Скрытый select отправляется с формой; скрыт и от фокуса — его принимает кнопка. */
+rl-combobox:defined > select {
+  display: none;
+}
+
+.combobox__trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 34px;
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.combobox__trigger:hover {
+  border-color: var(--accent);
+}
+
+.combobox__trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.combobox__value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.combobox__chevron {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.combobox__trigger[aria-expanded="true"] .combobox__chevron {
+  transform: rotate(180deg);
+}
+
+.combobox__panel {
+  position: absolute;
+  z-index: var(--z-sticky);
+  /* Свойства перехода перечислены явно: переход `all` перебил бы места, поставленные сценарием. */
+  transition: none;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: min(360px, 60vh);
+  background-color: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+/* Панель поверх страницы: рейль обрезал бы её по ширине. Место и размеры считает сценарий. */
+
+.combobox__panel.is-floating {
+  position: fixed;
+  right: auto;
+  max-height: none;
+}
+
+.combobox__search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Число найденного — в строке поиска, вне прокрутки. */
+
+.combobox__count {
+  flex-shrink: 0;
+  padding-inline: var(--space-2);
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.combobox__search input {
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.combobox__search input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.combobox__list {
+  flex: 1;
+  margin: 0;
+  /* Без поля сверху: иначе под закреплённым заголовком видна полоса. */
+  padding: 0 0 var(--space-1);
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Раздел перечня — свой контейнер, чтобы закреплённый заголовок уходил вместе с разделом. */
+
+.combobox__section {
+  display: block;
+}
+
+.combobox__items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Заголовок раздела закреплён, пока идут его пункты; фон непрозрачный. */
+
+.combobox__group {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--surface-sunken);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  /* Заголовок — в одну строку, полное название — в подсказке. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Линия над заголовком раздела, кроме первого. */
+
+.combobox__section + .combobox__section .combobox__group {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.combobox__option {
+  padding: var(--space-2) var(--space-3);
+  /* Отступ прокрутки к пункту — под закреплённым заголовком. */
+  scroll-margin-top: 2.25rem;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.combobox__option.is-active {
+  background-color: var(--surface-sunken);
+  color: var(--text-primary);
+}
+
+.combobox__option.is-selected {
+  color: var(--text-accent);
+  font-weight: var(--weight-medium);
+}
+
+.combobox__empty {
+  padding: var(--space-4) var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* --- Рабочая поверхность ------------------------------------------------------------------------
+   Полоса вкладок, заголовок-предмет и блоки холста — в surface.css (подключается только
+   на поверхности). Здесь — ползунок года в рейле: он собран из общих частей. */
+
+/* Ползунок времени в рейле — в два ряда. */
+.time-slider--stacked {
+  display: block;
+  margin-top: 0;
+}
+
+.time-slider__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.time-slider__head .time-slider__bounds {
+  margin-left: auto;
+}
+
+.time-slider--stacked .time-slider__range {
+  width: 100%;
+}
+
+/* Положение выбранных территорий внутри разброса. */
+.position-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.position-list__item {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.position-list__swatch {
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+}
+
+.position-list__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.position-list__value {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Доля субъектов ниже — второй строкой. */
+.position-list__share {
+  grid-column: 2 / -1;
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+}
+
+/* Образец цвета шкалы в строке таблицы: связывает число с классом на карте. */
+.table-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  vertical-align: baseline;
+}
+
+/* Строка выбранной территории: слабый фон и метка в левой границе. */
+.data-table tbody tr.is-selected {
+  background-color: var(--accent-quiet);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.data-table tbody tr.is-selected:hover {
+  background-color: var(--accent-quiet);
+}
+
+/* --- Подсветка одного субъекта во всех представлениях --------------------------------------- */
+
+/* Подсветка при наведении — приподнятой подложкой и обводкой, в отличие от выбора. */
+.data-table tbody tr.is-highlighted,
+.rank-list__item.is-highlighted,
+.position-list__item.is-highlighted,
+.territory-picker .checkbox.is-highlighted {
+  background-color: var(--surface-sunken);
+}
+
+/* У выбранной строки подсветка добавляет только обводку. */
+.data-table tbody tr.is-selected.is-highlighted {
+  background-color: var(--accent-quiet);
+  box-shadow:
+    inset 3px 0 0 var(--accent),
+    inset 0 0 0 1px var(--border-strong);
+}
+
+.matrix-table th.is-highlighted {
+  border-color: var(--accent);
+}
+
+/* На карте — контрастная обводка, заливка не меняется. */
+.geo-map__region.is-highlighted use {
+  stroke: var(--text-primary);
+  stroke-width: 1.8;
+}
+
+.tile-map__cell.is-highlighted rect {
+  stroke: var(--text-primary);
+  stroke-width: 0.7;
+}
+
+/* --- Всплывающие панели действий (popover): «Сохранить», «Ссылка», «Скачать» ---------------
+   Без сценариев панель посреди окна; сценарий ставит её под кнопкой (data-anchored).
+   На телефоне — лист у нижнего края. */
+.menu-popover {
+  width: min(20rem, calc(100vw - 2 * var(--space-4)));
+  max-height: calc(100dvh - 2 * var(--space-4));
+  margin: auto;
+  padding: var(--space-4);
+  overflow-y: auto;
+  background: var(--surface-overlay);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Раскладка — только у открытой панели, чтобы не перебить display: none браузера. */
+.menu-popover:popover-open {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.menu-popover[data-anchored] {
+  position: absolute;
+  margin: 0;
+}
+
+/* Панели шапки держатся за окно: шапка закреплена (app.js, placeMenuPopover). */
+.menu-popover[data-anchored][data-anchor-fixed] {
+  position: fixed;
+}
+
+.save-query__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.export-menu {
+  width: min(18rem, calc(100vw - 2 * var(--space-4)));
+}
+
+/* Меню форматов: название и мельче — чем отличается. */
+.export-menu:popover-open {
+  padding: var(--space-2);
+}
+
+.export-menu__list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.export-menu__action {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.export-menu__action:hover,
+.export-menu__action:focus-visible {
+  background-color: var(--surface-sunken);
+  text-decoration: none;
+}
+
+.export-menu__label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.export-menu__hint {
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+}
+
+/* --- Ссылка на текущий вид и запрос к интерфейсу ---------------------------------------------- */
+
+/* Панель шире прочих: в ней адреса. */
+.share-menu {
+  width: min(26rem, calc(100vw - 2 * var(--space-4)));
+}
+
+.share-menu:popover-open {
+  gap: var(--space-4);
+}
+
+/* На телефоне панель — лист во всю ширину; правило — после ширин отдельных панелей. */
+@media (max-width: 560px) {
+  .menu-popover,
+  .menu-popover[data-anchored] {
+    position: fixed;
+    inset: auto 0 0 0;
+    width: 100%;
+    max-width: none;
+    max-height: 85dvh;
+    margin: 0;
+    padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+    border-width: 1px 0 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+}
+
+.share-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.share-field__label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.share-field__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Адрес — узким моноширинным начертанием. */
+.share-field__value {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-family: var(--font-numeric);
+  font-size: var(--text-2xs);
+}
+
+.share-field__hint {
+  margin: 0;
+  font-size: var(--text-2xs);
+  line-height: var(--leading-normal);
+  color: var(--text-muted);
+}
+
+.share-field__links {
+  display: flex;
+  gap: var(--space-4);
+  font-size: var(--text-xs);
+}
+
+/* --- Полоса вызова рейля у нижнего края телефона и затемнение под листом (режим — layout.css) */
+
+.rail-dock {
+  display: none;
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: var(--z-sticky);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background-color: var(--surface-raised);
+  border-top: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-md);
+}
+
+.rail-dock__button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--rail-dock-height);
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.rail-dock__icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+/* Строки сводки укорачиваются многоточием. */
+.rail-dock__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.rail-dock__title,
+.rail-dock__summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rail-dock__title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+}
+
+.rail-dock__summary {
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+}
+
+.rail-dock__action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-accent);
+}
+
+/* Стрелка указывает вверх: лист выезжает снизу. Значок в наборе один, повёрнутый. */
+.rail-dock__chevron {
+  width: 14px;
+  height: 14px;
+  transform: rotate(180deg);
+}
+
+/* Затемнение — между полосой вызова и листом. */
+.rail-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-drawer) - 1);
+  background-color: var(--scrim);
+}
+
+/* --- Треугольник пересмотров: год по строкам, выпуск по столбцам; пусто — не печатался ----- */
+
+.triangle {
+  /* Ширина по содержимому, чтобы соседние выпуски стояли рядом. */
+  width: auto;
+  min-width: 0;
+  font-size: var(--text-xs);
+}
+
+.triangle th,
+.triangle td {
+  padding: var(--space-1) var(--space-4);
+}
+
+.triangle th[scope="row"] {
+  color: var(--text-secondary);
+  font-weight: var(--weight-regular);
+}
+
+/* Ячейка выпуска, не печатавшего этот год, — подложка чуть темнее. */
+.triangle__empty {
+  background-color: var(--surface-sunken);
+}
+
+.triangle__revised {
+  font-weight: var(--weight-medium);
+}
+
+/* Отклонение от первой публикации — под значением. */
+.triangle__change {
+  display: block;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-regular);
+}

@@ -1,0 +1,23 @@
+{% load i18n %}
+{# «Хлебные крошки» с микроданными schema.org; id — для внеочередной замены HTMX. #}
+<div class="breadcrumbs-bar no-print" id="breadcrumbs"{% if oob %} hx-swap-oob="true"{% endif %}>
+  <div class="container">
+    <nav aria-label="{% translate 'Вы находитесь здесь' %}">
+      <ol class="breadcrumbs" itemscope itemtype="https://schema.org/BreadcrumbList">
+        {% for crumb in breadcrumbs %}
+          <li class="breadcrumbs__item" itemprop="itemListElement" itemscope
+              itemtype="https://schema.org/ListItem">
+            {% if crumb.is_link %}
+              <a class="breadcrumbs__link" href="{{ crumb.url }}" itemprop="item">
+                <span itemprop="name">{{ crumb.title }}</span>
+              </a>
+            {% else %}
+              <span class="breadcrumbs__current" itemprop="name" aria-current="page">{{ crumb.title }}</span>
+            {% endif %}
+            <meta itemprop="position" content="{{ forloop.counter }}">
+          </li>
+        {% endfor %}
+      </ol>
+    </nav>
+  </div>
+</div>

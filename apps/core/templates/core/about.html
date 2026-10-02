@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% load i18n static formatting %}
+
+{% comment %}
+  О проекте: назначение, первые шаги, как читать данные, разделы, источник и автор.
+  Текст — колонкой, справа — сводка в цифрах.
+{% endcomment %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "О проекте" %}</h1>
+      <p class="page-intro__lead">
+        {% blocktranslate trimmed %}
+          RegionLens — анализ и визуализация социально-экономических показателей регионов
+          России: понятный ответ о регионе или показателе, а за ним — карта, рейтинги,
+          инструменты анализа и выгрузка.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  </header>
+
+  <div class="about">
+    <div class="about__main">
+
+      <section class="about__section" aria-labelledby="about-purpose">
+        <h2 class="about__title" id="about-purpose">{% translate "Зачем" %}</h2>
+        <div class="prose">
+          <p>
+            {% blocktranslate trimmed %}
+              Статистика по регионам России выходит в разных изданиях Росстата, Банка России
+              и ФНС России. Работать с ней напрямую тяжело: пропуски закодированы числами,
+              методика наблюдения менялась, а значения за один и тот же год различаются
+              между выпусками.
+            {% endblocktranslate %}
+          </p>
+          <p>
+            {% blocktranslate trimmed %}
+              RegionLens приводит наблюдения к единому виду, отмечает разрывы сопоставимости
+              и пересмотры и считает меры сравнительного анализа; каждый расчёт описан
+              в методике.
+            {% endblocktranslate %}
+          </p>
+          <p>
+            {% blocktranslate trimmed %}
+              Сайт работает на последней версии набора; новые версии загружаются по мере
+              выхода. Ряды, которые Росстат публикует ежемесячно, продолжаются после последнего
+              года набора по его бюллетеню и таблице ВРП, а ипотека, кредиты и малый бизнес —
+              по данным Банка России и ФНС; сайт собирает их выпуски сам.
+            {% endblocktranslate %}
+          </p>
+        </div>
+      </section>
+
+      <section class="about__section" aria-labelledby="about-start">
+        <h2 class="about__title" id="about-start">{% translate "С чего начать" %}</h2>
+        <ol class="about-steps">
+          <li>
+            <a href="{% url 'catalog:territory-list' %}">{% translate "Откройте свой регион" %}</a>
+            {% translate "— в паспорте главное словами, сильные и слабые стороны и место среди регионов." %}
+          </li>
+          <li>
+            <a href="{% url 'catalog:indicator-list' %}">{% translate "Найдите показатель" %}</a>
+            {% translate "— у каждого своя страница: где больше, где меньше и как он менялся." %}
+          </li>
+          <li>
+            {% translate "Смотрите на покрытие: ряд, охватывающий менее 80 % субъектов, для рейтингов не годится." %}
+          </li>
+          <li>
+            {% translate "Проверяйте отметки разрывов: если методика наблюдения менялась, сравнение во времени требует оговорки." %}
+          </li>
+          <li>
+            {% blocktranslate trimmed %}
+              Сочетание клавиш <kbd>Ctrl</kbd>+<kbd>K</kbd> открывает быстрый переход
+              к показателю, региону или разделу.
+            {% endblocktranslate %}
+          </li>
+        </ol>
+      </section>
+
+      <section class="about__section" aria-labelledby="about-marks">
+        <h2 class="about__title" id="about-marks">{% translate "Как читать данные" %}</h2>
+        <dl class="about-marks">
+          <div>
+            <dt><span class="quality-dot quality-dot--observed"></span>{% translate "Наблюдаемое значение" %}</dt>
+            <dd>{% translate "величина присутствует в источнике." %}</dd>
+          </div>
+          <div>
+            <dt><span class="quality-dot quality-dot--no-data"></span>{% translate "Нет данных" %}</dt>
+            <dd>{% translate "сведения отсутствуют в источнике. Это не ноль." %}</dd>
+          </div>
+          <div>
+            <dt><span class="quality-dot quality-dot--hidden"></span>{% translate "Значение скрыто" %}</dt>
+            <dd>{% translate "источник намеренно не публикует величину, например из-за малого числа наблюдений." %}</dd>
+          </div>
+        </dl>
+        <p class="about__note">
+          {% blocktranslate trimmed %}
+            Пропуск не заменяется расчётом и не соединяется линией на графике: показывается
+            только то, что опубликовал источник.
+          {% endblocktranslate %}
+        </p>
+      </section>
+
+      <section class="about__section" aria-labelledby="about-sections">
+        <h2 class="about__title" id="about-sections">{% translate "Разделы" %}</h2>
+        <ul class="about-sections">
+          {% for section in sections %}
+            <li>
+              <a href="{{ section.resolve }}">{{ section.title }}</a>
+              {% if section.hint %}<span>{{ section.hint }}</span>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="about__section" aria-labelledby="about-source">
+        <h2 class="about__title" id="about-source">{% translate "Источники данных" %}</h2>
+        <p class="about__cite">{% translate "Данные — Росстат, Банк России, ФНС России." %}</p>
+        <p class="about__links">
+          <a href="{% url 'catalog:sources' %}">{% translate "Источники данных" %}</a>
+          <a href="{% url 'catalog:dataset' %}">{% translate "О наборе данных: охват, полнота, проверки" %}</a>
+          <a href="{% url 'core:terms' %}">{% translate "Условия использования" %}</a>
+          <a href="{% url 'core:privacy' %}">{% translate "Политика обработки персональных данных" %}</a>
+        </p>
+      </section>
+
+      <section class="about__section" aria-labelledby="about-credits">
+        <h2 class="about__title" id="about-credits">{% translate "Реквизиты работы" %}</h2>
+        <dl class="about-credits">
+          <dt>{% translate "Автор" %}</dt>
+          <dd><strong lang="ru">{{ project.author }}</strong></dd>
+
+          <dt>{% translate "Студенческий билет" %}</dt>
+          <dd lang="ru">{{ project.student_id }}</dd>
+
+          <dt>{% translate "Тема работы" %}</dt>
+          <dd>{{ project.thesis_title }}</dd>
+
+          <dt>{% translate "Обратная связь" %}</dt>
+          <dd>
+            <a href="{% url 'feedback:create' %}">{% translate "Форма обращения" %}</a> ·
+            <a href="mailto:{{ project.author_email }}">{{ project.author_email }}</a>
+          </dd>
+
+          <dt>{% translate "Версия приложения" %}</dt>
+          <dd class="numeric">{{ project.version }}</dd>
+
+          <dt>{% translate "Репозиторий" %}</dt>
+          <dd>
+            <a href="{{ project.repository_url }}" target="_blank" rel="noopener noreferrer">
+              {{ project.repository_url }}
+            </a>
+          </dd>
+        </dl>
+      </section>
+    </div>
+
+    {% if summary %}
+      <aside class="about__figures" aria-label="{% translate 'В цифрах' %}">
+        <dl class="figure-list">
+          <div>
+            <dt>{% translate "наблюдений" %}</dt>
+            <dd class="numeric">{{ summary.observations|ru_number:0 }}</dd>
+          </div>
+          <div>
+            <dt>{% translate "рядов наблюдений" %}</dt>
+            <dd class="numeric">{{ summary.series|ru_number:0 }}</dd>
+          </div>
+          <div>
+            <dt>{% translate "субъектов Российской Федерации" %}</dt>
+            <dd class="numeric">{{ summary.regions }}</dd>
+          </div>
+          <div>
+            <dt>{% translate "годы наблюдений" %}</dt>
+            <dd class="numeric">{{ summary.first_year|year }}–{{ summary.last_year|year }}</dd>
+          </div>
+        </dl>
+      </aside>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

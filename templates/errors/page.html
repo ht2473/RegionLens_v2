@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n %}
+{# Страница ошибки в каркасе сайта: 404, 403 и отказ CSRF Django отрисовывает с запросом. #}
+
+{% block title %}{% block error_title %}{% endblock %} — {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container page">
+  <section class="error-page" aria-labelledby="error-title">
+    <p class="error-page__code numeric">{% block error_code %}{% endblock %}</p>
+    <h1 class="error-page__title" id="error-title">{% block error_heading %}{% endblock %}</h1>
+    <p class="error-page__lead">{% block error_lead %}{% endblock %}</p>
+    <div class="error-page__actions">{% block error_actions %}{% endblock %}</div>
+  </section>
+</div>
+{% endblock %}

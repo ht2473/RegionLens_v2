@@ -1,0 +1,10 @@
+{% load i18n %}
+{% comment %}
+Строка перечня рядов — общая для свёрнутого и развёрнутого вида. Пояснение — тегом comment:
+многострочный комментарий иного вида печатался бы в каждой из 575 строк.
+{% endcomment %}
+<label class="checkbox" data-filter-item data-filter-text="{{ item.group_title }} {{ item.title }} {{ item.subsection }} {{ item.search }}">
+  <input type="checkbox" name="series" value="{{ item.key }}"{% if item.key in selected_keys %} checked{% endif %}>
+  <span class="text-truncate" title="{{ item.title }}{% if item.subsection %} — {{ item.subsection }}{% endif %}">{{ item.title }}{% if item.subsection %} — {{ item.subsection }}{% endif %}</span>
+  {% if item.unnormalised %}<span class="series-mark" title="{% translate 'Величина не приведена к численности населения или иной основе' %}">{% translate "абс." %}</span>{% endif %}
+</label>

@@ -1,0 +1,70 @@
+{% load i18n %}
+{# Перечень рядов для выбора нескольких показателей; раскрытие — ссылкой с параметром picker. #}
+<div id="series-picker-frame">
+  {% if picker_open %}
+
+    <div class="search-field search-field--sm" style="margin-bottom: var(--space-3)">
+      <svg class="search-field__icon" aria-hidden="true"><use href="#icon-search"></use></svg>
+      <input type="search" class="input" autocomplete="off"
+             data-filter-input="#series-picker" data-filter-empty="#series-picker-empty"
+             aria-label="{% translate 'Поиск по показателям' %}"
+             placeholder="{% translate 'Название или раздел' %}">
+    </div>
+
+    <div class="territory-picker" id="series-picker">
+      {% for group in series_options %}
+        <div class="territory-picker__group" data-filter-group>
+          <div class="territory-picker__title">{{ group.title }}</div>
+          <div class="stack stack--tight">
+            {% for item in group.items %}
+              {% include "partials/_series_picker_item.html" %}
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    {# Показывается сценарием отбора, когда ни один ряд не подошёл. #}
+    <p class="field__hint" id="series-picker-empty" hidden>
+      {% translate "Ничего не найдено" %}
+    </p>
+
+    <a class="button button--ghost button--block button--sm" style="margin-top: var(--space-3)"
+       href="{% querystring picker=None series=selected_keys %}"
+       hx-get="{% url 'catalog:series-picker' %}"
+       hx-include="#series-picker-frame"
+       hx-target="#series-picker-frame"
+       hx-swap="outerHTML"
+       hx-indicator="this">
+      {% translate "Свернуть перечень" %}
+    </a>
+
+  {% else %}
+
+    {% if selected_options %}
+      <div class="stack stack--tight" style="margin-bottom: var(--space-3)">
+        {% for item in selected_options %}
+          {% include "partials/_series_picker_item.html" %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="field__hint" style="margin-bottom: var(--space-3)">
+        {% translate "Ни один показатель не выбран" %}
+      </p>
+    {% endif %}
+
+    {# Отмеченные ряды — из разметки (hx-include), без сценариев — из адреса ссылки. #}
+    <a class="button button--secondary button--block button--sm"
+       href="{% querystring picker=1 series=selected_keys %}"
+       hx-get="{% url 'catalog:series-picker' %}?picker=1"
+       hx-include="#series-picker-frame"
+       hx-target="#series-picker-frame"
+       hx-swap="outerHTML"
+       hx-indicator="this">
+      {% blocktranslate trimmed with total=series_total %}
+        Выбрать из {{ total }} показателей
+      {% endblocktranslate %}
+    </a>
+
+  {% endif %}
+</div>

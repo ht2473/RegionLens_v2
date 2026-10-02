@@ -1,0 +1,419 @@
+/* Инструменты анализа (/analytics/*): обзор карточками-вопросами, страница инструмента —
+   шапка, рейль и холст; рамка только у графиков и карт. */
+
+/* --- Шапка инструмента ---------------------------------------------------------------- */
+
+.tool-intro__next {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.tool-intro__next a {
+  font-weight: var(--weight-semibold);
+}
+
+/* --- Заголовок холста: что посчитано ---------------------------------------------------- */
+
+/* Отметка «Расчёт…» переносится под заголовок, если рядом не помещается. */
+.tool-subject {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.tool-subject__text {
+  flex: 1 1 20rem;
+  min-width: 0;
+}
+
+.tool-subject__title {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+.tool-subject__meta {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.tool-subject__busy {
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* --- Меры: крупные числа под линейкой --------------------------------------------------- */
+
+.tool-canvas .kpi {
+  gap: var(--space-1);
+  padding: var(--space-3) 0 var(--space-2);
+  background: none;
+  border: 0;
+  border-top: 2px solid var(--border-strong);
+  border-radius: 0;
+}
+
+.tool-canvas .kpi__label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.tool-canvas .kpi__value {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.01em;
+}
+
+.tool-canvas .kpi__footer {
+  display: block;
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+}
+
+.tool-canvas .grid--kpi {
+  gap: var(--space-5) var(--space-6);
+  grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+}
+
+/* Шесть мер — по три в строку. */
+.tool-canvas .grid--kpi:has(> .kpi:nth-child(6)) {
+  grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
+}
+
+/* --- Разделы разбора: заголовок на бумаге, без рамки ------------------------------------ */
+
+.tool-canvas .card {
+  padding: var(--space-5) 0 0;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  border-radius: 0;
+}
+
+.tool-canvas .card__header {
+  align-items: baseline;
+  margin-bottom: var(--space-4);
+}
+
+.tool-canvas .card__title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.tool-canvas .card__footer {
+  border-top: 0;
+  padding-top: 0;
+}
+
+/* Пустая строка под записью пересмотров не видна до ответа кнопки «версии». */
+.data-table td.revision-trace:empty {
+  padding: 0;
+  border-bottom: 0;
+}
+
+/* Таблица внутри раздела остаётся таблицей в рамке — рамку даёт её обёртка. */
+.tool-canvas .card .data-table-wrapper {
+  margin-top: var(--space-2);
+}
+
+/* Перечень выпусков в рейле «Пересмотров»: длинный прокручивается. */
+.edition-list {
+  max-height: 18rem;
+  overflow-y: auto;
+  font-size: var(--text-xs);
+}
+
+/* Методические пояснения — тихим текстом с линейкой слева. */
+.tool-canvas .callout--methodology {
+  padding: var(--space-1) 0 var(--space-1) var(--space-4);
+  background: none;
+  border: 0;
+  border-left: 2px solid var(--border-strong);
+  border-radius: 0;
+  font-size: var(--text-sm);
+}
+
+.tool-canvas .callout--methodology .callout__icon {
+  display: none;
+}
+
+/* Отступы — только у блоков самого холста, не внутри сетки в две колонки. */
+.tool-canvas > .chart-frame + .chart-frame,
+.tool-canvas > .grid + .card,
+.tool-canvas > .chart-frame + .card,
+.tool-canvas > .card + .card,
+.tool-canvas > .card + .chart-frame {
+  margin-top: var(--space-8);
+}
+
+/* --- Динамика: изменение за период, состав субъектов, разрывы, границы ------------------ */
+
+.tool-bounds,
+.tool-note {
+  margin-top: var(--space-5);
+}
+
+.tool-note {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.tool-bounds__list {
+  margin-top: var(--space-2);
+}
+
+.tool-canvas > .grid + .tool-period,
+.tool-canvas > .callout + .tool-period,
+.tool-canvas > .tool-note + .tool-period {
+  margin-top: var(--space-6);
+}
+
+.composition {
+  max-width: 72ch;
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.composition__lead {
+  margin: 0 0 var(--space-2);
+  color: var(--text-primary);
+}
+
+.composition__title {
+  margin: 0 0 var(--space-1);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.composition__details:not([open]) .composition__title {
+  margin-bottom: var(--space-2);
+}
+
+/* Перечень вне постоянного состава — в две колонки, пока хватает ширины. */
+.composition__list {
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+  columns: 2 16rem;
+  column-gap: var(--space-6);
+}
+
+.composition__list li {
+  break-inside: avoid;
+  padding: 1px 0;
+}
+
+.composition__note {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.tool-breaks {
+  margin-top: var(--space-4);
+}
+
+.tool-breaks p {
+  margin: 0;
+}
+
+.tool-breaks .tool-breaks__link {
+  margin-top: var(--space-2);
+  font-weight: var(--weight-semibold);
+}
+
+/* --- Направленность показателей индекса ------------------------------------------------- */
+
+.index-directions {
+  margin-bottom: var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  background: var(--attention-soft);
+  border-radius: var(--radius-md);
+}
+
+.index-directions__title {
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+}
+
+.index-directions__lead {
+  margin-top: var(--space-1);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.index-directions__list {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.index-directions__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 12rem;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.index-direction .select {
+  width: 11rem;
+}
+
+.index-weight {
+  width: 5.5rem;
+  text-align: right;
+}
+
+.index-direction__origin {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+@media (max-width: 639px) {
+  .index-directions__item {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+  }
+
+  .index-direction .select {
+    width: 9.5rem;
+  }
+}
+
+/* --- Обзор раздела ----------------------------------------------------------------------- */
+
+.tool-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(19rem, 100%), 1fr));
+  gap: var(--space-4);
+  margin: 0 0 var(--space-16);
+  padding: 0;
+  list-style: none;
+}
+
+/* Вопрос — ссылка, растянутая на всю карточку (::after); ссылка на продолжение — поверх. */
+.tool-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.tool-card:hover,
+.tool-card:has(.tool-card__question:focus-visible) {
+  border-color: var(--border-accent);
+}
+
+.tool-card:has(.tool-card__question:focus-visible) {
+  box-shadow: var(--shadow-focus);
+}
+
+.tool-card__name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+.tool-card__name svg {
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+}
+
+.tool-card__question {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.tool-card__question::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.tool-card:hover .tool-card__question {
+  color: var(--text-accent);
+  text-decoration: none;
+}
+
+.tool-card__summary {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+.tool-card__methods {
+  margin: auto 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.tool-card__next {
+  position: relative;
+  z-index: var(--z-base);
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.tool-card__next a {
+  font-weight: var(--weight-semibold);
+}
+
+.analytics-text {
+  max-width: 72ch;
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+.analytics-basis {
+  margin-bottom: var(--space-5);
+}
+
+@media (max-width: 720px) {
+  .tool-canvas .kpi__value {
+    font-size: var(--text-2xl);
+  }
+}
+
+/* На телефоне меры — по две в строку. */
+@media (max-width: 560px) {
+  .tool-canvas .grid--kpi,
+  .tool-canvas .grid--kpi:has(> .kpi:nth-child(6)) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+}

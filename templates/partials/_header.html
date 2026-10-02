@@ -1,0 +1,165 @@
+{% load i18n i18n_urls %}
+{# Шапка: знак, основная навигация, быстрый переход и переключатели. #}
+<header class="app-header">
+  <a class="app-header__brand" href="{% url 'core:home' %}">
+    {# Знак «Линза»: графит — цвет текста шапки, столбцы — маркеры --brand-bar-*. #}
+    <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <defs><clipPath id="rl-header-lens"><circle cx="13.5" cy="13.5" r="8.4"/></clipPath></defs>
+      <g clip-path="url(#rl-header-lens)">
+        <rect x="7.6" y="15.2" width="3.6" height="12" rx="1" fill="var(--brand-bar-1)"/>
+        <rect x="11.7" y="11.4" width="3.6" height="16" rx="1" fill="var(--brand-bar-2)"/>
+        <rect x="15.8" y="7.6" width="3.6" height="20" rx="1" fill="var(--brand-bar-3)"/>
+      </g>
+      <circle cx="13.5" cy="13.5" r="9.6" stroke="currentColor" stroke-width="2.4"/>
+      <path d="m20.9 20.9 6.4 6.4" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+    </svg>
+    <span>{{ project.name }}</span>
+  </a>
+
+  <nav class="app-header__nav" aria-label="{% translate 'Основная навигация' %}">
+    <ul class="main-nav">
+      {% for item in main_navigation %}
+        {% if item.children %}
+          {# Панель раздела — popover: без сценариев открывается, сценарий ставит её под кнопкой. #}
+          <li class="main-nav__item" data-menu-switch>
+            <button type="button" class="main-nav__link {% if item.active %}is-active{% endif %}"
+                    popovertarget="main-nav-{{ forloop.counter }}" aria-haspopup="true">
+              <span class="main-nav__label">{{ item.title }}</span>
+              <svg class="main-nav__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
+            </button>
+            <div class="menu-popover main-nav__dropdown" popover data-anchor-fixed
+                 id="main-nav-{{ forloop.counter }}">
+              <a class="main-nav__overview" href="{{ item.url }}"
+                 {% if item.active and not item.child_active %}aria-current="page"{% endif %}>
+                {{ item.overview }}
+                <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+              </a>
+              {% for child in item.children %}
+                <a class="main-nav__dropdown-item {% if child.active %}is-active{% endif %}"
+                   href="{{ child.url }}"
+                   {% if child.active %}aria-current="page"{% endif %}>
+                  <span class="main-nav__dropdown-title">
+                    {{ child.title }}
+                  </span>
+                  {% if child.hint %}<span class="main-nav__dropdown-hint">{{ child.hint }}</span>{% endif %}
+                </a>
+              {% endfor %}
+            </div>
+          </li>
+        {% else %}
+          <li class="main-nav__item">
+            <a class="main-nav__link {% if item.active %}is-active{% endif %}"
+               href="{{ item.url }}" {% if item.active %}aria-current="page"{% endif %}
+               title="{{ item.hint }}">
+              <span class="main-nav__label">{{ item.title }}</span>
+            </a>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </nav>
+
+  <div class="app-header__actions">
+    {% if my_region %}
+      {% blocktranslate trimmed asvar region_label with name=my_region.name %}Мой регион: {{ name }}{% endblocktranslate %}
+      <a class="icon-button app-header__region no-print"
+         href="{% url 'catalog:territory-detail' my_region.slug %}"
+         title="{{ region_label }}" aria-label="{{ region_label }}">
+        <svg aria-hidden="true"><use href="#icon-map-pin"></use></svg>
+      </a>
+    {% endif %}
+
+    <button type="button" class="palette-trigger no-print"
+            data-dialog-open="palette" aria-haspopup="dialog"
+            aria-label="{% translate 'Поиск по показателям и регионам' %}">
+      <svg aria-hidden="true" style="width: 15px; height: 15px"><use href="#icon-search"></use></svg>
+      <span class="palette-trigger__label">{% translate "Поиск" %}</span>
+    </button>
+
+    {# Адрес другой языковой версии — разбором маршрута (тег switch_language_url). #}
+    <div class="language-switch" role="group" aria-label="{% translate 'Язык интерфейса' %}">
+      {% get_available_languages as languages %}
+      {% for code, name in languages %}
+        {% switch_language_url code as language_url %}
+        <a class="language-switch__option {% if code == LANGUAGE_CODE %}is-active{% endif %}"
+           href="{{ language_url }}" hreflang="{{ code }}" lang="{{ code }}"
+           title="{{ name }}">{{ code }}</a>
+      {% endfor %}
+    </div>
+
+    {# Тема: как на устройстве, светлая, тёмная; выбранная отмечена aria-pressed. #}
+    <div class="theme-switch no-print" role="group" aria-label="{% translate 'Оформление' %}">
+      <button type="button" class="theme-switch__option" data-theme-choice="system"
+              aria-pressed="false" title="{% translate 'Как на устройстве' %}"
+              aria-label="{% translate 'Оформление как на устройстве' %}">
+        <svg aria-hidden="true"><use href="#icon-theme-system"></use></svg>
+      </button>
+      <button type="button" class="theme-switch__option" data-theme-choice="light"
+              aria-pressed="false" title="{% translate 'Светлое' %}"
+              aria-label="{% translate 'Светлое оформление' %}">
+        <svg aria-hidden="true"><use href="#icon-sun"></use></svg>
+      </button>
+      <button type="button" class="theme-switch__option" data-theme-choice="dark"
+              aria-pressed="false" title="{% translate 'Тёмное' %}"
+              aria-label="{% translate 'Тёмное оформление' %}">
+        <svg aria-hidden="true"><use href="#icon-moon"></use></svg>
+      </button>
+    </div>
+
+    {# Меню учётной записи; гостю — ссылка входа. #}
+    {% if request.user.is_authenticated %}
+      <div class="user-menu no-print">
+        <button type="button" class="user-menu__trigger"
+                popovertarget="user-menu-panel" aria-haspopup="true">
+          <svg aria-hidden="true" style="width: 15px; height: 15px">
+            <use href="#icon-user"></use>
+          </svg>
+          <span class="user-menu__name">{{ request.user.get_short_name }}</span>
+        </button>
+
+        <div class="menu-popover user-menu__panel" id="user-menu-panel" popover data-anchor-fixed>
+          <div class="user-menu__header">{{ request.user.email }}</div>
+
+          <a class="user-menu__item" href="{% url 'accounts:dashboard' %}">
+            {% translate "Личный кабинет" %}
+          </a>
+          <a class="user-menu__item" href="{% url 'workspace:saved' %}">
+            {% translate "Сохранённое" %}
+          </a>
+          <a class="user-menu__item" href="{% url 'feedback:mine' %}">
+            {% translate "Обращения" %}
+          </a>
+          <a class="user-menu__item" href="{% url 'accounts:security' %}">
+            {% translate "Безопасность" %}
+          </a>
+          {% if request.user.has_panel_access %}
+            <a class="user-menu__item" href="{% url 'dashboard:index' %}">
+              {% translate "Панель управления" %}
+            </a>
+          {% endif %}
+
+          <form class="user-menu__form" method="post" action="{% url 'accounts:logout' %}">
+            {% csrf_token %}
+            <button type="submit">{% translate "Выйти" %}</button>
+          </form>
+        </div>
+      </div>
+    {% else %}
+      <a class="button button--sm button--secondary no-print app-header__login"
+         href="{% url 'accounts:login' %}">
+        <svg aria-hidden="true" style="width: 15px; height: 15px">
+          <use href="#icon-user"></use>
+        </svg>
+        {% translate "Войти" %}
+      </a>
+    {% endif %}
+
+    <button type="button" class="icon-button app-header__burger"
+            data-dialog-open="mobile-nav" aria-haspopup="dialog"
+            aria-label="{% translate 'Открыть меню' %}">
+      <svg aria-hidden="true"><use href="#icon-menu"></use></svg>
+    </button>
+  </div>
+
+  {% include "partials/_mobile_nav.html" %}
+</header>

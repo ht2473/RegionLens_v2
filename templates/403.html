@@ -1,0 +1,18 @@
+{% extends "errors/page.html" %}
+{% load i18n %}
+
+{% block error_title %}{% translate "Нет доступа" %}{% endblock %}
+{% block error_code %}403{% endblock %}
+{% block error_heading %}{% translate "Нет доступа" %}{% endblock %}
+
+{% block error_lead %}
+  {% blocktranslate trimmed %}
+    У вашей учётной записи нет доступа к этой странице. Если доступ нужен для работы,
+    напишите через форму обратной связи.
+  {% endblocktranslate %}
+{% endblock %}
+
+{% block error_actions %}
+  <a class="button button--primary" href="{% url 'core:home' %}">{% translate "На главную" %}</a>
+  <a class="button button--secondary" href="{% url 'feedback:create' %}">{% translate "Обратная связь" %}</a>
+{% endblock %}

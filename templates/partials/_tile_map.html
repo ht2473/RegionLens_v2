@@ -1,0 +1,43 @@
+{% load i18n %}
+{# Плиточная картограмма: плитка на субъект; подпись плитки (title) готовит вызывающий. #}
+
+{% if tile_grid.available %}
+  {# На узком экране карта прокручивается вбок. #}
+  <div class="tile-map-wrapper">
+  <svg class="tile-map" viewBox="0 0 {{ tile_grid.width }} {{ tile_grid.height }}"
+       role="group" preserveAspectRatio="xMidYMid meet"
+       aria-label="{{ tile_caption }}">
+    <defs>
+      {# Штриховка для территорий без данных. #}
+      <pattern id="tile-no-data" width="3" height="3" patternUnits="userSpaceOnUse"
+               patternTransform="rotate(45)">
+        <rect width="3" height="3" fill="var(--no-data-fill)"></rect>
+        <line x1="0" y1="0" x2="0" y2="3" stroke="var(--no-data-stroke)" stroke-width="1"></line>
+      </pattern>
+    </defs>
+
+    {% for row in tile_rows %}
+      {% if row.tile_px is not None %}
+        <a href="{% url 'catalog:territory-detail' slug=row.slug %}" class="tile-map__cell"
+           data-territory="{{ row.code }}">
+          <title>{{ row.title }}</title>
+          <rect x="{{ row.tile_px }}" y="{{ row.tile_py }}"
+                width="{{ tile_grid.size }}" height="{{ tile_grid.size }}" rx="1.2"
+                fill="{% if row.colour %}var({{ row.colour }}){% else %}url(#tile-no-data){% endif %}"></rect>
+          <text x="{{ row.tile_px }}" y="{{ row.tile_py }}" dx="4.5" dy="5.6"
+                text-anchor="middle"
+                class="tile-map__label{% if row.light_label %} tile-map__label--light{% endif %}">{{ row.abbreviation|default:row.code }}</text>
+        </a>
+      {% endif %}
+    {% endfor %}
+  </svg>
+  </div>
+{% else %}
+  <div class="callout callout--warning">
+    <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+    <div>
+      <div class="callout__title">{% translate "Раскладка плиточной карты не загружена" %}</div>
+      <p>{% translate "Карта появится, когда администратор загрузит справочник территорий." %}</p>
+    </div>
+  </div>
+{% endif %}

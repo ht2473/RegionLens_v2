@@ -1,0 +1,58 @@
+{% load i18n formatting %}
+{% comment %}
+  Живая карта: разметка полная и без сценариев; rl-live-map (static/js/elements/live-map.js)
+  добавляет карточки и перебор годов по готовым кадрам. Смена показателя заменяет блок
+  целиком (HX-Target = live-map). Части _live_* общие со страницей показателя.
+{% endcomment %}
+<rl-live-map class="live-map" id="{{ live_map_id }}" data-state="live-map-state"
+             data-card-panel="region-card"
+             data-label-play="{% translate 'Показать по годам' %}"
+             data-label-pause="{% translate 'Пауза' %}"
+             data-label-missing="{% translate 'нет данных за этот год' %}">
+  <div class="live-map__head">
+    <p class="live-map__kicker">
+      {% blocktranslate trimmed with count=live.frame.classes|length first=live.first_year last=live.last_year %}
+        {{ count }} регионов · данные Росстата · {{ first }}–{{ last }}
+      {% endblocktranslate %}
+    </p>
+    <h1 class="live-map__title">
+      {{ live.series.short_title }}, <span data-live="year">{{ live.year }}</span>
+    </h1>
+    <p class="live-map__lead">
+      {% translate "Больше всего" %} — <span data-live="highest-name">{{ live.frame.highest.name }}</span>:
+      <b class="numeric" data-live="highest-value">{{ live.frame.highest.value }}</b>;
+      {% translate "меньше всего" %} — <span data-live="lowest-name">{{ live.frame.lowest.name }}</span>:
+      <b class="numeric" data-live="lowest-value">{{ live.frame.lowest.value }}</b>.
+      <span data-live="country-line"{% if not live.frame.country %} hidden{% endif %}>
+        {% translate "По России" %} — <b class="numeric" data-live="country">{{ live.frame.country }}</b>
+        {{ live.series.unit_label }}.
+      </span>
+    </p>
+  </div>
+
+  {% include "core/partials/_live_find.html" %}
+
+  <div class="live-map__choices">
+    <p class="live-map__label" id="live-map-choices">{% translate "Показать на карте" %}</p>
+    <ul class="choice-list" aria-labelledby="live-map-choices">
+      {% for choice in live_choices %}
+        <li>
+          <a class="choice-chip" href="?series={{ choice.series.key }}"
+             hx-get="?series={{ choice.series.key }}" hx-target="#{{ live_map_id }}"
+             hx-swap="outerHTML" hx-push-url="true"
+             {% if choice.active %}aria-current="true"{% endif %}>{{ choice.series.short_title }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  {% include "core/partials/_live_card.html" %}
+
+  {% include "core/partials/_live_legend.html" %}
+
+  {% include "core/partials/_live_note.html" %}
+
+  {% include "core/partials/_live_figure.html" %}
+
+  {{ live.state|json_script:"live-map-state" }}
+</rl-live-map>

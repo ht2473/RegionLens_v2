@@ -1,0 +1,22 @@
+{% load i18n formatting %}
+{# Карточка под указателем; без указателя — подсказка. #}
+<div class="live-map__card" aria-live="polite">
+  <p class="live-map__card-empty" data-live="card-empty">
+    {% blocktranslate trimmed with count=live.frame.classes|length %}
+      Наведите на регион — здесь появится его значение, место среди {{ count }} и сравнение с Россией.
+    {% endblocktranslate %}
+  </p>
+  <div class="live-map__card-body" data-live="card-body" hidden>
+    <p class="live-map__label">{% translate "Регион под указателем" %}</p>
+    <p class="live-map__card-name" data-live="card-name"></p>
+    <p class="live-map__card-value">
+      <span class="numeric" data-live="card-value"></span>
+      <span class="live-map__unit">{{ live.series.unit_label }}</span>
+    </p>
+    <p class="live-map__card-place">
+      <b data-live="card-place"></b> · <span class="verdict" data-live="card-standing"></span>
+    </p>
+    <p class="live-map__card-versus" data-live="card-versus"></p>
+    <p class="live-map__hint">{% translate "Щелчок открывает карточку региона" %}</p>
+  </div>
+</div>

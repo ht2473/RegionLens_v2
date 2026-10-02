@@ -1,0 +1,568 @@
+/* Общие части живой карты (витрина и страница показателя); раскладка — в home.css и indicator.css. */
+
+/* Метка над частью карты: «Регион под указателем», «Классы шкалы». */
+.live-map__label {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+/* Поиск своего региона — поле-пилюля с меткой места. */
+.live-map__find {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 3.5rem;
+  padding: 0 var(--space-5);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.live-map__find:focus-within {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-focus);
+}
+
+.live-map__find svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.live-map__find input {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-md);
+  color: var(--text-primary);
+}
+
+.live-map__find input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Карточка под указателем постоянной высоты: иначе всё под ней сдвигалось бы при движении
+   указателя. Название и сравнение — не длиннее двух строк. */
+.live-map__card {
+  height: 15.5rem;
+  overflow: hidden;
+  padding: var(--space-4) var(--space-5);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.live-map__card p {
+  margin: 0;
+}
+
+.live-map__card-empty {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  font-size: var(--text-md);
+  color: var(--text-muted);
+}
+
+.live-map__card-empty[hidden] {
+  display: none;
+}
+
+.live-map__card-name,
+.live-map__card-versus {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.live-map__card-versus[hidden] {
+  display: none;
+}
+
+.live-map__card-name {
+  margin-top: var(--space-1);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+}
+
+.live-map__card-value {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.live-map__card-value .numeric {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.1;
+}
+
+.live-map__unit {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.live-map__card-place,
+.live-map__card-versus {
+  margin-top: var(--space-1);
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+}
+
+.live-map__card-place b {
+  color: var(--text-primary);
+}
+
+.live-map__hint {
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+/* Легенда — сама шкала: пять полос подряд, под каждой её границы. */
+.live-legend {
+  display: flex;
+  /* Стык классов — просвет: под ним стоит граница, и видно, к чему она относится. */
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.live-legend__item {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.live-legend__swatch {
+  display: block;
+  height: 0.75rem;
+}
+
+.live-legend__item:first-child .live-legend__swatch {
+  border-start-start-radius: var(--radius-xs);
+  border-end-start-radius: var(--radius-xs);
+}
+
+.live-legend__item:last-child .live-legend__swatch {
+  border-start-end-radius: var(--radius-xs);
+  border-end-end-radius: var(--radius-xs);
+}
+
+/* Границы классов под стыками; положение (--at, доля ширины) задаёт разметка. */
+.live-legend__bounds {
+  position: relative;
+  height: 1.25rem;
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-2xs);
+  line-height: 1.25rem;
+  color: var(--text-secondary);
+}
+
+.live-legend__bounds li {
+  position: absolute;
+  top: 0;
+  left: var(--at);
+  translate: -50% 0;
+  white-space: nowrap;
+}
+
+.live-legend__bounds li:first-child {
+  translate: 0 0;
+}
+
+.live-legend__bounds li:last-child {
+  translate: -100% 0;
+}
+
+/* Направление шкалы — над полосой, у её концов. */
+.live-legend__ends {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+.live-legend__missing {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.live-legend__missing[hidden] {
+  display: none;
+}
+
+/* «Нет данных» — та же штриховка, что и на карте. */
+.live-legend__swatch--no-data {
+  width: 1.5rem;
+  border-radius: var(--radius-xs);
+  background-color: var(--no-data-fill);
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--no-data-stroke) 0 2px,
+    transparent 2px 6px
+  );
+}
+
+/* «Что это значит?» — раскрытие без сценариев. */
+.live-map__note summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2rem;
+  font-weight: var(--weight-semibold);
+  color: var(--text-accent);
+  cursor: pointer;
+  list-style: none;
+}
+
+.live-map__note summary::-webkit-details-marker {
+  display: none;
+}
+
+.live-map__note summary svg {
+  width: 17px;
+  height: 17px;
+}
+
+.live-map__note-body {
+  margin-top: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  background-color: var(--surface-sunken);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+.live-map__note-body p {
+  margin: 0;
+}
+
+.live-map__note-body p + p {
+  margin-top: var(--space-2);
+}
+
+/* Карта в своей карточке. */
+.live-map__figure {
+  margin: 0;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+/* На витрине карта укладывается в ширину и на телефоне: подписей значений нет. */
+.live-map .geo-map {
+  min-width: 0;
+  margin: 0;
+}
+
+.live-map .geo-map-wrapper {
+  overflow: visible;
+}
+
+.live-map .geo-map__region use {
+  transition:
+    fill var(--duration-slow) var(--ease-out),
+    stroke var(--duration-fast) var(--ease-out);
+}
+
+/* Перебор годов — когда элемент карты определён. */
+.live-map__time {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-4);
+  margin-top: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+rl-live-map:not(:defined) .live-map__time {
+  display: none;
+}
+
+.live-map__play {
+  min-width: 13rem;
+  min-height: 2.75rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+
+.live-map__play .live-map__pause-icon,
+.live-map__play[aria-pressed="true"] .live-map__play-icon {
+  display: none;
+}
+
+.live-map__play[aria-pressed="true"] .live-map__pause-icon {
+  display: block;
+}
+
+.live-map__year {
+  min-width: 4.5ch;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.live-map__range {
+  display: flex;
+  flex: 1 1 16rem;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.live-map__range-end {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.live-map__track {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.live-map__track input {
+  display: block;
+  width: 100%;
+  height: 1.75rem;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* Отметка разрыва под шкалой годов; положение — от центра бегунка в крайних точках. */
+.live-map__break {
+  --thumb: 1rem;
+
+  position: absolute;
+  top: 100%;
+  inset-inline-start: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--offset, 0));
+  width: 3px;
+  height: 0.5rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--attention);
+  transform: translateX(-50%);
+}
+
+.live-map__break--key {
+  position: static;
+  display: inline-block;
+  vertical-align: middle;
+  margin-inline-end: var(--space-1);
+  transform: none;
+}
+
+.live-map__caption {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-4);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+}
+
+.live-map__break-key {
+  color: var(--text-secondary);
+}
+
+/* --- Карточка региона (всплывающая панель) ---------------------------------------------- */
+
+/* Панель (popover) — справа под шапкой, на телефоне — снизу. */
+.region-card {
+  inset: calc(var(--header-height) + var(--space-4)) var(--space-4) auto auto;
+  width: min(24rem, calc(100vw - 2 * var(--space-4)));
+  max-height: calc(100dvh - var(--header-height) - 2 * var(--space-4));
+  margin: 0;
+  padding: var(--space-5) var(--space-6) var(--space-6);
+  overflow-y: auto;
+  background-color: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  color: var(--text-primary);
+}
+
+.region-card__body[aria-busy="true"] {
+  opacity: 0.55;
+}
+
+.region-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.region-card__kicker {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.region-card__title {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+.region-card__title:focus {
+  outline: none;
+}
+
+.region-card__close {
+  flex-shrink: 0;
+  border-radius: var(--radius-pill);
+}
+
+.region-card__summary {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+.region-card__rows {
+  margin: var(--space-4) 0 0;
+}
+
+/* Строка показателя — в две строки: название и значение, затем место и сравнение. */
+.region-card__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.region-card__name {
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.region-card__row.is-chosen .region-card__name {
+  color: var(--text-primary);
+}
+
+.region-card__figure {
+  margin: 0;
+  text-align: end;
+  white-space: nowrap;
+}
+
+.region-card__value {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+}
+
+.region-card__unit {
+  margin-inline-start: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.region-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 var(--space-3);
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--text-xs);
+}
+
+.region-card__versus {
+  color: var(--text-muted);
+}
+
+.region-card__actions {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+
+.region-card__actions .button {
+  width: 100%;
+  border-radius: var(--radius-pill);
+}
+
+.region-card__actions .my-region-form {
+  display: flex;
+}
+
+.region-card__hint {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* --- Узкие экраны ---------------------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .live-map__figure {
+    padding: var(--space-3);
+  }
+
+  .live-map__play {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .live-map__range {
+    flex-basis: 100%;
+  }
+
+  /* На телефоне карточка региона — лист снизу. */
+  .region-card {
+    inset: auto 0 0 0;
+    width: 100%;
+    max-height: 85dvh;
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+  }
+}
+
+/* Без наведения карточка под указателем не показывается: касание открывает карточку региона. */
+@media (hover: none) {
+  .live-map__card {
+    display: none;
+  }
+}

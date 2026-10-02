@@ -1,0 +1,430 @@
+/* Рабочая поверхность (/map/, /rankings/, /compare/, /distribution/, /table/): холст
+   с вкладками, предмет экрана и представления; рейль — в layout.css. */
+
+/* --- Полоса вкладок и действий ------------------------------------------------------ */
+
+.surface-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.tabs--surface {
+  gap: var(--space-1);
+  margin: 0 0 -1px;
+  border-bottom: 0;
+}
+
+.tabs--surface .tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3);
+  border-bottom-width: 3px;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.tabs--surface .tabs__tab:hover {
+  color: var(--text-primary);
+}
+
+.tabs--surface .tabs__tab.is-active {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent);
+}
+
+.tabs__icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.surface-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-width: 0;
+  padding-bottom: var(--space-2);
+}
+
+/* Запрет сжатия — у кнопок, а не у полосы: иначе полоса не переносится. */
+.surface-actions > * {
+  flex-shrink: 0;
+}
+
+/* «Обновление…» в покое не занимает места. */
+.surface-actions__busy {
+  max-width: 0;
+  overflow: hidden;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  transition:
+    max-width var(--duration-normal) var(--ease-out),
+    opacity var(--duration-normal) var(--ease-out);
+}
+
+.htmx-request .surface-actions__busy {
+  max-width: 16ch;
+}
+
+/* --- Предмет экрана: заголовок страницы --------------------------------------------- */
+
+.surface-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-4) var(--space-8);
+  margin-bottom: var(--space-5);
+}
+
+.surface-head--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.surface-head__kicker {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.surface-head__title {
+  margin: 0;
+  font-size: clamp(var(--text-2xl), 2.6vw, var(--text-3xl));
+  font-weight: var(--weight-bold);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.surface-head__meta {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+}
+
+/* Точка-разделитель прицеплена к предыдущей части. */
+.surface-head__meta > :not(:last-child)::after {
+  content: " ·";
+}
+
+/* Значения года из внешнего источника: полоса слева — цвет внимания, как у пометки «предв.». */
+.surface-head__origin {
+  max-width: 72ch;
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--attention);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.surface-head__about {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+}
+
+.surface-head__about a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: var(--weight-semibold);
+}
+
+.surface-head__about svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Два числа — сетка в две строки с subgrid: подписи сверху, числа на общей линии письма. */
+.surface-head__figures {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: auto auto;
+  justify-content: end;
+  column-gap: var(--space-6);
+  row-gap: 2px;
+  margin: 0;
+}
+
+.surface-head__figure {
+  display: grid;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+  align-items: last baseline;
+  text-align: left;
+}
+
+.surface-head__figure dt {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.surface-head__figure dd {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.surface-head__value {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.surface-head__unit {
+  max-width: 9rem;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+  text-align: left;
+}
+
+.surface-head__figure--quiet dd {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+/* --- Отмеченные регионы ------------------------------------------------------------- */
+
+.surface-chosen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  list-style: none;
+}
+
+.surface-chosen__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2rem;
+  padding: 0 var(--space-3);
+  background-color: var(--surface-accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.surface-chosen__item:hover,
+.surface-chosen__item.is-highlighted {
+  background-color: var(--accent-quiet);
+  text-decoration: none;
+}
+
+/* --- Холст и пояснение под ним ------------------------------------------------------- */
+
+.surface-canvas > * + * {
+  margin-top: var(--space-8);
+}
+
+.surface-note {
+  max-width: 80ch;
+  margin: var(--space-10) 0 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-muted);
+}
+
+/* Подзаголовок блока внутри представления: «Больше всего», «Поднялись», «Сводка». */
+.surface-block__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.surface-block__title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+}
+
+.surface-block__note {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.surface-block__footnote {
+  max-width: 80ch;
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  color: var(--text-muted);
+}
+
+/* Ссылки внутри текста подчёркнуты: по цвету они отличаются от него меньше чем
+   3 : 1 (WCAG 1.4.1). */
+.surface-block__footnote a {
+  text-decoration: underline;
+}
+
+/* Движение места — на месте отношения к России у крайних значений. */
+.leader-list--ranked .movement {
+  justify-self: end;
+  min-width: 3.25rem;
+  justify-content: flex-end;
+}
+
+/* Сводка распределения: подпись и число в две колонки, строки разделены линейками. */
+.figure-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--space-6);
+  margin: 0;
+}
+
+.figure-list > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.figure-list dt {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.figure-list dd {
+  margin: 0;
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.surface-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6) var(--space-10);
+}
+
+/* --- Таблицы рейтинга и значений ---------------------------------------------------- */
+
+/* На широком экране обёртка — overflow: clip, чтобы шапка таблицы залипала под строкой пути;
+   уже 1180 точек обёртка прокручивается. */
+@media (min-width: 1180px) {
+  .surface-canvas .data-table-wrapper {
+    overflow: clip;
+  }
+
+  .surface-canvas .data-table thead th {
+    top: calc(var(--header-height) + var(--breadcrumbs-height));
+  }
+}
+
+/* --- Год в рейле --------------------------------------------------------------------- */
+
+.filter-rail .time-slider__head {
+  gap: var(--space-3);
+}
+
+.filter-rail .time-slider__play {
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-accent);
+}
+
+.filter-rail .time-slider__play:hover,
+.filter-rail .time-slider__play.is-playing {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.filter-rail .time-slider__value {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.filter-rail .time-slider__bounds {
+  font-size: var(--text-xs);
+}
+
+/* --- Телефон и планшет -------------------------------------------------------------- */
+
+@media (max-width: 1180px) {
+  .surface-head {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .surface-head__figures {
+    justify-content: start;
+  }
+}
+
+/* На телефоне вкладки — плитками «сколько поместится», подписи не сокращаются. */
+@media (max-width: 767px) {
+  .surface-bar {
+    border-bottom: 0;
+    margin-bottom: var(--space-5);
+  }
+
+  .tabs--surface {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(112px, 100%), 1fr));
+    width: 100%;
+    gap: var(--space-1);
+    margin: 0;
+    overflow-x: visible;
+  }
+
+  .tabs--surface .tabs__tab {
+    justify-content: center;
+    padding: var(--space-2) var(--space-1);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-pill);
+    font-size: var(--text-sm);
+    white-space: normal;
+    text-align: center;
+  }
+
+  .tabs--surface .tabs__tab.is-active {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: var(--text-on-accent);
+  }
+
+  /* Без значка: иначе «Распределение» переносится посреди слова. */
+  .tabs--surface .tabs__icon {
+    display: none;
+  }
+
+  .surface-actions {
+    padding-bottom: 0;
+  }
+
+  .surface-head__value {
+    font-size: var(--text-2xl);
+  }
+
+  .surface-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,0 +1,291 @@
+/* Каталог показателей (/indicators/): темы с плитками и полный перечень рядов (?view=all). */
+
+.catalog__notice {
+  margin-bottom: var(--space-8);
+}
+
+/* Шапка, поиск и оглавление — .page-intro (layout.css), .find-form и .toc-pills (components.css). */
+
+.catalog-questions {
+  margin-bottom: var(--space-12);
+}
+
+/* --- Темы и плитки ----------------------------------------------------------------- */
+
+.catalog-theme {
+  margin-bottom: var(--space-12);
+}
+
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(15.5rem, 100%), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catalog-tile {
+  position: relative;
+  min-height: 10rem;
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.catalog-tile:hover,
+.catalog-tile:has(.catalog-tile__title:focus-visible) {
+  border-color: var(--border-accent);
+}
+
+.catalog-tile:has(.catalog-tile__title:focus-visible) {
+  box-shadow: var(--shadow-focus);
+}
+
+/* Название — ссылка, растянутая на всю плитку. */
+.catalog-tile__title {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.catalog-tile__title::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.catalog-tile__title:hover,
+.catalog-tile:hover .catalog-tile__title {
+  color: var(--text-accent);
+  text-decoration: none;
+}
+
+.catalog-tile .stat-tile__value .numeric {
+  font-size: var(--text-2xl);
+}
+
+.catalog-tile .sparkline {
+  width: 6.5rem;
+}
+
+.catalog-tile__empty {
+  margin: auto 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.catalog__footnote {
+  margin-top: 0;
+}
+
+/* На телефоне плитка — строка: название, значение и изменение, ход справа. */
+@media (max-width: 560px) {
+  .catalog-questions .choice-chip {
+    min-height: 2rem;
+    font-size: var(--text-sm);
+  }
+
+  .catalog-grid {
+    gap: var(--space-2);
+  }
+
+  .catalog-tile {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title title"
+      "value spark"
+      "change spark";
+    align-items: end;
+    column-gap: var(--space-4);
+    min-height: 0;
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .catalog-tile__title {
+    grid-area: title;
+  }
+
+  .catalog-tile .stat-tile__value {
+    grid-area: value;
+    margin-top: var(--space-1);
+  }
+
+  .catalog-tile .stat-tile__value .numeric {
+    font-size: var(--text-xl);
+  }
+
+  .catalog-tile .stat-tile__foot {
+    display: contents;
+  }
+
+  .catalog-tile .stat-tile__change {
+    grid-area: change;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-2);
+    font-size: var(--text-xs);
+  }
+
+  .catalog-tile .sparkline {
+    grid-area: spark;
+    align-self: center;
+    width: 5.5rem;
+  }
+
+  .catalog-tile__empty {
+    grid-column: 1 / -1;
+    margin-top: var(--space-1);
+  }
+}
+
+/* --- Полный перечень рядов (?view=all): рейль отборов и перечень ------------------------- */
+
+.catalog-all__hint {
+  margin: var(--space-2) 0 0;
+}
+
+/* Разделов больше сотни: перечень прокручивается внутри группы, а не растягивает рейль. */
+.catalog-all__sections {
+  max-height: 20rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.catalog-all__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-6);
+  margin-bottom: var(--space-4);
+}
+
+.catalog-all__count {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+}
+
+.catalog-all__count strong {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.catalog-all__count .htmx-indicator {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.catalog-all__sort {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.catalog-all__sort .select {
+  width: auto;
+}
+
+/* Строка перечня: название ряда — ссылка, под ним разрез и раздел со своим кодом. */
+.series-table__name {
+  min-width: 18rem;
+}
+
+.series-table__title {
+  display: block;
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.series-table__variant {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.series-table__meta {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.series-table__unit {
+  max-width: 16ch;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.series-table__coverage {
+  min-width: 9rem;
+}
+
+.series-table__years {
+  white-space: nowrap;
+}
+
+.series-table__marks {
+  min-width: 9rem;
+}
+
+.series-table__marks .badge {
+  margin: 0 var(--space-1) var(--space-1) 0;
+}
+
+/* На телефоне строка перечня — стопка, чтобы покрытие и сопоставимость были на виду. */
+@media (max-width: 640px) {
+  .series-table thead {
+    display: none;
+  }
+
+  .series-table,
+  .series-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .data-table.series-table tr {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .data-table.series-table td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    text-align: left;
+  }
+
+  .series-table__name,
+  .series-table__marks {
+    grid-column: 1 / -1;
+  }
+
+  .series-table__unit {
+    max-width: none;
+  }
+
+  .series-table__coverage .series-table__meta,
+  .series-table__years .series-table__meta {
+    display: none;
+  }
+
+  .series-table__marks .badge {
+    margin-bottom: 0;
+  }
+}

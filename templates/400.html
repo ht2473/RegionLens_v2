@@ -1,0 +1,13 @@
+{% extends "errors/standalone.html" %}
+{% load i18n %}
+
+{% block error_title %}{% translate "Неверный запрос" %}{% endblock %}
+{% block error_code %}400{% endblock %}
+{% block error_heading %}{% translate "Неверный запрос" %}{% endblock %}
+
+{% block error_lead %}
+  {% blocktranslate trimmed %}
+    В адресе или в отправленной форме есть недопустимые знаки. Проверьте ссылку
+    или вернитесь на предыдущую страницу.
+  {% endblocktranslate %}
+{% endblock %}

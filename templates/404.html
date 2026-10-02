@@ -1,0 +1,19 @@
+{% extends "errors/page.html" %}
+{% load i18n %}
+
+{% block error_title %}{% translate "Страница не найдена" %}{% endblock %}
+{% block error_code %}404{% endblock %}
+{% block error_heading %}{% translate "Страница не найдена" %}{% endblock %}
+
+{% block error_lead %}
+  {% blocktranslate trimmed %}
+    Адрес устарел или набран с ошибкой. Регионы и показатели доступны через разделы
+    ниже или поиск в шапке сайта.
+  {% endblocktranslate %}
+{% endblock %}
+
+{% block error_actions %}
+  <a class="button button--primary" href="{% url 'core:home' %}">{% translate "На главную" %}</a>
+  <a class="button button--secondary" href="{% url 'catalog:territory-list' %}">{% translate "Регионы" %}</a>
+  <a class="button button--secondary" href="{% url 'catalog:indicator-list' %}">{% translate "Показатели" %}</a>
+{% endblock %}

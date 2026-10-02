@@ -1,0 +1,181 @@
+/* Перечень регионов (/regions/): шапка с поиском и картой, округа плотным перечнем. */
+
+.regions-head {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  align-items: start;
+  gap: var(--space-10);
+  margin-bottom: var(--space-12);
+}
+
+.regions-head__intro {
+  margin-bottom: 0;
+}
+
+/* Самые населённые — пилюлями под поиском. */
+.regions-quick {
+  margin-top: var(--space-8);
+}
+
+.regions-quick__title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.regions-quick .choice-chip.is-highlighted {
+  border-color: var(--border-accent);
+}
+
+/* --- Карта: каждый регион ведёт в паспорт --------------------------------------------- */
+
+.regions-map {
+  margin: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.regions-map .geo-map {
+  min-width: 0;
+  margin: 0;
+}
+
+.regions-map .geo-map-wrapper {
+  overflow: visible;
+}
+
+/* Подсветка — заливкой цвета выбранного (is-highlighted по data-territory). */
+.regions-map .geo-map__region {
+  cursor: pointer;
+}
+
+.regions-map .geo-map__region:hover use,
+.regions-map .geo-map__region:focus-visible use,
+.regions-map .geo-map__region.is-highlighted use {
+  fill: var(--map-focus);
+}
+
+.regions-map figcaption {
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* --- Округа и регионы ------------------------------------------------------------------ */
+
+.regions-district {
+  margin-bottom: var(--space-12);
+}
+
+.region-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
+  column-gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Строка — ссылка на паспорт, растянутая на всю строку (::after). */
+.region-entry {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3) var(--space-3);
+  margin-inline: calc(-1 * var(--space-3));
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.region-entry:hover,
+.region-entry.is-highlighted,
+.region-entry:has(.region-entry__name:focus-visible) {
+  background-color: var(--surface-sunken);
+}
+
+.region-entry:has(.region-entry__name:focus-visible) {
+  box-shadow: var(--shadow-focus);
+}
+
+.region-entry__name {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.region-entry__name::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.region-entry:hover .region-entry__name {
+  color: var(--text-accent);
+  text-decoration: none;
+}
+
+.region-entry__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.region-entry__meta > * + *::before {
+  content: "·";
+  margin-right: var(--space-2);
+  color: var(--text-muted);
+}
+
+.region-entry__note {
+  font-size: var(--text-xs);
+  color: var(--attention);
+}
+
+/* --- Адаптация ------------------------------------------------------------------------- */
+
+@media (max-width: 1023px) {
+  .regions-head {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+}
+
+/* На телефоне карта скрыта: цели слишком мелкие. */
+@media (max-width: 639px) {
+  .regions-map {
+    display: none;
+  }
+
+  .regions-district {
+    margin-bottom: var(--space-10);
+  }
+
+  /* Строка в одну линию; переносится только длинное название. */
+  .region-entry {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: var(--space-3);
+    padding-block: var(--space-2);
+  }
+
+  .region-entry__meta {
+    margin-left: auto;
+    font-size: var(--text-xs);
+  }
+
+  .region-entry__note {
+    flex-basis: 100%;
+  }
+}

@@ -1,0 +1,11 @@
+{% load i18n formatting %}
+{# Поиск своего региона: без сценариев — в перечень регионов, со сценарием — карточка. #}
+<form class="live-map__find" action="{% url 'catalog:territory-list' %}" method="get" role="search">
+  <svg aria-hidden="true"><use href="#icon-map-pin"></use></svg>
+  <input type="search" name="q" list="live-map-regions" autocomplete="off"
+         placeholder="{% translate 'Найдите свой регион' %}"
+         aria-label="{% translate 'Найти регион' %}" data-live="find">
+  <datalist id="live-map-regions">
+    {% for name in live.state.names %}<option value="{{ name }}"></option>{% endfor %}
+  </datalist>
+</form>

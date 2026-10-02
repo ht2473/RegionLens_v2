@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% comment %}
+  Политика обработки персональных данных (ч. 2 ст. 18.1 152-ФЗ). Разделы повторяют поля
+  уведомления Роскомнадзора (ч. 3 ст. 22): оператор, цели, категории данных и субъектов,
+  основания, действия, меры, сроки, место хранения, трансграничная передача.
+{% endcomment %}
+
+{% block meta_description %}{% translate "Политика обработки персональных данных RegionLens: оператор, цели и основания, какие сведения хранятся и сколько, кому передаются, права пользователя и меры защиты." %}{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "Политика обработки персональных данных" %}</h1>
+      <p class="page-intro__lead">
+        {% translate "Какие сведения о пользователях обрабатывает сайт RegionLens, зачем, на каком основании, как долго они хранятся и как их удалить." %}
+      </p>
+      <p class="terms__revision">
+        {% blocktranslate trimmed with date=revision|date:"d.m.Y" %}Редакция от {{ date }}{% endblocktranslate %}
+      </p>
+    </div>
+  </header>
+
+  <div class="about">
+    <div class="about__main">
+
+      <section class="about__section" id="general" aria-labelledby="privacy-general">
+        <h2 class="about__title" id="privacy-general"><span class="terms__number">1.</span> {% translate "Общие положения" %}</h2>
+        <div class="prose">
+          <p>
+            {% blocktranslate trimmed with url=site_url %}
+              Политика определяет порядок и условия обработки персональных данных на сайте
+              RegionLens ({{ url }}). Она опубликована во исполнение части 2 статьи 18.1
+              Федерального закона от 27.07.2006 № 152-ФЗ «О персональных данных» и действует
+              для всех сведений, которые сайт получает от пользователей.
+            {% endblocktranslate %}
+          </p>
+        </div>
+      </section>
+
+      <section class="about__section" id="operator" aria-labelledby="privacy-operator">
+        <h2 class="about__title" id="privacy-operator"><span class="terms__number">2.</span> {% translate "Оператор" %}</h2>
+        <div class="prose">
+          <p>
+            {% url 'feedback:create' as feedback_url %}
+            {% blocktranslate trimmed with author=project.author email=project.author_email url=feedback_url %}
+              Оператор — <span lang="ru">{{ author }}</span>, физическое лицо, автор сайта. Он же
+              отвечает за организацию обработки персональных данных. Связь с оператором —
+              по адресу <a href="mailto:{{ email }}">{{ email }}</a> или через
+              <a href="{{ url }}">форму обращения</a>.
+            {% endblocktranslate %}
+          </p>
+        </div>
+      </section>
+
+      <section class="about__section" id="subjects" aria-labelledby="privacy-subjects">
+        <h2 class="about__title" id="privacy-subjects"><span class="terms__number">3.</span> {% translate "Чьи данные обрабатываются" %}</h2>
+        <ul class="terms-list">
+          <li>{% translate "Пользователи, зарегистрировавшие учётную запись." %}</li>
+          <li>{% translate "Отправители обращений через форму на сайте, в том числе без учётной записи." %}</li>
+          <li>{% translate "Посетители сайта — в журнале веб-сервера и при попытках входа." %}</li>
+        </ul>
+        <div class="prose">
+          <p>
+            {% blocktranslate trimmed %}
+              Специальные категории персональных данных и биометрические персональные данные
+              не обрабатываются. Смотреть, считать и выгружать данные сайта можно без учётной
+              записи и без сообщения о себе каких-либо сведений.
+            {% endblocktranslate %}
+          </p>
+        </div>
+      </section>
+
+      <section class="about__section" id="purposes" aria-labelledby="privacy-purposes">
+        <h2 class="about__title" id="privacy-purposes"><span class="terms__number">4.</span> {% translate "Цели, данные, основания и сроки" %}</h2>
+        <div class="data-table-wrapper terms__sources">
+          <table class="data-table privacy-table">
+            <caption class="visually-hidden">{% translate "Цели обработки, данные, основания и сроки хранения" %}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{% translate "Цель" %}</th>
+                <th scope="col">{% translate "Данные" %}</th>
+                <th scope="col">{% translate "Основание" %}</th>
+                <th scope="col">{% translate "Срок хранения" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">{% translate "Учётная запись: вход, сохранённое, мой регион" %}</th>
+                <td>
+                  {% blocktranslate trimmed %}
+                    адрес почты, имя, мой регион; пароль — только в виде хэша Argon2; даты
+                    регистрации, последнего входа и визита; ключ входа с кодом и хэши резервных
+                    кодов, если вход с кодом включён; сохранённые регионы, показатели и виды
+                    экрана с пометками
+                  {% endblocktranslate %}
+                </td>
+                <td>{% translate "согласие (п. 1 ч. 1 ст. 6 152-ФЗ)" %}</td>
+                <td>{% translate "до удаления учётной записи или отзыва согласия" %}</td>
+              </tr>
+              <tr>
+                <th scope="row">{% translate "Ответ на обращение" %}</th>
+                <td>
+                  {% translate "имя, адрес для ответа, текст обращения, страница, с которой оно отправлено; ответ" %}
+                </td>
+                <td>{% translate "согласие (п. 1 ч. 1 ст. 6 152-ФЗ)" %}</td>
+                <td>
+                  {% blocktranslate trimmed with days=ticket_contact_days %}
+                    обращение из учётной записи — пока она существует, затем без имени
+                    и адреса; без учётной записи — имя и адрес удаляются через {{ days }} суток
+                    после ответа или закрытия обращения
+                  {% endblocktranslate %}
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">{% translate "Защита формы обращения от рассылок" %}</th>
+                <td>{% translate "адрес IP и браузер отправителя обращения" %}</td>
+                <td>{% translate "согласие (п. 1 ч. 1 ст. 6 152-ФЗ)" %}</td>
+                <td>
+                  {% blocktranslate trimmed with days=ticket_trace_days %}{{ days }} суток{% endblocktranslate %}
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">{% translate "Защита входа от подбора пароля" %}</th>
+                <td>{% translate "адрес IP, введённый адрес почты и браузер при неудачной попытке входа" %}</td>
+                <td>{% translate "законный интерес оператора — безопасность сайта (п. 7 ч. 1 ст. 6 152-ФЗ)" %}</td>
+                <td>
+                  {% blocktranslate trimmed with hours=lockout_hours %}{{ hours }} ч после последней попытки{% endblocktranslate %}
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">{% translate "Защита сайта и статистика посещений" %}</th>
+                <td>
+                  {% translate "журнал веб-сервера: адрес IP, время, запрошенная страница, браузер, страница перехода" %}
+                </td>
+                <td>{% translate "законный интерес оператора — безопасность сайта (п. 7 ч. 1 ст. 6 152-ФЗ)" %}</td>
+                <td>
+                  {% blocktranslate trimmed with days=access_log_days %}
+                    {{ days }} суток; статистика посещений хранит адреса без последней части
+                  {% endblocktranslate %}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="prose">
+          <p>
+            {% if backup_days %}
+              {% blocktranslate trimmed with days=backup_days %}
+                Резервные копии базы делаются ежедневно; удалённое исчезает из них через
+                {{ days }} суток.
+              {% endblocktranslate %}
+            {% else %}
+              {% translate "Резервные копии базы делаются ежедневно; копии во внешнем хранилище хранятся без срока." %}
+            {% endif %}
+          </p>
+        </div>
+      </section>
+
+      <section class="about__section" id="cookies" aria-labelledby="privacy-cookies">
+        <h2 class="about__title" id="privacy-cookies"><span class="terms__number">5.</span> Cookie</h2>
+        <div class="prose">
+          <p>
+            {% blocktranslate trimmed with days=session_days %}
+              Сайт ставит только необходимые для работы cookie: сеанс после входа
+              ({{ days }} суток), защита форм, язык страницы, мой регион без входа. Тема
+              оформления и недавние переходы быстрого поиска хранятся только в браузере.
+              Счётчиков посещений, рекламы и cookie других сайтов нет.
+            {% endblocktranslate %}
+          </p>
+        </div>
+      </section>
+
+      <section class="about__section" id="actions" aria-labelledby="privacy-actions">
+        <h2 class="about__title" id="privacy-actions"><span class="terms__number">6.</span> {% translate "Действия с данными" %}</h2>
+        <div class="prose">
+          <p>
+            {% blocktranslate trimmed %}
+              Сбор, запись, систематизация, накопление, хранение, уточнение (обновление,
+              изменение), извлечение, использование, передача (предоставление), блокирование,
+              удаление, уничтожение. Обработка автоматизированная, с передачей по сети
+              Интернет по защищённому протоколу.
+            {% endblocktranslate %}
+          </p>
+        </div>
+      </section>
+
+      <section class="about__section" id="transfer" aria-labelledby="privacy-transfer">
+        <h2 class="about__title" id="privacy-transfer"><span class="terms__number">7.</span> {% translate "Передача и место хранения" %}</h2>
+        <ul class="terms-list">
+          <li>
+            {% blocktranslate trimmed %}
+              Персональные данные не продаются и не передаются третьим лицам, кроме почтового
+              сервера, через который сайт отправляет письма (адрес получателя и текст письма),
+              и случаев, предусмотренных законом.
+            {% endblocktranslate %}
+          </li>
+          {% if error_tracking %}
+            <li>
+              {% blocktranslate trimmed %}
+                Сведения об ошибках страниц уходят в службу учёта ошибок без адресов,
+                имён и cookie.
+              {% endblocktranslate %}
+            </li>
+          {% endif %}
+          <li>
+            {% blocktranslate trimmed %}
+              Базы данных, в которых записываются и хранятся персональные данные, и резервные
+              копии находятся в Российской Федерации (ч. 5 ст. 18 152-ФЗ). Трансграничная
+              передача персональных данных не выполняется.
+            {% endblocktranslate %}
+          </li>
+        </ul>
+      </section>
+
+      <section class="about__section" id="access" aria-labelledby="privacy-access">
+        <h2 class="about__title" id="privacy-access"><span class="terms__number">8.</span> {% translate "Кто видит данные" %}</h2>
+        <div class="prose">
+          <p>
+            {% blocktranslate trimmed %}
+              Сохранённое видит только владелец. Администратор видит учётную запись — почту,
+              имя, даты входа и число сохранённого, но не само сохранённое.
+              Обращения читают те, кто на них отвечает.
+            {% endblocktranslate %}
+          </p>
+        </div>
+      </section>
+
+      <section class="about__section" id="rights" aria-labelledby="privacy-rights">
+        <h2 class="about__title" id="privacy-rights"><span class="terms__number">9.</span> {% translate "Права пользователя" %}</h2>
+        <ul class="terms-list">
+          <li>{% translate "Получить сведения об обработке своих персональных данных (ст. 14 152-ФЗ)." %}</li>
+          <li>{% translate "Потребовать уточнения, блокирования или уничтожения неполных, устаревших, неточных или ненужных для цели данных." %}</li>
+          <li>{% translate "Отозвать согласие на обработку персональных данных." %}</li>
+          <li>{% translate "Обжаловать действия оператора в Роскомнадзоре или в суде." %}</li>
+        </ul>
+        <div class="prose">
+          <p>
+            {% url 'accounts:data' as data_url %}
+            {% url 'accounts:profile' as profile_url %}
+            {% blocktranslate trimmed %}
+              В личном кабинете, в разделе <a href="{{ data_url }}">«Мои данные»</a>, всё
+              сохранённое о себе выгружается одним файлом JSON, а учётная запись удаляется
+              после подтверждения паролем; имя и мой регион меняются
+              в <a href="{{ profile_url }}">профиле</a>. Удаление учётной записи — отзыв
+              согласия: сохранённое удаляется сразу, обращения остаются без имени и адреса.
+            {% endblocktranslate %}
+          </p>
+          <p>
+            {% url 'feedback:create' as feedback_url %}
+            {% blocktranslate trimmed with email=project.author_email url=feedback_url days=destruction_days %}
+              Остальные запросы, в том числе отзыв согласия по обращению без учётной записи, —
+              по адресу <a href="mailto:{{ email }}">{{ email }}</a> или через
+              <a href="{{ url }}">форму обращения</a>. Ответ — в течение 10 рабочих дней;
+              после отзыва согласия данные уничтожаются в течение {{ days }} дней, если закон
+              не требует их хранить.
+            {% endblocktranslate %}
+          </p>
+        </div>
+      </section>
+
+      <section class="about__section" id="security" aria-labelledby="privacy-security">
+        <h2 class="about__title" id="privacy-security"><span class="terms__number">10.</span> {% translate "Меры защиты" %}</h2>
+        <ul class="terms-list">
+          <li>{% translate "Передача данных — только по протоколу HTTPS (шифрование TLS)." %}</li>
+          <li>{% translate "Пароли хранятся только в виде хэшей Argon2; резервные коды входа — тоже хэшами." %}</li>
+          <li>{% translate "Число неудачных попыток входа ограничено; для панели управления обязателен вход с одноразовым кодом." %}</li>
+          <li>{% translate "Доступ к сведениям о пользователях есть только у администратора; права разделены по ролям." %}</li>
+          <li>{% translate "Резервные копии базы делаются ежедневно и хранятся ограниченный срок." %}</li>
+          <li>{% translate "Письма об ошибках сервера не содержат паролей и содержимого форм." %}</li>
+        </ul>
+      </section>
+
+      <section class="about__section" id="changes" aria-labelledby="privacy-changes">
+        <h2 class="about__title" id="privacy-changes"><span class="terms__number">11.</span> {% translate "Изменение политики" %}</h2>
+        <div class="prose">
+          <p>
+            {% blocktranslate trimmed %}
+              Новая редакция публикуется на этой странице с датой. Если меняются цели
+              обработки или состав данных, новое согласие запрашивается отдельно.
+            {% endblocktranslate %}
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <aside class="about__figures terms__toc" data-toc aria-labelledby="privacy-toc">
+      <div class="terms__toc-title" id="privacy-toc">{% translate "На странице" %}</div>
+      <ol class="terms__toc-list">
+        <li><a href="#general">{% translate "Общие положения" %}</a></li>
+        <li><a href="#operator">{% translate "Оператор" %}</a></li>
+        <li><a href="#subjects">{% translate "Чьи данные обрабатываются" %}</a></li>
+        <li><a href="#purposes">{% translate "Цели, данные, основания и сроки" %}</a></li>
+        <li><a href="#cookies">Cookie</a></li>
+        <li><a href="#actions">{% translate "Действия с данными" %}</a></li>
+        <li><a href="#transfer">{% translate "Передача и место хранения" %}</a></li>
+        <li><a href="#access">{% translate "Кто видит данные" %}</a></li>
+        <li><a href="#rights">{% translate "Права пользователя" %}</a></li>
+        <li><a href="#security">{% translate "Меры защиты" %}</a></li>
+        <li><a href="#changes">{% translate "Изменение политики" %}</a></li>
+      </ol>
+      <p class="terms__toc-more">
+        <a href="{% url 'core:consent' %}">{% translate "Согласие на обработку персональных данных" %}</a>
+        <a href="{% url 'core:terms' %}">{% translate "Условия использования" %}</a>
+      </p>
+    </aside>
+  </div>
+
+</div>
+{% endblock %}

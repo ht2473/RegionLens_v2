@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% comment %}
+  Условия использования: нумерованные разделы колонкой, справа — оглавление. Сведения
+  о пользователях — в политике обработки персональных данных (core/privacy.html).
+{% endcomment %}
+
+{% block meta_description %}{% translate "Условия использования RegionLens: данные и ссылка на источник, расчёты, программный интерфейс, учётная запись, недопустимые действия и ответственность." %}{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "Условия использования" %}</h1>
+      <p class="page-intro__lead">
+        {% translate "Правила пользования сайтом RegionLens, его данными и расчётами." %}
+      </p>
+      <p class="terms__revision">
+        {% blocktranslate trimmed with date=revision|date:"d.m.Y" %}Редакция от {{ date }}{% endblocktranslate %}
+      </p>
+    </div>
+  </header>
+
+  <div class="about">
+    <div class="about__main">
+
+      <section class="about__section" id="general" aria-labelledby="terms-general">
+        <h2 class="about__title" id="terms-general"><span class="terms__number">1.</span> {% translate "Общие положения" %}</h2>
+        <ol class="terms-list terms-list--numbered">
+          <li>
+            {% blocktranslate trimmed with url=site_url %}
+              Сайт RegionLens ({{ url }}) — учебный проект, выполненный в рамках магистерской
+              работы: анализ и визуализация социально-экономических показателей регионов
+              России по открытым данным.
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% blocktranslate trimmed with author=project.author %}
+              Сайт ведёт <span lang="ru">{{ author }}</span> (далее — автор). Он же — оператор
+              персональных данных пользователей.
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% blocktranslate trimmed %}
+              Смотреть, считать и выгружать данные можно без регистрации; пользуясь сайтом,
+              вы принимаете эти условия. Учётная запись создаётся после отдельного согласия
+              с условиями и отдельного согласия на обработку персональных данных.
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% url 'core:privacy' as privacy_url %}
+            {% url 'core:consent' as consent_url %}
+            {% blocktranslate trimmed %}
+              Какие сведения о пользователях хранятся, зачем и как долго, описано
+              в <a href="{{ privacy_url }}">политике обработки персональных данных</a>;
+              текст согласия — на странице <a href="{{ consent_url }}">«Согласие на обработку
+              персональных данных»</a>.
+            {% endblocktranslate %}
+          </li>
+        </ol>
+      </section>
+
+      <section class="about__section" id="data" aria-labelledby="terms-data">
+        <h2 class="about__title" id="terms-data"><span class="terms__number">2.</span> {% translate "Данные и ссылка на источник" %}</h2>
+        <div class="prose">
+          <p>
+            {% blocktranslate trimmed %}
+              Данные сайта взяты из открытых источников. Их можно копировать, публиковать
+              и перерабатывать — в учебных и научных работах, статьях, программах, — указывая
+              источник. Условия каждого источника:
+            {% endblocktranslate %}
+          </p>
+        </div>
+        <div class="data-table-wrapper terms__sources">
+          <table class="data-table">
+            <caption class="visually-hidden">{% translate "Условия источников данных" %}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{% translate "Источник" %}</th>
+                <th scope="col">{% translate "Издатель" %}</th>
+                <th scope="col">{% translate "Условия" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><a href="{{ data_source.url }}" rel="noopener noreferrer" lang="ru">{{ data_source.title }}</a></td>
+                <td>{{ data_source.origin }}; {% translate "обработка" %} — «<span lang="ru">{{ data_source.processor }}</span>»</td>
+                <td>{{ data_source.license }}</td>
+              </tr>
+              {% for source in source_terms %}
+                <tr>
+                  <td><a href="{{ source.url }}" rel="noopener noreferrer">{{ source.title }}</a></td>
+                  <td>{{ source.publisher }}</td>
+                  <td>{{ source.licence }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <p class="about__note">{% translate "Ссылка на набор данных:" %}</p>
+        <p class="about__cite">
+          «<span lang="ru">{{ data_source.title }}</span>» // {{ data_source.origin }};
+          {% translate "обработка" %}: «<span lang="ru">{{ data_source.processor }}</span>».
+          URL: {{ data_source.url }}
+        </p>
+        <div class="prose">
+          <p>
+            {% blocktranslate trimmed %}
+              Документы CSV, XLSX и PDF, выгруженные с сайта, называют источник значений
+              в реквизитах. Готовую ссылку на вид экрана с датой обращения даёт кнопка
+              «Ссылка» над картой, рейтингом и таблицей.
+            {% endblocktranslate %}
+          </p>
+        </div>
+        <p class="about__links terms__more">
+          <a href="{% url 'catalog:sources' %}">{% translate "Источники данных: издания, выпуски, продолжение рядов" %}</a>
+        </p>
+      </section>
+
+      <section class="about__section" id="calculations" aria-labelledby="terms-calculations">
+        <h2 class="about__title" id="terms-calculations"><span class="terms__number">3.</span> {% translate "Расчёты RegionLens" %}</h2>
+        <div class="prose">
+          <p>
+            {% blocktranslate trimmed %}
+              Рейтинги, оценки «лучше» и «хуже», изменения в реальном выражении, продолжение
+              рядов по изданиям Росстата, меры неравенства и индексы рассчитаны RegionLens
+              по данным источников и официальной статистикой не являются. В публикации их
+              называют расчётом по данным источника, например: «расчёт RegionLens по данным
+              Росстата».
+            {% endblocktranslate %}
+          </p>
+          <p>
+            {% url 'content:methodology' as methodology_url %}
+            {% blocktranslate trimmed with url=methodology_url %}
+              Как получено каждое значение, описано в <a href="{{ url }}">методике расчётов</a>.
+            {% endblocktranslate %}
+          </p>
+        </div>
+      </section>
+
+      <section class="about__section" id="api" aria-labelledby="terms-api">
+        <h2 class="about__title" id="terms-api"><span class="terms__number">4.</span> {% translate "Программный интерфейс" %}</h2>
+        <ul class="terms-list">
+          <li>{% translate "Интерфейс открыт без ключа и без входа и работает только на чтение." %}</li>
+          <li>
+            {% blocktranslate trimmed with rate=api_rate %}
+              Предел — {{ rate }} с одного адреса. При превышении возвращается ответ 429
+              с числом секунд до следующей попытки.
+            {% endblocktranslate %}
+          </li>
+          <li>{% translate "Данные интерфейса используются на тех же условиях, что и данные сайта: со ссылкой на источник." %}</li>
+        </ul>
+        <p class="about__links terms__more">
+          <a href="{% url 'api:docs' %}">{% translate "Описание программного интерфейса" %}</a>
+        </p>
+      </section>
+
+      <section class="about__section" id="account" aria-labelledby="terms-account">
+        <h2 class="about__title" id="terms-account"><span class="terms__number">5.</span> {% translate "Учётная запись" %}</h2>
+        <ul class="terms-list">
+          <li>
+            {% blocktranslate trimmed %}
+              Учётная запись нужна, чтобы сохранять регионы, показатели и виды экрана
+              и видеть свои обращения. При регистрации указываются адрес почты, имя и пароль.
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% blocktranslate trimmed %}
+              Пароль хранится только в виде хэша. Вход с одноразовым кодом включается
+              в разделе «Безопасность»; для панели управления он обязателен.
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% blocktranslate trimmed %}
+              Пользователь хранит свой пароль в тайне и сообщает автору, если учётной записью
+              воспользовался кто-то другой.
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% url 'accounts:data' as data_url %}
+            {% blocktranslate trimmed with url=data_url %}
+              Учётная запись удаляется в разделе <a href="{{ url }}">«Мои данные»</a> после
+              подтверждения паролем. Удаление учётной записи — отзыв согласия на обработку
+              персональных данных.
+            {% endblocktranslate %}
+          </li>
+        </ul>
+      </section>
+
+      <section class="about__section" id="prohibited" aria-labelledby="terms-prohibited">
+        <h2 class="about__title" id="terms-prohibited"><span class="terms__number">6.</span> {% translate "Недопустимые действия" %}</h2>
+        <ul class="terms-list">
+          <li>{% translate "Обходить предел обращений к интерфейсу, в том числе сменой адресов." %}</li>
+          <li>
+            {% blocktranslate trimmed %}
+              Собирать страницы сайта программами в обход программного интерфейса и выгрузок:
+              набор целиком доступен у «Если быть точным», ряды и рейтинги — документами
+              CSV и XLSX с сайта.
+            {% endblocktranslate %}
+          </li>
+          <li>{% translate "Пытаться получить доступ к чужим учётным записям, панели управления и сведениям о пользователях." %}</li>
+          <li>{% translate "Отправлять через форму обращения рекламу, массовые и автоматические сообщения." %}</li>
+          <li>{% translate "Выдавать расчёты RegionLens за официальную статистику." %}</li>
+        </ul>
+        <div class="prose">
+          <p>{% translate "Учётная запись, с которой нарушаются эти условия, может быть заблокирована." %}</p>
+        </div>
+      </section>
+
+      <section class="about__section" id="warranty" aria-labelledby="terms-warranty">
+        <h2 class="about__title" id="terms-warranty"><span class="terms__number">7.</span> {% translate "Ограничение ответственности" %}</h2>
+        <ul class="terms-list">
+          <li>
+            {% blocktranslate trimmed %}
+              Значения берутся из изданий источников; рассчитанные сайтом помечены «расчёт».
+              Источник может ошибиться или пересмотреть значение, а разбор его таблиц —
+              дать сбой. Прежние значения видны в «Пересмотрах».
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% blocktranslate trimmed %}
+              Предварительные значения помечены «предв.» и меняются, когда источник
+              их уточняет.
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% blocktranslate trimmed %}
+              Сайт может быть недоступен, а данные и расчёты — меняться без предупреждения.
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% blocktranslate trimmed %}
+              Автор не отвечает за решения, принятые на основе данных и расчётов сайта.
+              Если от точности значения что-то зависит, его сверяют с изданием источника.
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% url 'feedback:create' as feedback_url %}
+            {% blocktranslate trimmed with url=feedback_url %}
+              О найденной ошибке можно написать через <a href="{{ url }}">форму обращения</a>.
+            {% endblocktranslate %}
+          </li>
+        </ul>
+      </section>
+
+      <section class="about__section" id="code" aria-labelledby="terms-code">
+        <h2 class="about__title" id="terms-code"><span class="terms__number">8.</span> {% translate "Исходный код и тексты" %}</h2>
+        <div class="prose">
+          <p>
+            {% blocktranslate trimmed with url=project.repository_url %}
+              Исходный код сайта открыт по лицензии MIT: <a href="{{ url }}" rel="noopener noreferrer">репозиторий</a>.
+            {% endblocktranslate %}
+          </p>
+          <p>{% translate "Тексты методики и глоссария можно цитировать со ссылкой на сайт." %}</p>
+        </div>
+      </section>
+
+      <section class="about__section" id="changes" aria-labelledby="terms-changes">
+        <h2 class="about__title" id="terms-changes"><span class="terms__number">9.</span> {% translate "Изменение условий" %}</h2>
+        <div class="prose">
+          <p>
+            {% blocktranslate trimmed %}
+              Новая редакция публикуется на этой странице с датой; продолжая пользоваться
+              сайтом, вы принимаете её. Если меняется согласие на обработку персональных
+              данных, новое согласие запрашивается отдельно.
+            {% endblocktranslate %}
+          </p>
+        </div>
+      </section>
+
+      <section class="about__section" id="law" aria-labelledby="terms-law">
+        <h2 class="about__title" id="terms-law"><span class="terms__number">10.</span> {% translate "Применимое право" %}</h2>
+        <div class="prose">
+          <p>{% translate "К условиям и отношениям, связанным с сайтом, применяется законодательство Российской Федерации." %}</p>
+        </div>
+      </section>
+
+      <section class="about__section" id="contacts" aria-labelledby="terms-contacts">
+        <h2 class="about__title" id="terms-contacts"><span class="terms__number">11.</span> {% translate "Контакты" %}</h2>
+        <div class="prose">
+          <p>
+            {% url 'feedback:create' as feedback_url %}
+            {% blocktranslate trimmed with author=project.author url=feedback_url email=project.author_email %}
+              Автор сайта — <span lang="ru">{{ author }}</span>. Вопросы об условиях
+              и сообщения об ошибках — через <a href="{{ url }}">форму обращения</a> или по адресу
+              <a href="mailto:{{ email }}">{{ email }}</a>.
+            {% endblocktranslate %}
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <aside class="about__figures terms__toc" data-toc aria-labelledby="terms-toc">
+      <div class="terms__toc-title" id="terms-toc">{% translate "На странице" %}</div>
+      <ol class="terms__toc-list">
+        <li><a href="#general">{% translate "Общие положения" %}</a></li>
+        <li><a href="#data">{% translate "Данные и ссылка на источник" %}</a></li>
+        <li><a href="#calculations">{% translate "Расчёты RegionLens" %}</a></li>
+        <li><a href="#api">{% translate "Программный интерфейс" %}</a></li>
+        <li><a href="#account">{% translate "Учётная запись" %}</a></li>
+        <li><a href="#prohibited">{% translate "Недопустимые действия" %}</a></li>
+        <li><a href="#warranty">{% translate "Ограничение ответственности" %}</a></li>
+        <li><a href="#code">{% translate "Исходный код и тексты" %}</a></li>
+        <li><a href="#changes">{% translate "Изменение условий" %}</a></li>
+        <li><a href="#law">{% translate "Применимое право" %}</a></li>
+        <li><a href="#contacts">{% translate "Контакты" %}</a></li>
+      </ol>
+      <p class="terms__toc-more">
+        <a href="{% url 'core:privacy' %}">{% translate "Политика обработки персональных данных" %}</a>
+        <a href="{% url 'core:consent' %}">{% translate "Согласие на обработку персональных данных" %}</a>
+      </p>
+    </aside>
+  </div>
+
+</div>
+{% endblock %}

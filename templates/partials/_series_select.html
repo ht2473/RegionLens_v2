@@ -1,0 +1,51 @@
+{% load i18n series_picker %}
+{# Выбор ряда: основной набор, затем пригодные ряды по разделам. #}
+{% series_choice series as choice %}
+<div class="field">
+  <label class="field__label" id="series-select-label" for="series-select">
+    {% translate "Показатель" %}
+  </label>
+  {# <rl-combobox> — выбор с поиском; в странице только выбранный ряд, перечень догружается. #}
+  {# Без сценариев перечень раскрывается ссылкой ниже. #}
+  <rl-combobox class="combobox"
+               data-source="{% series_options_url %}"
+               data-loading="{% translate 'Загрузка перечня…' %}"
+               data-search="{% translate 'Поиск по названию или разделу' %}"
+               data-empty="{% translate 'Ничего не найдено' %}"
+               data-placeholder="{% translate 'Ряд не выбран' %}"
+               data-found="{% translate 'найдено' %}"
+               data-total="{% translate 'всего' %}"
+               data-unnormalised="{% translate 'абс.' %}"
+               data-unnormalised-hint="{% translate 'Величина не приведена к численности населения или иной основе' %}">
+    <select class="select" id="series-select" name="series">
+      {% if request.GET.series_list %}
+        {% include "partials/_series_options.html" with selected_key=series.key %}
+      {% elif series %}
+        <optgroup label="{{ choice.group }}">
+          <option value="{{ series.key }}"{% if choice.unnormalised %} data-unnormalised="1"{% endif %} selected>{{ choice.title }}</option>
+        </optgroup>
+      {% endif %}
+    </select>
+  </rl-combobox>
+  {% if not request.GET.series_list %}
+    <noscript>
+      <a class="field__hint" href="{% querystring series_list=1 %}">{% translate "Показать весь перечень рядов" %}</a>
+    </noscript>
+  {% endif %}
+  <span class="field__hint">
+    {% translate "Показаны ряды с покрытием не менее 80 % субъектов и не менее десяти лет" %}
+  </span>
+
+  {# Предупреждение о ненормированной величине — подсказка, а не запрет. #}
+  {% if choice and choice.unnormalised %}
+    <div class="callout callout--warning" style="margin-top: var(--space-3)">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Величина не приведена к численности" %}</div>
+        <p style="margin: 0">
+          {% translate "Сравнение субъектов по этому ряду показывает, где больше населения и крупнее экономика, а не где лучше положение дел. Для сопоставления регионов выберите душевой или относительный показатель." %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+</div>

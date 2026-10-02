@@ -1,0 +1,40 @@
+{% load i18n formatting %}
+{% comment %}
+  Легенда живой карты: направление — над полосой, под ней — границы классов у стыков.
+  При смене года полосу и границы переписывает static/js/elements/live-map.js (paintLegend).
+{% endcomment %}
+<div class="live-map__legend">
+  <p class="live-map__label">
+    {% translate "Классы шкалы · в каждом поровну регионов" %}
+  </p>
+  {# Направление — стрелками: в тёмной теме шкала светлеет в обратную сторону. #}
+  <p class="live-legend__ends">
+    <span>
+      ← {% translate "меньше" %}{% if live.ends.low %} ·
+      <span class="verdict verdict--{{ live.ends.low_tone }}">{{ live.ends.low }}</span>{% endif %}
+    </span>
+    <span>
+      {% translate "больше" %}{% if live.ends.high %} ·
+      <span class="verdict verdict--{{ live.ends.high_tone }}">{{ live.ends.high }}</span>{% endif %} →
+    </span>
+  </p>
+  <ol class="live-legend" data-live="legend">
+    {% for item in live.frame.legend %}
+      <li class="live-legend__item" title="{{ item.range }}">
+        <span class="live-legend__swatch" style="background-color: var({{ item.colour }})"></span>
+      </li>
+    {% endfor %}
+  </ol>
+  <ol class="live-legend__bounds numeric" data-live="bounds">
+    {% with count=live.frame.legend|length %}
+      {% for item in live.frame.legend %}
+        {% if forloop.first %}<li style="--at: 0%">{{ item.lower }}</li>{% endif %}
+        <li style="--at: {% widthratio forloop.counter count 100 %}%">{{ item.upper }}</li>
+      {% endfor %}
+    {% endwith %}
+  </ol>
+  <p class="live-legend__missing" data-live="missing"{% if not live.frame.missing %} hidden{% endif %}>
+    <span class="live-legend__swatch live-legend__swatch--no-data"></span>
+    {% translate "нет данных" %}: <span class="numeric" data-live="missing-count">{{ live.frame.missing }}</span>
+  </p>
+</div>

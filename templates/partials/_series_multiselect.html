@@ -1,0 +1,19 @@
+{% load i18n %}
+{# Выбор нескольких рядов; перечень свёрнут и догружается (_series_picker.html). #}
+<div class="filter-rail__group">
+  {# Счётчик пересчитывает браузер: заголовок не приходит ни с одним из фрагментов. #}
+  <div class="filter-rail__title">
+    {% translate "Показатели" %}
+    <span class="text-muted" data-count-of="#series-picker-frame"
+          data-count-max="{{ max_series }}">({{ selected_keys|length }}/{{ max_series }})</span>
+  </div>
+
+  {% include "partials/_series_picker.html" %}
+
+  <span class="field__hint">
+    {% blocktranslate trimmed with limit=max_series least=min_series %}
+      Учитываются первые {{ limit }} отмеченных рядов; для расчёта нужно
+      не менее {{ least }}.
+    {% endblocktranslate %}
+  </span>
+</div>

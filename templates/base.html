@@ -1,0 +1,91 @@
+{% load i18n static i18n_urls seo %}<!DOCTYPE html>
+{# Каркас страницы: стили, сценарии, шапка, «хлебные крошки», подвал. #}
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="{{ project.author }}">
+  <meta name="description" content="{% block meta_description %}{{ project.tagline }}{% endblock %}">
+  <meta name="color-scheme" content="light dark">
+
+  <title>{% block title %}{% if page_title %}{{ page_title }} — {% endif %}{{ project.name }}{% endblock %}</title>
+
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+
+  {# Карточка ссылки для переписки; адрес обложки — полный: её читает сторонняя служба. #}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ project.name }}">
+  <meta property="og:locale" content="{% og_locale LANGUAGE_CODE %}">
+  <meta property="og:url" content="{{ request.build_absolute_uri }}">
+  <meta property="og:title" content="{% block og_title %}{% if page_title %}{{ page_title }}{% else %}{{ project.name }}{% endif %}{% endblock %}">
+  <meta property="og:description" content="{{ page_description|default:project.tagline }}">
+  <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-cover.png' %}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+
+  {# Машиночитаемое описание страницы, собранное представлением. #}
+  {% json_ld structured_data %}
+
+  {# Канонический адрес и языковые версии страницы. #}
+  <link rel="canonical" href="{% canonical_url %}">
+  {% alternate_links as language_versions %}
+  {% for version in language_versions %}
+    <link rel="alternate" hreflang="{{ version.code }}" href="{{ version.url }}">
+  {% endfor %}
+
+  {# Шрифты — заранее, чтобы первый экран не рисовался системным. #}
+  <link rel="preload" href="{% static 'fonts/onest-cyrillic.woff2' %}" as="font" type="font/woff2" crossorigin>
+
+  <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+  <link rel="stylesheet" href="{% static 'css/components.css' %}">
+  {% block extra_css %}{% endblock %}
+
+  {# Тема — до отрисовки, без вспышки светлого фона. #}
+  <script src="{% static 'js/theme-init.js' %}"></script>
+
+  <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+  <script type="module" src="{% static 'js/app.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</head>
+
+{# Адрес библиотеки графиков — для догрузки с первым графиком; подписи — здесь ради перевода. #}
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+      data-chart-library="{% static 'vendor/echarts.min.js' %}"
+      data-chart-save="{% translate 'Сохранить график картинкой' %}"
+      data-chart-save-short="{% translate 'PNG' %}"
+      data-map-save="{% translate 'Сохранить карту чертежом SVG' %}"
+      data-scroll-back="{% translate 'Прокрутить назад' %}"
+      data-scroll-forward="{% translate 'Прокрутить вперёд' %}">
+  <a class="skip-link" href="#main-content">{% translate "Перейти к содержимому" %}</a>
+
+  {# Объявление программе чтения с экрана о заменённом фрагменте (static/js/lib/announce.js). #}
+  <p class="visually-hidden" id="live-status" role="status" aria-live="polite"></p>
+
+  {% include "partials/_icons.html" %}
+
+  <div class="app-shell">
+    {% include "partials/_header.html" %}
+    {# У витрины пути нет. #}
+    {% if breadcrumbs %}{% include "partials/_breadcrumbs.html" %}{% endif %}
+
+    <main class="app-main" id="main-content" tabindex="-1">
+      {% block content %}{% endblock %}
+    </main>
+
+    {% include "partials/_footer.html" %}
+  </div>
+
+  {% include "partials/_palette.html" %}
+
+  {% if messages %}
+    <div class="toast-region" role="status" aria-live="polite">
+      {% for message in messages %}
+        <div class="toast toast--{{ message.tags|default:'info' }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</body>
+</html>

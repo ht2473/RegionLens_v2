@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% load i18n static formatting %}
+
+{# Витрина: мой регион, живая карта, вопросы с готовым ответом, главное о стране и входы вглубь (showcase.py). #}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/live-map.css' %}">
+  <link rel="stylesheet" href="{% static 'css/home.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+  {# Модуль живой карты загружается вместе с входным, а не после него. #}
+  <link rel="modulepreload" href="{% static 'js/elements/live-map.js' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page home">
+
+  {% if not warehouse_ready %}
+    <div class="callout callout--warning home__notice">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Данные ещё не загружены" %}</div>
+        <p>{% translate "Страница заработает, когда администратор загрузит набор данных." %}</p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if my_region_brief %}
+    {% with brief=my_region_brief %}
+      <section class="home-region" aria-labelledby="home-region-title">
+        <div class="home-region__text">
+          <p class="home-region__kicker">
+            {% translate "Мой регион" %}{% if brief.territory.parent %} · {{ brief.territory.parent.name }}{% endif %}
+          </p>
+          <h2 class="home-region__title" id="home-region-title">
+            <a href="{{ brief.href }}">{{ brief.territory.name }}</a>
+          </h2>
+          {% if brief.summary %}
+            <ul class="home-region__summary">
+              {% for line in brief.summary|slice:":2" %}<li>{{ line }}</li>{% endfor %}
+            </ul>
+          {% endif %}
+          <a class="button button--secondary button--sm" href="{{ brief.href }}">
+            {% translate "Паспорт региона" %}
+            <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+          </a>
+        </div>
+        {% if brief.now %}
+          <dl class="home-region__now" aria-label="{% translate 'Что сейчас' %}">
+            {% for row in brief.now %}
+              <div class="home-region__figure">
+                <dt>{{ row.title }}</dt>
+                <dd class="home-region__value">
+                  <span class="numeric">{{ row.value }}</span>
+                  <span class="home-region__unit">{{ row.unit }}</span>
+                </dd>
+                <dd class="home-region__period">
+                  {{ row.period|capfirst }}{% if row.change %} · <span class="verdict verdict--{{ row.tone }}">{{ row.change }}</span>{% endif %}
+                </dd>
+              </div>
+            {% endfor %}
+          </dl>
+        {% endif %}
+      </section>
+    {% endwith %}
+  {% endif %}
+
+  {% if live %}
+    {% include "core/partials/_live_map.html" %}
+  {% else %}
+    <h1 class="home__title">{% translate "Социально-экономические показатели регионов России" %}</h1>
+  {% endif %}
+
+  {# --- Вопросы с готовым ответом ------------------------------------------------------ #}
+  {% if questions %}
+    <section class="page-section" aria-labelledby="home-questions">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="home-questions">{% translate "С чего начать" %}</h2>
+        <a href="{% url 'catalog:indicator-list' %}">{% translate "Все основные показатели по темам" %}</a>
+      </div>
+      <ul class="question-grid">
+        {% for card in questions %}
+          <li>
+            <a class="question-card" href="{{ card.href }}">
+              <span class="question-card__title">{{ card.series.question }}</span>
+              <ol class="question-card__answer">
+                {% for row in card.leaders %}
+                  <li>
+                    <span class="question-card__place numeric" aria-hidden="true">{{ forloop.counter }}</span>
+                    <span class="question-card__name">{{ row.name }}</span>
+                    <span class="question-card__value numeric">{{ row.value }}</span>
+                  </li>
+                {% endfor %}
+              </ol>
+              <span class="question-card__foot">
+                <span>{{ card.series.unit_label }} · {{ card.year }}</span>
+                <span class="question-card__more">
+                  {% translate "Весь рейтинг" %}
+                  <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+                </span>
+              </span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  {# --- Россия: главное ------------------------------------------------------------------ #}
+  {% if tiles %}
+    <section class="page-section" aria-labelledby="home-country">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="home-country">{% translate "Россия: главное" %}</h2>
+        <p class="page-section__note">{% translate "Последний год с данными и изменение к предыдущему" %}</p>
+      </div>
+      <ul class="stat-grid">
+        {% for tile in tiles %}
+          <li class="stat-tile">
+            <a class="stat-tile__title" href="{{ tile.href }}">{{ tile.series.short_title }}</a>
+            <p class="stat-tile__value">
+              <span class="numeric">{{ tile.value }}</span>
+              <span class="stat-tile__unit">{{ tile.series.unit_label }}</span>{% include "catalog/partials/_origin_mark.html" with origin=tile.origin %}
+            </p>
+            <div class="stat-tile__foot">
+              <p class="stat-tile__change">
+                {% if tile.change %}
+                  <span class="stat-tile__delta numeric verdict verdict--{{ tile.tone }}">{{ tile.change }}</span>
+                  <span class="stat-tile__period">
+                    {% if tile.nominal %}
+                      {% blocktranslate trimmed with year=tile.year previous=tile.previous_year nominal=tile.nominal %}
+                        реально, {{ year }} к {{ previous }}; в рублях {{ nominal }}
+                      {% endblocktranslate %}
+                    {% else %}
+                      {% blocktranslate trimmed with year=tile.year previous=tile.previous_year %}
+                        {{ year }} к {{ previous }}
+                      {% endblocktranslate %}
+                    {% endif %}
+                  </span>
+                {% elif tile.break_year %}
+                  <span class="stat-tile__period">
+                    {% blocktranslate trimmed with year=tile.break_year %}
+                      к прошлому году не сравнивается: разрыв сопоставимости в {{ year }} году
+                    {% endblocktranslate %}
+                  </span>
+                {% else %}
+                  <span class="stat-tile__period">{{ tile.year }}</span>
+                {% endif %}
+              </p>
+              {% if tile.spark %}
+                <svg class="sparkline" viewBox="0 0 {{ tile.spark.width }} {{ tile.spark.height }}"
+                     preserveAspectRatio="none" aria-hidden="true">
+                  <path class="sparkline__line" d="{{ tile.spark.path }}"></path>
+                  <path class="sparkline__end" d="M{{ tile.spark.end_x }} {{ tile.spark.end_y }}h0"></path>
+                </svg>
+              {% endif %}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+      <p class="page-section__footnote">
+        {% blocktranslate trimmed %}
+          Цвет изменения — оценка, а не направление: рост безработицы или бедности отмечен
+          как ухудшение. Изменение процентных величин — в процентных пунктах.
+        {% endblocktranslate %}
+      </p>
+    </section>
+  {% endif %}
+
+  {# --- Входы вглубь --------------------------------------------------------------------- #}
+  <section class="page-section entry-grid" aria-label="{% translate 'Дальше' %}">
+    <a class="entry-card" href="{% url 'maps:choropleth' %}">
+      <span class="entry-card__kicker">{% translate "Исследовать" %}</span>
+      <span class="entry-card__title">{% translate "Пять способов посмотреть на показатель" %}</span>
+      <span class="entry-card__text">
+        {% blocktranslate trimmed %}
+          Карта, динамика, рейтинг, распределение и таблица — над одним выбором показателя,
+          регионов и года. Вид экрана сохраняется в ссылке.
+        {% endblocktranslate %}
+      </span>
+    </a>
+    <a class="entry-card" href="{% url 'analytics:index' %}">
+      <span class="entry-card__kicker">{% translate "Анализ" %}</span>
+      <span class="entry-card__title">{% translate "Инструменты для исследователя" %}</span>
+      <span class="entry-card__text">
+        {% blocktranslate trimmed %}
+          Неравенство и сближение регионов, связи показателей, пространственные
+          закономерности, интегральные индексы и пересмотры статистики.
+        {% endblocktranslate %}
+      </span>
+    </a>
+    <a class="entry-card" href="{% url 'catalog:dataset' %}">
+      <span class="entry-card__kicker">{% translate "О данных" %}</span>
+      <span class="entry-card__title">{% translate "Где данные требуют оговорки" %}</span>
+      <span class="entry-card__text">
+        {% if summary %}
+          {% blocktranslate trimmed with breaks=break_count|ru_number:0 revisions=summary.revisions|ru_number:0 %}
+            Отметок о разрывах сопоставимости — {{ breaks }}, пересмотренных значений — {{ revisions }}.
+            Пропуск не соединяется линией, а сравнение через разрыв не проводится.
+          {% endblocktranslate %}
+        {% else %}
+          {% blocktranslate trimmed with breaks=break_count|ru_number:0 %}
+            Отметок о разрывах сопоставимости — {{ breaks }}. Пропуск не соединяется линией,
+            а сравнение через разрыв не проводится.
+          {% endblocktranslate %}
+        {% endif %}
+      </span>
+    </a>
+  </section>
+
+</div>
+
+{# Карточка региона (popover) — вне блока карты, чтобы пережить смену показателя. #}
+<div class="region-card" id="region-card" popover role="dialog"
+     aria-label="{% translate 'Карточка региона' %}">
+  <div class="region-card__body" data-region-card-body></div>
+</div>
+{% endblock %}

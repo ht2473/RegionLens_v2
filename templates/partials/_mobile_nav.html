@@ -1,0 +1,92 @@
+{% load i18n %}
+{# Навигация для узких экранов — <dialog>; закрытие кнопкой data-dialog-close, без формы. #}
+<dialog class="mobile-nav" id="mobile-nav" aria-label="{% translate 'Меню разделов' %}">
+  <div class="mobile-nav__header">
+    <span class="app-header__brand">{{ project.name }}</span>
+    <button type="button" class="icon-button" data-dialog-close
+            aria-label="{% translate 'Закрыть меню' %}">
+      <svg aria-hidden="true"><use href="#icon-close"></use></svg>
+    </button>
+  </div>
+
+  <ul class="mobile-nav__list">
+    {% for item in main_navigation %}
+      <li>
+        <a class="mobile-nav__link {% if item.active %}is-active{% endif %}" href="{{ item.url }}">
+          {{ item.title }}
+        </a>
+      </li>
+      {% if item.children %}
+        <li>
+          <ul class="mobile-nav__list mobile-nav__list--nested">
+            {% for child in item.children %}
+              <li>
+                <a class="mobile-nav__link {% if child.active %}is-active{% endif %}"
+                   href="{{ child.url }}"
+                   {% if child.active %}aria-current="page"{% endif %}>
+                  <span class="text-secondary">{{ child.title }}</span>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+
+  {# Поиск и учётная запись, не поместившиеся в шапку. #}
+  <div class="mobile-nav__footer">
+    <button type="button" class="button button--secondary button--block"
+            data-dialog-open="palette" aria-haspopup="dialog">
+      {% translate "Поиск по показателям и регионам" %}
+    </button>
+
+    <div class="mobile-nav__theme">
+      <span class="mobile-nav__theme-label">{% translate "Оформление" %}</span>
+      <div class="theme-switch" role="group" aria-label="{% translate 'Оформление' %}">
+        <button type="button" class="theme-switch__option" data-theme-choice="system"
+                aria-pressed="false" aria-label="{% translate 'Как на устройстве' %}">
+          <svg aria-hidden="true"><use href="#icon-theme-system"></use></svg>
+        </button>
+        <button type="button" class="theme-switch__option" data-theme-choice="light"
+                aria-pressed="false" aria-label="{% translate 'Светлое оформление' %}">
+          <svg aria-hidden="true"><use href="#icon-sun"></use></svg>
+        </button>
+        <button type="button" class="theme-switch__option" data-theme-choice="dark"
+                aria-pressed="false" aria-label="{% translate 'Тёмное оформление' %}">
+          <svg aria-hidden="true"><use href="#icon-moon"></use></svg>
+        </button>
+      </div>
+    </div>
+
+    {% if my_region %}
+      <a class="mobile-nav__link" href="{% url 'catalog:territory-detail' my_region.slug %}">
+        {% blocktranslate trimmed with name=my_region.name %}Мой регион: {{ name }}{% endblocktranslate %}
+      </a>
+    {% endif %}
+
+    {% if request.user.is_authenticated %}
+      <a class="mobile-nav__link" href="{% url 'accounts:dashboard' %}">
+        {% translate "Личный кабинет" %}
+      </a>
+      {% if request.user.has_panel_access %}
+        <a class="mobile-nav__link" href="{% url 'dashboard:index' %}">
+          {% translate "Панель управления" %}
+        </a>
+      {% endif %}
+      <form method="post" action="{% url 'accounts:logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="button button--ghost button--block">
+          {% translate "Выйти" %}
+        </button>
+      </form>
+    {% else %}
+      <a class="button button--primary button--block" href="{% url 'accounts:login' %}">
+        {% translate "Войти" %}
+      </a>
+      <a class="mobile-nav__link" href="{% url 'accounts:register' %}">
+        {% translate "Зарегистрироваться" %}
+      </a>
+    {% endif %}
+  </div>
+</dialog>

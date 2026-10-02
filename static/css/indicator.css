@@ -1,0 +1,658 @@
+/* Страница показателя: шапка с главным, живая карта с перечнями, ход по стране, сведения о ряде. */
+
+.indicator {
+  padding-top: var(--space-6);
+}
+
+.indicator__notice {
+  margin-bottom: var(--space-8);
+}
+
+/* Ссылка «дальше» в заголовке раздела и под перечнем. */
+.indicator-more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: var(--weight-semibold);
+}
+
+.indicator-more svg {
+  width: 15px;
+  height: 15px;
+}
+
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  height: 1.5rem;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background-color: var(--surface-sunken);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+/* --- Шапка: что это и главное --------------------------------------------------------- */
+
+.indicator-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+  gap: var(--space-8) var(--space-12);
+  align-items: start;
+  margin-bottom: var(--space-12);
+}
+
+.indicator-head--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.indicator-head__kicker {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.indicator-head__title {
+  margin: var(--space-2) 0 var(--space-3);
+  font-size: clamp(var(--text-2xl), 3.4vw, var(--text-4xl));
+  font-weight: var(--weight-bold);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+/* Формулировка сборника — для сверки с источником, мельче заголовка. */
+.indicator-head__source {
+  max-width: 80ch;
+  margin: 0 0 var(--space-5);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-muted);
+}
+
+/* Главное словами. */
+.indicator-head__lead {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 72ch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.indicator-head__lead li:first-child {
+  color: var(--text-primary);
+}
+
+.indicator-head__lead b {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* Состояние публикации ряда: прекращённая — с линейкой цвета внимания. */
+.indicator-head__status {
+  max-width: 72ch;
+  margin: var(--space-4) 0 0;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--border-strong);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.indicator-head__status b {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.indicator-head__status--stopped {
+  border-left-color: var(--attention);
+}
+
+.indicator-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+
+/* Плитка «Россия» — крупнее плиток паспорта. */
+.indicator-head__country {
+  margin-top: var(--space-6);
+}
+
+.indicator-head__country .stat-tile__value .numeric {
+  font-size: var(--text-4xl);
+}
+
+.indicator-head__country .sparkline {
+  width: 9rem;
+  height: 2.5rem;
+}
+
+.indicator-head__country-note {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+}
+
+/* --- Выбор разреза ------------------------------------------------------------------ */
+
+.indicator-variants {
+  margin: calc(-1 * var(--space-6)) 0 var(--space-12);
+}
+
+.indicator-variants__label {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.indicator-variants__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  max-width: 40rem;
+}
+
+.indicator-variants__form .select {
+  flex: 1 1 20rem;
+  min-width: 0;
+}
+
+/* --- Где больше, где меньше: живая карта ---------------------------------------------- */
+
+.indicator-map {
+  display: block;
+}
+
+.indicator-map__head [hidden] {
+  display: none;
+}
+
+.indicator-map__head b {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.indicator-map__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 23rem);
+  gap: var(--space-6) var(--space-8);
+  align-items: start;
+}
+
+.indicator-map__main,
+.indicator-map__side {
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+/* Легенда и «Что это значит?» под картой: легенда — шириной с саму шкалу, а не с карту. */
+.indicator-map__key {
+  display: grid;
+  grid-template-columns: minmax(0, 30rem) minmax(0, 1fr);
+  gap: var(--space-4) var(--space-8);
+  align-items: start;
+}
+
+/* Перечни крайних регионов. */
+.indicator-leaders {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.indicator-leaders--plain {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5) var(--space-8);
+}
+
+/* Сами перечни (.leader-list) — общий компонент в components.css. */
+
+/* --- Как менялся ----------------------------------------------------------------------- */
+
+.indicator-chart {
+  margin: 0;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+/* На узком холсте (NARROW_CHART) линии подписывает легенда библиотеки; под графиком —
+   только пояснение коридора. */
+.indicator-chart {
+  container-type: inline-size;
+}
+
+@container (width < 520px) {
+  .indicator-chart__key--line {
+    display: none;
+  }
+}
+
+.indicator-chart__caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-6);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.indicator-chart__key {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.indicator-chart__swatch {
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 0;
+  border-top: 2px solid var(--accent);
+}
+
+.indicator-chart__swatch--country {
+  border-top: 2px dashed var(--text-secondary);
+}
+
+.indicator-chart__swatch--band {
+  height: 0.75rem;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background-color: var(--accent-quiet);
+}
+
+.indicator-chart__hint {
+  flex-basis: 100%;
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+}
+
+/* Разрывы словами — под графиком. */
+.break-notes {
+  margin-top: var(--space-6);
+  scroll-margin-top: calc(var(--header-height) + var(--space-4));
+}
+
+.break-notes__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+}
+
+.break-notes__lead {
+  max-width: 80ch;
+  margin: 0 0 var(--space-3);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+.break-notes__list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.break-notes__item {
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.break-notes__year {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--attention);
+}
+
+.break-notes__kind {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-weight: var(--weight-semibold);
+}
+
+.break-notes__text {
+  max-width: 90ch;
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+/* --- О ряде и глубже -------------------------------------------------------------------- */
+
+.indicator-data {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-10) var(--space-12);
+  align-items: start;
+}
+
+.indicator-data .page-section__title {
+  margin-bottom: var(--space-4);
+}
+
+.about-list {
+  display: grid;
+  margin: 0;
+}
+
+.about-list > div {
+  display: grid;
+  grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.about-list dt {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.about-list dd {
+  margin: 0;
+  line-height: var(--leading-snug);
+}
+
+/* Ссылки внутри текста подчёркнуты: по цвету они отличаются от него меньше чем
+   3 : 1 (WCAG 1.4.1). */
+.indicator-head__lead a,
+.about-list dd a {
+  text-decoration: underline;
+}
+
+.about-list__note {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.about-list__code {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+/* Переходы вглубь — перечень в общей рамке. */
+.deep-links {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.deep-links li + li {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.deep-links__item {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  color: var(--text-primary);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.deep-links__item:hover {
+  background-color: var(--surface-sunken);
+  text-decoration: none;
+  color: var(--text-primary);
+}
+
+.deep-links__item:hover .deep-links__title {
+  color: var(--text-accent);
+}
+
+.deep-links__icon {
+  grid-row: 1 / 3;
+  align-self: center;
+  width: 20px;
+  height: 20px;
+  color: var(--text-accent);
+}
+
+.deep-links__title {
+  font-weight: var(--weight-semibold);
+}
+
+.deep-links__text {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* --- Источник и методика: под раскрытием ------------------------------------------------ */
+
+.source-blocks {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.source-block {
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.source-block__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 3.25rem;
+  padding: var(--space-3) var(--space-5);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  list-style: none;
+}
+
+.source-block__summary::-webkit-details-marker {
+  display: none;
+}
+
+.source-block__summary::after {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-inline-start: auto;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(45deg);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.source-block[open] .source-block__summary::after {
+  transform: rotate(-135deg);
+}
+
+.source-block__body {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0 var(--space-5) var(--space-5);
+}
+
+.source-block__lead,
+.source-block__more {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.source-note {
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.source-note__text {
+  max-width: 90ch;
+  margin: 0;
+  line-height: var(--leading-normal);
+}
+
+.source-note__meta {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* Пометка неофициального перевода примечаний Росстата на английской странице. */
+.translation-caveat {
+  max-width: 80ch;
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.translation-caveat a {
+  text-decoration: underline;
+}
+
+/* --- Узкие экраны ---------------------------------------------------------------------- */
+
+@media (max-width: 1180px) {
+  .indicator-head {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 18rem);
+    gap: var(--space-6) var(--space-8);
+  }
+
+  .indicator-map__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Одна колонка: поиск своего региона — над картой, перечни — под легендой. */
+  .indicator-map__main,
+  .indicator-map__side {
+    display: contents;
+  }
+
+  .indicator-map__main > *,
+  .indicator-map__side > * {
+    min-width: 0;
+  }
+
+  .indicator-map .live-map__find {
+    order: 1;
+  }
+
+  .indicator-map .live-map__figure {
+    order: 2;
+  }
+
+  .indicator-map .live-map__card {
+    order: 3;
+  }
+
+  .indicator-map__key {
+    order: 4;
+  }
+
+  .indicator-leaders {
+    order: 5;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5) var(--space-8);
+  }
+
+  .indicator-map__side > .indicator-more {
+    order: 6;
+  }
+}
+
+@media (max-width: 860px) {
+  .indicator-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .indicator-head__country {
+    margin-top: 0;
+  }
+
+  .indicator-data {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .indicator-head {
+    margin-bottom: var(--space-10);
+  }
+
+  .indicator-head__lead {
+    font-size: var(--text-md);
+  }
+
+  .indicator-map__key,
+  .indicator-leaders,
+  .indicator-leaders--plain {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .indicator-chart {
+    padding: var(--space-3);
+  }
+
+  .about-list > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+  }
+
+  .break-notes__item {
+    grid-template-columns: 3.25rem minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+}
+
+/* --- По месяцам: Россия год к году и карта последнего периода ------------------------------ */
+
+.month-block {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+.month-block__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+.month-block__legend {
+  margin-top: var(--space-3);
+}
+
+@media (max-width: 860px) {
+  .month-block {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

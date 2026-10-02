@@ -1,0 +1,34 @@
+{% load i18n %}
+{% comment %}
+  Быстрый переход (Ctrl+K) к показателю, региону или разделу; поиск — на сервере.
+  Окно <dialog> на весь экран и прозрачно: нажатие мимо рамки закрывает его (data-dialog-light).
+{% endcomment %}
+<dialog class="palette-dialog" id="palette" data-dialog-light
+        data-recent-title="{% translate 'Недавно открытое' %}"
+        aria-label="{% translate 'Быстрый переход' %}">
+  <div class="palette">
+    {# Подпись — атрибутом aria-label: видимая отняла бы место. #}
+    <input type="search" class="palette__input" autofocus
+           name="q" autocomplete="off" spellcheck="false"
+           aria-label="{% translate 'Поиск по показателям, регионам и разделам' %}"
+           placeholder="{% translate 'Показатель, регион или раздел…' %}"
+           hx-get="{% url 'catalog:quick-search' %}"
+           hx-trigger="input changed delay:200ms, search"
+           hx-target="#palette-results"
+           hx-indicator="#palette-indicator">
+
+    <div id="palette-results" class="palette__results">
+      <div class="palette__group-title">{% translate "Начните вводить запрос" %}</div>
+      <p class="palette__hint">
+        {% translate "Поиск ведётся по названиям показателей, разрезов и регионов." %}
+      </p>
+    </div>
+
+    <div class="palette__footer">
+      <span id="palette-indicator" class="htmx-indicator">{% translate "Поиск…" %}</span>
+      <span><kbd>↑</kbd> <kbd>↓</kbd> {% translate "выбор" %}</span>
+      <span><kbd>Enter</kbd> {% translate "перейти" %}</span>
+      <span><kbd>Esc</kbd> {% translate "закрыть" %}</span>
+    </div>
+  </div>
+</dialog>

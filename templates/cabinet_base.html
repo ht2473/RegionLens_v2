@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{# Каркас личного кабинета: заголовок, кто вошёл, вкладки разделов из apps/accounts/cabinet.py. #}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/cabinet.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page cabinet">
+
+  <header class="cabinet-head">
+    <div class="cabinet-head__text">
+      <p class="cabinet-head__kicker">{% translate "Личный кабинет" %}</p>
+      <h1 class="cabinet-head__title">{% block cabinet_title %}{{ page_title }}{% endblock %}</h1>
+      {% block cabinet_subtitle %}{% endblock %}
+    </div>
+
+    {% if cabinet_user %}
+      <div class="cabinet-user">
+        <p class="cabinet-user__name">{{ cabinet_user.name }}</p>
+        <p class="cabinet-user__meta">
+          <span>{{ cabinet_user.email }}</span>
+          <span class="cabinet-user__role">{{ cabinet_user.role }}</span>
+        </p>
+        {% if cabinet_user.manages %}
+          <a class="cabinet-user__manage" href="{% url 'dashboard:index' %}">
+            {% translate "Панель управления" %}
+            <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+          </a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </header>
+
+  <nav class="cabinet-tabs" aria-label="{% translate 'Разделы личного кабинета' %}">
+    {% for section in cabinet_sections %}
+      <a class="cabinet-tabs__tab" href="{{ section.url }}"
+         {% if section.active %}aria-current="page"{% endif %}
+         title="{{ section.hint }}">
+        {{ section.title }}
+      </a>
+    {% endfor %}
+  </nav>
+
+  <div class="cabinet__content">
+    {% block cabinet_content %}{% endblock %}
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% load i18n %}
+{# Подвал: карта разделов и сведения об авторе работы. #}
+<footer class="app-footer">
+  <div class="container">
+    <div class="app-footer__grid">
+      <div>
+        <div class="app-footer__title">{{ project.name }}</div>
+        <p>{{ project.tagline }}</p>
+      </div>
+
+      {% for group in footer_navigation %}
+        <div>
+          <div class="app-footer__title">{{ group.title }}</div>
+          <ul class="app-footer__list">
+            {% for link in group.items %}
+              <li>
+                <a href="{{ link.url }}">{{ link.title }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="app-footer__bottom">
+      <p>
+        {% translate "Разработал" %}:
+        <span class="app-footer__author" lang="ru">{{ project.author }}</span>,
+        {% translate "студенческий билет" %} <span lang="ru">{{ project.student_id }}</span> · {{ project.current_year }}
+      </p>
+      <p class="text-muted">
+        {% translate "Версия" %} {{ project.version }} ·
+        <a href="{{ project.repository_url }}" rel="noopener noreferrer" target="_blank">{% translate "Репозиторий" %}</a>
+      </p>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% comment %}
+  Текст согласия на обработку персональных данных — отдельно от условий (ч. 1 ст. 9 152-ФЗ).
+  На него ссылаются флажки регистрации и формы обращения; дата и редакция согласия
+  записываются в учётной записи и в обращении.
+{% endcomment %}
+
+{% block meta_description %}{% translate "Согласие на обработку персональных данных на сайте RegionLens: какие данные, для каких целей, какие действия, срок и порядок отзыва." %}{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "Согласие на обработку персональных данных" %}</h1>
+      <p class="terms__revision">
+        {% blocktranslate trimmed with date=revision|date:"d.m.Y" %}Редакция от {{ date }}{% endblocktranslate %}
+      </p>
+    </div>
+  </header>
+
+  <div class="about">
+    <div class="about__main">
+      <section class="about__section" aria-label="{% translate 'Текст согласия' %}">
+        <div class="prose">
+          <p>
+            {% blocktranslate trimmed with author=project.author url=site_url %}
+              Регистрируясь на сайте RegionLens ({{ url }}) или отправляя обращение через форму
+              на сайте и отмечая флажок «Даю согласие на обработку персональных данных», я свободно,
+              своей волей и в своём интересе даю согласие <span lang="ru">{{ author }}</span>
+              (далее — оператор) на обработку моих персональных данных на следующих условиях.
+            {% endblocktranslate %}
+          </p>
+        </div>
+        <ol class="terms-list terms-list--numbered">
+          <li>
+            {% blocktranslate trimmed %}
+              Данные: при регистрации — адрес электронной почты, имя, выбранный регион,
+              сохранённые регионы, показатели и виды экрана, сведения о входе; при обращении —
+              имя, адрес электронной почты, текст обращения, адрес страницы, с которой оно
+              отправлено, адрес IP и сведения о браузере.
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% blocktranslate trimmed %}
+              Цели: работа личного кабинета — вход, сохранённое, мой регион; ответ на обращение
+              и защита формы обращения от автоматических сообщений.
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% blocktranslate trimmed %}
+              Действия: сбор, запись, систематизация, накопление, хранение, уточнение
+              (обновление, изменение), извлечение, использование, передача (предоставление),
+              блокирование, удаление, уничтожение. Обработка автоматизированная.
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% blocktranslate trimmed %}
+              Передача: адрес получателя и текст письма передаются почтовому серверу, через
+              который сайт отправляет письма. Иным лицам данные не передаются, кроме случаев,
+              предусмотренных законом.
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% blocktranslate trimmed %}
+              Срок: согласие действует до удаления учётной записи или до отзыва согласия.
+              Сроки хранения отдельных сведений названы в политике обработки персональных
+              данных.
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% url 'accounts:data' as data_url %}
+            {% url 'feedback:create' as feedback_url %}
+            {% blocktranslate trimmed with email=project.author_email days=destruction_days %}
+              Отзыв: удаление учётной записи в разделе <a href="{{ data_url }}">«Мои данные»</a>
+              личного кабинета либо письмо на адрес <a href="mailto:{{ email }}">{{ email }}</a>
+              или обращение через <a href="{{ feedback_url }}">форму</a>. После отзыва данные
+              уничтожаются в течение {{ days }} дней, если закон не требует их хранить.
+            {% endblocktranslate %}
+          </li>
+        </ol>
+        <div class="prose">
+          <p>
+            {% url 'core:privacy' as privacy_url %}
+            {% blocktranslate trimmed %}
+              Я ознакомлен(а) с <a href="{{ privacy_url }}">политикой обработки персональных
+              данных</a>.
+            {% endblocktranslate %}
+          </p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

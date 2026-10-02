@@ -1,0 +1,2 @@
+{# Пункты перечня рядов (catalog:series-options) в одну строку: с отступами они весили втрое больше. #}
+{% spaceless %}{% for group in series_options %}<optgroup label="{{ group.title }}">{% for item in group.items %}<option value="{{ item.key }}"{% if item.unnormalised %} data-unnormalised="1"{% endif %}{% if item.search %} data-search="{{ item.search }}"{% endif %}{% if item.key == selected_key %} selected{% endif %}>{{ item.title }}{% if item.subsection %} — {{ item.subsection }}{% endif %}</option>{% endfor %}</optgroup>{% endfor %}{% endspaceless %}

@@ -1,0 +1,22 @@
+{% load i18n %}
+{# Полоса вызова рейля на телефоне с предметом экрана и затемнение под листом; data-rail ставит sheet.js. #}
+<div class="rail-dock">
+  <button type="button" class="rail-dock__button"
+          data-rail-open aria-controls="{{ rail_id }}" aria-expanded="false">
+    <svg class="rail-dock__icon" aria-hidden="true"><use href="#icon-filter"></use></svg>
+
+    <span class="rail-dock__text">
+      <span class="rail-dock__title">{{ dock_title }}</span>
+      {% if dock_summary %}
+        <span class="rail-dock__summary">{{ dock_summary }}</span>
+      {% endif %}
+    </span>
+
+    <span class="rail-dock__action">
+      {% translate "Настроить" %}
+      <svg class="rail-dock__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
+    </span>
+  </button>
+</div>
+
+<div class="rail-backdrop" data-rail-backdrop hidden></div>

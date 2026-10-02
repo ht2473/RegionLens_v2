@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Значок вкладки: знак «Линза» на бумажной плашке — различим и на тёмной полосе вкладок. -->
+  <rect width="32" height="32" rx="7" fill="#f6f3ee"/>
+  <g transform="translate(3 3) scale(0.8125)" fill="none">
+    <defs><clipPath id="rl-fav"><circle cx="13.5" cy="13.5" r="8.4"/></clipPath></defs>
+    <g clip-path="url(#rl-fav)">
+      <rect x="7.6" y="15.2" width="3.6" height="12" rx="1" fill="#e4d292"/>
+      <rect x="11.7" y="11.4" width="3.6" height="16" rx="1" fill="#34a160"/>
+      <rect x="15.8" y="7.6" width="3.6" height="20" rx="1" fill="#077e63"/>
+    </g>
+    <circle cx="13.5" cy="13.5" r="9.6" stroke="#2a2724" stroke-width="2.4"/>
+    <path d="m20.9 20.9 6.4 6.4" stroke="#2a2724" stroke-width="3.4" stroke-linecap="round"/>
+  </g>
+</svg>
