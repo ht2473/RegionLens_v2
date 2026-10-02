@@ -1,0 +1,250 @@
+# =====================================================================================
+# Непрерывная интеграция.
+#
+# Задачи разделены: проверки кода идут полминуты и сообщают сразу, тестам нужна
+# PostgreSQL, сквозным сценариям — браузеры.
+# =====================================================================================
+
+name: Проверки
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  # Ручной запуск — прогон после смены версий зависимостей без правок кода.
+  workflow_dispatch:
+
+# Новый прогон ветки отменяет предыдущий.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.14"
+  # Настройки тестового окружения; секретов нет — проверки идут на порождённых данных.
+  DJANGO_SETTINGS_MODULE: config.settings.test
+  DJANGO_SECRET_KEY: ci-secret-key-not-used-outside-of-continuous-integration
+  DATABASE_URL: postgres://regionlens:regionlens@localhost:5432/regionlens
+
+jobs:
+  # --- Качество кода ---------------------------------------------------------------------
+  quality:
+    name: Качество кода
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Установка uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.11.15"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Установка зависимостей
+        run: uv sync --frozen
+
+      - name: Линтер
+        run: uv run ruff check --output-format=github .
+
+      - name: Форматирование
+        run: uv run ruff format --check .
+
+      - name: Статическая типизация
+        run: uv run mypy apps config
+
+      - name: Проверка миграций
+        # Тесты расхождения моделей с миграциями не видят: тестовая база создаётся по миграциям.
+        run: uv run python manage.py makemigrations --check --dry-run
+
+      - name: Проверка настроек рабочего стенда
+        # Почта и адресат писем об ошибках задаются явно: проверка не пропускает на стенде
+        # консольную почту и стенд, об ошибках которого никто не узнает.
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.production
+          DJANGO_ALLOWED_HOSTS: example.org
+          DJANGO_CSRF_TRUSTED_ORIGINS: https://example.org
+          DJANGO_ADMINS: admin@example.org
+          EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
+          EMAIL_HOST: smtp.example.org
+        run: uv run python manage.py check --deploy --fail-level WARNING
+
+  # --- Безопасность -----------------------------------------------------------------------------
+  security:
+    name: Безопасность
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Установка uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.11.15"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Установка зависимостей
+        run: uv sync --frozen
+
+      - name: Статический анализ кода
+        run: uv run bandit -c pyproject.toml -r apps config -q
+
+      - name: Известные уязвимости зависимостей
+        # Не прерывает сборку: уязвимость зависимости обычно исправляет её сопровождающий.
+        # Результат — в сводке.
+        continue-on-error: true
+        run: uv run pip-audit --skip-editable --strict
+
+  # --- Тесты ---------------------------------------------------------------------------------------
+  tests:
+    name: Тесты
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    env:
+      # Проверки кэша с настоящим Valkey (tests/integration/test_valkey.py);
+      # без адреса они пропускаются.
+      VALKEY_TEST_URL: redis://localhost:6379
+
+    services:
+      valkey:
+        image: valkey/valkey:8-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "valkey-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: regionlens
+          POSTGRES_USER: regionlens
+          POSTGRES_PASSWORD: regionlens
+          POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U regionlens"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Установка uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.11.15"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Установка зависимостей
+        run: uv sync --frozen
+
+      - name: Прогон с измерением покрытия
+        run: uv run pytest --cov --cov-report=xml --cov-report=term --junitxml=junit.xml
+
+      - name: Порог покрытия
+        # Порог покрытия — 80 %; отдельный шаг отличает недостаток покрытия
+        # от падения теста.
+        run: uv run coverage report --fail-under=80
+
+      - name: Отчёты
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-reports
+          path: |
+            junit.xml
+            coverage.xml
+          retention-days: 14
+
+  # --- Сквозные сценарии ------------------------------------------------------------------------------
+  e2e:
+    name: Сквозные сценарии
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # Браузер и прогон — минуты: только после более дешёвых проверок.
+    needs: [quality, tests]
+
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: regionlens
+          POSTGRES_USER: regionlens
+          POSTGRES_PASSWORD: regionlens
+          POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U regionlens"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Установка uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.11.15"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Установка зависимостей
+        run: uv sync --frozen
+
+      - name: Установка браузера
+        run: uv run playwright install --with-deps chromium
+
+      - name: Прогон сценариев
+        run: uv run pytest -m e2e --browser chromium --junitxml=e2e.xml
+
+      - name: Снимки экрана и следы
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: e2e
+          path: |
+            e2e.xml
+            data/tmp/e2e/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # --- Сборка образа ------------------------------------------------------------------------------------
+  image:
+    name: Сборка образа
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    needs: [quality, tests]
+    # Образ собирается только для основной ветки.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Подготовка сборщика
+        uses: docker/setup-buildx-action@v3
+
+      - name: Сборка
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          # Без публикации в реестр: на стенд образ попадает сборкой из исходников.
+          push: false
+          tags: regionlens:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Проверка запуска образа
+        run: |
+          docker run --rm --entrypoint python regionlens:${{ github.sha }} \
+            -c "import django; print('Django', django.get_version())"
