@@ -3,7 +3,8 @@
 
 Новый разобранный выпуск пересобирает склад (кроме ``--no-build``). ``--file`` и ``--url``
 кладут в архив названный файл; ``--reparse`` разбирает архив заново после правки разбора.
-С ``--due`` и ``--all`` заодно проверяется, не вышла ли новая версия набора.
+С ``--due`` и ``--all`` заодно проверяется, не вышла ли новая версия набора; новая
+скачивается и проверяется сборкой рядом с рабочим складом.
 """
 
 from __future__ import annotations
@@ -96,13 +97,26 @@ class Command(BaseCommand):
             raise CommandError("Сбор завершён с ошибками; подробности — в журнале выпусков")
 
     def _check_dataset(self) -> None:
-        """Сверить версию набора на сайте с загруженной; отказ сайта сбор не прерывает."""
+        """
+        Сверить версию набора на сайте с загруженной; новую — скачать и проверить сборкой.
+
+        Отказ сайта или неудачная проверка сбор не прерывают.
+        """
         beat = dataset_watch.check()
         detail = beat.detail or {}
         if not beat.ok:
             self._report(f"набор: проверка не удалась — {detail.get('error', '')}")
         elif dataset_watch.newer_version():
             self._report(f"набор: на сайте версия {detail['found']}, загружена {detail['current']}")
+            try:
+                run = dataset_watch.offer_newer(self._report)
+            except Exception as error:
+                # Причина записана в запуске проверки, администратору ушло письмо; сбор
+                # выпусков и пересборка склада продолжаются.
+                self._report(f"набор: проверка новой версии не удалась — {error!r}")
+            else:
+                if run is not None:
+                    self._report(f"набор: проверка № {run.pk} — {run.get_status_display()}")
         else:
             self._report(f"набор: новых версий нет ({detail['current']})")
 

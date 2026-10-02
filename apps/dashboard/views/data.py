@@ -1,21 +1,24 @@
 """
 Разделы «Загрузка данных» и «Качество данных».
 
-Сборка запускается отдельным процессом (``etl_build --run``); склад подменяется
-только после успешной сборки.
+Новый набор сначала проверяется сборкой рядом с рабочим складом и отчётом о различиях;
+рабочий склад собирается из него, когда администратор примет версию. Сборки идут
+отдельным процессом (``etl_build --run``).
 """
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from django.contrib import messages
 from django.db.models import QuerySet
 from django.forms import ModelForm
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+from django.views import View
 from django.views.generic import DetailView, FormView, ListView, UpdateView
 
 from apps.catalog.models import DatasetVersion
@@ -74,6 +77,7 @@ class DataView(AdminViewMixin, ListView):
         context["statuses"] = EtlRun.Status.choices
         context.setdefault("upload_form", DatasetUploadForm())
         context["active_run"] = builds.active_run()
+        context["awaiting"] = selectors.awaiting_candidates()
         return context
 
 
@@ -86,7 +90,7 @@ class DatasetUploadView(AdminViewMixin, FormView):
     http_method_names = ["post"]
 
     def form_valid(self, form: DatasetUploadForm) -> HttpResponse:
-        """Сохранить файл, проверить состав и начать сборку."""
+        """Сохранить файл, проверить состав и начать проверку новой версии."""
         if builds.active_run() is not None:
             messages.error(self.request, _("Сборка склада уже идёт — дождитесь её окончания"))
             return redirect("dashboard:data")
@@ -99,11 +103,14 @@ class DatasetUploadView(AdminViewMixin, FormView):
                 form.add_error("dataset", problem)
             return self.form_invalid(form)
 
-        run = builds.start_build(source_path=path, started_by=self.current_user)
+        run = builds.start_candidate(source_path=path, started_by=self.current_user)
         if run.status == EtlRun.Status.FAILED:
-            messages.error(self.request, _("Сборка не начата: %s") % run.error_message)
+            messages.error(self.request, _("Проверка не начата: %s") % run.error_message)
         else:
-            messages.success(self.request, _("Набор принят, сборка склада начата"))
+            messages.success(
+                self.request,
+                _("Набор принят: идёт проверка, рабочий склад заменится после вашего решения"),
+            )
         return redirect("dashboard:etl-run", pk=run.pk)
 
     def form_invalid(self, form: DatasetUploadForm) -> HttpResponse:
@@ -198,6 +205,10 @@ class EtlRunDetailView(AdminViewMixin, DetailView):
         context["checks"] = list(run.quality_checks.all()[:30])
         context["checks_total"] = run.quality_checks.count()
         context["missing_groups"] = integrity.grouped(run.missing_series)
+        context["report"] = run.report
+        context["decision_build"] = (
+            EtlRun.objects.filter(pk=run.decision.get("build")).first() if run.decision else None
+        )
         context["poll_seconds"] = PROGRESS_POLL_SECONDS
         return context
 
@@ -213,6 +224,34 @@ class EtlRunDetailView(AdminViewMixin, DetailView):
         if self.request.headers.get("HX-Request"):
             return [f"{self.template_name}#progress"]
         return [self.template_name]
+
+
+class CandidateDecisionView(AdminViewMixin, View):
+    """Принять или отклонить проверенную версию набора."""
+
+    http_method_names = ["post"]
+    section_code = "data"
+    accept = True
+
+    def post(self, request: HttpRequest, pk: int) -> HttpResponse:
+        """Записать решение; принятая версия собирается в рабочий склад."""
+        run = get_object_or_404(EtlRun, pk=pk, mode=EtlRun.Mode.CANDIDATE)
+        if not run.awaits_decision:
+            messages.error(request, _("По этой проверке решение уже принято"))
+            return redirect("dashboard:etl-run", pk=run.pk)
+        if not self.accept:
+            builds.reject_candidate(run, self.current_user)
+            messages.success(request, _("Версия отклонена, рабочий склад прежний"))
+            return redirect("dashboard:data")
+        if builds.active_run() is not None:
+            messages.error(request, _("Сборка склада уже идёт — дождитесь её окончания"))
+            return redirect("dashboard:etl-run", pk=run.pk)
+        if not Path(run.source_path).exists():
+            messages.error(request, _("Файл проверенного набора не найден: загрузите его заново"))
+            return redirect("dashboard:etl-run", pk=run.pk)
+        build = builds.accept_candidate(run, self.current_user)
+        messages.success(request, _("Версия принята, сборка рабочего склада начата"))
+        return redirect("dashboard:etl-run", pk=build.pk)
 
 
 class QualityView(AdminViewMixin, ListView):

@@ -24,6 +24,7 @@ from apps.warehouse.models import EtlRun
 
 from . import (
     catalog_sync,
+    compare,
     dimensions,
     facts,
     integrity,
@@ -130,7 +131,7 @@ class Pipeline:
     # Публичный интерфейс
     # -----------------------------------------------------------------------------------
 
-    def build(self) -> PipelineResult:  # noqa: PLR0915 - линейная последовательность этапов
+    def build(self) -> PipelineResult:
         """Выполнить полную сборку склада во временный файл рядом с рабочим."""
         if not self.source_path.exists():
             raise EtlError(
@@ -142,85 +143,8 @@ class Pipeline:
         temporary_path.unlink(missing_ok=True)
 
         with writable_connection(temporary_path) as connection:
-            self._report("Подготовка схемы склада")
-            self._step("schema", lambda: connection.execute(SCHEMA_PATH.read_text("utf-8")))
-
-            self._report("Чтение исходного набора данных")
-            source.register_source(connection, self.source_path)
-            profile = self._step(
-                "profile",
-                lambda: source.profile_source(connection, self.source_path),
-            ).detail
-
-            if not profile.is_valid:
-                raise EtlError(
-                    "Исходный набор не прошёл проверку:\n  - " + "\n  - ".join(profile.problems)
-                )
-
-            self._report(
-                f"Наблюдений: {profile.observation_count:,}, "
-                f"показателей: {profile.indicator_count}, "
-                f"период: {profile.first_year}–{profile.last_year}".replace(",", " ")
-            )
-
-            self._report("Загрузка справочника территорий")
-            self._step("territories", lambda: dimensions.load_territories(connection))
-
-            missing = source.unmapped_territories(connection)
-            if missing:
-                raise EtlError(
-                    "В исходных данных есть территории, отсутствующие в справочнике:\n  - "
-                    + "\n  - ".join(missing)
-                    + "\nДополните data/reference/territories.json и повторите сборку."
-                )
-
-            self._report("Построение измерений")
-            self._step("sections", lambda: len(dimensions.build_sections(connection)))
-            self._step("editions", lambda: len(dimensions.build_editions(connection)))
-            self._step("unit_scales", lambda: dimensions.build_unit_scales(connection))
-            self._step("series", lambda: len(dimensions.build_series(connection)[0]))
-
-            self._report("Загрузка наблюдений")
-            self._step("vintages", lambda: facts.load_vintages(connection))
-            self._report("Выпуски внешних источников и сшивка с набором")
-            release_statistics = self._step(
-                "releases", lambda: releases.load_releases(connection)
-            ).detail
-            if release_statistics.get("releases"):
-                self._report(
-                    "Выпусков: {releases}, связей рядов: {links} (условных {conditional}), "
-                    "версий значений: {vintages}".format(**release_statistics)
-                )
-            self._step("ranks_editions", lambda: facts.rank_editions(connection))
-            self._report("Ряды Банка России и ФНС, помесячный слой")
-            source_statistics = self._step(
-                "source_series", lambda: _source_series(connection)
-            ).detail
-            if source_statistics.get("series") or source_statistics.get("months"):
-                self._report(
-                    "Рядов источников: {series}, годовых версий: {vintages}, "
-                    "месячных значений: {months}".format(**source_statistics)
-                )
-            self._step("observations", lambda: facts.build_observations(connection))
-            self._step("revisions", lambda: facts.build_revisions(connection))
-
-            self._report("Расчёт витрин")
-            self._step("coverage", lambda: marts.build_coverage(connection))
-            self._step("stats", lambda: marts.build_stats(connection))
-            self._step("ranks", lambda: marts.build_ranks(connection))
-            self._step("counters", lambda: dimensions.refresh_dimension_counters(connection))
-
-            value_quality = facts.observation_quality_summary(connection)
-            self._report(
-                "Качество значений: наблюдений {observed:,}, "
-                "нет данных {no_data:,}, скрыто {hidden:,}".format(**value_quality).replace(
-                    ",", " "
-                )
-            )
-
-            self._write_metadata(connection, profile, value_quality)
-            self._step("keys", lambda: check_unique_keys(connection))
-            absent_series = self._check_references(connection)
+            assembled = self._assemble(connection)
+            profile = assembled["profile"]
 
             self._report("Синхронизация справочников")
             catalog_statistics = self._step(
@@ -250,18 +174,148 @@ class Pipeline:
             profile=profile,
             steps=self._steps,
             statistics={
-                "values": value_quality,
+                "values": assembled["values"],
                 "catalog": catalog_statistics,
                 "findings": quality_findings,
-                "releases": release_statistics,
-                "source_series": source_statistics,
-                "missing_series": absent_series,
+                "releases": assembled["releases"],
+                "source_series": assembled["source_series"],
+                "missing_series": assembled["missing_series"],
             },
         )
 
         self._finalize_run(result, version)
         self._report(f"Сборка завершена за {result.total_duration:.1f} с")
         return result
+
+    def check_candidate(self, *, current_source: Path | None) -> PipelineResult:
+        """
+        Собрать склад из нового набора и сравнить с рабочим, ничего не меняя.
+
+        Справочники PostgreSQL и рабочий склад не трогаются: собранный файл удаляется,
+        остаётся отчёт о различиях. ``current_source`` — набор действующего склада.
+        """
+        if not self.source_path.exists():
+            raise EtlError(f"Исходный файл не найден: {self.source_path}")
+
+        temporary_path = self.target_path.with_suffix(".candidate.duckdb")
+        temporary_path.unlink(missing_ok=True)
+        try:
+            with writable_connection(temporary_path) as connection:
+                assembled = self._assemble(connection)
+                self._report("Сравнение с рабочим складом")
+                report = self._step(
+                    "compare",
+                    lambda: compare.compare(connection, self.target_path, current_source),
+                ).detail
+        finally:
+            temporary_path.unlink(missing_ok=True)
+
+        report["references"] = assembled["missing_series"]
+        profile = assembled["profile"]
+        result = PipelineResult(
+            profile=profile,
+            steps=self._steps,
+            statistics={
+                "values": assembled["values"],
+                "releases": assembled["releases"],
+                "source_series": assembled["source_series"],
+                "missing_series": assembled["missing_series"],
+                "report": report,
+            },
+        )
+        if self.run is not None:
+            self.run.source_checksum = profile.checksum
+            self.run.observation_count = assembled["values"]["total"]
+            self.run.series_count = report["candidate"]["series"]
+            self.run.statistics = {**(self.run.statistics or {}), **result.as_dict()}
+            self.run.save()
+        self._report(f"Проверка завершена за {result.total_duration:.1f} с")
+        return result
+
+    def _assemble(self, connection: duckdb.DuckDBPyConnection) -> dict[str, Any]:
+        """Общая часть полной сборки и проверки кандидата: от схемы до сверки ссылок."""
+        self._report("Подготовка схемы склада")
+        self._step("schema", lambda: connection.execute(SCHEMA_PATH.read_text("utf-8")))
+
+        self._report("Чтение исходного набора данных")
+        source.register_source(connection, self.source_path)
+        profile = self._step(
+            "profile",
+            lambda: source.profile_source(connection, self.source_path),
+        ).detail
+
+        if not profile.is_valid:
+            raise EtlError(
+                "Исходный набор не прошёл проверку:\n  - " + "\n  - ".join(profile.problems)
+            )
+
+        self._report(
+            f"Наблюдений: {profile.observation_count:,}, "
+            f"показателей: {profile.indicator_count}, "
+            f"период: {profile.first_year}–{profile.last_year}".replace(",", " ")
+        )
+
+        self._report("Загрузка справочника территорий")
+        self._step("territories", lambda: dimensions.load_territories(connection))
+
+        missing = source.unmapped_territories(connection)
+        if missing:
+            raise EtlError(
+                "В исходных данных есть территории, отсутствующие в справочнике:\n  - "
+                + "\n  - ".join(missing)
+                + "\nДополните data/reference/territories.json и повторите сборку."
+            )
+
+        self._report("Построение измерений")
+        self._step("sections", lambda: len(dimensions.build_sections(connection)))
+        self._step("editions", lambda: len(dimensions.build_editions(connection)))
+        self._step("unit_scales", lambda: dimensions.build_unit_scales(connection))
+        self._step("series", lambda: len(dimensions.build_series(connection)[0]))
+
+        self._report("Загрузка наблюдений")
+        self._step("vintages", lambda: facts.load_vintages(connection))
+        self._report("Выпуски внешних источников и сшивка с набором")
+        release_statistics = self._step(
+            "releases", lambda: releases.load_releases(connection)
+        ).detail
+        if release_statistics.get("releases"):
+            self._report(
+                "Выпусков: {releases}, связей рядов: {links} (условных {conditional}), "
+                "версий значений: {vintages}".format(**release_statistics)
+            )
+        self._step("ranks_editions", lambda: facts.rank_editions(connection))
+        self._report("Ряды Банка России и ФНС, помесячный слой")
+        source_statistics = self._step("source_series", lambda: _source_series(connection)).detail
+        if source_statistics.get("series") or source_statistics.get("months"):
+            self._report(
+                "Рядов источников: {series}, годовых версий: {vintages}, "
+                "месячных значений: {months}".format(**source_statistics)
+            )
+        self._step("observations", lambda: facts.build_observations(connection))
+        self._step("revisions", lambda: facts.build_revisions(connection))
+
+        self._report("Расчёт витрин")
+        self._step("coverage", lambda: marts.build_coverage(connection))
+        self._step("stats", lambda: marts.build_stats(connection))
+        self._step("ranks", lambda: marts.build_ranks(connection))
+        self._step("counters", lambda: dimensions.refresh_dimension_counters(connection))
+
+        value_quality = facts.observation_quality_summary(connection)
+        self._report(
+            "Качество значений: наблюдений {observed:,}, "
+            "нет данных {no_data:,}, скрыто {hidden:,}".format(**value_quality).replace(",", " ")
+        )
+
+        self._write_metadata(connection, profile, value_quality)
+        self._step("keys", lambda: check_unique_keys(connection))
+        absent_series = self._check_references(connection)
+        return {
+            "profile": profile,
+            "values": value_quality,
+            "releases": release_statistics,
+            "source_series": source_statistics,
+            "missing_series": absent_series,
+        }
 
     def rebuild_marts(self) -> PipelineResult:
         """Пересчитать только витрины — за секунды, после правки порогов или основного набора."""

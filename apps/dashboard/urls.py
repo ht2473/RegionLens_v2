@@ -47,6 +47,16 @@ urlpatterns = [
         name="dataset-version-edit",
     ),
     path("manage/data/runs/<int:pk>/", views.EtlRunDetailView.as_view(), name="etl-run"),
+    path(
+        "manage/data/runs/<int:pk>/accept/",
+        views.CandidateDecisionView.as_view(accept=True),
+        name="candidate-accept",
+    ),
+    path(
+        "manage/data/runs/<int:pk>/reject/",
+        views.CandidateDecisionView.as_view(accept=False),
+        name="candidate-reject",
+    ),
     path("manage/data/quality/", views.QualityView.as_view(), name="quality"),
     # --- Источники данных -------------------------------------------------------------------
     path("manage/sources/", views.SourcesView.as_view(), name="sources"),

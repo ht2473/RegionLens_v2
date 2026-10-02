@@ -1,0 +1,195 @@
+{% load i18n formatting %}
+
+{# Отчёт проверки новой версии набора и решение по ней. #}
+
+<section class="card admin-section">
+  <div class="card__header">
+    <h2 class="card__title">{% translate "Что изменится, если принять версию" %}</h2>
+    {% if run.decision.accepted %}
+      <span class="badge badge--positive">{% translate "принята" %}</span>
+    {% elif run.decision %}
+      <span class="badge badge--negative">{% translate "отклонена" %}</span>
+    {% endif %}
+  </div>
+
+  {% if report.current %}
+    <div class="admin-facts">
+      <div>
+        <div class="admin-facts__label">{% translate "Версия" %}</div>
+        <div class="admin-facts__value">{{ report.current.version }} → {{ report.candidate.version }}</div>
+      </div>
+      <div>
+        <div class="admin-facts__label">{% translate "Рядов" %}</div>
+        <div class="admin-facts__value">{{ report.current.series|ru_number:0 }} → {{ report.candidate.series|ru_number:0 }}</div>
+      </div>
+      <div>
+        <div class="admin-facts__label">{% translate "Значений" %}</div>
+        <div class="admin-facts__value">{{ report.current.values|ru_number:0 }} → {{ report.candidate.values|ru_number:0 }}</div>
+      </div>
+      <div>
+        <div class="admin-facts__label">{% translate "Последний год" %}</div>
+        <div class="admin-facts__value">{{ report.current.last_year }} → {{ report.candidate.last_year }}</div>
+      </div>
+    </div>
+
+    <dl class="definition-list definition-list--compact">
+      <dt>{% translate "Ряды" %}</dt>
+      <dd>
+        {% blocktranslate trimmed with added=report.series.added removed=report.series.removed renamed=report.series.renamed|length %}
+          новых: {{ added }}, исчезло: {{ removed }}, переименовано: {{ renamed }}
+        {% endblocktranslate %}
+      </dd>
+      <dt>{% translate "Значения" %}</dt>
+      <dd>
+        {% blocktranslate trimmed with changed=report.values.changed|ru_number:0 appeared=report.values.appeared|ru_number:0 lost=report.values.lost|ru_number:0 %}
+          изменилось: {{ changed }}, появилось: {{ appeared }}, пропало: {{ lost }}
+        {% endblocktranslate %}
+      </dd>
+      <dt>{% translate "Длина рядов" %}</dt>
+      <dd>
+        {% blocktranslate trimmed with extended=report.values.extended shortened=report.values.shortened %}
+          продлено: {{ extended }}, укорочено: {{ shortened }}
+        {% endblocktranslate %}
+      </dd>
+      <dt>{% translate "Единицы измерения" %}</dt>
+      <dd>{% blocktranslate trimmed with count=report.units.count %}сменились у рядов: {{ count }}{% endblocktranslate %}</dd>
+      <dt>{% translate "Связи с выпусками источников" %}</dt>
+      <dd>{% blocktranslate trimmed with count=report.links|length %}изменились: {{ count }}{% endblocktranslate %}</dd>
+      {% if report.notes %}
+        <dt>{% translate "Методические примечания" %}</dt>
+        <dd>
+          {% blocktranslate trimmed with count=report.notes.count breaks=report.notes.breaks %}
+            новых: {{ count }}, из них отмечают разрыв: {{ breaks }}
+          {% endblocktranslate %}
+        </dd>
+      {% endif %}
+    </dl>
+
+    {% if report.series.renamed %}
+      <details class="card__footer">
+        <summary>{% translate "Переименованные ряды" %}</summary>
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th scope="col">{% translate "Было" %}</th>
+                <th scope="col">{% translate "Стало" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in report.series.renamed %}
+                <tr>
+                  <td><code>{{ item.before }}</code> <span lang="ru">{{ item.title_before }}</span></td>
+                  <td><code>{{ item.after }}</code> <span lang="ru">{{ item.title_after }}</span></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    {% endif %}
+
+    {% if report.series.removed_sample %}
+      <details class="card__footer">
+        <summary>{% translate "Исчезнувшие ряды" %}</summary>
+        <ul class="stack stack--tight">
+          {% for item in report.series.removed_sample %}
+            <li><code>{{ item.key }}</code> <span lang="ru">{{ item.title }}</span></li>
+          {% endfor %}
+        </ul>
+      </details>
+    {% endif %}
+
+    {% if report.series.added_sample %}
+      <details class="card__footer">
+        <summary>{% translate "Новые ряды" %}</summary>
+        <ul class="stack stack--tight">
+          {% for item in report.series.added_sample %}
+            <li><code>{{ item.key }}</code> <span lang="ru">{{ item.title }}</span></li>
+          {% endfor %}
+        </ul>
+      </details>
+    {% endif %}
+
+    {% if report.values.top %}
+      <details class="card__footer">
+        <summary>{% translate "Больше всего изменённых значений" %}</summary>
+        <ul class="stack stack--tight">
+          {% for item in report.values.top %}
+            <li><code>{{ item.key }}</code> <span lang="ru">{{ item.title }}</span> — {{ item.changed|ru_number:0 }}</li>
+          {% endfor %}
+        </ul>
+      </details>
+    {% endif %}
+
+    {% if report.units.sample %}
+      <details class="card__footer">
+        <summary>{% translate "Сменилась единица измерения" %}</summary>
+        <ul class="stack stack--tight">
+          {% for item in report.units.sample %}
+            <li><code>{{ item.key }}</code> <span lang="ru">{{ item.title }}</span>: {{ item.before|default:"—" }} → {{ item.after|default:"—" }}</li>
+          {% endfor %}
+        </ul>
+      </details>
+    {% endif %}
+
+    {% if report.links %}
+      <details class="card__footer">
+        <summary>{% translate "Изменившиеся связи с выпусками источников" %}</summary>
+        <ul class="stack stack--tight">
+          {% for item in report.links %}
+            <li><code>{{ item.key }}</code>: {{ item.before|default:"—" }} → {{ item.after|default:"—" }}</li>
+          {% endfor %}
+        </ul>
+      </details>
+    {% endif %}
+
+    {% if report.notes.sample %}
+      <details class="card__footer">
+        <summary>{% translate "Новые методические примечания" %}</summary>
+        <ul class="stack stack--tight">
+          {% for item in report.notes.sample %}
+            <li>
+              <span lang="ru">{{ item.text }}</span>
+              {% if item.years %}<span class="text-muted">— {% translate "разрыв" %}: {{ item.years|join:", " }}</span>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </details>
+    {% endif %}
+  {% else %}
+    <p class="text-secondary">{% translate "Рабочего склада нет: сравнивать не с чем." %}</p>
+  {% endif %}
+
+  <div class="card__footer">
+    {% if run.awaits_decision %}
+      <div class="row">
+        <form method="post" action="{% url 'dashboard:candidate-accept' pk=run.pk %}">
+          {% csrf_token %}
+          <button class="button button--primary" type="submit">{% translate "Принять и собрать рабочий склад" %}</button>
+        </form>
+        <form method="post" action="{% url 'dashboard:candidate-reject' pk=run.pk %}">
+          {% csrf_token %}
+          <button class="button button--secondary" type="submit">{% translate "Отклонить" %}</button>
+        </form>
+      </div>
+    {% elif run.decision %}
+      <p class="text-secondary">
+        {% if run.decision.accepted %}
+          {% blocktranslate trimmed with user=run.decision.user moment=run.decided_at|date:"d.m.Y H:i" %}
+            Принята: {{ user }}, {{ moment }}.
+          {% endblocktranslate %}
+          {% if decision_build %}
+            <a href="{% url 'dashboard:etl-run' pk=decision_build.pk %}">
+              {% blocktranslate with pk=decision_build.pk %}Сборка рабочего склада — запуск № {{ pk }}{% endblocktranslate %}
+            </a>
+          {% endif %}
+        {% else %}
+          {% blocktranslate trimmed with user=run.decision.user moment=run.decided_at|date:"d.m.Y H:i" %}
+            Отклонена: {{ user }}, {{ moment }}.
+          {% endblocktranslate %}
+        {% endif %}
+      </p>
+    {% endif %}
+  </div>
+</section>

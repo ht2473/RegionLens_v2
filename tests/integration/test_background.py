@@ -217,15 +217,24 @@ def upload(client: Client, path: Path) -> Any:
     return client.post(reverse("dashboard:data-upload"), payload)
 
 
-def test_upload_builds_warehouse(
+def test_upload_is_checked_then_built(
     admin_panel_client: Client, administrator: Any, warehouse: Any, build_target: Path
 ) -> None:
-    """Загруженный набор принят и склад собран по нему."""
+    """Загруженный набор сначала проверяется; склад собирается по нему после решения."""
     response = upload(admin_panel_client, warehouse.path)
 
-    run = EtlRun.objects.latest("started_at")
+    check = EtlRun.objects.latest("started_at")
     assert response.status_code == 302
-    assert response["Location"] == reverse("dashboard:etl-run", kwargs={"pk": run.pk})
+    assert response["Location"] == reverse("dashboard:etl-run", kwargs={"pk": check.pk})
+    assert check.mode == EtlRun.Mode.CANDIDATE
+    assert check.status == EtlRun.Status.SUCCESS, check.error_message
+    assert check.awaits_decision
+    assert not build_target.exists()
+
+    admin_panel_client.post(reverse("dashboard:candidate-accept", kwargs={"pk": check.pk}))
+
+    run = EtlRun.objects.latest("started_at")
+    assert run.mode == EtlRun.Mode.FULL
     assert run.status == EtlRun.Status.SUCCESS, run.error_message
     assert run.started_by == administrator
     assert build_target.exists()

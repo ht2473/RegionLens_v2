@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import datetime
 from typing import Any
 
 from django.db import models
@@ -27,6 +28,7 @@ class EtlRun(TimeStampedModel):
         FULL = "full", _("Полная сборка")
         MARTS = "marts", _("Пересчёт витрин")
         CATALOG = "catalog", _("Синхронизация справочников")
+        CANDIDATE = "candidate", _("Проверка новой версии набора")
 
     dataset_version = models.ForeignKey(
         "catalog.DatasetVersion",
@@ -115,6 +117,36 @@ class EtlRun(TimeStampedModel):
     def is_active(self) -> bool:
         """Сборка ждёт в очереди или идёт."""
         return self.status in {self.Status.QUEUED, self.Status.RUNNING}
+
+    @property
+    def report(self) -> dict[str, Any]:
+        """Отчёт проверки новой версии набора: что изменится, если её принять."""
+        return dict((self.statistics or {}).get("statistics", {}).get("report", {}))
+
+    @property
+    def offered_version(self) -> str:
+        """Версия, скачанная с сайта набора для проверки; пусто — набор загружен в панели."""
+        return str((self.statistics or {}).get("offered", {}).get("version", ""))
+
+    @property
+    def decision(self) -> dict[str, Any]:
+        """Решение по проверенной версии: принята ли, кем, когда и какой сборкой."""
+        return dict((self.statistics or {}).get("decision", {}))
+
+    @property
+    def decided_at(self) -> datetime | None:
+        """Когда принято решение по проверенной версии."""
+        moment = self.decision.get("at")
+        return datetime.fromisoformat(moment) if moment else None
+
+    @property
+    def awaits_decision(self) -> bool:
+        """Проверка новой версии закончилась, а решения по ней ещё нет."""
+        return (
+            self.mode == self.Mode.CANDIDATE
+            and self.status == self.Status.SUCCESS
+            and not self.decision
+        )
 
     @property
     def missing_series(self) -> list[dict[str, str]]:

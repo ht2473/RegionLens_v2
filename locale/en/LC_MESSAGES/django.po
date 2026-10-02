@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-02 15:12+0000\n"
+"POT-Creation-Date: 2026-10-02 15:29+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -2349,16 +2349,16 @@ msgstr "Section"
 #: apps/analytics/templates/analytics/partials/_revisions_results.html:121
 #: apps/analytics/templates/analytics/partials/_revisions_results.html:156
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:539
-#: apps/dashboard/templates/dashboard/data.html:139
-#: apps/dashboard/templates/dashboard/data.html:198
+#: apps/dashboard/templates/dashboard/data.html:184
+#: apps/dashboard/templates/dashboard/data.html:243
 msgid "Наблюдений"
 msgstr "Observations"
 
 #: apps/analytics/templates/analytics/partials/_revisions_results.html:122
 #: apps/catalog/templates/catalog/partials/_series_results.html:6
+#: apps/dashboard/templates/dashboard/_candidate_report.html:22
 #: apps/dashboard/templates/dashboard/data.html:43
 #: apps/dashboard/templates/dashboard/etl_run.html:78
-#: apps/dashboard/templates/dashboard/index.html:97
 msgid "Рядов"
 msgstr "Series"
 
@@ -3812,8 +3812,9 @@ msgstr "Licence"
 
 #: apps/catalog/templates/catalog/dataset.html:81
 #: apps/catalog/templates/catalog/sources.html:40
-#: apps/dashboard/templates/dashboard/data.html:137
-#: templates/partials/_footer.html:32
+#: apps/dashboard/templates/dashboard/_candidate_report.html:18
+#: apps/dashboard/templates/dashboard/data.html:182
+#: apps/dashboard/templates/dashboard/data.html:85
 msgid "Версия"
 msgstr "Version"
 
@@ -4315,10 +4316,12 @@ msgid "Выпусков"
 msgstr "Editions"
 
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:500
+#: apps/dashboard/templates/dashboard/_candidate_report.html:75
 msgid "Было"
 msgstr "Was"
 
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:501
+#: apps/dashboard/templates/dashboard/_candidate_report.html:76
 msgid "Стало"
 msgstr "Became"
 
@@ -4695,8 +4698,8 @@ msgid "Условия"
 msgstr "Terms"
 
 #: apps/catalog/templates/catalog/sources.html:42
-#: apps/dashboard/templates/dashboard/data.html:142
-#: apps/dashboard/templates/dashboard/data.html:196
+#: apps/dashboard/templates/dashboard/data.html:187
+#: apps/dashboard/templates/dashboard/data.html:241
 #: apps/dashboard/templates/dashboard/etl_run.html:58
 #: apps/dashboard/templates/dashboard/sources.html:188
 msgid "Состояние"
@@ -6547,9 +6550,9 @@ msgid "Учётные записи, роли, блокировка"
 msgstr "Accounts, roles, blocking"
 
 #: apps/dashboard/navigation.py:55
-#: apps/dashboard/views/data.py:133
-#: apps/dashboard/views/data.py:189
-#: apps/dashboard/views/data.py:237
+#: apps/dashboard/views/data.py:140
+#: apps/dashboard/views/data.py:196
+#: apps/dashboard/views/data.py:276
 msgid "Загрузка данных"
 msgstr "Data loading"
 
@@ -6587,110 +6590,110 @@ msgstr "Visitors by day, pages and referrals from the server log"
 #: apps/dashboard/navigation.py:129
 #: apps/dashboard/navigation.py:131
 #: apps/dashboard/views/content.py:111
-#: apps/dashboard/views/data.py:132
-#: apps/dashboard/views/data.py:188
+#: apps/dashboard/views/data.py:139
+#: apps/dashboard/views/data.py:195
 msgid "Панель управления"
 msgstr "Control panel"
 
-#: apps/dashboard/selectors.py:385
+#: apps/dashboard/selectors.py:404
 msgid "Последняя сборка"
 msgstr "Latest build"
 
-#: apps/dashboard/selectors.py:401
+#: apps/dashboard/selectors.py:420
 msgid "Резервная копия"
 msgstr "Backup"
 
-#: apps/dashboard/selectors.py:420
+#: apps/dashboard/selectors.py:439
 msgid "Почта"
 msgstr "Mail"
 
-#: apps/dashboard/selectors.py:444
+#: apps/dashboard/selectors.py:463
 msgid "Письма об ошибках"
 msgstr "Error emails"
 
-#: apps/dashboard/selectors.py:460
+#: apps/dashboard/selectors.py:479
 msgid "Сбор источников"
 msgstr "Source collection"
 
-#: apps/dashboard/selectors.py:483
+#: apps/dashboard/selectors.py:502
 #: apps/dashboard/templates/dashboard/etl_run.html:62
 msgid "Версия набора"
 msgstr "Dataset version"
 
-#: apps/dashboard/selectors.py:506
+#: apps/dashboard/selectors.py:525
 msgid "Статистика посещений"
 msgstr "Visit statistics"
 
-#: apps/dashboard/selectors.py:455
+#: apps/dashboard/selectors.py:474
 msgid "адресаты не заданы (DJANGO_ADMINS)"
 msgstr "no recipients set (DJANGO_ADMINS)"
 
-#: apps/dashboard/selectors.py:563
+#: apps/dashboard/selectors.py:582
 #: apps/dashboard/templates/dashboard/data.html:24
 #: apps/dashboard/templates/dashboard/index.html:81
 msgid "Аналитический склад"
 msgstr "Analytical warehouse"
 
-#: apps/dashboard/selectors.py:388
+#: apps/dashboard/selectors.py:407
 msgid "сборок не было"
 msgstr "no builds yet"
 
-#: apps/dashboard/selectors.py:403
+#: apps/dashboard/selectors.py:422
 msgid "копий не отмечено"
 msgstr "no backups recorded"
 
-#: apps/dashboard/selectors.py:426
+#: apps/dashboard/selectors.py:445
 msgid "писем ещё не отправлялось"
 msgstr "no emails sent yet"
 
-#: apps/dashboard/selectors.py:431
+#: apps/dashboard/selectors.py:450
 msgid "последнее письмо принято %(time)s"
 msgstr "last email accepted at %(time)s"
 
-#: apps/dashboard/selectors.py:433
+#: apps/dashboard/selectors.py:452
 msgid "письмо не ушло %(time)s"
 msgstr "email failed at %(time)s"
 
-#: apps/dashboard/selectors.py:454
+#: apps/dashboard/selectors.py:473
 msgid "только Sentry"
 msgstr "Sentry only"
 
-#: apps/dashboard/selectors.py:463
+#: apps/dashboard/selectors.py:482
 msgid "сбора ещё не было"
 msgstr "no collection yet"
 
-#: apps/dashboard/selectors.py:468
+#: apps/dashboard/selectors.py:487
 msgid "разобрано выпусков: %(count)s"
 msgstr "releases parsed: %(count)s"
 
-#: apps/dashboard/selectors.py:486
+#: apps/dashboard/selectors.py:505
 msgid "ещё не проверялась"
 msgstr "not checked yet"
 
-#: apps/dashboard/selectors.py:494
+#: apps/dashboard/selectors.py:513
 msgid "загружена последняя"
 msgstr "the latest is loaded"
 
-#: apps/dashboard/selectors.py:509
+#: apps/dashboard/selectors.py:528
 msgid "ещё не пересчитывалась"
 msgstr "not computed yet"
 
-#: apps/dashboard/selectors.py:512
+#: apps/dashboard/selectors.py:531
 msgid "посетителей за всё время: %(count)s"
 msgstr "visitors of all time: %(count)s"
 
-#: apps/dashboard/selectors.py:532
-#: apps/dashboard/selectors.py:537
+#: apps/dashboard/selectors.py:551
+#: apps/dashboard/selectors.py:556
 msgid "База данных"
 msgstr "Database"
 
-#: apps/dashboard/selectors.py:548
-#: apps/dashboard/selectors.py:555
+#: apps/dashboard/selectors.py:567
+#: apps/dashboard/selectors.py:574
 msgid "Кэш"
 msgstr "Cache"
 
-#: apps/dashboard/selectors.py:578
-#: apps/dashboard/selectors.py:584
+#: apps/dashboard/selectors.py:597
+#: apps/dashboard/selectors.py:603
 msgid "Дисковое пространство"
 msgstr "Disk space"
 
@@ -6710,63 +6713,63 @@ msgstr "Open the run log and remove the cause"
 msgid "Вероятно, источник сменил вид таблиц: склад остался прежним"
 msgstr "The source has probably changed its table layout: the warehouse stays as it was"
 
-#: apps/dashboard/selectors.py:199
-msgid "Скачайте её на странице набора «Если быть точным» и загрузите в разделе «Загрузка данных»"
-msgstr "Download it from the dataset page of “Esli byt tochnym” and load it under “Data loading”"
+#: apps/dashboard/selectors.py:200
+msgid "Посмотрите отчёт о различиях и примите или отклоните версию"
+msgstr "Review the comparison report and accept or reject the version"
 
-#: apps/dashboard/selectors.py:216
+#: apps/dashboard/selectors.py:227
 msgid "Снимите пометку или уточните год в data/reference/series_status.json"
 msgstr "Remove the mark or correct the year in data/reference/series_status.json"
 
-#: apps/dashboard/selectors.py:226
+#: apps/dashboard/selectors.py:237
 msgid "Не отмечена текущая версия набора данных"
 msgstr "The current version of the data set is not marked"
 
-#: apps/dashboard/selectors.py:227
+#: apps/dashboard/selectors.py:238
 msgid "Без неё ссылка для цитирования собирается неполно"
 msgstr "Without it the citation is incomplete"
 
-#: apps/dashboard/selectors.py:409
+#: apps/dashboard/selectors.py:428
 msgid "вывезена с сервера"
 msgstr "copied off the server"
 
-#: apps/dashboard/selectors.py:409
+#: apps/dashboard/selectors.py:428
 msgid "только на сервере"
 msgstr "on the server only"
 
-#: apps/dashboard/selectors.py:451
+#: apps/dashboard/selectors.py:470
 msgid "и Sentry"
 msgstr "and Sentry"
 
-#: apps/dashboard/selectors.py:451
+#: apps/dashboard/selectors.py:470
 msgid "одна ошибка — не чаще раза в час"
 msgstr "one error — at most once an hour"
 
-#: apps/dashboard/selectors.py:492
+#: apps/dashboard/selectors.py:511
 msgid "на сайте вышла %(version)s"
 msgstr "%(version)s is out on the site"
 
-#: apps/dashboard/selectors.py:534
+#: apps/dashboard/selectors.py:553
 msgid "сеансов: %(count)s"
 msgstr "sessions: %(count)s"
 
-#: apps/dashboard/selectors.py:551
+#: apps/dashboard/selectors.py:570
 msgid "запись и чтение выполняются"
 msgstr "writing and reading work"
 
-#: apps/dashboard/selectors.py:551
+#: apps/dashboard/selectors.py:570
 msgid "значение не читается"
 msgstr "the value is not read back"
 
-#: apps/dashboard/selectors.py:566
+#: apps/dashboard/selectors.py:585
 msgid "%(size)s МБ"
 msgstr "%(size)s MB"
 
-#: apps/dashboard/selectors.py:579
+#: apps/dashboard/selectors.py:598
 msgid "свободно %(free).1f ГБ из %(total).1f ГБ"
 msgstr "%(free).1f GB free of %(total).1f GB"
 
-#: apps/dashboard/selectors.py:581
+#: apps/dashboard/selectors.py:600
 msgid "занято %(share).0f %%"
 msgstr "%(share).0f %% used"
 
@@ -6786,17 +6789,152 @@ msgstr "Loads that ended with an error: %(count)s"
 msgid "Выпусков источников не разобрано: %(count)s"
 msgstr "Source releases not parsed: %(count)s"
 
-#: apps/dashboard/selectors.py:197
-msgid "Вышла новая версия набора данных: %(version)s"
-msgstr "A new version of the dataset is out: %(version)s"
+#: apps/dashboard/selectors.py:198
+msgid "Проверенная версия набора ждёт решения: %(count)s"
+msgstr "Checked dataset version awaiting a decision: %(count)s"
 
-#: apps/dashboard/selectors.py:212
+#: apps/dashboard/selectors.py:210
+msgid "Она будет скачана и проверена при следующем сборе источников; загрузить её можно и вручную в разделе «Загрузка данных»"
+msgstr "It will be downloaded and checked at the next source collection; you can also upload it manually under “Data loading”"
+
+#: apps/dashboard/selectors.py:223
 msgid "У рядов с пометкой «публикация прекращена» появились значения: %(count)s"
 msgstr "Series marked “publication discontinued” have new values: %(count)s"
 
-#: apps/dashboard/selectors.py:408
+#: apps/dashboard/selectors.py:427
 msgid "%(size).1f МБ"
 msgstr "%(size).1f MB"
+
+#: apps/dashboard/selectors.py:208
+msgid "Вышла новая версия набора данных: %(version)s"
+msgstr "A new version of the dataset is out: %(version)s"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:7
+msgid "Что изменится, если принять версию"
+msgstr "What changes if the version is accepted"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:9
+msgid "принята"
+msgstr "accepted"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:11
+msgid "отклонена"
+msgstr "rejected"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:26
+#: apps/dashboard/templates/dashboard/release.html:57
+#: apps/dashboard/templates/dashboard/sources.html:189
+msgid "Значений"
+msgstr "Values"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:30
+msgid "Последний год"
+msgstr "Latest year"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:36
+msgid "Ряды"
+msgstr "Series"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:42
+msgid "Значения"
+msgstr "Values"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:48
+msgid "Длина рядов"
+msgstr "Series length"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:54
+msgid "Единицы измерения"
+msgstr "Units of measurement"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:56
+#: apps/warehouse/etl/integrity.py:25
+msgid "Связи с выпусками источников"
+msgstr "Links to source releases"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:59
+msgid "Методические примечания"
+msgstr "Methodological notes"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:70
+msgid "Переименованные ряды"
+msgstr "Renamed series"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:94
+msgid "Исчезнувшие ряды"
+msgstr "Removed series"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:105
+msgid "Новые ряды"
+msgstr "New series"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:116
+msgid "Больше всего изменённых значений"
+msgstr "Most changed values"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:127
+msgid "Сменилась единица измерения"
+msgstr "Unit of measurement changed"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:138
+msgid "Изменившиеся связи с выпусками источников"
+msgstr "Changed links to source releases"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:149
+msgid "Новые методические примечания"
+msgstr "New methodological notes"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:154
+msgid "разрыв"
+msgstr "break"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:161
+msgid "Рабочего склада нет: сравнивать не с чем."
+msgstr "There is no working warehouse, so there is nothing to compare with."
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:169
+msgid "Принять и собрать рабочий склад"
+msgstr "Accept and build the working warehouse"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:173
+msgid "Отклонить"
+msgstr "Reject"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:38
+msgid "новых: %(added)s, исчезло: %(removed)s, переименовано: %(renamed)s"
+msgstr "new: %(added)s, removed: %(removed)s, renamed: %(renamed)s"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:44
+msgid "изменилось: %(changed)s, появилось: %(appeared)s, пропало: %(lost)s"
+msgstr "changed: %(changed)s, appeared: %(appeared)s, lost: %(lost)s"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:50
+msgid "продлено: %(extended)s, укорочено: %(shortened)s"
+msgstr "extended: %(extended)s, shortened: %(shortened)s"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:55
+msgid "сменились у рядов: %(count)s"
+msgstr "changed for series: %(count)s"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:57
+msgid "изменились: %(count)s"
+msgstr "changed: %(count)s"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:61
+msgid "новых: %(count)s, из них отмечают разрыв: %(breaks)s"
+msgstr "new: %(count)s, of which mark a break: %(breaks)s"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:179
+msgid "Принята: %(user)s, %(moment)s."
+msgstr "Accepted by %(user)s, %(moment)s."
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:184
+msgid "Сборка рабочего склада — запуск № %(pk)s"
+msgstr "Working warehouse build — run No. %(pk)s"
+
+#: apps/dashboard/templates/dashboard/_candidate_report.html:188
+msgid "Отклонена: %(user)s, %(moment)s."
+msgstr "Rejected by %(user)s, %(moment)s."
 
 #: apps/dashboard/templates/dashboard/base.html:18
 msgid "Панель управления — изменения затрагивают всех пользователей"
@@ -6872,7 +7010,7 @@ msgstr "no en"
 
 #: apps/dashboard/templates/dashboard/content.html:106
 #: apps/dashboard/templates/dashboard/content.html:111
-#: apps/dashboard/templates/dashboard/data.html:169
+#: apps/dashboard/templates/dashboard/data.html:214
 msgid "Править"
 msgstr "Edit"
 
@@ -6942,8 +7080,8 @@ msgid "Сохранить версию «%(lang)s»"
 msgstr "Save the “%(lang)s” version"
 
 #: apps/dashboard/templates/dashboard/data.html:16
-#: apps/dashboard/views/data.py:238
-#: apps/dashboard/views/data.py:244
+#: apps/dashboard/views/data.py:277
+#: apps/dashboard/views/data.py:283
 msgid "Замечания проверок"
 msgstr "Check findings"
 
@@ -6967,7 +7105,7 @@ msgid "Пригодных к анализу"
 msgstr "Suitable for analysis"
 
 #: apps/dashboard/templates/dashboard/data.html:51
-#: apps/dashboard/templates/dashboard/etl_run.html:82
+#: apps/dashboard/templates/dashboard/etl_run.html:83
 msgid "Пересмотров"
 msgstr "Revisions"
 
@@ -6987,101 +7125,125 @@ msgid "Склад недоступен"
 msgstr "The warehouse is unavailable"
 
 #: apps/dashboard/templates/dashboard/data.html:71
-#: apps/dashboard/templates/dashboard/etl_run.html:117
+#: apps/dashboard/templates/dashboard/etl_run.html:123
 #: apps/dashboard/templates/dashboard/release.html:24
-#: apps/dashboard/views/data.py:145
+#: apps/dashboard/views/data.py:152
 msgid "Файл"
 msgstr "File"
 
-#: apps/dashboard/templates/dashboard/data.html:78
+#: apps/dashboard/templates/dashboard/data.html:79
+msgid "Проверенные версии ждут решения"
+msgstr "Checked versions awaiting a decision"
+
+#: apps/dashboard/templates/dashboard/data.html:86
+msgid "Проверена"
+msgstr "Checked"
+
+#: apps/dashboard/templates/dashboard/data.html:87
+msgid "Откуда"
+msgstr "Origin"
+
+#: apps/dashboard/templates/dashboard/data.html:97
+msgid "загружена в панели"
+msgstr "uploaded in the panel"
+
+#: apps/dashboard/templates/dashboard/data.html:97
+msgid "скачана при сборе"
+msgstr "downloaded during collection"
+
+#: apps/dashboard/templates/dashboard/data.html:101
+msgid "Отчёт и решение"
+msgstr "Report and decision"
+
+#: apps/dashboard/templates/dashboard/data.html:114
 msgid "Новый выпуск набора"
 msgstr "New dataset release"
 
-#: apps/dashboard/templates/dashboard/data.html:85
+#: apps/dashboard/templates/dashboard/data.html:121
 msgid "Сборка склада уже идёт"
 msgstr "A warehouse build is already running"
 
-#: apps/dashboard/templates/dashboard/data.html:105
-msgid "Загрузить и собрать склад"
-msgstr "Upload and build the warehouse"
+#: apps/dashboard/templates/dashboard/data.html:150
+msgid "Загрузить и проверить"
+msgstr "Upload and check"
 
-#: apps/dashboard/templates/dashboard/data.html:110
+#: apps/dashboard/templates/dashboard/data.html:155
 #: apps/dashboard/templates/dashboard/sources.html:88
 msgid "Команды для обслуживания вручную, на стенде"
 msgstr "Commands for manual maintenance on the server"
 
-#: apps/dashboard/templates/dashboard/data.html:129
+#: apps/dashboard/templates/dashboard/data.html:174
 msgid "Версии набора данных"
 msgstr "Dataset versions"
 
-#: apps/dashboard/templates/dashboard/data.html:138
+#: apps/dashboard/templates/dashboard/data.html:183
 msgid "Опубликована"
 msgstr "Published"
 
-#: apps/dashboard/templates/dashboard/data.html:140
+#: apps/dashboard/templates/dashboard/data.html:185
 #: apps/dashboard/templates/dashboard/index.html:105
-#: apps/dashboard/views/data.py:154
+#: apps/dashboard/views/data.py:161
 msgid "Период"
 msgstr "Period"
 
-#: apps/dashboard/templates/dashboard/data.html:141
+#: apps/dashboard/templates/dashboard/data.html:186
 msgid "Загрузок"
 msgstr "Downloads"
 
-#: apps/dashboard/templates/dashboard/data.html:161
+#: apps/dashboard/templates/dashboard/data.html:206
 #: apps/dashboard/templates/dashboard/user_list.html:88
 msgid "действует"
 msgstr "active"
 
-#: apps/dashboard/templates/dashboard/data.html:163
+#: apps/dashboard/templates/dashboard/data.html:208
 msgid "прежняя"
 msgstr "previous"
 
-#: apps/dashboard/templates/dashboard/data.html:179
+#: apps/dashboard/templates/dashboard/data.html:224
 msgid "Версии не зарегистрированы: сборка склада ещё не выполнялась."
 msgstr "No versions are registered: the warehouse has not been built yet."
 
-#: apps/dashboard/templates/dashboard/data.html:186
+#: apps/dashboard/templates/dashboard/data.html:231
 msgid "История запусков загрузки"
 msgstr "Data loading history"
 
-#: apps/dashboard/templates/dashboard/data.html:194
+#: apps/dashboard/templates/dashboard/data.html:239
 msgid "Начало"
 msgstr "Start"
 
-#: apps/dashboard/templates/dashboard/data.html:195
+#: apps/dashboard/templates/dashboard/data.html:240
 msgid "Режим"
 msgstr "Mode"
 
-#: apps/dashboard/templates/dashboard/data.html:197
+#: apps/dashboard/templates/dashboard/data.html:242
 #: apps/dashboard/templates/dashboard/etl_run.html:68
 msgid "Длительность"
 msgstr "Duration"
 
-#: apps/dashboard/templates/dashboard/data.html:199
+#: apps/dashboard/templates/dashboard/data.html:244
 msgid "Разрывов"
 msgstr "Breaks"
 
-#: apps/dashboard/templates/dashboard/data.html:200
-#: apps/dashboard/templates/dashboard/etl_run.html:90
+#: apps/dashboard/templates/dashboard/data.html:245
+#: apps/dashboard/templates/dashboard/etl_run.html:92
 msgid "Запустил"
 msgstr "Started by"
 
-#: apps/dashboard/templates/dashboard/data.html:221
+#: apps/dashboard/templates/dashboard/data.html:266
 #: apps/dashboard/templates/dashboard/etl_run.html:70
 msgid "с"
 msgstr "from"
 
-#: apps/dashboard/templates/dashboard/data.html:226
-#: apps/dashboard/templates/dashboard/etl_run.html:92
+#: apps/dashboard/templates/dashboard/data.html:271
+#: apps/dashboard/templates/dashboard/etl_run.html:94
 msgid "командная строка"
 msgstr "command line"
 
-#: apps/dashboard/templates/dashboard/data.html:230
+#: apps/dashboard/templates/dashboard/data.html:275
 msgid "Журнал"
 msgstr "Log"
 
-#: apps/dashboard/templates/dashboard/data.html:239
+#: apps/dashboard/templates/dashboard/data.html:284
 msgid "Запусков не зафиксировано."
 msgstr "No runs are recorded."
 
@@ -7089,13 +7251,17 @@ msgstr "No runs are recorded."
 msgid "Какая версия набора действует, когда выполнялась сборка склада и чем она закончилась."
 msgstr "Which version of the set is in force, when the warehouse was built and how the build ended."
 
-#: apps/dashboard/templates/dashboard/data.html:88
+#: apps/dashboard/templates/dashboard/data.html:124
 msgid "Ход сборки — запуск № %(pk)s"
 msgstr "Build progress — run no. %(pk)s"
 
-#: apps/dashboard/templates/dashboard/data.html:95
-msgid "Файл проверяется по составу атрибутов, и склад собирается отдельным процессом — около полуминуты. Сайт работает на прежних данных, пока новый склад не собран целиком; при неудаче прежние данные остаются."
-msgstr "The file is checked for its set of attributes, and the warehouse is built by a separate process — about half a minute. The site keeps working on the previous data until the new warehouse is complete; if the build fails, the previous data stay."
+#: apps/dashboard/templates/dashboard/data.html:132
+msgid "Файл проверяется по составу атрибутов и собирается рядом с рабочим складом — около минуты. Затем показывается отчёт о том, что изменится: ряды, значения, единицы, связи с выпусками источников, новые методические примечания. Рабочий склад собирается из новой версии, только когда вы её примете."
+msgstr "The file is checked for its attributes and built next to the working warehouse, which takes about a minute. A report then shows what will change: series, values, units, links to source releases and new methodological notes. The working warehouse is built from the new version only once you accept it."
+
+#: apps/dashboard/templates/dashboard/data.html:140
+msgid "Новую версию на странице набора «Если быть точным» ежедневный сбор источников находит, скачивает и проверяет сам; о готовой проверке приходит письмо."
+msgstr "The daily source collection finds a new version on the “Esli byt tochnym” dataset page, downloads and checks it by itself; an email arrives when the check is ready."
 
 #: apps/dashboard/templates/dashboard/dataset_version_form.html:7
 msgid "Версия набора данных"
@@ -7133,47 +7299,51 @@ msgstr "The reason was not recorded: see the execution log below."
 msgid "Наблюдений загружено"
 msgstr "Observations loaded"
 
-#: apps/dashboard/templates/dashboard/etl_run.html:86
+#: apps/dashboard/templates/dashboard/etl_run.html:87
 msgid "Разрывов сопоставимости"
 msgstr "Comparability breaks"
 
-#: apps/dashboard/templates/dashboard/etl_run.html:99
+#: apps/dashboard/templates/dashboard/etl_run.html:94
+msgid "сбор источников"
+msgstr "source collection"
+
+#: apps/dashboard/templates/dashboard/etl_run.html:105
 msgid "Журнал выполнения"
 msgstr "Execution log"
 
-#: apps/dashboard/templates/dashboard/etl_run.html:105
+#: apps/dashboard/templates/dashboard/etl_run.html:111
 msgid "Журнал пуст."
 msgstr "The log is empty."
 
-#: apps/dashboard/templates/dashboard/etl_run.html:120
-#: apps/dashboard/views/data.py:152
+#: apps/dashboard/templates/dashboard/etl_run.html:126
+#: apps/dashboard/views/data.py:159
 msgid "Контрольная сумма"
 msgstr "Checksum"
 
-#: apps/dashboard/templates/dashboard/etl_run.html:129
+#: apps/dashboard/templates/dashboard/etl_run.html:135
 msgid "Ссылки на ряды, которых нет в складе"
 msgstr "References to series missing from the warehouse"
 
-#: apps/dashboard/templates/dashboard/etl_run.html:142
+#: apps/dashboard/templates/dashboard/etl_run.html:148
 msgid "записей"
 msgstr "records"
 
-#: apps/dashboard/templates/dashboard/etl_run.html:152
+#: apps/dashboard/templates/dashboard/etl_run.html:158
 msgid "Замечания, найденные этим запуском"
 msgstr "Findings from this run"
 
-#: apps/dashboard/templates/dashboard/etl_run.html:162
+#: apps/dashboard/templates/dashboard/etl_run.html:168
 #: apps/dashboard/templates/dashboard/quality.html:30
 #: apps/dashboard/templates/dashboard/quality.html:57
 msgid "Уровень"
 msgstr "Severity"
 
-#: apps/dashboard/templates/dashboard/etl_run.html:163
+#: apps/dashboard/templates/dashboard/etl_run.html:169
 #: apps/dashboard/templates/dashboard/quality.html:58
 msgid "Тип"
 msgstr "Type"
 
-#: apps/dashboard/templates/dashboard/etl_run.html:164
+#: apps/dashboard/templates/dashboard/etl_run.html:170
 #: apps/dashboard/templates/dashboard/quality.html:59
 msgid "Описание"
 msgstr "Description"
@@ -7182,11 +7352,11 @@ msgstr "Description"
 msgid "Страница обновляется сама. Сайт работает на прежних данных, пока новый склад не собран целиком."
 msgstr "This page refreshes by itself. The site keeps serving the previous data until the new warehouse is complete."
 
-#: apps/dashboard/templates/dashboard/etl_run.html:132
+#: apps/dashboard/templates/dashboard/etl_run.html:138
 msgid "Справочники проекта и сохранённое пользователями ссылаются на эти ряды, а в собранном складе их нет. Чаще всего это значит, что в новой версии набора у рядов сменились ключи: показатели с такими ссылками остаются без данных."
 msgstr "Project reference files and users' saved items refer to these series, but the built warehouse does not contain them. Most often this means the series keys changed in the new dataset version: indicators with such references are left without data."
 
-#: apps/dashboard/templates/dashboard/etl_run.html:154
+#: apps/dashboard/templates/dashboard/etl_run.html:160
 msgid "всего: %(total)s"
 msgstr "in total: %(total)s"
 
@@ -7365,11 +7535,6 @@ msgstr "Parsing by table"
 msgid "Таблица и лист"
 msgstr "Table and sheet"
 
-#: apps/dashboard/templates/dashboard/release.html:57
-#: apps/dashboard/templates/dashboard/sources.html:189
-msgid "Значений"
-msgstr "Values"
-
 #: apps/dashboard/templates/dashboard/release.html:59
 msgid "Предварительные годы"
 msgstr "Preliminary years"
@@ -7467,7 +7632,7 @@ msgid "Журнал выпусков"
 msgstr "Release log"
 
 #: apps/dashboard/templates/dashboard/sources.html:187
-#: apps/dashboard/views/data.py:147
+#: apps/dashboard/views/data.py:154
 msgid "Размер"
 msgstr "Size"
 
@@ -7894,39 +8059,56 @@ msgstr "New record"
 msgid "Сохранено (язык: %(lang)s)"
 msgstr "Saved (language: %(lang)s)"
 
-#: apps/dashboard/views/data.py:70
+#: apps/dashboard/views/data.py:73
 msgid "Загрузка данных и версии набора"
 msgstr "Data loading and versions of the set"
 
-#: apps/dashboard/views/data.py:165
+#: apps/dashboard/views/data.py:172
 msgid "Сведения о версии сохранены"
 msgstr "The version details have been saved"
 
-#: apps/dashboard/views/data.py:197
+#: apps/dashboard/views/data.py:204
 msgid "Запуск загрузки №%(pk)s"
 msgstr "Load run no. %(pk)s"
 
-#: apps/dashboard/views/data.py:91
+#: apps/dashboard/views/data.py:253
+msgid "Версия принята, сборка рабочего склада начата"
+msgstr "Version accepted, the working warehouse build has started"
+
+#: apps/dashboard/views/data.py:247
+#: apps/dashboard/views/data.py:95
 msgid "Сборка склада уже идёт — дождитесь её окончания"
 msgstr "A warehouse build is already running — wait for it to finish"
 
-#: apps/dashboard/views/data.py:106
-msgid "Набор принят, сборка склада начата"
-msgstr "The dataset has been accepted and the warehouse build has started"
+#: apps/dashboard/views/data.py:112
+msgid "Набор принят: идёт проверка, рабочий склад заменится после вашего решения"
+msgstr "Dataset received: the check is running, and the working warehouse will be replaced after your decision"
 
-#: apps/dashboard/views/data.py:143
+#: apps/dashboard/views/data.py:150
 msgid "Код версии"
 msgstr "Version code"
 
-#: apps/dashboard/views/data.py:144
+#: apps/dashboard/views/data.py:151
 msgid "Дата публикации"
 msgstr "Date of publication"
 
-#: apps/dashboard/views/data.py:104
-msgid "Сборка не начата: %s"
-msgstr "The build has not started: %s"
+#: apps/dashboard/views/data.py:240
+msgid "По этой проверке решение уже принято"
+msgstr "A decision on this check has already been taken"
 
-#: apps/dashboard/views/data.py:190
+#: apps/dashboard/views/data.py:244
+msgid "Версия отклонена, рабочий склад прежний"
+msgstr "Version rejected, the working warehouse is unchanged"
+
+#: apps/dashboard/views/data.py:250
+msgid "Файл проверенного набора не найден: загрузите его заново"
+msgstr "The checked dataset file was not found: upload it again"
+
+#: apps/dashboard/views/data.py:108
+msgid "Проверка не начата: %s"
+msgstr "Check not started: %s"
+
+#: apps/dashboard/views/data.py:197
 msgid "Запуск №%(pk)s"
 msgstr "Run no. %(pk)s"
 
@@ -8967,10 +9149,6 @@ msgstr "Core set"
 msgid "Пересчёт в реальное выражение"
 msgstr "Conversion to real terms"
 
-#: apps/warehouse/etl/integrity.py:25
-msgid "Связи с выпусками источников"
-msgstr "Links to source releases"
-
 #: apps/warehouse/etl/integrity.py:26
 msgid "Статусы публикации рядов"
 msgstr "Series publication statuses"
@@ -8991,95 +9169,99 @@ msgstr "Users' saved views"
 msgid "Избранное пользователей"
 msgstr "Users' favourites"
 
-#: apps/warehouse/models.py:213
+#: apps/warehouse/models.py:245
 msgid "Составное объявление единицы измерения: соотношение между единицей территорий и единицей для России в целом не определено"
 msgstr "A compound declaration of the unit of measurement: the ratio between the unit of the territories and the unit for Russia as a whole is undefined"
 
-#: apps/warehouse/models.py:217
+#: apps/warehouse/models.py:249
 msgid "Выпуски издания объявляют единицу измерения для России в целом по-разному; значения приведены к единой единице при загрузке"
 msgstr "The editions declare the unit of measurement for Russia as a whole differently; the values were brought to a single unit on loading"
 
-#: apps/warehouse/models.py:20
+#: apps/warehouse/models.py:21
 msgid "В очереди"
 msgstr "Queued"
 
-#: apps/warehouse/models.py:21
+#: apps/warehouse/models.py:22
 msgid "Выполняется"
 msgstr "Running"
 
-#: apps/warehouse/models.py:22
+#: apps/warehouse/models.py:23
 msgid "Завершён успешно"
 msgstr "Completed successfully"
 
-#: apps/warehouse/models.py:23
+#: apps/warehouse/models.py:24
 msgid "Завершён с ошибкой"
 msgstr "Completed with an error"
 
-#: apps/warehouse/models.py:24
+#: apps/warehouse/models.py:25
 msgid "Прерван"
 msgstr "Interrupted"
 
-#: apps/warehouse/models.py:27
+#: apps/warehouse/models.py:28
 msgid "Полная сборка"
 msgstr "Full build"
 
-#: apps/warehouse/models.py:28
+#: apps/warehouse/models.py:29
 msgid "Пересчёт витрин"
 msgstr "Recalculation of summary tables"
 
-#: apps/warehouse/models.py:29
+#: apps/warehouse/models.py:30
 msgid "Синхронизация справочников"
 msgstr "Synchronisation of reference data"
 
-#: apps/warehouse/models.py:137
+#: apps/warehouse/models.py:31
+msgid "Проверка новой версии набора"
+msgstr "New dataset version check"
+
+#: apps/warehouse/models.py:169
 msgid "Информация"
 msgstr "Information"
 
-#: apps/warehouse/models.py:138
+#: apps/warehouse/models.py:170
 msgid "Предупреждение"
 msgstr "Warning"
 
-#: apps/warehouse/models.py:139
+#: apps/warehouse/models.py:171
 msgid "Ошибка"
 msgstr "Error"
 
-#: apps/warehouse/models.py:142
+#: apps/warehouse/models.py:174
 msgid "Расхождение суммы регионов с итогом"
 msgstr "Sum of the regions differs from the total"
 
-#: apps/warehouse/models.py:143
+#: apps/warehouse/models.py:175
 msgid "Резкое изменение значения"
 msgstr "Abrupt change of a value"
 
-#: apps/warehouse/models.py:144
+#: apps/warehouse/models.py:176
 msgid "Разрыв в ряде наблюдений"
 msgstr "Gap in a series of observations"
 
-#: apps/warehouse/models.py:145
+#: apps/warehouse/models.py:177
 msgid "Несогласованность единиц измерения"
 msgstr "Inconsistent units of measurement"
 
-#: apps/warehouse/models.py:146
+#: apps/warehouse/models.py:178
 msgid "Устаревшее состояние публикации"
 msgstr "Outdated publication status"
 
-#: apps/warehouse/models.py:207
+#: apps/warehouse/models.py:239
 msgid "Ряд отмечен как прекращённый с %(since)s года, но в складе есть значения за %(year)s год"
 msgstr "The series is marked as discontinued since %(since)s, but the warehouse has values for %(year)s"
 
-#: apps/warehouse/models.py:222
+#: apps/warehouse/models.py:254
 msgid "Значения по субъектам и по России в целом приведены в разных единицах измерения: их отношение устойчиво равно %(ratio).0f"
 msgstr "The values for the regions and for Russia as a whole are given in different units of measurement: their ratio is steadily %(ratio).0f"
 
-#: apps/warehouse/models.py:229
+#: apps/warehouse/models.py:261
 msgid "Сумма по субъектам отличается от значения по России на %(share).1f %%"
 msgstr "The sum over the regions differs from the value for Russia by %(share).1f %%"
 
-#: apps/warehouse/models.py:233
+#: apps/warehouse/models.py:265
 msgid "Значение изменилось между выпусками в %(factor).0f раз — вероятна ошибка единицы измерения в источнике"
 msgstr "The value changed between editions by a factor of %(factor).0f — a unit of measurement error at the source is likely"
 
-#: apps/warehouse/models.py:240
+#: apps/warehouse/models.py:272
 msgid "В периоде %(first)s–%(last)s отсутствует наблюдений: %(count)s"
 msgstr "Observations missing in the period %(first)s–%(last)s: %(count)s"
 

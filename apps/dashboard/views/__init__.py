@@ -10,6 +10,7 @@ from .content import (
     MethodologySectionEditView,
 )
 from .data import (
+    CandidateDecisionView,
     DatasetUploadView,
     DatasetVersionEditView,
     DataView,
@@ -30,6 +31,7 @@ from .users import (
 from .visits import VisitsExportView, VisitsView
 
 __all__ = [
+    "CandidateDecisionView",
     "CollectNowView",
     "ContentView",
     "DataView",

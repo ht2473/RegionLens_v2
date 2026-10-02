@@ -73,6 +73,42 @@
     </div>
   </section>
 
+  {% if awaiting %}
+    <section class="card admin-section">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Проверенные версии ждут решения" %}</h2>
+      </div>
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Версия" %}</th>
+              <th scope="col">{% translate "Проверена" %}</th>
+              <th scope="col">{% translate "Откуда" %}</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for run in awaiting %}
+              <tr>
+                <td><strong>{{ run.report.candidate.version|default:run.offered_version }}</strong></td>
+                <td>{{ run.finished_at|date:"d.m.Y H:i" }}</td>
+                <td class="text-muted">
+                  {% if run.started_by %}{% translate "загружена в панели" %}{% else %}{% translate "скачана при сборе" %}{% endif %}
+                </td>
+                <td>
+                  <a class="button button--sm button--primary" href="{% url 'dashboard:etl-run' pk=run.pk %}">
+                    {% translate "Отчёт и решение" %}
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% endif %}
+
   <section class="card" style="margin-top: var(--space-5)">
     <div class="card__header">
       <h2 class="card__title">{% translate "Новый выпуск набора" %}</h2>
@@ -91,18 +127,27 @@
         </div>
       </div>
     {% else %}
-      <p class="text-secondary">
-        {% blocktranslate trimmed %}
-          Файл проверяется по составу атрибутов, и склад собирается отдельным процессом —
-          около полуминуты. Сайт работает на прежних данных, пока новый склад не собран
-          целиком; при неудаче прежние данные остаются.
-        {% endblocktranslate %}
-      </p>
+      <div class="stack stack--tight">
+        <p class="text-secondary">
+          {% blocktranslate trimmed %}
+            Файл проверяется по составу атрибутов и собирается рядом с рабочим складом — около
+            минуты. Затем показывается отчёт о том, что изменится: ряды, значения, единицы,
+            связи с выпусками источников, новые методические примечания. Рабочий склад
+            собирается из новой версии, только когда вы её примете.
+          {% endblocktranslate %}
+        </p>
+        <p class="text-secondary">
+          {% blocktranslate trimmed %}
+            Новую версию на странице набора «Если быть точным» ежедневный сбор источников
+            находит, скачивает и проверяет сам; о готовой проверке приходит письмо.
+          {% endblocktranslate %}
+        </p>
+      </div>
       <form method="post" action="{% url 'dashboard:data-upload' %}" enctype="multipart/form-data"
             style="margin-top: var(--space-3)">
         {% csrf_token %}
         {% include "partials/_field.html" with field=upload_form.dataset %}
-        <button class="button button--primary" type="submit">{% translate "Загрузить и собрать склад" %}</button>
+        <button class="button button--primary" type="submit">{% translate "Загрузить и проверить" %}</button>
       </form>
     {% endif %}
 

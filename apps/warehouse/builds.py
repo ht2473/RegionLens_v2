@@ -26,7 +26,7 @@ from django.utils import timezone, translation
 from apps.core import alerts
 
 from .duckdb_client import writable_connection
-from .etl import integrity, source
+from .etl import compare, integrity, source
 from .etl.pipeline import EtlError, Pipeline, PipelineResult
 from .models import EtlRun
 
@@ -43,6 +43,9 @@ SOURCES_KEPT = 3
 
 # Через сколько времени сборка без исхода считается оборванной.
 ABANDONED_AFTER = timedelta(minutes=30)
+
+# Письмо о проверенной версии не повторяется: она ждёт решения в панели.
+CANDIDATE_LETTER_REPEAT = timedelta(days=365)
 
 
 class BuildBusyError(EtlError):
@@ -116,16 +119,28 @@ def current_source_path() -> Path:
 
 def store_upload(upload: UploadedFile) -> Path:
     """Сохранить загруженный набор под уникальным именем, оканчивающимся исходным."""
-    directory = Path(settings.DATASET_UPLOAD_DIR)
-    directory.mkdir(parents=True, exist_ok=True)
-    original = Path(upload.name or "dataset.parquet").stem
-    stem = "".join(char if char.isalnum() or char in "-_." else "_" for char in original)
-    stamp = timezone.now().strftime("%Y%m%d-%H%M%S")
-    target = directory / f"{stamp}-{uuid.uuid4().hex[:6]}-{stem}.parquet"
+    target = _upload_path(upload.name or "dataset.parquet")
     with target.open("wb") as handle:
         for chunk in upload.chunks():
             handle.write(chunk)
     return target
+
+
+def store_download(content: bytes, name: str) -> Path:
+    """Сохранить скачанный набор рядом с загруженными из панели."""
+    target = _upload_path(name)
+    target.write_bytes(content)
+    return target
+
+
+def _upload_path(name: str) -> Path:
+    """Уникальный путь в каталоге наборов: время, случайная часть и исходное имя."""
+    directory = Path(settings.DATASET_UPLOAD_DIR)
+    directory.mkdir(parents=True, exist_ok=True)
+    original = Path(name).stem
+    stem = "".join(char if char.isalnum() or char in "-_." else "_" for char in original)
+    stamp = timezone.now().strftime("%Y%m%d-%H%M%S")
+    return directory / f"{stamp}-{uuid.uuid4().hex[:6]}-{stem}.parquet"
 
 
 def check_structure(path: Path) -> list[str]:
@@ -166,6 +181,63 @@ def start_build(*, source_path: Path, started_by: User | None) -> EtlRun:
     launch(run)
     run.refresh_from_db()
     return run
+
+
+def start_candidate(
+    *,
+    source_path: Path,
+    started_by: User | None,
+    offered: dict[str, str] | None = None,
+    inline: bool = False,
+    progress: Callable[[str], None] | None = None,
+) -> EtlRun:
+    """
+    Начать проверку нового набора: сборку рядом с рабочим складом и отчёт о различиях.
+
+    Из панели проверка идёт отдельным процессом; из сбора (``inline``) — в нём самом.
+    ``offered`` — версия и адрес, если набор скачан с сайта.
+    """
+    run = EtlRun.objects.create(
+        mode=EtlRun.Mode.CANDIDATE,
+        status=EtlRun.Status.QUEUED,
+        source_path=str(source_path),
+        started_by=started_by,
+        statistics={"offered": offered} if offered else {},
+    )
+    run.append_log(f"Набор принят: {source_path.name}. Проверка новой версии", save=True)
+    if inline:
+        run_queued(run.pk, progress=progress)
+    else:
+        launch(run)
+    run.refresh_from_db()
+    return run
+
+
+def accept_candidate(run: EtlRun, user: User) -> EtlRun:
+    """Принять проверенную версию: собрать рабочий склад из её набора."""
+    build = start_build(source_path=Path(run.source_path), started_by=user)
+    _decide(run, user, accepted=True, build=build)
+    return build
+
+
+def reject_candidate(run: EtlRun, user: User) -> None:
+    """Отклонить проверенную версию; её файл удаляется при чистке наборов."""
+    _decide(run, user, accepted=False)
+    prune_sources()
+
+
+def _decide(run: EtlRun, user: User, *, accepted: bool, build: EtlRun | None = None) -> None:
+    """Записать решение по проверенной версии."""
+    run.statistics = {
+        **(run.statistics or {}),
+        "decision": {
+            "accepted": accepted,
+            "user": user.get_short_name(),
+            "at": timezone.now().isoformat(timespec="seconds"),
+            "build": build.pk if build is not None else None,
+        },
+    }
+    run.save(update_fields=["statistics", "updated_at"])
 
 
 def launch(run: EtlRun) -> None:
@@ -223,10 +295,11 @@ def execute(
     progress: Callable[[str], None] | None = None,
 ) -> PipelineResult:
     """
-    Выполнить полную сборку по запуску ``run``.
+    Выполнить полную сборку или проверку новой версии по запуску ``run``.
 
     При занятой блокировке — ``BuildBusyError``; отказ сборки отмечается и пробрасывается.
     """
+    candidate = run.mode == EtlRun.Mode.CANDIDATE
     with build_lock() as acquired:
         if not acquired:
             raise BuildBusyError("Идёт другая сборка склада")
@@ -242,7 +315,10 @@ def execute(
             progress=progress,
         )
         try:
-            result = pipeline.build()
+            if candidate:
+                result = pipeline.check_candidate(current_source=current_source_path())
+            else:
+                result = pipeline.build()
         except EtlError as error:
             run.finish(status=EtlRun.Status.FAILED, error=str(error))
             _alert_failed(run)
@@ -254,6 +330,9 @@ def execute(
 
         run.finish(status=EtlRun.Status.SUCCESS)
 
+    if candidate:
+        _alert_candidate(run)
+        return result
     _alert_missing(run)
     after_build()
     return result
@@ -298,6 +377,24 @@ def _alert_missing(run: EtlRun) -> None:
     )
 
 
+def _alert_candidate(run: EtlRun) -> None:
+    """Письмо о проверенной версии набора, скачанной при сборе: её нужно принять или отклонить."""
+    if run.started_by_id is not None:
+        return
+    report = run.report
+    version = run.offered_version or report.get("candidate", {}).get("version", "")
+    alerts.notify(
+        f"candidate:{version}:{run.source_checksum}",
+        f"новая версия набора {version}: проверка готова",
+        "На сайте «Если быть точным» вышла новая версия набора. Она скачана и собрана рядом "
+        "с рабочим складом; рабочий склад не менялся.\n\n"
+        + "\n".join(compare.summary_lines(report))
+        + "\n\nПринять или отклонить — в карточке проверки: "
+        + alerts.panel_address("dashboard:etl-run", run.pk),
+        repeat_after=CANDIDATE_LETTER_REPEAT,
+    )
+
+
 def after_build() -> None:
     """
     Действия после успешной сборки: прогрев кэша и чистка загруженных наборов.
@@ -312,7 +409,8 @@ def after_build() -> None:
 
 def prune_sources(keep: int = SOURCES_KEPT) -> list[Path]:
     """
-    Удалить загруженные наборы, кроме последних ``keep`` удачных и незаконченных сборок.
+    Удалить загруженные наборы, кроме последних ``keep`` удачных, незаконченных сборок
+    и проверенных версий, которые ждут решения.
 
     Возвращает удалённые файлы.
     """
@@ -327,7 +425,12 @@ def prune_sources(keep: int = SOURCES_KEPT) -> list[Path]:
     pending = EtlRun.objects.filter(
         status__in=[EtlRun.Status.QUEUED, EtlRun.Status.RUNNING]
     ).values_list("source_path", flat=True)
-    needed = {Path(path).name for path in [*successful, *pending] if path}
+    awaiting = [
+        run.source_path
+        for run in EtlRun.objects.filter(mode=EtlRun.Mode.CANDIDATE, status=EtlRun.Status.SUCCESS)
+        if run.awaits_decision
+    ]
+    needed = {Path(path).name for path in [*successful, *pending, *awaiting] if path}
 
     removed = []
     for path in directory.glob("*.parquet"):

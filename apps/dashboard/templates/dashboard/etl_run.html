@@ -78,21 +78,27 @@
       <div class="admin-facts__label">{% translate "Рядов" %}</div>
       <div class="admin-facts__value">{{ run.series_count|ru_number:0 }}</div>
     </div>
-    <div>
-      <div class="admin-facts__label">{% translate "Пересмотров" %}</div>
-      <div class="admin-facts__value">{{ run.revision_count|ru_number:0 }}</div>
-    </div>
-    <div>
-      <div class="admin-facts__label">{% translate "Разрывов сопоставимости" %}</div>
-      <div class="admin-facts__value">{{ run.break_count|ru_number:0 }}</div>
-    </div>
+    {% if run.mode != "candidate" %}
+      <div>
+        <div class="admin-facts__label">{% translate "Пересмотров" %}</div>
+        <div class="admin-facts__value">{{ run.revision_count|ru_number:0 }}</div>
+      </div>
+      <div>
+        <div class="admin-facts__label">{% translate "Разрывов сопоставимости" %}</div>
+        <div class="admin-facts__value">{{ run.break_count|ru_number:0 }}</div>
+      </div>
+    {% endif %}
     <div>
       <div class="admin-facts__label">{% translate "Запустил" %}</div>
       <div class="admin-facts__value">
-        {% if run.started_by %}{{ run.started_by.get_short_name }}{% else %}{% translate "командная строка" %}{% endif %}
+        {% if run.started_by %}{{ run.started_by.get_short_name }}{% elif run.offered_version %}{% translate "сбор источников" %}{% else %}{% translate "командная строка" %}{% endif %}
       </div>
     </div>
   </div>
+
+  {% if run.mode == "candidate" and report %}
+    {% include "dashboard/_candidate_report.html" %}
+  {% endif %}
 
   <section class="card" style="margin-top: var(--space-5)">
     <div class="card__header">

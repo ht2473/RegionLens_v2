@@ -189,16 +189,27 @@ def attention_items() -> list[dict[str, Any]]:
             }
         )
 
+    awaiting = awaiting_candidates()
     newer = dataset_watch.newer_version()
-    if newer:
+    if awaiting:
+        items.append(
+            {
+                "level": "warning",
+                "title": gettext("Проверенная версия набора ждёт решения: %(count)s")
+                % {"count": len(awaiting)},
+                "hint": _("Посмотрите отчёт о различиях и примите или отклоните версию"),
+                "url_name": "dashboard:data",
+            }
+        )
+    elif newer:
         items.append(
             {
                 "level": "warning",
                 "title": gettext("Вышла новая версия набора данных: %(version)s")
                 % {"version": newer},
                 "hint": _(
-                    "Скачайте её на странице набора «Если быть точным» "
-                    "и загрузите в разделе «Загрузка данных»"
+                    "Она будет скачана и проверена при следующем сборе источников; "
+                    "загрузить её можно и вручную в разделе «Загрузка данных»"
                 ),
                 "url_name": "dashboard:data",
             }
@@ -274,6 +285,14 @@ def etl_runs(limit: int = 20) -> list[EtlRun]:
             :limit
         ]
     )
+
+
+def awaiting_candidates() -> list[EtlRun]:
+    """Проверенные версии набора, по которым ещё нет решения, — новые первыми."""
+    runs = EtlRun.objects.filter(mode=EtlRun.Mode.CANDIDATE, status=EtlRun.Status.SUCCESS).order_by(
+        "-started_at"
+    )
+    return [run for run in runs if run.awaits_decision]
 
 
 def dataset_versions() -> list[DatasetVersion]:
