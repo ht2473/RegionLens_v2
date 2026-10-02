@@ -1,0 +1,26 @@
+# Нормализация переводов строк: в репозитории всегда LF, в рабочей копии — по платформе.
+* text=auto eol=lf
+
+# Скрипты Windows должны сохранять CRLF, иначе PowerShell их не выполнит.
+*.ps1  text eol=crlf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# Бинарные и упакованные форматы не подлежат нормализации и диффу.
+*.parquet binary
+*.duckdb  binary
+*.joblib  binary
+*.onnx    binary
+*.png     binary
+*.jpg     binary
+*.ico     binary
+*.woff2   binary
+*.xlsx    binary
+*.docx    binary
+*.pdf     binary
+*.mo      binary
+
+# Файлы переводов и данные справочников удобнее сравнивать как текст.
+*.po      text diff
+*.json    text diff
+*.geojson text diff
