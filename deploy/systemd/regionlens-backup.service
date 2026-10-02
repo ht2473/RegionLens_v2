@@ -1,0 +1,23 @@
+# =====================================================================================
+# Снятие резервной копии по расписанию.
+#
+# Одноразовая служба, её запускает regionlens-backup.timer: копия нужна и тогда,
+# когда контейнеры приложения упали. Пользователь regionlens — в группе docker.
+# =====================================================================================
+
+[Unit]
+Description=RegionLens — резервная копия
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+User=regionlens
+Group=regionlens
+WorkingDirectory=/srv/regionlens
+EnvironmentFile=/srv/regionlens/.env
+ExecStart=/srv/regionlens/scripts/backup.sh --quiet
+
+# Низкий приоритет процессора и диска.
+Nice=10
+IOSchedulingClass=idle

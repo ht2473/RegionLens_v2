@@ -1,0 +1,24 @@
+# =====================================================================================
+# Сбор выпусков внешних источников по расписанию.
+#
+# Одноразовая служба, её запускает regionlens-collect.timer: команда проверяет
+# источники, которым пора, и при новом выпуске пересобирает склад в контейнере web.
+# Пользователь regionlens — в группе docker.
+# =====================================================================================
+
+[Unit]
+Description=RegionLens — сбор выпусков источников
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+User=regionlens
+Group=regionlens
+WorkingDirectory=/srv/regionlens
+EnvironmentFile=/srv/regionlens/.env
+ExecStart=/srv/regionlens/scripts/compose.sh exec -T web python manage.py collect --due
+
+# Низкий приоритет процессора и диска.
+Nice=10
+IOSchedulingClass=idle

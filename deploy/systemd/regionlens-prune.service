@@ -1,0 +1,25 @@
+# =====================================================================================
+# Удаление персональных данных по истечении сроков из политики обработки.
+#
+# Одноразовая служба, её запускает regionlens-prune.timer: истёкшие сеансы, попытки
+# входа старше часа, адрес IP и браузер в обращениях старше 30 суток, имя и адрес
+# обращений без учётной записи через 365 суток после ответа или закрытия.
+# Пользователь regionlens — в группе docker.
+# =====================================================================================
+
+[Unit]
+Description=RegionLens — удаление персональных данных по сроку
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+User=regionlens
+Group=regionlens
+WorkingDirectory=/srv/regionlens
+EnvironmentFile=/srv/regionlens/.env
+ExecStart=/srv/regionlens/scripts/compose.sh exec -T web python manage.py prune_personal_data
+
+# Низкий приоритет процессора и диска.
+Nice=10
+IOSchedulingClass=idle

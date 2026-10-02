@@ -1,0 +1,24 @@
+# =====================================================================================
+# Пересчёт статистики посещений по журналу Caddy.
+#
+# Одноразовая служба, её запускает regionlens-visits.timer: новые строки журнала
+# переходят в историю посещений, GoAccess пересчитывает отчёт, панель его читает.
+# Пользователь regionlens — в группе docker.
+# =====================================================================================
+
+[Unit]
+Description=RegionLens — статистика посещений
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+User=regionlens
+Group=regionlens
+WorkingDirectory=/srv/regionlens
+EnvironmentFile=/srv/regionlens/.env
+ExecStart=/srv/regionlens/scripts/compose.sh exec -T web python manage.py visits
+
+# Низкий приоритет процессора и диска.
+Nice=10
+IOSchedulingClass=idle

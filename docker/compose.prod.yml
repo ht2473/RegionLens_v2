@@ -1,0 +1,182 @@
+# =====================================================================================
+# Рабочий стенд RegionLens.
+#
+# Запуск:    docker compose -f docker/compose.prod.yml --env-file .env up -d
+# Остановка: docker compose -f docker/compose.prod.yml --env-file .env down
+# Журналы:   docker compose -f docker/compose.prod.yml --env-file .env logs -f web
+#
+# --env-file нужен в каждом вызове: иначе Compose ищет docker/.env, POSTGRES_PASSWORD
+# не подставляется, и разбор описания обрывается даже у `logs` и `ps`.
+#
+# Службы:
+#   caddy    — обратный прокси, сертификаты, статика, журнал обращений;
+#   web      — приложение (gunicorn), сборка склада из панели отдельным процессом,
+#              сбор источников и статистика посещений по таймерам хоста;
+#   postgres — учётные записи, справочники, обращения;
+#   valkey   — кэш и счётчики ограничителей частоты.
+#
+# Наружу открыты только порты 80 и 443; порты базы и Valkey не публикуются.
+# Пределы памяти — для VPS с 4 ГБ: обычно стенду хватает около 1,2 ГБ, во время
+# сборки склада — около 2,5 ГБ, прибавка приходится на web.
+# =====================================================================================
+
+name: regionlens
+
+x-app: &app
+  image: ${REGIONLENS_IMAGE:-regionlens:latest}
+  build:
+    context: ..
+    dockerfile: docker/Dockerfile
+  restart: unless-stopped
+  env_file: ../.env
+  environment: &app-environment
+    DJANGO_SETTINGS_MODULE: config.settings.production
+    VALKEY_URL: redis://valkey:6379
+    DATABASE_URL: postgres://${POSTGRES_USER:-regionlens}:${POSTGRES_PASSWORD:?переменная POSTGRES_PASSWORD обязательна}@postgres:5432/${POSTGRES_DB:-regionlens}
+  depends_on:
+    postgres:
+      condition: service_healthy
+    valkey:
+      condition: service_healthy
+  networks: [internal]
+  logging: &logging
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "5"
+
+services:
+  # --- Обратный прокси и сертификаты -----------------------------------------------------
+  caddy:
+    image: caddy:2-alpine
+    container_name: regionlens-caddy
+    restart: unless-stopped
+    ports:
+      # Порты — переменными: на стенде порт 443 может быть занят другой службой.
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+      - "${HTTPS_PORT:-443}:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+      # С пустым адресом Caddy не запускается; обязательность даёт отказ при разборе описания.
+      ACME_EMAIL: "${ACME_EMAIL:?переменная ACME_EMAIL обязательна — адрес для удостоверяющего центра}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+      # Журнал обращений — отдельно от сертификатов: его читает статистика посещений.
+      - caddy_logs:/var/log/caddy
+      # Статику отдаёт прокси, минуя приложение.
+      - static:/srv/static:ro
+    depends_on: [web]
+    networks: [internal]
+    mem_limit: 128m
+    logging: *logging
+
+  # --- Приложение ---------------------------------------------------------------------------
+  web:
+    <<: *app
+    container_name: regionlens-web
+    volumes:
+      - warehouse:/app/data/warehouse
+      # Загруженные из панели наборы: по ним собирается склад.
+      - uploads:/app/data/uploads
+      # Неизменяемый архив выпусков источников и их разбор: по ним склад продолжает ряды.
+      - archive:/app/data/archive
+      - sources:/app/data/sources
+      - static:/app/staticfiles
+      # Журнал Caddy — только на чтение; статистика посещений, накопленная GoAccess.
+      - caddy_logs:/app/logs/caddy:ro
+      - visits:/app/data/visits
+    environment:
+      <<: *app-environment
+      # Предел памяти самой сборки склада: она идёт в этом контейнере.
+      DUCKDB_BUILD_MEMORY_LIMIT: ${DUCKDB_BUILD_MEMORY_LIMIT:-1GB}
+    # Рабочие процессы сервера — около 0,6 ГБ, сборка склада — ещё до 1,5 ГБ.
+    mem_limit: 2560m
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8000/healthz"]
+      interval: 30s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
+
+  # --- Хранилища ---------------------------------------------------------------------------------
+  postgres:
+    image: postgres:18-alpine
+    container_name: regionlens-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-regionlens}
+      POSTGRES_USER: ${POSTGRES_USER:-regionlens}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?переменная POSTGRES_PASSWORD обязательна}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      # С версии 18 образ хранит данные в подкаталоге версии и ждёт том на уровень выше.
+      - postgres_data:/var/lib/postgresql
+    # Настройки — для VPS с 4 ГБ; значения по умолчанию рассчитаны на машину много меньше.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${POSTGRES_SHARED_BUFFERS:-512MB}
+      - -c
+      - effective_cache_size=${POSTGRES_EFFECTIVE_CACHE_SIZE:-1536MB}
+      - -c
+      - work_mem=${POSTGRES_WORK_MEM:-16MB}
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - max_connections=${POSTGRES_MAX_CONNECTIONS:-60}
+      # Диск виртуального сервера — твердотельный: стоимость случайного чтения
+      # почти равна стоимости последовательного.
+      - -c
+      - random_page_cost=1.1
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-regionlens} -d ${POSTGRES_DB:-regionlens}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [internal]
+    mem_limit: 1024m
+    logging: *logging
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: regionlens-valkey
+    restart: unless-stopped
+    # Предел памяти — 128 МБ; при нехватке вытесняются давно не читанные ключи.
+    # На диск ничего не пишется: кэш после перезапуска собирается заново.
+    command:
+      - valkey-server
+      - --maxmemory
+      - 128mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --appendonly
+      - "no"
+      - --save
+      - ""
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks: [internal]
+    mem_limit: 192m
+    logging: *logging
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
+  caddy_logs:
+  warehouse:
+  uploads:
+  archive:
+  sources:
+  visits:
+  static:

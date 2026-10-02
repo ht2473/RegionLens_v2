@@ -1,0 +1,85 @@
+# =====================================================================================
+# Обратный прокси RegionLens. Caddy сам получает и продлевает сертификаты Let's Encrypt.
+#
+# Домен и адрес для уведомлений — из переменных compose. При DOMAIN=localhost
+# сертификат самоподписанный и наружу Caddy не обращается — для проверки развёртывания.
+# =====================================================================================
+
+{
+	email {$ACME_EMAIL}
+	# Журнал в JSON — для систем сбора журналов.
+	log {
+		format json
+		level INFO
+	}
+	servers {
+		# HTTP/3 ускоряет первую загрузку в мобильной сети.
+		protocols h1 h2 h3
+	}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# --- Размер запроса ----------------------------------------------------------------
+	# Большой файл принимает только загрузка выпуска набора в панели управления.
+	@dataset_upload path */manage/data/upload/
+	@other_requests not path */manage/data/upload/
+	request_body @dataset_upload {
+		max_size 256MB
+	}
+	request_body @other_requests {
+		max_size 25MB
+	}
+
+	# --- Заголовки безопасности ---------------------------------------------------------
+	# Политику содержимого задаёт приложение (SECURE_CSP); здесь — заголовки,
+	# не зависящие от страницы.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "same-origin"
+		Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()"
+		# Без сведений о версии сервера.
+		-Server
+	}
+
+	# --- Статика ---------------------------------------------------------------------------
+	# Файлы статики снабжены отпечатком содержимого в имени (ManifestStaticFilesStorage),
+	# поэтому кэшируются навсегда: изменившийся файл получает другое имя.
+	handle_path /static/* {
+		root * /srv/static
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+
+	# --- Приложение ----------------------------------------------------------------------------
+	handle {
+		reverse_proxy web:8000 {
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			# Загрузка крупного набора по медленному каналу занимает минуты;
+			# сборка склада идёт отдельным процессом.
+			transport http {
+				read_timeout 300s
+				write_timeout 300s
+			}
+		}
+	}
+
+	# --- Журнал обращений ------------------------------------------------------------------------
+	# Отдельный том: его читает статистика посещений (manage.py visits) в контейнере web,
+	# поэтому файл доступен на чтение всем, а прежние части не сжимаются — команда дочитывает
+	# и то, что попало в них после её прошлого запуска.
+	# Срок хранения назван на странице условий (ACCESS_LOG_DAYS в apps/core/views.py).
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 20mb
+			roll_keep 10
+			roll_keep_for 720h
+			roll_uncompressed
+			mode 0644
+		}
+		format json
+	}
+}
