@@ -161,7 +161,7 @@ jobs:
 
       - name: Отчёты
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: test-reports
           path: |
@@ -218,7 +218,7 @@ jobs:
 
       - name: Снимки экрана и следы
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: e2e
           path: |
@@ -240,10 +240,10 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Подготовка сборщика
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Сборка
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: docker/Dockerfile
