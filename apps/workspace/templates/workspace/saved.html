@@ -1,0 +1,162 @@
+{% extends "cabinet_base.html" %}
+{% load i18n %}
+
+{# «Сохранённое»: регионы и показатели пилюлями с пометками, виды экрана карточками с параметрами словами. #}
+
+{% block cabinet_subtitle %}
+  <p class="cabinet-head__lead">
+    {% blocktranslate trimmed %}
+      Регионы, показатели и виды экрана, к которым вы хотите вернуться. Сохраняются
+      параметры, а не числа: открытый вид считается заново на текущих данных.
+    {% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block cabinet_content %}
+
+  {% if not territories and not indicators and not queries %}
+    <section class="cabinet-empty">
+      <h2 class="cabinet-empty__title">{% translate "Сохранённого пока нет" %}</h2>
+      <p class="cabinet-empty__text">
+        {% blocktranslate trimmed %}
+          Кнопка «Сохранить» есть в паспорте региона, на странице показателя, на карте,
+          в рейтинге и в инструментах анализа. Сохранённый вид вернёт вас к тому же
+          расчёту, но выполненному на актуальных данных.
+        {% endblocktranslate %}
+      </p>
+      <ul class="choice-list">
+        <li><a class="choice-chip" href="{% url 'catalog:territory-list' %}">{% translate "Регионы" %}</a></li>
+        <li><a class="choice-chip" href="{% url 'catalog:indicator-list' %}">{% translate "Показатели" %}</a></li>
+        <li><a class="choice-chip" href="{% url 'maps:choropleth' %}">{% translate "Исследовать на карте" %}</a></li>
+      </ul>
+    </section>
+  {% endif %}
+
+  {% if territories or indicators %}
+    <div class="saved-columns">
+      {% for group_title, items, empty_hint, actions in favorite_groups %}
+        <section class="saved-group" aria-labelledby="saved-group-{{ forloop.counter }}">
+          <h2 class="saved-group__title" id="saved-group-{{ forloop.counter }}">
+            {{ group_title }} <span class="saved-group__count numeric">{{ items|length }}</span>
+          </h2>
+          {% if items %}
+            <ul class="saved-marks">
+              {% for favorite in items %}
+                <li class="saved-mark">
+                  <a class="saved-mark__link" href="{{ favorite.url }}"
+                     {% if favorite.note %}title="{{ favorite.note }}"{% endif %}>
+                    {{ favorite.title }}{% if favorite.note %}<span class="saved-mark__note">{{ favorite.note }}</span>{% endif %}
+                  </a>
+                  <button type="button" class="saved-mark__remove" popovertarget="mark-note-{{ favorite.pk }}"
+                          aria-haspopup="dialog"
+                          aria-label="{% blocktranslate trimmed with title=favorite.title %}Пометка к «{{ title }}»{% endblocktranslate %}"
+                          title="{% translate 'Пометка' %}">
+                    <svg aria-hidden="true"><use href="#icon-edit"></use></svg>
+                  </button>
+                  <div class="menu-popover save-query" id="mark-note-{{ favorite.pk }}" popover role="dialog"
+                       aria-label="{% blocktranslate trimmed with title=favorite.title %}Пометка к «{{ title }}»{% endblocktranslate %}">
+                    <form method="post" action="{% url 'workspace:favorite-note' pk=favorite.pk %}" class="save-query__form">
+                      {% csrf_token %}
+                      <div class="field">
+                        <label class="field__label" for="mark-note-input-{{ favorite.pk }}">{% translate "Пометка" %}</label>
+                        <input class="input" id="mark-note-input-{{ favorite.pk }}" name="note" maxlength="200"
+                               value="{{ favorite.note }}"
+                               placeholder="{% translate 'Например: сравнить с соседями' %}">
+                        <span class="field__hint">{% translate "Зачем сохранено; видна только вам. Пустая — убрать." %}</span>
+                      </div>
+                      <button type="submit" class="button button--sm button--primary">{% translate "Сохранить" %}</button>
+                    </form>
+                  </div>
+                  <form method="post" action="{% url 'workspace:favorite-delete' pk=favorite.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="saved-mark__remove"
+                            aria-label="{% blocktranslate trimmed with title=favorite.title %}Убрать «{{ title }}» из сохранённого{% endblocktranslate %}"
+                            title="{% translate 'Убрать из сохранённого' %}">
+                      <svg aria-hidden="true"><use href="#icon-close"></use></svg>
+                    </button>
+                  </form>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="saved-group__empty">{{ empty_hint }}</p>
+          {% endif %}
+          {% if actions %}
+            <p class="saved-group__actions">
+              {% for label, url, icon in actions %}
+                <a class="button button--sm button--secondary" href="{{ url }}">
+                  <svg aria-hidden="true"><use href="#icon-{{ icon }}"></use></svg>
+                  {{ label }}
+                </a>
+              {% endfor %}
+            </p>
+            {% if over_limit %}
+              <p class="saved-group__empty">
+                {% blocktranslate trimmed with limit=compare_limit %}
+                  Сравниваются первые {{ limit }} сохранённых регионов.
+                {% endblocktranslate %}
+              </p>
+            {% endif %}
+          {% endif %}
+        </section>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if queries %}
+    <section class="page-section saved-views" aria-labelledby="saved-views-title">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="saved-views-title">
+          {% translate "Виды экрана" %} <span class="saved-group__count numeric">{{ queries|length }}</span>
+        </h2>
+        <p class="page-section__note">{% translate "Карта, рейтинг и инструменты анализа — с теми же настройками" %}</p>
+      </div>
+
+      <ul class="saved-grid">
+        {% for query in queries %}
+          <li class="saved-view">
+            <p class="saved-view__kind">
+              {% if query.target_info %}
+                <svg aria-hidden="true"><use href="#icon-{{ query.target_info.icon }}"></use></svg>
+              {% endif %}
+              {{ query.get_target_display }}
+            </p>
+            <h3 class="saved-view__title">
+              <a href="{% url 'workspace:query-open' public_id=query.public_id %}">{{ query.title }}</a>
+            </h3>
+            {% if query.description %}
+              <p class="saved-view__note">{{ query.description }}</p>
+            {% endif %}
+            {% if query.vanished %}
+              <p class="saved-view__vanished">
+                <svg aria-hidden="true"><use href="#icon-alert"></use></svg>
+                {% blocktranslate trimmed with names=query.vanished|join:"; " %}
+                  Нет в данных: {{ names }}. Вид откроется без них.
+                {% endblocktranslate %}
+              </p>
+            {% endif %}
+
+            <ul class="saved-view__params" aria-label="{% translate 'Параметры' %}">
+              {% for phrase in query.phrases %}
+                <li>{{ phrase }}</li>
+              {% empty %}
+                <li>{% translate "параметры по умолчанию" %}</li>
+              {% endfor %}
+            </ul>
+
+            <div class="saved-view__foot">
+              <p class="saved-view__meta">
+                {% blocktranslate trimmed with date=query.updated_at|date:"d.m.Y" %}изменён {{ date }}{% endblocktranslate %}{% if query.opened_count %} · {% blocktranslate trimmed with count=query.opened_count %}открытий: {{ count }}{% endblocktranslate %}{% endif %}
+              </p>
+              <p class="saved-view__actions">
+                <a href="{% url 'workspace:query-edit' public_id=query.public_id %}">{% translate "Переименовать" %}</a>
+                <a href="{% url 'workspace:query-delete' public_id=query.public_id %}">{% translate "Удалить" %}</a>
+              </p>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "cabinet_base.html" %}
+{% load i18n %}
+
+{# Включение входа с кодом: ключ в приложение (QR-код или вручную), затем первый код. #}
+
+{% block cabinet_content %}
+  <div class="two-factor-setup">
+
+    <ol class="two-factor-setup__steps">
+      <li>
+        <h2 class="cabinet-block__title">{% translate "Добавьте ключ в приложение" %}</h2>
+        <p class="cabinet-block__lead">
+          {% blocktranslate trimmed %}
+            Откройте приложение-генератор кодов и отсканируйте QR-код. Если сканировать нечем —
+            введите ключ вручную или, на телефоне, нажмите ссылку.
+          {% endblocktranslate %}
+        </p>
+        <figure class="qr-code">
+          <svg class="qr-code__image" viewBox="0 0 {{ qr.size }} {{ qr.size }}" role="img"
+               aria-label="{% translate 'QR-код ключа входа' %}" shape-rendering="crispEdges">
+            <rect class="qr-code__paper" width="{{ qr.size }}" height="{{ qr.size }}"></rect>
+            <path class="qr-code__ink" d="{{ qr.path }}"></path>
+          </svg>
+          <figcaption>
+            <span class="qr-code__label">{% translate "Ключ" %}</span>
+            <code class="qr-code__secret">{{ secret }}</code>
+            <a class="qr-code__link" href="{{ uri }}">{% translate "Открыть в приложении на этом устройстве" %}</a>
+          </figcaption>
+        </figure>
+      </li>
+
+      <li>
+        <h2 class="cabinet-block__title">{% translate "Введите код из приложения" %}</h2>
+        <form method="post" class="stack cabinet-form two-factor-setup__form" novalidate>
+          {% csrf_token %}
+          {% for field in form %}{% include "partials/_field.html" with field=field %}{% endfor %}
+          <div class="cabinet-form__actions cabinet-form__actions--start">
+            <a class="button button--ghost" href="{% url 'accounts:security' %}">{% translate "Отмена" %}</a>
+            <button type="submit" class="button button--primary">{% translate "Включить" %}</button>
+          </div>
+        </form>
+        <p class="cabinet-block__footnote">
+          {% blocktranslate trimmed %}
+            После включения сайт покажет резервные коды — сохраните их: без телефона войти
+            можно будет только по ним. Сеансы на других устройствах завершатся.
+          {% endblocktranslate %}
+        </p>
+      </li>
+    </ol>
+
+  </div>
+{% endblock %}

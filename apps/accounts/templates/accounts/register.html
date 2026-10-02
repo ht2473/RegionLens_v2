@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{# Регистрация: слева — что даёт учётная запись, справа — форма. #}
+
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/cabinet.css' %}">{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <div class="auth-layout">
+    <header class="page-intro auth-layout__intro">
+      <div class="page-intro__text">
+        <h1 class="page-intro__title">{% translate "Регистрация" %}</h1>
+        <p class="page-intro__lead">
+          {% blocktranslate trimmed %}
+            Всё открыто и без учётной записи — карта, рейтинги, анализ, выгрузка чисел
+            и документов. Учётная запись нужна, чтобы сохранять и возвращаться.
+          {% endblocktranslate %}
+        </p>
+        <ul class="auth-benefits">
+          <li>
+            <strong>{% translate "Регионы и показатели" %}</strong>
+            {% translate "— свои, собраны в разделе «Сохранённое» личного кабинета." %}
+          </li>
+          <li>
+            <strong>{% translate "Виды экрана" %}</strong>
+            {% translate "— карта, рейтинг или расчёт с теми же настройками; открываются заново на свежих данных." %}
+          </li>
+          <li>
+            <strong>{% translate "Новое по сохранённому" %}</strong>
+            {% translate "— какие выпуски Росстата, Банка России и ФНС принесли данные по вашим регионам и показателям." %}
+          </li>
+          <li>
+            <strong>{% translate "Обращения" %}</strong>
+            {% translate "— ваши вопросы и ответы на них в одном месте." %}
+          </li>
+        </ul>
+      </div>
+    </header>
+
+    <div class="auth-card">
+      <form method="post" class="stack" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="callout callout--danger">
+            <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+            <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+          </div>
+        {% endif %}
+
+        {% for field in form %}
+          {% if field.name != "website" %}{% include "partials/_field.html" with field=field %}{% endif %}
+        {% endfor %}
+
+        {# Поле-ловушка. #}
+        <div class="visually-hidden" aria-hidden="true">
+          {{ form.website.label_tag }}{{ form.website }}
+        </div>
+
+        <button type="submit" class="button button--primary button--block">
+          {% translate "Зарегистрироваться" %}
+        </button>
+      </form>
+
+      <div class="auth-card__links">
+        <a href="{% url 'accounts:login' %}">{% translate "У меня уже есть учётная запись" %}</a>
+        <a href="{% url 'core:terms' %}">{% translate "Условия использования" %}</a>
+        <a href="{% url 'core:privacy' %}">{% translate "Политика обработки персональных данных" %}</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

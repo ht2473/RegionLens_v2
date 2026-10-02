@@ -1,0 +1,50 @@
+{% extends "cabinet_base.html" %}
+{% load i18n %}
+
+{# Обращение в кабинете: текст, состояние и ответ. #}
+
+{% block cabinet_subtitle %}
+  <p class="cabinet-head__lead">
+    {% blocktranslate trimmed with number=ticket.pk date=ticket.created_at|date:"d.m.Y H:i" topic=ticket.get_topic_display %}
+      Обращение № {{ number }} от {{ date }} · {{ topic }}
+    {% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block cabinet_content %}
+  <article class="ticket-thread">
+    <section class="ticket-message" aria-labelledby="ticket-question">
+      <h2 class="ticket-message__title" id="ticket-question">{% translate "Вы писали" %}</h2>
+      <div class="ticket-message__body">{{ ticket.body|linebreaks }}</div>
+      {% if ticket.page_url %}
+        <p class="ticket-message__meta">
+          {% translate "Со страницы:" %} <a href="{{ ticket.page_url }}" rel="nofollow">{{ ticket.page_url|truncatechars:80 }}</a>
+        </p>
+      {% endif %}
+    </section>
+
+    <section class="ticket-message ticket-message--answer" aria-labelledby="ticket-answer">
+      <h2 class="ticket-message__title" id="ticket-answer">
+        {% translate "Ответ" %}
+        <span class="badge {{ ticket.status_badge }}">{{ ticket.get_status_display }}</span>
+      </h2>
+      {% if ticket.answer %}
+        <div class="ticket-message__body">{{ ticket.answer|linebreaks }}</div>
+        <p class="ticket-message__meta">
+          {% blocktranslate trimmed with date=ticket.answered_at|date:"d.m.Y H:i" %}Ответ написан {{ date }}{% endblocktranslate %}
+        </p>
+      {% elif ticket.is_open %}
+        <p class="ticket-message__meta">
+          {% translate "Ответ обычно приходит за один-два рабочих дня — письмом и сюда." %}
+        </p>
+      {% else %}
+        <p class="ticket-message__meta">{% translate "Обращение закрыто без ответа." %}</p>
+      {% endif %}
+    </section>
+  </article>
+
+  <div class="cabinet-form__actions cabinet-form__actions--start">
+    <a class="button button--ghost" href="{% url 'feedback:mine' %}">← {% translate "Все обращения" %}</a>
+    <a class="button button--secondary" href="{% url 'feedback:create' %}">{% translate "Написать новое" %}</a>
+  </div>
+{% endblock %}

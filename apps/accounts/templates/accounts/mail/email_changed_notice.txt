@@ -1,0 +1,12 @@
+{% load i18n %}{% autoescape off %}{% blocktranslate trimmed with name=user.full_name %}Здравствуйте, {{ name }}!{% endblocktranslate %}
+
+{% blocktranslate trimmed with project=project_name old=old_email new=new_email %}
+Адрес почты учётной записи в {{ project }} изменён: прежний — {{ old }}, новый — {{ new }}.
+Входить теперь нужно с новым адресом; сеансы на других устройствах завершены.
+{% endblocktranslate %}
+
+{% blocktranslate trimmed %}
+Если вы этого не делали, напишите через форму обратной связи — учётную запись вернут:
+{% endblocktranslate %}
+{{ feedback_url }}
+{% endautoescape %}

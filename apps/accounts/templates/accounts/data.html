@@ -1,0 +1,122 @@
+{% extends "cabinet_base.html" %}
+{% load i18n %}
+
+{# «Мои данные»: что хранится, выгрузка одним файлом, удаление учётной записи. #}
+
+{% block cabinet_subtitle %}
+  <p class="cabinet-head__lead">
+    {% translate "Что сайт хранит о вас, выгрузка всего этого одним файлом и удаление учётной записи." %}
+  </p>
+{% endblock %}
+
+{% block cabinet_content %}
+  <div class="cabinet-columns">
+
+    <section class="cabinet-block" aria-labelledby="data-stored">
+      <h2 class="cabinet-block__title" id="data-stored">{% translate "Что хранится" %}</h2>
+      <dl class="cabinet-facts">
+        <div>
+          <dt>{% translate "Профиль" %}</dt>
+          <dd>{% translate "адрес почты, имя, мой регион" %}</dd>
+        </div>
+        <div>
+          <dt>{% translate "Сохранённое" %}</dt>
+          <dd>
+            {% blocktranslate trimmed with marks=stored.marks views=stored.views %}
+              регионов и показателей — {{ marks }}, видов экрана — {{ views }}
+            {% endblocktranslate %}
+          </dd>
+        </div>
+        <div>
+          <dt>{% translate "Обращения" %}</dt>
+          <dd>{{ stored.tickets }}</dd>
+        </div>
+        <div>
+          <dt>{% translate "Вход" %}</dt>
+          <dd>{% translate "хэш пароля, время последнего входа, ключ входа с кодом, если он включён" %}</dd>
+        </div>
+      </dl>
+
+      <div class="cabinet-form__actions cabinet-form__actions--start">
+        <a class="button button--secondary" href="{% url 'accounts:data-export' %}" download>
+          <svg aria-hidden="true"><use href="#icon-download"></use></svg>
+          {% translate "Выгрузить всё (JSON)" %}
+        </a>
+      </div>
+      <p class="cabinet-block__footnote">
+        {% translate "В файле — профиль, сохранённое с параметрами видов и обращения с ответами. Пароль и ключи входа в файл не попадают." %}
+        <a href="{% url 'core:privacy' %}">{% translate "Политика обработки персональных данных" %}</a>
+      </p>
+    </section>
+
+    <section class="cabinet-block" aria-labelledby="data-consent">
+      <h2 class="cabinet-block__title" id="data-consent">{% translate "Согласие на обработку" %}</h2>
+      {% if account.has_current_consent %}
+        <p class="cabinet-block__lead">
+          {% blocktranslate trimmed with given=account.consent_at|date:"d.m.Y H:i" revision=account.consent_revision|date:"d.m.Y" %}
+            Дано {{ given }} на редакцию от {{ revision }}.
+          {% endblocktranslate %}
+          <a href="{% url 'core:consent' %}">{% translate "Текст согласия" %}</a>
+        </p>
+        <p class="cabinet-block__footnote">
+          {% translate "Отозвать согласие — значит удалить учётную запись: без согласия сайт не хранит сведения о вас." %}
+        </p>
+      {% else %}
+        <p class="cabinet-block__lead">
+          {% if account.consent_at %}
+            {% blocktranslate trimmed with revision=account.consent_revision|date:"d.m.Y" %}
+              Дано на прежнюю редакцию от {{ revision }}; текст с тех пор изменился.
+            {% endblocktranslate %}
+          {% else %}
+            {% translate "Согласие не записано: учётная запись заведена без него." %}
+          {% endif %}
+        </p>
+        <form method="post" action="{% url 'accounts:consent' %}" class="stack cabinet-form">
+          {% csrf_token %}
+          <label class="checkbox">
+            <input type="checkbox" name="consent" value="1" required>
+            <span>{{ consent_label }}</span>
+          </label>
+          <div class="cabinet-form__actions cabinet-form__actions--start">
+            <button type="submit" class="button button--primary">{% translate "Дать согласие" %}</button>
+          </div>
+        </form>
+      {% endif %}
+    </section>
+
+    <section class="cabinet-block danger-zone" aria-labelledby="data-delete">
+      <h2 class="cabinet-block__title" id="data-delete">{% translate "Удалить учётную запись" %}</h2>
+      <p class="cabinet-block__lead">
+        {% blocktranslate trimmed %}
+          Сохранённое удаляется сразу и безвозвратно. Обращения остаются у администратора
+          без имени и адреса. На адрес учётной записи придёт письмо об удалении. Удаление
+          учётной записи — отзыв согласия на обработку персональных данных.
+        {% endblocktranslate %}
+      </p>
+
+      {% if last_administrator %}
+        <div class="callout callout--warning">
+          <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+          <div>
+            <p>{% translate "Это последняя учётная запись администратора: сначала назначьте администратором кого-то ещё." %}</p>
+          </div>
+        </div>
+      {% else %}
+        <form method="post" class="stack cabinet-form" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="callout callout--danger">
+              <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+              <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+            </div>
+          {% endif %}
+          {% for field in form %}{% include "partials/_field.html" with field=field %}{% endfor %}
+          <div class="cabinet-form__actions cabinet-form__actions--start">
+            <button type="submit" class="button button--danger">{% translate "Удалить учётную запись" %}</button>
+          </div>
+        </form>
+      {% endif %}
+    </section>
+
+  </div>
+{% endblock %}

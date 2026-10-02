@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{# Второй шаг входа: одноразовый код из приложения или резервный код. #}
+
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/cabinet.css' %}">{% endblock %}
+
+{% block content %}
+<div class="container container--narrow page">
+  <div class="auth-card">
+    <h1 class="auth-card__title">{% translate "Код входа" %}</h1>
+    <p class="auth-card__lead">
+      {% if reverify %}
+        {% blocktranslate trimmed %}
+          Подтвердите вход кодом из приложения — без этого панель управления не открывается.
+        {% endblocktranslate %}
+      {% else %}
+        {% blocktranslate trimmed with email=account_email %}
+          Пароль для {{ email }} верный. Введите шесть цифр из приложения-генератора.
+        {% endblocktranslate %}
+      {% endif %}
+    </p>
+
+    <form method="post" class="stack" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="callout callout--danger">
+          <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+          <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+        </div>
+      {% endif %}
+      {% for field in form %}{% include "partials/_field.html" with field=field %}{% endfor %}
+      <button type="submit" class="button button--primary button--block">{% translate "Войти" %}</button>
+    </form>
+
+    <div class="auth-card__links">
+      <a href="{% url 'accounts:login' %}">{% translate "Войти заново" %}</a>
+      <a href="{% url 'feedback:create' %}?topic=access">{% translate "Нет телефона и резервных кодов" %}</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends "cabinet_base.html" %}
+{% load i18n %}
+
+{% comment %}
+  «Безопасность»: вход и сеансы, пароль, адрес почты, вход с одноразовым кодом.
+  Формы с ошибками приходят от представлений действий (email_form, disable_form, codes_form).
+{% endcomment %}
+
+{% block cabinet_subtitle %}
+  <p class="cabinet-head__lead">
+    {% translate "Пароль, адрес почты, вход с одноразовым кодом и сеансы на других устройствах." %}
+  </p>
+{% endblock %}
+
+{% block cabinet_content %}
+  {% with user=request.user %}
+
+  <div class="cabinet-columns">
+
+    {# --- Вход и сеансы ------------------------------------------------------------------- #}
+    <section class="cabinet-block" aria-labelledby="security-sessions">
+      <h2 class="cabinet-block__title" id="security-sessions">{% translate "Вход и сеансы" %}</h2>
+      <dl class="cabinet-facts">
+        <div>
+          <dt>{% translate "Последний вход" %}</dt>
+          <dd class="numeric">{{ user.last_login|date:"d.m.Y H:i"|default:"—" }}</dd>
+        </div>
+        <div>
+          <dt>{% translate "Последняя активность" %}</dt>
+          <dd class="numeric">{{ user.last_seen_at|date:"d.m.Y H:i"|default:"—" }}</dd>
+        </div>
+        <div>
+          <dt>{% translate "Пароль" %}</dt>
+          <dd><a href="{% url 'accounts:password-change' %}">{% translate "Сменить пароль" %}</a></dd>
+        </div>
+      </dl>
+
+      <form method="post" action="{% url 'accounts:sign-out-others' %}" class="security-action">
+        {% csrf_token %}
+        <button type="submit" class="button button--secondary">{% translate "Выйти на других устройствах" %}</button>
+        <p class="cabinet-block__footnote">
+          {% blocktranslate trimmed %}
+            Завершает вход на других компьютерах и телефонах; здесь вы останетесь.
+            Смена пароля или адреса почты делает то же самое.
+          {% endblocktranslate %}
+        </p>
+      </form>
+    </section>
+
+    {# --- Адрес почты ------------------------------------------------------------------- #}
+    <section class="cabinet-block" aria-labelledby="security-email">
+      <h2 class="cabinet-block__title" id="security-email">{% translate "Адрес почты" %}</h2>
+      <p class="cabinet-block__lead">{{ user.email }}</p>
+
+      {% if user.pending_email %}
+        <div class="callout callout--info">
+          <svg class="callout__icon" aria-hidden="true"><use href="#icon-mail"></use></svg>
+          <div>
+            <div class="callout__title">{% translate "Ждёт подтверждения" %}</div>
+            <p>
+              {% blocktranslate trimmed with email=user.pending_email %}
+                Ссылка отправлена на {{ email }}. Адрес сменится, когда вы её откроете.
+              {% endblocktranslate %}
+            </p>
+            <form method="post" action="{% url 'accounts:email-cancel' %}">
+              {% csrf_token %}
+              <button type="submit" class="button button--ghost button--sm">{% translate "Отменить смену" %}</button>
+            </form>
+          </div>
+        </div>
+      {% endif %}
+
+      <form method="post" action="{% url 'accounts:email-change' %}" class="stack cabinet-form" novalidate>
+        {% csrf_token %}
+        {% if email_form.non_field_errors %}
+          <div class="callout callout--danger">
+            <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+            <div>{% for error in email_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+          </div>
+        {% endif %}
+        {% for field in email_form %}{% include "partials/_field.html" with field=field %}{% endfor %}
+        <div class="cabinet-form__actions cabinet-form__actions--start">
+          <button type="submit" class="button button--secondary">{% translate "Отправить ссылку на новый адрес" %}</button>
+        </div>
+        <p class="cabinet-block__footnote">
+          {% blocktranslate trimmed %}
+            На прежний адрес после смены придёт уведомление. Вход по прежнему адресу
+            перестанет работать.
+          {% endblocktranslate %}
+        </p>
+      </form>
+    </section>
+
+  </div>
+
+  {# --- Вход с кодом ----------------------------------------------------------------------- #}
+  <section class="page-section two-factor" aria-labelledby="security-code">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="security-code">{% translate "Вход с одноразовым кодом" %}</h2>
+      {% if user.two_factor_enabled %}
+        <span class="badge badge--positive">
+          {% blocktranslate trimmed with date=user.totp_enabled_at|date:"d.m.Y" %}включён {{ date }}{% endblocktranslate %}
+        </span>
+      {% else %}
+        <span class="badge badge--outline">{% translate "выключен" %}</span>
+      {% endif %}
+    </div>
+
+    <p class="two-factor__lead">
+      {% blocktranslate trimmed %}
+          После пароля сайт спрашивает шесть цифр из приложения-генератора на телефоне
+          (Яндекс Ключ, Google Authenticator, FreeOTP и другие). Код меняется каждые 30 секунд,
+          поэтому украденного пароля для входа мало.
+      {% endblocktranslate %}
+    </p>
+
+    {% if panel_needs_code %}
+      <div class="callout {% if user.two_factor_enabled %}callout--info{% else %}callout--warning{% endif %}">
+        <svg class="callout__icon" aria-hidden="true"><use href="#icon-shield"></use></svg>
+        <div>
+          <div class="callout__title">{% translate "Обязателен для панели управления" %}</div>
+          <p>{% translate "У вас есть права панели: без входа с кодом она не открывается, и выключить его нельзя." %}</p>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if user.two_factor_enabled %}
+      <div class="cabinet-columns two-factor__columns">
+        <div>
+          <h3 class="cabinet-block__title">{% translate "Резервные коды" %}</h3>
+          <p class="cabinet-block__lead">
+            {% blocktranslate trimmed with count=recovery_left %}
+              Осталось кодов: {{ count }}.
+            {% endblocktranslate %}
+          </p>
+          <p class="cabinet-block__footnote">
+            {% translate "Каждый код входит один раз вместо шести цифр — на случай, если телефона нет под рукой. Новый набор отменяет прежний." %}
+          </p>
+          <form method="post" action="{% url 'accounts:recovery-codes' %}" class="stack cabinet-form" novalidate>
+            {% csrf_token %}
+            {% for field in codes_form %}{% include "partials/_field.html" with field=field %}{% endfor %}
+            <div class="cabinet-form__actions cabinet-form__actions--start">
+              <button type="submit" class="button button--secondary">{% translate "Выпустить новые коды" %}</button>
+            </div>
+          </form>
+        </div>
+
+        {% if not panel_needs_code %}
+          <div>
+            <h3 class="cabinet-block__title">{% translate "Выключить" %}</h3>
+            <form method="post" action="{% url 'accounts:two-factor-disable' %}" class="stack cabinet-form" novalidate>
+              {% csrf_token %}
+              {% if disable_form.non_field_errors %}
+                <div class="callout callout--danger">
+                  <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+                  <div>{% for error in disable_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+                </div>
+              {% endif %}
+              {% for field in disable_form %}{% include "partials/_field.html" with field=field %}{% endfor %}
+              <div class="cabinet-form__actions cabinet-form__actions--start">
+                <button type="submit" class="button button--danger">{% translate "Выключить вход с кодом" %}</button>
+              </div>
+            </form>
+          </div>
+        {% endif %}
+      </div>
+    {% else %}
+      <a class="button button--primary" href="{% url 'accounts:two-factor' %}">
+        <svg aria-hidden="true"><use href="#icon-shield"></use></svg>
+        {% translate "Включить вход с кодом" %}
+      </a>
+    {% endif %}
+  </section>
+
+  {% endwith %}
+{% endblock %}

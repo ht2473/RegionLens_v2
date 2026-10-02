@@ -1,0 +1,21 @@
+{% load i18n %}
+{# «Это мой регион»: переключатель; у гостя регион живёт в cookie, у вошедшего — в профиле. #}
+<form method="post" action="{% url 'accounts:my-region' %}"
+      hx-post="{% url 'accounts:my-region' %}" hx-swap="outerHTML"
+      class="favorite-form my-region-form">
+  {% csrf_token %}
+  <input type="hidden" name="region" value="{{ territory.code }}">
+  <input type="hidden" name="back" value="{{ back }}">
+  {% if is_mine %}<input type="hidden" name="clear" value="1">{% endif %}
+  <button type="submit"
+          class="button button--sm {% if is_mine %}button--secondary{% else %}button--ghost{% endif %}"
+          aria-pressed="{% if is_mine %}true{% else %}false{% endif %}"
+          title="{% if is_mine %}{% translate 'Главная и кабинет открываются с этого региона. Нажмите, чтобы сбросить.' %}{% else %}{% translate 'Главная и кабинет будут открываться с этого региона' %}{% endif %}">
+    <svg aria-hidden="true"><use href="#icon-map-pin"></use></svg>
+    {% if is_mine %}
+      {% translate "Мой регион" %}
+    {% else %}
+      {% translate "Это мой регион" %}
+    {% endif %}
+  </button>
+</form>

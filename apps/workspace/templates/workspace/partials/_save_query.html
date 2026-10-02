@@ -1,0 +1,39 @@
+{% load i18n %}
+{# Кнопка «Сохранить» вида экрана со строкой запроса; название — в popover. #}
+{# Ожидает save_query_target — код страницы из QUERY_TARGETS. #}
+{% if request.user.is_authenticated %}
+  <button type="button" class="button button--sm button--ghost no-print"
+          popovertarget="save-query" aria-haspopup="dialog">
+    <svg aria-hidden="true"><use href="#icon-bookmark"></use></svg>
+    {% translate "Сохранить" %}
+  </button>
+
+  <div class="menu-popover save-query no-print" id="save-query" popover role="dialog"
+       aria-label="{% translate 'Сохранить вид экрана' %}">
+    <form method="post" action="{% url 'workspace:query-save' %}" class="save-query__form">
+      {% csrf_token %}
+      <input type="hidden" name="target" value="{{ save_query_target }}">
+      <input type="hidden" name="query_string" value="{{ request.META.QUERY_STRING }}">
+      <input type="hidden" name="back" value="{{ request.get_full_path }}">
+
+      <div class="field">
+        <label class="field__label" for="save-query-title">{% translate "Название" %}</label>
+        <input class="input" id="save-query-title" name="title" maxlength="160" required
+               placeholder="{% translate 'Например: неравенство доходов по округам' %}">
+        <span class="field__hint">
+          {% translate "Сохраняются параметры, а не числа: расчёт выполнится заново на текущих данных" %}
+        </span>
+      </div>
+
+      <button type="submit" class="button button--sm button--primary">
+        {% translate "Сохранить" %}
+      </button>
+    </form>
+  </div>
+{% else %}
+  <a class="button button--sm button--ghost no-print"
+     href="{% url 'accounts:login' %}?next={{ request.get_full_path|urlencode }}">
+    <svg aria-hidden="true"><use href="#icon-bookmark"></use></svg>
+    {% translate "Сохранить" %}
+  </a>
+{% endif %}

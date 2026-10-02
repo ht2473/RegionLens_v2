@@ -1,0 +1,73 @@
+{% extends "cabinet_base.html" %}
+{% load i18n %}
+
+{# «Обращения» в кабинете: отправленные из учётной записи, состояние и ответ. #}
+
+{% block cabinet_subtitle %}
+  <p class="cabinet-head__lead">
+    {% blocktranslate trimmed %}
+      Обращения, отправленные из учётной записи. Ответ приходит письмом и хранится здесь.
+    {% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block cabinet_content %}
+  <div class="tickets-head">
+    <p class="tickets-head__note">
+      {% if waiting %}
+        {% blocktranslate trimmed with count=waiting %}Ждут ответа: {{ count }}{% endblocktranslate %}
+      {% endif %}
+    </p>
+    <a class="button button--primary" href="{% url 'feedback:create' %}">
+      <svg aria-hidden="true"><use href="#icon-edit"></use></svg>
+      {% translate "Написать" %}
+    </a>
+  </div>
+
+  {% if tickets %}
+    <ul class="ticket-list">
+      {% for ticket in tickets %}
+        <li class="ticket-row">
+          <p class="ticket-row__meta">
+            <span class="numeric">№ {{ ticket.pk }}</span>
+            <span>{{ ticket.created_at|date:"d.m.Y" }}</span>
+            <span>{{ ticket.get_topic_display }}</span>
+          </p>
+          <h2 class="ticket-row__title"><a href="{{ ticket.cabinet_url }}">{{ ticket.subject }}</a></h2>
+          <p class="ticket-row__state">
+            <span class="badge {{ ticket.status_badge }}">{{ ticket.get_status_display }}</span>
+            {% if ticket.answered_at %}
+              <span class="ticket-row__answered">
+                {% blocktranslate trimmed with date=ticket.answered_at|date:"d.m.Y" %}ответ {{ date }}{% endblocktranslate %}
+              </span>
+            {% endif %}
+          </p>
+        </li>
+      {% endfor %}
+    </ul>
+
+    {% if page_obj.has_other_pages %}
+      <nav class="pagination" aria-label="{% translate 'Постраничная навигация' %}">
+        <span class="pagination__pages">
+          {% if page_obj.has_previous %}
+            <a class="pagination__page" href="{% querystring page=page_obj.previous_page_number %}">←</a>
+          {% endif %}
+          <span class="pagination__page is-current">{{ page_obj.number }}</span>
+          {% if page_obj.has_next %}
+            <a class="pagination__page" href="{% querystring page=page_obj.next_page_number %}">→</a>
+          {% endif %}
+        </span>
+      </nav>
+    {% endif %}
+  {% else %}
+    <section class="cabinet-empty">
+      <h2 class="cabinet-empty__title">{% translate "Обращений пока нет" %}</h2>
+      <p class="cabinet-empty__text">
+        {% blocktranslate trimmed %}
+          Нашли ошибку в данных, не согласны с методикой или хотите что-то предложить —
+          напишите. Обращение и ответ на него появятся здесь.
+        {% endblocktranslate %}
+      </p>
+    </section>
+  {% endif %}
+{% endblock %}

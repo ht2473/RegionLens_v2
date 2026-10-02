@@ -1,0 +1,14 @@
+{% load i18n %}{% autoescape off %}{% blocktranslate trimmed with name=user.full_name %}Здравствуйте, {{ name }}!{% endblocktranslate %}
+
+{% blocktranslate trimmed with project=project_name email=new_email %}
+Для учётной записи в {{ project }} запрошена смена адреса почты на {{ email }}.
+Чтобы подтвердить новый адрес, откройте ссылку и нажмите «Подтвердить адрес»:
+{% endblocktranslate %}
+
+{{ link }}
+
+{% blocktranslate trimmed with days=days %}
+Ссылка действует {{ days }} дня и один раз. Если смену адреса запрашивали не вы,
+ничего делать не нужно: адрес останется прежним.
+{% endblocktranslate %}
+{% endautoescape %}

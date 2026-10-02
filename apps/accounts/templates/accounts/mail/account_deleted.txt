@@ -1,0 +1,11 @@
+{% load i18n %}{% autoescape off %}{% blocktranslate trimmed %}Здравствуйте, {{ name }}!{% endblocktranslate %}
+
+{% blocktranslate trimmed with project=project_name %}
+Учётная запись {{ email }} в {{ project }} удалена по вашему запросу. Сохранённые регионы,
+показатели и виды экрана удалены; обращения остались у администратора без имени и адреса.
+{% endblocktranslate %}
+
+{% blocktranslate trimmed %}
+Карта, рейтинги, анализ и выгрузка по-прежнему открыты без учётной записи.
+{% endblocktranslate %}
+{% endautoescape %}

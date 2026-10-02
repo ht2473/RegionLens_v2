@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{# Подтверждение приёма обращения с номером. #}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/cabinet.css' %}">
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "Обращение принято" %}</h1>
+      <p class="page-intro__lead">
+        {% if ticket %}
+          {% blocktranslate trimmed with email=ticket.contact_email %}
+            Ответ придёт на адрес {{ email }}. Обычно это занимает один-два рабочих дня.
+          {% endblocktranslate %}
+        {% else %}
+          {% translate "Обращение отправлено. Ответ придёт на указанный адрес электронной почты." %}
+        {% endif %}
+      </p>
+    </div>
+  </header>
+
+  {% if ticket %}
+    <section class="feedback-receipt" aria-label="{% translate 'Обращение' %}">
+      <dl class="figure-list">
+        <div>
+          <dt>{% translate "номер обращения — сохраните его" %}</dt>
+          <dd class="numeric">№ {{ ticket.pk }}</dd>
+        </div>
+      </dl>
+
+      <dl class="about-credits">
+        <dt>{% translate "Тема" %}</dt>
+        <dd>{{ ticket.get_topic_display }}</dd>
+
+        <dt>{% translate "Заголовок" %}</dt>
+        <dd>{{ ticket.subject }}</dd>
+
+        <dt>{% translate "Принято" %}</dt>
+        <dd class="numeric">{{ ticket.created_at|date:"d.m.Y H:i" }}</dd>
+      </dl>
+
+      <p class="feedback-receipt__note">
+        {% blocktranslate trimmed %}
+          Ответ придёт письмом. Если понадобится что-то уточнить, напишите новое
+          обращение и укажите в нём этот номер.
+        {% endblocktranslate %}
+      </p>
+    </section>
+  {% endif %}
+
+  <div class="feedback-receipt__actions">
+    <a class="button button--secondary" href="{% url 'core:home' %}">
+      {% translate "На главную" %}
+    </a>
+    {% if ticket and ticket.author_id and ticket.author_id == request.user.pk %}
+      <a class="button button--secondary" href="{{ ticket.cabinet_url }}">
+        {% translate "Обращение в кабинете" %}
+      </a>
+    {% endif %}
+    <a class="button button--ghost" href="{% url 'feedback:create' %}">
+      {% translate "Написать ещё" %}
+    </a>
+  </div>
+
+</div>
+{% endblock %}

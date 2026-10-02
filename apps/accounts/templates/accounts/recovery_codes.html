@@ -1,0 +1,33 @@
+{% extends "cabinet_base.html" %}
+{% load i18n %}
+
+{# Резервные коды — показываются один раз, сразу после выпуска. #}
+
+{% block cabinet_content %}
+  <section class="cabinet-block cabinet-block--narrow" aria-labelledby="codes-title">
+    <h2 class="cabinet-block__title" id="codes-title">{% translate "Сохраните резервные коды" %}</h2>
+    <p class="cabinet-block__lead">
+      {% blocktranslate trimmed %}
+        Каждый код входит один раз вместо шести цифр из приложения. Больше они показаны
+        не будут: перепишите их или сохраните в менеджер паролей.
+      {% endblocktranslate %}
+    </p>
+
+    <ol class="recovery-codes">
+      {% for code in codes %}<li><code>{{ code }}</code></li>{% endfor %}
+    </ol>
+
+    {# Поле для копирования кнопкой (static/js/ui/clipboard.js). #}
+    <input type="text" class="visually-hidden" id="recovery-codes-text" readonly tabindex="-1"
+           aria-hidden="true" value="{{ codes|join:' ' }}">
+
+    <div class="cabinet-form__actions cabinet-form__actions--start">
+      <button type="button" class="button button--secondary" data-copy="#recovery-codes-text"
+              data-copy-done="{% translate 'Коды скопированы' %}">
+        <svg aria-hidden="true"><use href="#icon-copy"></use></svg>
+        {% translate "Скопировать" %}
+      </button>
+      <a class="button button--primary" href="{% url 'accounts:security' %}">{% translate "Коды сохранены" %}</a>
+    </div>
+  </section>
+{% endblock %}

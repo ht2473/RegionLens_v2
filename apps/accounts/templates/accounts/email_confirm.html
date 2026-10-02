@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{# Подтверждение нового адреса по ссылке из письма: адрес меняется кнопкой, не открытием ссылки. #}
+
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/cabinet.css' %}">{% endblock %}
+
+{% block content %}
+<div class="container container--narrow page">
+  <div class="auth-card">
+    <h1 class="auth-card__title">{% translate "Новый адрес почты" %}</h1>
+
+    {% if error %}
+      <div class="callout callout--danger">
+        <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+        <div>
+          <div class="callout__title">{% translate "Адрес не изменён" %}</div>
+          <p>{{ error }}</p>
+        </div>
+      </div>
+      <div class="auth-card__links">
+        <a href="{% url 'accounts:security' %}">{% translate "Запросить ссылку заново" %}</a>
+      </div>
+    {% else %}
+      <p class="auth-card__lead">
+        {% blocktranslate trimmed %}
+          Подтвердите, что этот адрес ваш: после нажатия он станет адресом входа, а сеансы
+          на других устройствах завершатся.
+        {% endblocktranslate %}
+      </p>
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="button button--primary button--block">{% translate "Подтвердить адрес" %}</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

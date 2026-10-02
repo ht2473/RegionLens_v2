@@ -1,0 +1,42 @@
+{% extends "cabinet_base.html" %}
+{% load i18n %}
+
+{# Правка названия и пояснения сохранённого вида; параметры меняют на самой странице. #}
+
+{% block cabinet_title %}{% translate "Переименовать вид" %}{% endblock %}
+
+{% block cabinet_content %}
+  <div class="cabinet-columns">
+    <section class="cabinet-block" aria-labelledby="query-form-title">
+      <h2 class="cabinet-block__title" id="query-form-title">{% translate "Название и пояснение" %}</h2>
+      <form method="post" class="stack cabinet-form" novalidate>
+        {% csrf_token %}
+        {% for field in form %}{% include "partials/_field.html" with field=field %}{% endfor %}
+        <div class="cabinet-form__actions">
+          <a class="button button--ghost" href="{% url 'workspace:saved' %}">
+            {% translate "Отмена" %}
+          </a>
+          <button type="submit" class="button button--primary">{% translate "Сохранить" %}</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="cabinet-block" aria-labelledby="query-params-title">
+      <h2 class="cabinet-block__title" id="query-params-title">{% translate "Что сохранено" %}</h2>
+      <p class="saved-view__kind">{{ query.get_target_display }}</p>
+      <ul class="saved-view__params">
+        {% for phrase in query.phrases %}
+          <li>{{ phrase }}</li>
+        {% empty %}
+          <li>{% translate "параметры по умолчанию" %}</li>
+        {% endfor %}
+      </ul>
+      <p class="cabinet-block__footnote">
+        {% translate "Параметры меняются на странице расчёта: настройте её и сохраните вид заново." %}
+      </p>
+      <a class="button button--secondary" href="{% url 'workspace:query-open' public_id=query.public_id %}">
+        {% translate "Открыть" %}
+      </a>
+    </section>
+  </div>
+{% endblock %}

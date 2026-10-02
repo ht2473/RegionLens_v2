@@ -1,0 +1,15 @@
+{% autoescape off %}{{ ticket.contact_name }}, здравствуйте!
+
+{{ answer }}
+
+--
+Вы писали в {{ project_name }} {{ ticket.created_at|date:"d.m.Y" }}, обращение № {{ ticket.pk }}.
+Тема: {{ ticket.get_topic_display }}
+Заголовок: {{ ticket.subject }}
+
+{{ ticket.body }}
+
+--
+Если вопрос не исчерпан, напишите новое обращение и укажите в нём номер {{ ticket.pk }}:
+{{ feedback_url }}
+{% endautoescape %}

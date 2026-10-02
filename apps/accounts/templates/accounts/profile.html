@@ -1,0 +1,61 @@
+{% extends "cabinet_base.html" %}
+{% load i18n formatting %}
+
+{# Профиль: сведения о себе, мой регион и роли учётной записи. #}
+
+{% block cabinet_content %}
+
+  <div class="cabinet-columns">
+
+    <section class="cabinet-block" aria-labelledby="profile-about-title">
+      <h2 class="cabinet-block__title" id="profile-about-title">{% translate "Сведения о себе" %}</h2>
+      <form method="post" class="stack cabinet-form" novalidate>
+        {% csrf_token %}
+        {% for field in form %}{% include "partials/_field.html" with field=field %}{% endfor %}
+        <div class="cabinet-form__actions">
+          <button type="submit" class="button button--primary">{% translate "Сохранить" %}</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="cabinet-block" aria-labelledby="profile-account-title">
+      <h2 class="cabinet-block__title" id="profile-account-title">{% translate "Учётная запись" %}</h2>
+
+      <dl class="cabinet-facts">
+        <div>
+          <dt>{% translate "Адрес почты" %}</dt>
+          <dd>{{ request.user.email }}</dd>
+        </div>
+        <div>
+          <dt>{% translate "Роли" %}</dt>
+          <dd>
+            {% for role in roles %}
+              {{ role.label }}
+              <span class="cabinet-facts__note">{{ role.description }}</span>
+            {% endfor %}
+          </dd>
+        </div>
+        <div>
+          <dt>{% translate "Зарегистрирован" %}</dt>
+          <dd class="numeric">{{ request.user.created_at|date:"d.m.Y" }}</dd>
+        </div>
+      </dl>
+
+      <div class="cabinet-form__actions cabinet-form__actions--start">
+        <a class="button button--secondary" href="{% url 'accounts:security' %}">
+          {% translate "Пароль, почта и вход с кодом" %}
+        </a>
+      </div>
+
+      {# Пределы кабинета — одной фразой. #}
+      <p class="cabinet-block__footnote">
+        {% blocktranslate trimmed with views=limits.saved_queries|ru_number:0 marks=limits.favorites|ru_number:0 %}
+          В кабинете помещается до {{ views }} видов экрана и до {{ marks }} регионов
+          и показателей.
+        {% endblocktranslate %}
+      </p>
+    </section>
+
+  </div>
+
+{% endblock %}
