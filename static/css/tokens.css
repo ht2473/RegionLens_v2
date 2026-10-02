@@ -24,7 +24,7 @@
   --text-accent: light-dark(#1851a7, #93b6e8);
   --text-on-accent: light-dark(#ffffff, #191714);
 
-  --accent: light-dark(#a8751a, #e7b65c);
+  --accent: light-dark(#9d6d18, #e7b65c);
   --accent-hover: light-dark(#8c6014, #f2c97e);
   --accent-quiet: light-dark(#f1e3c8, #3a2f1c);
   /* Текстовая ступень главного цвета: подпись у конца линии, набранная им,
