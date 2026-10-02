@@ -1,0 +1,59 @@
+{% load i18n formatting %}
+{% comment %}
+  Живая карта ряда на странице показателя: те же rl-live-map и части _live_*, что на витрине,
+  и перечни крайних регионов; за другие годы их переписывает сценарий.
+{% endcomment %}
+<section class="page-section" aria-labelledby="indicator-map-title">
+  <rl-live-map class="live-map indicator-map" id="{{ live_map_id }}" data-state="indicator-map-state"
+               data-card-panel="region-card"
+               data-label-play="{% translate 'Показать по годам' %}"
+               data-label-pause="{% translate 'Пауза' %}"
+               data-label-missing="{% translate 'нет данных за этот год' %}">
+    <div class="page-section__head indicator-map__head">
+      <h2 class="page-section__title" id="indicator-map-title">
+        {% translate "Где больше, где меньше" %}, <span data-live="year">{{ live.year }}</span>
+      </h2>
+      <p class="page-section__note" data-live="country-line"{% if not live.frame.country %} hidden{% endif %}>
+        {% translate "По России" %} — <b class="numeric" data-live="country">{{ live.frame.country }}</b>
+        {{ item.unit_label }}
+      </p>
+    </div>
+
+    <div class="indicator-map__body">
+      <div class="indicator-map__main">
+        {% include "core/partials/_live_figure.html" %}
+        <div class="indicator-map__key">
+          {% include "core/partials/_live_legend.html" %}
+          {% include "core/partials/_live_note.html" %}
+        </div>
+      </div>
+
+      <div class="indicator-map__side">
+        {% include "core/partials/_live_find.html" %}
+        {% include "core/partials/_live_card.html" %}
+
+        <div class="indicator-leaders">
+          <div>
+            <h3 class="live-map__label">{% translate "Больше всего" %}</h3>
+            <ol class="leader-list" data-live="top">
+              {% for row in live.top %}{% include "catalog/partials/_leader_row.html" %}{% endfor %}
+            </ol>
+          </div>
+          <div>
+            <h3 class="live-map__label">{% translate "Меньше всего" %}</h3>
+            <ol class="leader-list" data-live="bottom">
+              {% for row in live.bottom %}{% include "catalog/partials/_leader_row.html" %}{% endfor %}
+            </ol>
+          </div>
+        </div>
+
+        <a class="indicator-more" href="{% url 'rankings:index' %}?series={{ item.key }}">
+          {% blocktranslate trimmed with count=live.frame.classes|length %}Весь рейтинг из {{ count }} регионов{% endblocktranslate %}
+          <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+        </a>
+      </div>
+    </div>
+
+    {{ live.state|json_script:"indicator-map-state" }}
+  </rl-live-map>
+</section>

@@ -1,0 +1,22 @@
+{# «Что сейчас»: последние месячные значения, изменение к прошлому году, Россия и источник. #}
+<ul class="stat-grid now-grid">
+  {% for row in rows %}
+    <li class="stat-tile now-tile">
+      {% if row.href %}
+        <a class="stat-tile__title" href="{{ row.href }}">{{ row.title }}</a>
+      {% else %}
+        <p class="stat-tile__title">{{ row.title }}</p>
+      {% endif %}
+      <p class="stat-tile__value">
+        <span class="numeric">{{ row.value }}</span>
+        <span class="stat-tile__unit">{{ row.unit }}</span>
+      </p>
+      <p class="now-tile__period">{{ row.period|capfirst }}{% if row.note %} · {{ row.note }}{% endif %}</p>
+      <p class="stat-tile__facts">
+        {% if row.change %}<span class="verdict verdict--{{ row.tone }}">{{ row.change|capfirst }}</span>{% endif %}
+        {% if row.country %}<span>{{ row.country|capfirst }}</span>{% endif %}
+      </p>
+      <p class="now-tile__source">{{ row.source|capfirst }}</p>
+    </li>
+  {% endfor %}
+</ul>

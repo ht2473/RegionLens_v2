@@ -1,0 +1,89 @@
+{% load i18n formatting %}
+{# Похожие регионы — считаются при раскрытии блока; кнопка — обычная ссылка. #}
+<div id="{{ similar_id }}">
+
+  {% if not similar_requested %}
+    {# Во время запроса видна строка ожидания (hx-indicator); ссылка — без сценариев или при отказе. #}
+    <p class="similar-block__wait" aria-live="polite">{% translate "Расчёт…" %}</p>
+    <a class="button button--secondary button--sm similar-block__fallback"
+       href="{{ similar_url }}"
+       hx-get="{{ similar_url }}" hx-target="#{{ similar_id }}" hx-swap="outerHTML"
+       hx-push-url="true">
+      <svg aria-hidden="true"><use href="#icon-scale"></use></svg>
+      {% translate "Подобрать похожие регионы" %}
+    </a>
+
+  {% elif not similar %}
+    <p class="text-muted" style="font-size: var(--text-sm)">
+      {% blocktranslate trimmed %}
+        Расчёт невозможен: недостаточно субъектов с полными значениями по ключевым
+        показателям.
+      {% endblocktranslate %}
+    </p>
+
+  {% elif similar.excluded %}
+    <div class="callout callout--warning">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Субъект не участвует в расчёте" %}</div>
+        <p style="margin: 0">
+          {% blocktranslate trimmed %}
+            Хотя бы одного из ключевых показателей по нему нет, а пропуски перед поиском
+            сходства не восстанавливаются.
+          {% endblocktranslate %}
+        </p>
+      </div>
+    </div>
+
+  {% else %}
+    <p class="similar-list__head" aria-hidden="true">
+      <span>{% translate "Регион" %}</span>
+      <span>{% translate "расстояние: меньше — ближе" %}</span>
+    </p>
+    <ul class="similar-list">
+      {% for item in similar.items %}
+        <li class="similar-list__item" data-territory="{{ item.code }}">
+          <a class="similar-list__name" href="{% url 'catalog:territory-detail' slug=item.slug %}">
+            {{ item.name }}
+          </a>
+          <span class="similar-list__distance numeric"
+                title="{% translate 'Расстояние в стандартных отклонениях признаков' %}">
+            <span class="visually-hidden">{% translate "расстояние" %}</span>
+            {{ item.distance|ru_number:2 }}
+          </span>
+          <span class="similar-list__apart">
+            {% blocktranslate trimmed with feature=item.apart_label %}
+              сильнее всего расходятся: {{ feature }}
+            {% endblocktranslate %}
+          </span>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <p class="text-muted" style="margin-top: var(--space-3); font-size: var(--text-2xs)">
+      {% blocktranslate trimmed %}
+        Расстояние измеряется в стандартных отклонениях признаков и годится
+        для упорядочивания, а не для утверждений вида «вдвое ближе». Признаки взяты
+        за последний доступный год каждого показателя — он у разных рядов не совпадает.
+      {% endblocktranslate %}
+      {% if similar.excluded_count %}
+        {% blocktranslate trimmed with skipped=similar.excluded_count %}
+          Субъектов с неполными данными, не вошедших в расчёт: {{ skipped }}.
+        {% endblocktranslate %}
+      {% endif %}
+    </p>
+
+    <details class="disclosure" style="margin-top: var(--space-3)">
+      <summary>{% translate "По каким показателям считалось сходство" %}</summary>
+      <ul class="similar-list__features">
+        {% for column in similar.columns %}
+          <li>
+            {{ column.label }}
+            <span class="text-muted numeric">{{ column.year|year }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </details>
+  {% endif %}
+
+</div>

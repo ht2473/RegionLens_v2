@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "purpose": "Английские названия статистических изданий Росстата. Название издания показывается в разборе пересмотров и в перечне источников на карточке ряда: именно оно объясняет, откуда взялось расхождение между двумя значениями одного наблюдения.",
+    "keys": "Ключ — русское название издания без года выпуска, как его выделяет конвейер загрузки из атрибута source.",
+    "command": "python manage.py seed_catalog_names"
+  },
+  "publications": {
+    "Валовой региональный продукт по субъектам Российской Федерации": "Gross regional product by region of Russia",
+    "Демографический ежегодник России": "The Demographic Yearbook of Russia",
+    "Единый реестр субъектов малого и среднего предпринимательства, статистика": "Unified register of small and medium-sized businesses, statistics",
+    "Женщины и мужчины России": "Women and Men in Russia",
+    "Жилищное хозяйство в России": "Housing Economy in Russia",
+    "Здравоохранение в России": "Healthcare in Russia",
+    "Инвестиции в России": "Investment in Russia",
+    "Информация для ведения мониторинга социально-экономического положения субъектов Российской Федерации": "Information for monitoring the socio-economic situation of the regions of Russia",
+    "Малое и среднее предпринимательство в России": "Small and Medium-sized Business in Russia",
+    "Охрана окружающей среды в России": "Environmental Protection in Russia",
+    "Платное обслуживание населения в России": "Paid Services to the Population in Russia",
+    "Промышленное производство в России": "Industrial Production in Russia",
+    "Рабочая сила, занятость и безработица в России": "Labour Force, Employment and Unemployment in Russia",
+    "Регионы России. Социально-экономические показатели": "Regions of Russia. Socio-economic Indicators",
+    "Сельское хозяйство в России": "Agriculture in Russia",
+    "Сервис получения данных Банка России": "Bank of Russia data service",
+    "Социальное положение и уровень жизни населения России": "Social Status and Living Standards of the Population of Russia",
+    "Строительство в России": "Construction in Russia",
+    "Торговля в России": "Trade in Russia",
+    "Транспорт в России": "Transport in Russia",
+    "Труд и занятость в России": "Labour and Employment in Russia",
+    "Финансы в России": "Finance in Russia",
+    "Цены в России": "Prices in Russia"
+  }
+}

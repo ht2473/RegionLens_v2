@@ -1,0 +1,586 @@
+{% load i18n formatting workspace exports %}
+{% comment %}
+  Страница показателя под шапкой сайта. Отдаётся отдельным фрагментом при смене
+  разреза: от ряда зависит всё — главное, карта, ход, сведения о ряде.
+{% endcomment %}
+
+{# --- Шапка: что это и главное ------------------------------------------------------- #}
+<header class="indicator-head{% if not country %} indicator-head--single{% endif %}">
+  <div class="indicator-head__text">
+    <p class="indicator-head__kicker">
+      {% if theme %}{{ theme.title }}{% else %}{{ indicator.section.name }}{% endif %}
+      {% if item and not item.absolute %}
+        {% if item.polarity == "positive" %} · {% translate "рост — к лучшему" %}
+        {% elif item.polarity == "negative" %} · {% translate "рост — к худшему" %}{% endif %}
+      {% endif %}
+    </p>
+    <h1 class="indicator-head__title">{{ heading }}</h1>
+
+    {% if source_title or unit_name %}
+      <p class="indicator-head__source">
+        {% if source_title and collected %}
+          {% blocktranslate trimmed with title=source_title %}Полное название — «{{ title }}»{% endblocktranslate %}{% if unit_name %}, {{ unit_name|lower }}{% endif %}.
+        {% elif source_title %}
+          {% blocktranslate trimmed with title=source_title %}В сборнике Росстата — «{{ title }}»{% endblocktranslate %}{% if unit_name %}, {{ unit_name|lower }}{% endif %}.
+        {% else %}
+          {% blocktranslate trimmed with unit=unit_name|lower %}Единица измерения — {{ unit }}.{% endblocktranslate %}
+        {% endif %}
+      </p>
+    {% endif %}
+
+    {% if lead %}
+      {# Главное словами — из того же кадра, что рисует карта. #}
+      <ul class="indicator-head__lead" aria-label="{% translate 'Главное' %}">
+        <li>
+          {% blocktranslate trimmed with year=lead.year high_name=lead.highest.name high_href=lead.highest.href high_value=lead.highest.value low_name=lead.lowest.name low_href=lead.lowest.href low_value=lead.lowest.value unit=lead.unit %}
+            В {{ year }} году больше всего — <a href="{{ high_href }}">{{ high_name }}</a>: <b class="numeric">{{ high_value }}</b>{{ unit }}, меньше всего — <a href="{{ low_href }}">{{ low_name }}</a>: <b class="numeric">{{ low_value }}</b>
+          {% endblocktranslate %}{% if lead.gap %}{% blocktranslate trimmed with gap=lead.gap %}; разница — {{ gap }}{% endblocktranslate %}{% endif %}.
+        </li>
+        <li>
+          {% blocktranslate trimmed with median=lead.median %}
+            Середина списка — <b class="numeric">{{ median }}</b>: у половины регионов больше, у половины — меньше.
+          {% endblocktranslate %}
+        </li>
+        <li>
+          {% if lead.first_year == lead.last_year %}
+            {% blocktranslate trimmed with year=lead.year regions=lead.regions total=lead.total %}
+              Данные — только за {{ year }} год, по {{ regions }} регионам из {{ total }}.
+            {% endblocktranslate %}
+          {% else %}
+            {% blocktranslate trimmed with first=lead.first_year last=lead.last_year year=lead.year regions=lead.regions total=lead.total %}
+              Данные за {{ first }}–{{ last }} годы; в {{ year }} году — по {{ regions }} регионам из {{ total }}.
+            {% endblocktranslate %}
+          {% endif %}
+          {% if lead.break_years %}
+            {% blocktranslate trimmed with years=lead.break_years|join:", " %}
+              Разрыв сопоставимости — {{ years }}:
+            {% endblocktranslate %}
+            <a href="#indicator-breaks">{% translate "что изменилось" %}</a>.
+          {% else %}
+            {% translate "Разрывов сопоставимости источник не отмечает." %}
+          {% endif %}
+        </li>
+      </ul>
+    {% endif %}
+
+    {% if status %}
+      <p class="indicator-head__status{% if status.is_discontinued %} indicator-head__status--stopped{% endif %}">
+        <b>{{ status.label|capfirst }}.</b> {{ status.detail }}
+        {% if status.is_discontinued %}{% translate "Новых значений не будет." %}{% endif %}
+      </p>
+    {% endif %}
+
+    <div class="indicator-head__actions">
+      {% favorite_button "indicator" indicator.slug %}
+      {% if series %}
+        {% export_button "series" series=series.key title=heading %}
+        <a class="button button--secondary button--sm" href="{% url 'maps:choropleth' %}?series={{ series.key }}">
+          <svg aria-hidden="true"><use href="#icon-map"></use></svg>
+          {% translate "Исследовать" %}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if country %}
+    {# Изменение за год: у процентов — в пунктах. #}
+    <aside class="stat-tile indicator-head__country" aria-label="{% translate 'Россия' %}">
+      <p class="stat-tile__title">
+        {% blocktranslate trimmed with year=country.year %}Россия, {{ year }}{% endblocktranslate %}
+      </p>
+      <p class="stat-tile__value">
+        <span class="numeric">{{ country.value }}</span>
+        <span class="stat-tile__unit">{{ item.unit_label }}</span>{% include "catalog/partials/_origin_mark.html" with origin=country.origin %}
+      </p>
+      <div class="stat-tile__foot">
+        <p class="stat-tile__change">
+          {% if country.change %}
+            <span class="stat-tile__delta numeric verdict verdict--{{ country.tone }}">{{ country.change }}</span>
+            <span class="stat-tile__period">
+              {% if country.nominal %}
+                {% blocktranslate trimmed with year=country.year previous=country.previous_year nominal=country.nominal %}
+                  реально, {{ year }} к {{ previous }}; в рублях {{ nominal }}
+                {% endblocktranslate %}
+              {% else %}
+                {% blocktranslate trimmed with year=country.year previous=country.previous_year %}
+                  {{ year }} к {{ previous }}
+                {% endblocktranslate %}
+              {% endif %}
+            </span>
+          {% elif country.break_year %}
+            <span class="stat-tile__period">
+              {% blocktranslate trimmed with year=country.break_year %}
+                к прошлому году не сравнивается: разрыв сопоставимости в {{ year }} году
+              {% endblocktranslate %}
+            </span>
+          {% elif item.is_growth_index %}
+            <span class="stat-tile__period">{% translate "величина — сам темп к прошлому году" %}</span>
+          {% endif %}
+        </p>
+        {% if country.spark %}
+          <svg class="sparkline" viewBox="0 0 {{ country.spark.width }} {{ country.spark.height }}"
+               preserveAspectRatio="none" aria-hidden="true">
+            <path class="sparkline__line" d="{{ country.spark.path }}"></path>
+            <path class="sparkline__end" d="M{{ country.spark.end_x }} {{ country.spark.end_y }}h0"></path>
+          </svg>
+        {% endif %}
+      </div>
+      {% if item.absolute %}
+        <p class="indicator-head__country-note">
+          {% translate "По стране — сумма регионов, поэтому регион с ней не сравнивается." %}
+        </p>
+      {% endif %}
+    </aside>
+  {% endif %}
+</header>
+
+{# --- Выбор разреза ------------------------------------------------------------------- #}
+{% if variants|length > 1 %}
+  <nav class="indicator-variants" aria-labelledby="indicator-variants-label">
+    <p class="indicator-variants__label" id="indicator-variants-label">
+      {% blocktranslate trimmed with count=variants|length %}Разрез показателя · {{ count }}{% endblocktranslate %}
+    </p>
+    {% if variant_chips %}
+      <ul class="choice-list">
+        {% for variant in variants %}
+          <li>
+            <a class="choice-chip" href="?series={{ variant.key }}"
+               hx-get="?series={{ variant.key }}" hx-target="#indicator-page" hx-push-url="true"
+               {% if variant.pk == series.pk %}aria-current="true"{% endif %}>
+              {% if variant.has_subsection and variant.name %}{{ variant.name }}{% else %}{% translate "без разреза" %}{% endif %}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      {# Десятки разрезов — списком. Выбор применяется сразу; без сценариев — кнопкой. #}
+      <form class="indicator-variants__form" method="get" action="{{ request.path }}"
+            hx-get="{{ request.path }}" hx-target="#indicator-page" hx-push-url="true"
+            hx-trigger="change">
+        <label class="visually-hidden" for="indicator-variant">{% translate "Разрез показателя" %}</label>
+        <select class="select" id="indicator-variant" name="series">
+          {% for variant in variants %}
+            <option value="{{ variant.key }}"{% if variant.pk == series.pk %} selected{% endif %}>
+              {% if variant.has_subsection and variant.name %}{{ variant.name }}{% else %}{% translate "без разреза" %}{% endif %}
+            </option>
+          {% endfor %}
+        </select>
+        <noscript><button class="button button--secondary button--sm" type="submit">{% translate "Открыть" %}</button></noscript>
+      </form>
+    {% endif %}
+  </nav>
+{% endif %}
+
+{% if not series %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "У показателя нет рядов наблюдений" %}</p>
+  </div>
+{% elif not warehouse_ready %}
+  <div class="callout callout--warning indicator__notice">
+    <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+    <div>
+      <div class="callout__title">{% translate "Данные ещё не загружены" %}</div>
+      <p>{% translate "Страница заработает, когда администратор загрузит набор данных." %}</p>
+    </div>
+  </div>
+{% else %}
+
+  {# --- Где больше, где меньше: живая карта ------------------------------------------ #}
+  {% if live %}
+    {% include "catalog/partials/_indicator_map.html" %}
+  {% elif fallback_top %}
+    {# Живой карты нет, когда ни за один год не ранжировано хотя бы 60 регионов. #}
+    <section class="page-section" aria-labelledby="indicator-leaders-title">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="indicator-leaders-title">
+          {% blocktranslate trimmed with year=fallback_year %}Где больше, где меньше, {{ year }}{% endblocktranslate %}
+        </h2>
+        <p class="page-section__note">
+          {% translate "Данные есть меньше чем по 60 регионам, поэтому карта и места не строятся." %}
+        </p>
+      </div>
+      <div class="indicator-leaders indicator-leaders--plain">
+        <div>
+          <h3 class="live-map__label">{% translate "Больше всего" %}</h3>
+          <ol class="leader-list">
+            {% for row in fallback_top %}
+              <li class="leader-list__item">
+                <span class="leader-list__name">{{ row.name }}</span>
+                <span class="leader-list__value numeric">{{ row.value|ru_number:item.precision }}</span>
+              </li>
+            {% endfor %}
+          </ol>
+        </div>
+        <div>
+          <h3 class="live-map__label">{% translate "Меньше всего" %}</h3>
+          <ol class="leader-list">
+            {% for row in fallback_bottom %}
+              <li class="leader-list__item">
+                <span class="leader-list__name">{{ row.name }}</span>
+                <span class="leader-list__value numeric">{{ row.value|ru_number:item.precision }}</span>
+              </li>
+            {% endfor %}
+          </ol>
+        </div>
+      </div>
+    </section>
+  {% endif %}
+
+  {# --- По месяцам: последние данные --------------------------------------------------------- #}
+  {% if month %}
+    {% include "catalog/partials/_indicator_month.html" %}
+  {% endif %}
+
+  {# --- Как менялся ----------------------------------------------------------------------- #}
+  {% if timeline_option %}
+    <section class="page-section" aria-labelledby="indicator-timeline-title">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="indicator-timeline-title">
+          {% blocktranslate trimmed with first=timeline_years.0 last=timeline_years.1 %}
+            Как менялся показатель, {{ first }}–{{ last }}
+          {% endblocktranslate %}
+        </h2>
+        <a class="indicator-more" href="{% url 'compare:index' %}?series={{ series.key }}">
+          {% translate "Динамика по регионам" %}
+          <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+        </a>
+      </div>
+
+      <figure class="indicator-chart">
+        <rl-chart class="chart chart--tall" data-options="indicator-timeline-option"></rl-chart>
+        {{ timeline_option|json_script:"indicator-timeline-option" }}
+        <figcaption class="indicator-chart__caption">
+          <span class="indicator-chart__key indicator-chart__key--line">
+            <span class="indicator-chart__swatch indicator-chart__swatch--country" aria-hidden="true"></span>
+            {% translate "Россия" %}
+          </span>
+          <span class="indicator-chart__key indicator-chart__key--line">
+            <span class="indicator-chart__swatch indicator-chart__swatch--median" aria-hidden="true"></span>
+            {% translate "середина регионов: у половины больше, у половины меньше" %}
+          </span>
+          <span class="indicator-chart__key">
+            <span class="indicator-chart__swatch indicator-chart__swatch--band" aria-hidden="true"></span>
+            {% translate "половина регионов — между первым и третьим квартилем" %}
+          </span>
+          <span class="indicator-chart__hint">
+            {% blocktranslate trimmed %}
+              Пропуск в данных не соединяется линией. Значение по России не равно середине
+              регионов: в нём регионы весят по численности, а в списке каждый — один.
+            {% endblocktranslate %}
+          </span>
+        </figcaption>
+      </figure>
+
+      {% if breaks %}
+        <div class="break-notes" id="indicator-breaks">
+          <h3 class="break-notes__title">
+            {% translate "Разрывы сопоставимости" %}
+            <span class="count-badge numeric">{{ breaks|length }}</span>
+          </h3>
+          <p class="break-notes__lead">
+            {% blocktranslate trimmed %}
+              В отмеченный год менялась методика или круг наблюдения: значения до и после
+              получены по-разному, и сравнивать их напрямую нельзя. На графике — вертикальная
+              черта, на шкале годов карты — отметка. Отметки извлечены из методических
+              примечаний сборника и сносок таблиц Росстата.
+            {% endblocktranslate %}
+          </p>
+          {% include "catalog/partials/_translation_caveat.html" %}
+          <ul class="break-notes__list">
+            {% for entry in breaks %}
+              <li class="break-notes__item">
+                <span class="break-notes__year numeric">{{ entry.year|year }}</span>
+                <div>
+                  <p class="break-notes__kind">
+                    {{ entry.get_kind_display }}
+                    {% if entry.territory %}<span class="badge badge--outline">{{ entry.territory.name }}</span>{% endif %}
+                  </p>
+                  {% if entry.description %}<p class="break-notes__text" lang="{{ entry.description_lang }}">{{ entry.description }}</p>{% endif %}
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {# --- О ряде и глубже ------------------------------------------------------------------- #}
+  <section class="page-section indicator-data" aria-label="{% translate 'О ряде и дальнейший разбор' %}">
+    <div class="indicator-data__about">
+      <h2 class="page-section__title">{% translate "О ряде" %}</h2>
+      <dl class="about-list">
+        <div>
+          <dt>{% translate "Регионы" %}</dt>
+          <dd>
+            {% blocktranslate trimmed with count=series.region_count total=territories_total %}
+              данные есть по {{ count }} из {{ total }}
+            {% endblocktranslate %}
+          </dd>
+        </div>
+        <div>
+          <dt>{% translate "Годы" %}</dt>
+          <dd class="numeric">
+            {{ series.first_year|year }}–{{ series.last_year|year }}
+            <span class="about-list__note">
+              {% blocktranslate trimmed with count=series.year_count %}лет с данными: {{ count }}{% endblocktranslate %}
+            </span>
+          </dd>
+        </div>
+        <div>
+          <dt>{% translate "Заполненность" %}</dt>
+          <dd>
+            <span class="numeric">{{ series.completeness|percent:0 }}</span>
+            {% translate "ячеек «регион × год»" %} ·
+            <a href="{% url 'content:methodology' %}#m-missing-values">{% translate "что считается пропуском" %}</a>
+          </dd>
+        </div>
+        <div>
+          <dt>{% translate "Разрывы" %}</dt>
+          <dd>
+            {% if breaks %}
+              <a href="#indicator-breaks">{{ break_years|join:", " }}</a>
+              {% if breaks|length > break_years|length %}
+                <span class="about-list__note">
+                  {% blocktranslate trimmed with count=breaks|length %}отметок всего: {{ count }}{% endblocktranslate %}
+                </span>
+              {% endif %}
+            {% else %}
+              {% translate "источник не отмечает" %}
+            {% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt>{% translate "Пересмотры" %}</dt>
+          <dd>
+            {% if series.revision_count %}
+              {% blocktranslate trimmed with count=series.revision_count|ru_number:0 %}пересмотрено значений: {{ count }}{% endblocktranslate %}
+            {% else %}
+              {% translate "значения между выпусками не менялись" %}
+            {% endif %}
+            {% if editions %}
+              <span class="about-list__note">
+                {% if collected %}
+                  {% blocktranslate trimmed with count=editions|length %}выпусков источника: {{ count }}{% endblocktranslate %}
+                {% else %}
+                  {% blocktranslate trimmed with count=editions|length %}выпусков сборника: {{ count }}{% endblocktranslate %}
+                {% endif %}
+              </span>
+            {% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt>{% translate "Сравнение регионов" %}</dt>
+          <dd>
+            {% if series.is_analysis_ready and collected %}
+              {% translate "пригоден: данные по 80 % регионов и больше, не меньше пяти лет — ряд начинается с первого года источника" %}
+            {% elif series.is_analysis_ready %}
+              {% translate "пригоден: данные по 80 % регионов и больше, не меньше десяти лет" %}
+            {% else %}
+              {% translate "с осторожностью: данных меньше чем по 80 % регионов или меньше десяти лет" %}
+            {% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt>{% translate "Оценка" %}</dt>
+          <dd>
+            {% if item.absolute %}
+              {% translate "не делается: величина зависит от размера региона" %}
+            {% elif item.polarity == "positive" %}
+              {% translate "рост — к лучшему; направленность проверена вручную" %}
+            {% elif item.polarity == "negative" %}
+              {% translate "рост — к худшему; направленность проверена вручную" %}
+            {% elif item.theme %}
+              {% translate "не делается: однозначно хорошего направления нет" %}
+            {% else %}
+              {% translate "не делается: «лучше» и «хуже» называются только у основных показателей, чья направленность проверена вручную" %}
+            {% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt>{% if collected %}{% translate "Раздел" %}{% else %}{% translate "Раздел сборника" %}{% endif %}</dt>
+          <dd>
+            <a href="{% url 'catalog:indicator-list' %}?view=all&amp;section={{ indicator.section.slug }}">{{ indicator.section.name }}</a>
+          </dd>
+        </div>
+        <div>
+          <dt>{% translate "Ключ ряда" %}</dt>
+          <dd>
+            <code class="about-list__code">{{ series.key }}</code> ·
+            <a href="{% url 'api:v1:series-detail' key=series.key %}">{% translate "в API" %}</a>
+          </dd>
+        </div>
+        {% if glossary_terms %}
+          <div>
+            <dt>{% translate "Термины" %}</dt>
+            <dd>
+              {% for term in glossary_terms %}<a href="{{ term.get_absolute_url }}">{{ term.term }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
+            </dd>
+          </div>
+        {% endif %}
+      </dl>
+    </div>
+
+    <div class="indicator-data__deeper">
+      <h2 class="page-section__title">{% translate "Смотреть глубже" %}</h2>
+      <ul class="deep-links">
+        {% for link in links %}
+          <li>
+            <a class="deep-links__item" href="{{ link.href }}">
+              <svg class="deep-links__icon" aria-hidden="true"><use href="#icon-{{ link.icon }}"></use></svg>
+              <span class="deep-links__title">{{ link.title }}</span>
+              <span class="deep-links__text">{{ link.text }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  {# --- Источник: примечания, пересмотры, выпуски — под раскрытием ------------------------ #}
+  {% if notes or revisions or editions %}
+    <section class="page-section" aria-labelledby="indicator-source-title">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="indicator-source-title">{% translate "Источник и методика" %}</h2>
+        <a class="indicator-more" href="{% url 'content:methodology' %}">
+          {% translate "Как устроены данные" %}
+          <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+        </a>
+      </div>
+
+      <div class="source-blocks">
+        {% if notes %}
+          <details class="source-block">
+            <summary class="source-block__summary">
+              {% translate "Методические примечания сборника" %}
+              <span class="count-badge numeric">{{ notes_total }}</span>
+            </summary>
+            <div class="source-block__body">
+              {% include "catalog/partials/_translation_caveat.html" %}
+              {% for note in notes %}
+                <div class="source-note">
+                  <p class="source-note__text" lang="{{ note.text_lang }}">{{ note.text }}</p>
+                  <p class="source-note__meta">
+                    {{ note.get_kind_display }} ·
+                    {% blocktranslate trimmed with count=note.occurrence_count %}
+                      встречается у {{ count }} наблюдений
+                    {% endblocktranslate %}
+                  </p>
+                </div>
+              {% endfor %}
+              {% if notes_total > notes|length %}
+                <p class="source-block__more">
+                  {% blocktranslate trimmed with shown=notes|length total=notes_total %}
+                    Показаны {{ shown }} самых частых из {{ total }}.
+                  {% endblocktranslate %}
+                </p>
+              {% endif %}
+            </div>
+          </details>
+        {% endif %}
+
+        {% if revisions %}
+          <details class="source-block">
+            <summary class="source-block__summary">
+              {% translate "Пересмотры значений" %}
+              <span class="count-badge numeric">{{ series.revision_count|ru_number:0 }}</span>
+            </summary>
+            <div class="source-block__body">
+              <p class="source-block__lead">
+                {% translate "Расхождение между первым и последним выпуском сборника; самые крупные." %}
+              </p>
+              <div class="data-table-wrapper">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">{% translate "Территория" %}</th>
+                      <th scope="col" class="is-numeric">{% translate "Год" %}</th>
+                      <th scope="col" class="is-numeric">{% translate "Выпусков" %}</th>
+                      <th scope="col" class="is-numeric">{% translate "Было" %}</th>
+                      <th scope="col" class="is-numeric">{% translate "Стало" %}</th>
+                      <th scope="col" class="is-numeric">{% translate "Изменение" %}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for entry in revisions %}
+                      <tr>
+                        <td>{{ entry.territory_name }}</td>
+                        <td class="is-numeric">{{ entry.year|year }}</td>
+                        <td class="is-numeric">{{ entry.edition_count }}</td>
+                        <td class="is-numeric">{{ entry.first_value|ru_number }}</td>
+                        <td class="is-numeric">{{ entry.last_value|ru_number }}</td>
+                        <td class="is-numeric">{{ entry.rel_change|percent_delta }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <p class="source-block__more">
+                <a href="{% url 'analytics:revisions' %}?series={{ series.key }}">{% translate "Все пересмотры ряда" %}</a>
+              </p>
+            </div>
+          </details>
+        {% endif %}
+
+        {% if editions %}
+          <details class="source-block">
+            <summary class="source-block__summary">
+              {% translate "Выпуски изданий" %}
+              <span class="count-badge numeric">{{ editions|length }}</span>
+            </summary>
+            <div class="source-block__body">
+              <div class="data-table-wrapper">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">{% translate "Издание" %}</th>
+                      <th scope="col" class="is-numeric">{% translate "Выпуск" %}</th>
+                      <th scope="col" class="is-numeric">{% translate "Наблюдений" %}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for edition in editions %}
+                      <tr>
+                        <td>{{ edition.publication }}</td>
+                        <td class="is-numeric">{{ edition.edition_label }}</td>
+                        <td class="is-numeric">{{ edition.observation_count|ru_number:0 }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <p class="source-block__more">
+                {% blocktranslate trimmed %}
+                  При расхождении между выпусками берётся значение более позднего выпуска;
+                  прежние версии сохраняются и показаны в пересмотрах.
+                {% endblocktranslate %}
+              </p>
+            </div>
+          </details>
+        {% endif %}
+      </div>
+    </section>
+  {% endif %}
+
+  {# --- В той же теме -------------------------------------------------------------------- #}
+  {% if neighbours %}
+    <section class="page-section" aria-labelledby="indicator-theme-title">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="indicator-theme-title">
+          {% blocktranslate trimmed with theme=theme.title %}Ещё в теме «{{ theme }}»{% endblocktranslate %}
+        </h2>
+        <a class="indicator-more" href="{% url 'catalog:indicator-list' %}#theme-{{ theme.slug }}">
+          {% translate "Все основные показатели" %}
+          <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+        </a>
+      </div>
+      <ul class="choice-list">
+        {% for other in neighbours %}
+          <li><a class="choice-chip" href="{{ other.href }}">{{ other.title }}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+{% endif %}

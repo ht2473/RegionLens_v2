@@ -1,0 +1,82 @@
+{% load i18n formatting %}
+{% comment %}
+  Помесячный блок страницы показателя: Россия по месяцам рядом с прошлыми годами и карта
+  последнего периода по регионам. Собирает apps/catalog/monthly.py (month_block).
+{% endcomment %}
+<section class="page-section" aria-labelledby="indicator-month-title">
+  <div class="page-section__head">
+    <h2 class="page-section__title" id="indicator-month-title">{% translate "По месяцам" %}</h2>
+    {% if month.country %}
+      <p class="page-section__note">
+        {% translate "Россия" %}, {{ month.period }} — <b class="numeric">{{ month.country.value }}</b>
+        {{ month.spec.unit }}{% if month.country.change %} ·
+          <span class="verdict verdict--{{ month.country.tone }}">{{ month.country.change }}</span>{% endif %}
+      </p>
+    {% endif %}
+  </div>
+
+  <div class="month-block">
+    {% if month.chart %}
+      <figure class="indicator-chart month-block__chart">
+        <p class="month-block__title">
+          {% blocktranslate trimmed with first=month.chart_years|first last=month.chart_years|last %}
+            Россия по месяцам, {{ first }}–{{ last }}
+          {% endblocktranslate %}
+        </p>
+        <rl-chart class="chart chart--tall" data-options="indicator-month-option"></rl-chart>
+        {{ month.chart|json_script:"indicator-month-option" }}
+        {% if month.chart_note %}
+          <figcaption class="indicator-chart__caption">
+            <span class="indicator-chart__hint">{{ month.chart_note }}</span>
+          </figcaption>
+        {% endif %}
+      </figure>
+    {% endif %}
+
+    {% if month.geo_map %}
+      <figure class="indicator-chart month-block__map">
+        <p class="month-block__title">
+          {% blocktranslate trimmed with period=month.period %}Регионы, {{ period }}{% endblocktranslate %}
+        </p>
+        {% include "maps/partials/_geo_map.html" with geo_map=month.geo_map geo_caption=month.spec.title plain=True %}
+        {% if month.legend %}
+          <ol class="live-legend month-block__legend">
+            {% for item in month.legend %}
+              <li class="live-legend__item" title="{{ item.range }}">
+                <span class="live-legend__swatch" style="background-color: var({{ item.colour }})"></span>
+              </li>
+            {% endfor %}
+          </ol>
+          <ol class="live-legend__bounds numeric">
+            {% with count=month.legend|length %}
+              {% for item in month.legend %}
+                {% if forloop.first %}<li style="--at: 0%">{{ item.lower }}</li>{% endif %}
+                <li style="--at: {% widthratio forloop.counter count 100 %}%">{{ item.upper }}</li>
+              {% endfor %}
+            {% endwith %}
+          </ol>
+        {% endif %}
+        <figcaption class="indicator-chart__caption">
+          {% if month.highest %}
+            <span class="indicator-chart__hint">
+              {% blocktranslate trimmed with high=month.highest.name high_value=month.highest.value low=month.lowest.name low_value=month.lowest.value unit=month.spec.unit %}
+                Больше всего — {{ high }}: {{ high_value }} {{ unit }}; меньше всего — {{ low }}: {{ low_value }} {{ unit }}
+              {% endblocktranslate %}
+            </span>
+          {% endif %}
+          {% if month.missing %}
+            <span class="indicator-chart__hint">
+              {% blocktranslate trimmed with count=month.missing %}Нет данных по {{ count }} регионам.{% endblocktranslate %}
+            </span>
+          {% endif %}
+        </figcaption>
+      </figure>
+    {% endif %}
+  </div>
+
+  {% if month.country.source %}
+    <p class="page-section__footnote">
+      {% translate "Источник" %}: {{ month.country.source }}.
+    </p>
+  {% endif %}
+</section>

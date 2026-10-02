@@ -1,0 +1,56 @@
+{% load i18n formatting accounts %}
+{# Карточка региона во всплывающей панели живой карты; открытый показатель — первым. #}
+<header class="region-card__head">
+  <div>
+    {% if territory.parent %}<p class="region-card__kicker">{{ territory.parent.name }}</p>{% endif %}
+    <h2 class="region-card__title">{{ territory.name }}</h2>
+  </div>
+  <button type="button" class="icon-button region-card__close" popovertarget="region-card"
+          popovertargetaction="hide" aria-label="{% translate 'Закрыть' %}">
+    <svg aria-hidden="true"><use href="#icon-close"></use></svg>
+  </button>
+</header>
+
+{% if passport %}
+  <ul class="region-card__summary">
+    {% for line in summary %}<li>{{ line }}</li>{% endfor %}
+  </ul>
+
+  {% if positions %}
+    <dl class="region-card__rows">
+      {% for position in positions %}
+        <div class="region-card__row{% if position.series.key == chosen %} is-chosen{% endif %}">
+          <dt class="region-card__name">{{ position.series.short_title }}</dt>
+          <dd class="region-card__figure">
+            <span class="region-card__value numeric">{{ position.value|ru_number:position.series.precision }}</span>
+            <span class="region-card__unit">{{ position.series.unit_label }}</span>
+          </dd>
+          <dd class="region-card__meta">
+            <span class="verdict verdict--{{ position.tone }}">{{ position.place_text }} · {{ position.year }}</span>
+            {% if position.versus_country %}
+              <span class="region-card__versus">{{ position.versus_country }}</span>
+            {% endif %}
+          </dd>
+        </div>
+      {% endfor %}
+    </dl>
+  {% endif %}
+{% else %}
+  <p class="region-card__summary">{% translate "Сведения о регионе пока недоступны." %}</p>
+{% endif %}
+
+<div class="region-card__actions">
+  <a class="button button--primary button--lg" href="{% url 'catalog:territory-detail' territory.slug %}">
+    {% translate "Открыть паспорт региона" %}
+    <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+  </a>
+  {% my_region_button territory %}
+</div>
+{% if passport %}
+  <p class="region-card__hint">
+    {% blocktranslate trimmed with total=passport.total %}
+      В паспорте — все {{ total }} основных показателей по темам, сильные и слабые стороны,
+      изменения за пять лет и похожие регионы.
+    {% endblocktranslate %}
+  </p>
+{% endif %}

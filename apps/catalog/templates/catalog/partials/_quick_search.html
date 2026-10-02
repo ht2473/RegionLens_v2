@@ -1,0 +1,84 @@
+{% load i18n %}
+{# Подсказки быстрого перехода: показатели, регионы, разделы, инструменты. #}
+
+{% if not query or query|length < 2 %}
+  <div class="palette__group-title">{% translate "Начните вводить запрос" %}</div>
+  <p class="text-muted" style="padding: 0 var(--space-3) var(--space-3); font-size: var(--text-xs)">
+    {% translate "Поиск ведётся по названиям показателей, разрезов и регионов." %}
+  </p>
+
+{% elif not has_results %}
+  <div class="palette__group-title">{% translate "Ничего не найдено" %}</div>
+
+  {# Исправление опечатки — перед советом «попробуйте иначе». #}
+  {% if suggestion %}
+    <button type="button" class="palette__item" data-palette-suggest="{{ suggestion }}">
+      <svg aria-hidden="true" style="width: 15px; height: 15px; color: var(--text-muted)">
+        <use href="#icon-search"></use>
+      </svg>
+      <span class="palette__item-title">
+        {% blocktranslate trimmed %}Возможно: {{ suggestion }}{% endblocktranslate %}
+      </span>
+    </button>
+  {% endif %}
+
+  <p class="text-muted" style="padding: 0 var(--space-3) var(--space-3); font-size: var(--text-xs)">
+    {% blocktranslate trimmed %}
+      Попробуйте другую формулировку или откройте каталог с фильтрами.
+    {% endblocktranslate %}
+  </p>
+
+{% else %}
+  {# Инструменты — первыми. #}
+  {% if tools %}
+    <div class="palette__group-title">{% translate "Разделы и инструменты" %}</div>
+    {% for tool in tools %}
+      <a class="palette__item" href="{{ tool.url }}">
+        <svg aria-hidden="true" style="width: 15px; height: 15px; color: var(--text-muted)">
+          <use href="#icon-{{ tool.icon|default:'activity' }}"></use>
+        </svg>
+        <span class="palette__item-title">{{ tool.title }}</span>
+        <span class="text-muted" style="font-size: var(--text-2xs)">{{ tool.hint|truncatechars:48 }}</span>
+      </a>
+    {% endfor %}
+  {% endif %}
+
+  {% if series %}
+    <div class="palette__group-title">{% translate "Показатели" %}</div>
+    {% for item in series %}
+      <a class="palette__item" href="{% url 'catalog:indicator-list' %}?q={{ item.indicator.name|urlencode }}">
+        <span class="quality-dot quality-dot--observed"></span>
+        <span class="palette__item-title">
+          {{ item.indicator.name }}{% if item.has_subsection %} — {{ item.name }}{% endif %}
+        </span>
+        <span class="badge badge--neutral">{{ item.region_count }}/85</span>
+      </a>
+    {% endfor %}
+  {% endif %}
+
+  {% if territories %}
+    <div class="palette__group-title">{% translate "Регионы" %}</div>
+    {% for territory in territories %}
+      <a class="palette__item" href="{% url 'catalog:territory-list' %}?q={{ territory.name|urlencode }}">
+        <svg aria-hidden="true" style="width: 15px; height: 15px; color: var(--text-muted)">
+          <use href="#icon-map-pin"></use>
+        </svg>
+        <span class="palette__item-title">{{ territory.name }}</span>
+        <span class="text-muted" style="font-size: var(--text-2xs)">{{ territory.capital }}</span>
+      </a>
+    {% endfor %}
+  {% endif %}
+
+  {% if sections %}
+    <div class="palette__group-title">{% translate "Разделы" %}</div>
+    {% for section in sections %}
+      <a class="palette__item" href="{% url 'catalog:indicator-list' %}?section={{ section.slug }}">
+        <svg aria-hidden="true" style="width: 15px; height: 15px; color: var(--text-muted)">
+          <use href="#icon-list"></use>
+        </svg>
+        <span class="palette__item-title">{{ section.name }}</span>
+        <span class="badge badge--neutral">{{ section.series_count }}</span>
+      </a>
+    {% endfor %}
+  {% endif %}
+{% endif %}

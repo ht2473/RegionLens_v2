@@ -1,0 +1,960 @@
+{
+  "meta": {
+    "purpose": "Основной набор показателей — вход для широкой публики: плитки главной страницы и паспорта региона, выводы понятным языком, сильные и слабые стороны региона, темы каталога и первая группа списка выбора ряда. Полный перечень рядов остаётся на уровне анализа.",
+    "selection_criteria": "Ряд пригоден для сравнительного анализа (не менее 80 % субъектов и десяти лет наблюдений; у рядов Банка России и ФНС, которые начинаются с 2019 и 2016 годов, — пяти лет), формулировка понятна без специальной подготовки, величина приведена к численности, площади или иной основе. Исключения — абсолютные величины, без которых портрет региона неполон (численность населения, объём ВРП, выбросы); они помечены полем absolute и в оценку сильных и слабых сторон не входят. Разрывы сопоставимости ряд не исключают: они показываются на графиках и в карточке ряда.",
+    "version": "2.0",
+    "status": "Проверен автором 23.09.2026. Впервые выявленные заболевания и доля расходов на ЖКУ — без оценки: высокая выявляемость бывает признаком доступной медицины, а низкая доля расходов на жильё — признаком дешёвого частного жилья, а не благополучия. Темы «Кредиты» и «Малый бизнес» добавлены 25.09.2026 по данным Банка России и ФНС: размер и число кредитов и ставка — без оценки (много ипотеки и долгов бывает и признаком достатка, и признаком нагрузки), доля просрочки — рост к худшему, число малых и средних предприятий и их работников на 1 000 жителей — рост к лучшему.",
+    "fields_note": "key — ключ ряда в складе; short_title_* — короткое название для публики; unit_label_* — подпись единицы, заданная вручную (у части рядов источник подписывает единицу неверно или не подписывает вовсе); polarity — направленность: positive — рост к лучшему, negative — рост к худшему, neutral — оценка не делается; theme — тема из перечня themes; precision — знаков после запятой; order — порядок в наборе, он же порядок внутри темы; headline — плитка на главной и в паспорте; absolute — величина не приведена к численности или иной основе; question_* — вопрос-вход, который открывает рейтинг по ряду.",
+    "roles_note": "Поле role помечает ряд, используемый системой в служебной роли. Значение population означает численность населения: этим рядом взвешиваются меры неравенства, когда единицей наблюдения выступает человек, а не территория. Значение default означает ряд, с которого открываются карта, рейтинги и аналитические инструменты: он должен быть приведён к душе населения, иначе первый экран каждого инструмента упорядочивает субъекты по размеру, а не по состоянию. Первые двенадцать рядов по полю order задают наборы по умолчанию многомерных инструментов и профиль сравнения — менять их порядок значит менять первые экраны этих инструментов.",
+    "real_note": "Поле real — пересчёт денежного ряда в реальное выражение для изменения во времени. method: index — цепной индекс реальной величины Росстата к прошлому году (реальная зарплата, реальные доходы); volume — индекс физического объёма итога total (ВРП, инвестиции, оборот розничной торговли), для душевого ряда поправленный на изменение численности через отношение итога к душевому значению; prices — индекс потребительских цен региона, декабрь к декабрю. У стоимости фиксированного набора поля нет: это сама цена."
+  },
+  "themes": [
+    {
+      "slug": "population",
+      "title_ru": "Население",
+      "title_en": "Population",
+      "lead_ru": "Сколько людей живёт в регионе, как меняется их число и возраст.",
+      "lead_en": "How many people live in the region and how their number and age change."
+    },
+    {
+      "slug": "health",
+      "title_ru": "Здоровье",
+      "title_en": "Health",
+      "lead_ru": "Продолжительность жизни, смертность и доступность медицины.",
+      "lead_en": "Life expectancy, mortality and access to healthcare."
+    },
+    {
+      "slug": "income",
+      "title_ru": "Доходы и расходы",
+      "title_en": "Income and spending",
+      "lead_ru": "Зарплаты, доходы, бедность и траты семей.",
+      "lead_en": "Wages, incomes, poverty and household spending."
+    },
+    {
+      "slug": "labour",
+      "title_ru": "Работа",
+      "title_en": "Jobs",
+      "lead_ru": "Безработица, занятость и нагрузка на работающих.",
+      "lead_en": "Unemployment, employment and the burden on those in work."
+    },
+    {
+      "slug": "economy",
+      "title_ru": "Экономика",
+      "title_en": "Economy",
+      "lead_ru": "Размер и рост экономики, инвестиции, торговля и состояние предприятий.",
+      "lead_en": "Size and growth of the economy, investment, trade and the state of businesses."
+    },
+    {
+      "slug": "business",
+      "title_ru": "Малый бизнес",
+      "title_en": "Small business",
+      "lead_ru": "Малые и средние предприятия, их работники и кредиты бизнесу.",
+      "lead_en": "Small and medium-sized businesses, their employees and business loans."
+    },
+    {
+      "slug": "housing",
+      "title_ru": "Жильё",
+      "title_en": "Housing",
+      "lead_ru": "Сколько строят, сколько места у жителей и сколько стоит квадратный метр.",
+      "lead_en": "How much is built, how much space residents have and what a square metre costs."
+    },
+    {
+      "slug": "credit",
+      "title_ru": "Кредиты",
+      "title_en": "Credit",
+      "lead_ru": "Ипотека, долги населения и просрочка по кредитам.",
+      "lead_en": "Mortgages, household debt and overdue loans."
+    },
+    {
+      "slug": "education",
+      "title_ru": "Образование и культура",
+      "title_en": "Education and culture",
+      "lead_ru": "Детские сады, школы, студенты, музеи и театры.",
+      "lead_en": "Kindergartens, schools, students, museums and theatres."
+    },
+    {
+      "slug": "transport",
+      "title_ru": "Дороги и связь",
+      "title_en": "Roads and connectivity",
+      "lead_ru": "Дороги, безопасность движения и доступ в интернет.",
+      "lead_en": "Roads, road safety and internet access."
+    },
+    {
+      "slug": "environment",
+      "title_ru": "Природа",
+      "title_en": "Environment",
+      "lead_ru": "Загрязнение воздуха и леса.",
+      "lead_en": "Air pollution and forests."
+    },
+    {
+      "slug": "prices",
+      "title_ru": "Цены",
+      "title_en": "Prices",
+      "lead_ru": "Рост цен и стоимость жизни.",
+      "lead_en": "Price growth and the cost of living."
+    }
+  ],
+  "series": [
+    {
+      "key": "Y477110461:00",
+      "short_title_ru": "Численность населения",
+      "short_title_en": "Population",
+      "unit_label_ru": "тыс. чел.",
+      "unit_label_en": "thousand people",
+      "polarity": "neutral",
+      "theme": "population",
+      "precision": 1,
+      "order": 1,
+      "headline": true,
+      "absolute": true,
+      "role": "population"
+    },
+    {
+      "key": "Y477110256:00",
+      "short_title_ru": "Ожидаемая продолжительность жизни",
+      "short_title_en": "Life expectancy at birth",
+      "unit_label_ru": "лет",
+      "unit_label_en": "years",
+      "polarity": "positive",
+      "theme": "health",
+      "precision": 2,
+      "order": 2,
+      "headline": true,
+      "question_ru": "Где дольше живут?",
+      "question_en": "Where do people live longest?"
+    },
+    {
+      "key": "Y477110006:00",
+      "short_title_ru": "ВРП на душу населения",
+      "short_title_en": "GRP per capita",
+      "unit_label_ru": "руб. в год",
+      "unit_label_en": "RUB per year",
+      "polarity": "positive",
+      "theme": "economy",
+      "precision": 0,
+      "order": 3,
+      "headline": true,
+      "role": "default",
+      "real": {
+        "method": "volume",
+        "index": "Y477110109:00",
+        "total": "Y477110005:00"
+      }
+    },
+    {
+      "key": "Y477110374:00",
+      "short_title_ru": "Средний доход на человека",
+      "short_title_en": "Average income per person",
+      "unit_label_ru": "руб. в месяц",
+      "unit_label_en": "RUB per month",
+      "polarity": "positive",
+      "theme": "income",
+      "precision": 0,
+      "order": 4,
+      "headline": true,
+      "real": {
+        "method": "index",
+        "index": "Y477110363:00"
+      }
+    },
+    {
+      "key": "Y477110378:00",
+      "short_title_ru": "Средняя зарплата",
+      "short_title_en": "Average monthly wage",
+      "unit_label_ru": "руб. в месяц",
+      "unit_label_en": "RUB per month",
+      "polarity": "positive",
+      "theme": "income",
+      "precision": 0,
+      "order": 5,
+      "headline": true,
+      "question_ru": "Где самые высокие зарплаты?",
+      "question_en": "Where are wages highest?",
+      "role": "home",
+      "real": {
+        "method": "index",
+        "index": "Y477110362:00"
+      }
+    },
+    {
+      "key": "Y477110463:00",
+      "short_title_ru": "Уровень бедности",
+      "short_title_en": "Poverty rate",
+      "unit_label_ru": "% жителей",
+      "unit_label_en": "% of population",
+      "polarity": "negative",
+      "theme": "income",
+      "precision": 1,
+      "order": 6,
+      "headline": true,
+      "question_ru": "Где больше бедных?",
+      "question_en": "Where is poverty highest?"
+    },
+    {
+      "key": "Y477110418:00",
+      "short_title_ru": "Уровень безработицы",
+      "short_title_en": "Unemployment rate",
+      "unit_label_ru": "%",
+      "unit_label_en": "%",
+      "polarity": "negative",
+      "theme": "labour",
+      "precision": 1,
+      "order": 7,
+      "headline": true,
+      "question_ru": "Где труднее найти работу?",
+      "question_en": "Where is it hardest to find a job?"
+    },
+    {
+      "key": "Y477110108:00",
+      "short_title_ru": "Инвестиции на душу населения",
+      "short_title_en": "Investment per capita",
+      "unit_label_ru": "руб. в год",
+      "unit_label_en": "RUB per year",
+      "polarity": "positive",
+      "theme": "economy",
+      "precision": 0,
+      "order": 8,
+      "real": {
+        "method": "volume",
+        "index": "Y477110110:00",
+        "total": "Y477110107:00"
+      }
+    },
+    {
+      "key": "Y477110224:00",
+      "short_title_ru": "Розничный оборот на душу населения",
+      "short_title_en": "Retail sales per capita",
+      "unit_label_ru": "руб. в год",
+      "unit_label_en": "RUB per year",
+      "polarity": "positive",
+      "theme": "economy",
+      "precision": 0,
+      "order": 9,
+      "real": {
+        "method": "volume",
+        "index": "Y477110128:00",
+        "total": "Y477110223:00"
+      }
+    },
+    {
+      "key": "Y477110017:00",
+      "short_title_ru": "Ввод жилья",
+      "short_title_en": "New housing",
+      "unit_label_ru": "м² на 1000 жителей",
+      "unit_label_en": "sq m per 1,000 people",
+      "polarity": "positive",
+      "theme": "housing",
+      "precision": 0,
+      "order": 10
+    },
+    {
+      "key": "Y477110226:00",
+      "short_title_ru": "Жилая площадь на человека",
+      "short_title_en": "Living space per person",
+      "unit_label_ru": "м²",
+      "unit_label_en": "sq m",
+      "polarity": "positive",
+      "theme": "housing",
+      "precision": 1,
+      "order": 11,
+      "headline": true,
+      "question_ru": "Где просторнее живут?",
+      "question_en": "Where do people have the most living space?"
+    },
+    {
+      "key": "Y477110005:00",
+      "short_title_ru": "Валовой региональный продукт",
+      "short_title_en": "Gross regional product",
+      "unit_label_ru": "млн руб.",
+      "unit_label_en": "RUB mn",
+      "polarity": "positive",
+      "theme": "economy",
+      "precision": 0,
+      "order": 12,
+      "absolute": true,
+      "real": {
+        "method": "volume",
+        "index": "Y477110109:00",
+        "total": "Y477110005:00"
+      }
+    },
+    {
+      "key": "Y477110402:00",
+      "short_title_ru": "Суммарная рождаемость",
+      "short_title_en": "Total fertility rate",
+      "unit_label_ru": "детей на женщину",
+      "unit_label_en": "children per woman",
+      "polarity": "positive",
+      "theme": "population",
+      "precision": 2,
+      "order": 13,
+      "question_ru": "Где рождается больше детей?",
+      "question_en": "Where are birth rates highest?"
+    },
+    {
+      "key": "Y477110232:00",
+      "short_title_ru": "Смертность",
+      "short_title_en": "Crude death rate",
+      "unit_label_ru": "на 1000 жителей",
+      "unit_label_en": "per 1,000 people",
+      "polarity": "negative",
+      "theme": "population",
+      "precision": 1,
+      "order": 14
+    },
+    {
+      "key": "Y477110196:00",
+      "short_title_ru": "Естественный прирост",
+      "short_title_en": "Natural increase",
+      "unit_label_ru": "на 1000 жителей",
+      "unit_label_en": "per 1,000 people",
+      "polarity": "positive",
+      "theme": "population",
+      "precision": 1,
+      "order": 15
+    },
+    {
+      "key": "Y477110197:00",
+      "short_title_ru": "Миграционный прирост",
+      "short_title_en": "Net migration",
+      "unit_label_ru": "на 10 тыс. жителей",
+      "unit_label_en": "per 10,000 people",
+      "polarity": "positive",
+      "theme": "population",
+      "precision": 0,
+      "order": 16,
+      "question_ru": "Куда переезжают люди?",
+      "question_en": "Where are people moving to?"
+    },
+    {
+      "key": "Y477110408:00",
+      "short_title_ru": "Доля городских жителей",
+      "short_title_en": "Urban population share",
+      "unit_label_ru": "%",
+      "unit_label_en": "%",
+      "polarity": "neutral",
+      "theme": "population",
+      "precision": 1,
+      "order": 17
+    },
+    {
+      "key": "Y477110051:00",
+      "short_title_ru": "Доля детей и подростков",
+      "short_title_en": "Share of children and teenagers",
+      "unit_label_ru": "% жителей",
+      "unit_label_en": "% of population",
+      "polarity": "neutral",
+      "theme": "population",
+      "precision": 1,
+      "order": 18
+    },
+    {
+      "key": "Y477110052:00",
+      "short_title_ru": "Доля старше трудоспособного возраста",
+      "short_title_en": "Share above working age",
+      "unit_label_ru": "% жителей",
+      "unit_label_en": "% of population",
+      "polarity": "neutral",
+      "theme": "population",
+      "precision": 1,
+      "order": 19
+    },
+    {
+      "key": "Y477110198:00",
+      "short_title_ru": "Младенческая смертность",
+      "short_title_en": "Infant mortality",
+      "unit_label_ru": "на 1000 родившихся",
+      "unit_label_en": "per 1,000 live births",
+      "polarity": "negative",
+      "theme": "health",
+      "precision": 1,
+      "order": 20
+    },
+    {
+      "key": "Y477110369:00",
+      "short_title_ru": "Смертность в трудоспособном возрасте",
+      "short_title_en": "Working-age mortality",
+      "unit_label_ru": "на 100 тыс. чел.",
+      "unit_label_en": "per 100,000 people",
+      "polarity": "negative",
+      "theme": "health",
+      "precision": 0,
+      "order": 21
+    },
+    {
+      "key": "Y477110076:00",
+      "short_title_ru": "Впервые выявленные заболевания",
+      "short_title_en": "New disease cases",
+      "unit_label_ru": "на 1000 жителей",
+      "unit_label_en": "per 1,000 people",
+      "polarity": "neutral",
+      "theme": "health",
+      "precision": 0,
+      "order": 22
+    },
+    {
+      "key": "Y477110441:00",
+      "short_title_ru": "Обеспеченность врачами",
+      "short_title_en": "Doctors per capita",
+      "unit_label_ru": "на 10 тыс. жителей",
+      "unit_label_en": "per 10,000 people",
+      "polarity": "positive",
+      "theme": "health",
+      "precision": 1,
+      "order": 23
+    },
+    {
+      "key": "Y477110482:00",
+      "short_title_ru": "Обеспеченность средним медперсоналом",
+      "short_title_en": "Nurses and paramedics per capita",
+      "unit_label_ru": "на 10 тыс. жителей",
+      "unit_label_en": "per 10,000 people",
+      "polarity": "positive",
+      "theme": "health",
+      "precision": 1,
+      "order": 24
+    },
+    {
+      "key": "Y477110211:00",
+      "short_title_ru": "Мощность поликлиник",
+      "short_title_en": "Outpatient clinic capacity",
+      "unit_label_ru": "посещений в смену на 10 тыс. жителей",
+      "unit_label_en": "visits per shift per 10,000 people",
+      "polarity": "positive",
+      "theme": "health",
+      "precision": 0,
+      "order": 25
+    },
+    {
+      "key": "Y477110208:00",
+      "short_title_ru": "Медианная зарплата",
+      "short_title_en": "Median wage",
+      "unit_label_ru": "руб. в месяц",
+      "unit_label_en": "RUB per month",
+      "polarity": "positive",
+      "theme": "income",
+      "precision": 0,
+      "order": 26,
+      "real": {
+        "method": "prices",
+        "index": "Y477110111:00"
+      }
+    },
+    {
+      "key": "Y477110209:00",
+      "short_title_ru": "Медианный доход на человека",
+      "short_title_en": "Median income per person",
+      "unit_label_ru": "руб. в месяц",
+      "unit_label_en": "RUB per month",
+      "polarity": "positive",
+      "theme": "income",
+      "precision": 0,
+      "order": 27,
+      "real": {
+        "method": "prices",
+        "index": "Y477110111:00"
+      }
+    },
+    {
+      "key": "Y477110363:00",
+      "short_title_ru": "Реальные доходы",
+      "short_title_en": "Real income growth",
+      "unit_label_ru": "% к прошлому году",
+      "unit_label_en": "% of previous year",
+      "polarity": "positive",
+      "theme": "income",
+      "precision": 1,
+      "order": 28
+    },
+    {
+      "key": "Y477110362:00",
+      "short_title_ru": "Реальная зарплата",
+      "short_title_en": "Real wage growth",
+      "unit_label_ru": "% к прошлому году",
+      "unit_label_en": "% of previous year",
+      "polarity": "positive",
+      "theme": "income",
+      "precision": 1,
+      "order": 29
+    },
+    {
+      "key": "Y477110314:00",
+      "short_title_ru": "Потребительские расходы на человека",
+      "short_title_en": "Consumer spending per person",
+      "unit_label_ru": "руб. в месяц",
+      "unit_label_en": "RUB per month",
+      "polarity": "positive",
+      "theme": "income",
+      "precision": 0,
+      "order": 30,
+      "real": {
+        "method": "prices",
+        "index": "Y477110111:00"
+      }
+    },
+    {
+      "key": "Y477110412:00",
+      "short_title_ru": "Доля расходов на жильё и коммунальные услуги",
+      "short_title_en": "Housing and utilities share of spending",
+      "unit_label_ru": "% расходов",
+      "unit_label_en": "% of spending",
+      "polarity": "neutral",
+      "theme": "income",
+      "precision": 1,
+      "order": 31
+    },
+    {
+      "key": "Y477110499:00",
+      "short_title_ru": "Легковые автомобили",
+      "short_title_en": "Private cars",
+      "unit_label_ru": "на 1000 жителей",
+      "unit_label_en": "per 1,000 people",
+      "polarity": "neutral",
+      "theme": "income",
+      "precision": 0,
+      "order": 32
+    },
+    {
+      "key": "Y477110421:00",
+      "short_title_ru": "Уровень занятости",
+      "short_title_en": "Employment rate",
+      "unit_label_ru": "%",
+      "unit_label_en": "%",
+      "polarity": "positive",
+      "theme": "labour",
+      "precision": 1,
+      "order": 33
+    },
+    {
+      "key": "Y477110420:00",
+      "short_title_ru": "Зарегистрированная безработица",
+      "short_title_en": "Registered unemployment",
+      "unit_label_ru": "%",
+      "unit_label_en": "%",
+      "polarity": "negative",
+      "theme": "labour",
+      "precision": 1,
+      "order": 34
+    },
+    {
+      "key": "Y477110448:00",
+      "short_title_ru": "Работающие на одного пенсионера",
+      "short_title_en": "Workers per pensioner",
+      "unit_label_ru": "чел.",
+      "unit_label_en": "people",
+      "polarity": "positive",
+      "theme": "labour",
+      "precision": 2,
+      "order": 35
+    },
+    {
+      "key": "Y477110109:00",
+      "short_title_ru": "Рост ВРП",
+      "short_title_en": "Real GRP growth",
+      "unit_label_ru": "% к прошлому году",
+      "unit_label_en": "% of previous year",
+      "polarity": "positive",
+      "theme": "economy",
+      "precision": 1,
+      "order": 36
+    },
+    {
+      "key": "Y477110126:00",
+      "short_title_ru": "Рост промышленного производства",
+      "short_title_en": "Industrial production growth",
+      "unit_label_ru": "% к прошлому году",
+      "unit_label_en": "% of previous year",
+      "polarity": "positive",
+      "theme": "economy",
+      "precision": 1,
+      "order": 37
+    },
+    {
+      "key": "Y477110415:00",
+      "short_title_ru": "Доля убыточных организаций",
+      "short_title_en": "Loss-making companies",
+      "unit_label_ru": "%",
+      "unit_label_en": "%",
+      "polarity": "negative",
+      "theme": "economy",
+      "precision": 1,
+      "order": 38
+    },
+    {
+      "key": "Y477110390:00",
+      "short_title_ru": "Износ основных фондов",
+      "short_title_en": "Wear of fixed assets",
+      "unit_label_ru": "%",
+      "unit_label_en": "%",
+      "polarity": "negative",
+      "theme": "economy",
+      "precision": 1,
+      "order": 39
+    },
+    {
+      "key": "Y477110235:00",
+      "short_title_ru": "Доля инновационной продукции",
+      "short_title_en": "Innovative products share",
+      "unit_label_ru": "% отгрузки",
+      "unit_label_en": "% of shipments",
+      "polarity": "positive",
+      "theme": "economy",
+      "precision": 1,
+      "order": 40
+    },
+    {
+      "key": "Y477110380:00",
+      "short_title_ru": "Цена жилья в новостройках",
+      "short_title_en": "New-build housing price",
+      "unit_label_ru": "руб. за м²",
+      "unit_label_en": "RUB per sq m",
+      "polarity": "neutral",
+      "theme": "housing",
+      "precision": 0,
+      "order": 41,
+      "question_ru": "Где дороже жильё?",
+      "question_en": "Where is housing most expensive?",
+      "real": {
+        "method": "prices",
+        "index": "Y477110111:00"
+      }
+    },
+    {
+      "key": "Y477110379:00",
+      "short_title_ru": "Цена жилья на вторичном рынке",
+      "short_title_en": "Resale housing price",
+      "unit_label_ru": "руб. за м²",
+      "unit_label_en": "RUB per sq m",
+      "polarity": "neutral",
+      "theme": "housing",
+      "precision": 0,
+      "order": 42,
+      "real": {
+        "method": "prices",
+        "index": "Y477110111:00"
+      }
+    },
+    {
+      "key": "Y477110323:00",
+      "short_title_ru": "Семьи в очереди на жильё",
+      "short_title_en": "Families on the housing waiting list",
+      "unit_label_ru": "% семей",
+      "unit_label_en": "% of families",
+      "polarity": "negative",
+      "theme": "housing",
+      "precision": 1,
+      "order": 43
+    },
+    {
+      "key": "Y477110004:00",
+      "short_title_ru": "Охват детскими садами",
+      "short_title_en": "Pre-school enrolment",
+      "unit_label_ru": "% детей 1–6 лет",
+      "unit_label_en": "% of children aged 1–6",
+      "polarity": "positive",
+      "theme": "education",
+      "precision": 1,
+      "order": 44
+    },
+    {
+      "key": "Y477110217:00",
+      "short_title_ru": "Места в детских садах",
+      "short_title_en": "Kindergarten places",
+      "unit_label_ru": "на 1000 детей",
+      "unit_label_en": "per 1,000 children",
+      "polarity": "positive",
+      "theme": "education",
+      "precision": 0,
+      "order": 45
+    },
+    {
+      "key": "Y477110410:00",
+      "short_title_ru": "Школьники во вторую смену",
+      "short_title_en": "Pupils in second shifts",
+      "unit_label_ru": "% учащихся",
+      "unit_label_en": "% of pupils",
+      "polarity": "negative",
+      "theme": "education",
+      "precision": 1,
+      "order": 46
+    },
+    {
+      "key": "Y477110485:00",
+      "short_title_ru": "Студенты вузов",
+      "short_title_en": "University students",
+      "unit_label_ru": "на 10 тыс. жителей",
+      "unit_label_en": "per 10,000 people",
+      "polarity": "neutral",
+      "theme": "education",
+      "precision": 0,
+      "order": 47
+    },
+    {
+      "key": "Y477110451:00",
+      "short_title_ru": "Посещения музеев",
+      "short_title_en": "Museum visits",
+      "unit_label_ru": "на 1000 жителей",
+      "unit_label_en": "per 1,000 people",
+      "polarity": "positive",
+      "theme": "education",
+      "precision": 0,
+      "order": 48
+    },
+    {
+      "key": "Y477110450:00",
+      "short_title_ru": "Зрители театров",
+      "short_title_en": "Theatre attendance",
+      "unit_label_ru": "на 1000 жителей",
+      "unit_label_en": "per 1,000 people",
+      "polarity": "positive",
+      "theme": "education",
+      "precision": 0,
+      "order": 49
+    },
+    {
+      "key": "Y477110295:00",
+      "short_title_ru": "Плотность дорог с твёрдым покрытием",
+      "short_title_en": "Paved road density",
+      "unit_label_ru": "км на 1000 км²",
+      "unit_label_en": "km per 1,000 sq km",
+      "polarity": "positive",
+      "theme": "transport",
+      "precision": 0,
+      "order": 50
+    },
+    {
+      "key": "Y477110406:00",
+      "short_title_ru": "Доля дорог с твёрдым покрытием",
+      "short_title_en": "Paved roads share",
+      "unit_label_ru": "%",
+      "unit_label_en": "%",
+      "polarity": "positive",
+      "theme": "transport",
+      "precision": 1,
+      "order": 51
+    },
+    {
+      "key": "Y477110496:00",
+      "short_title_ru": "Гибель в ДТП",
+      "short_title_en": "Road deaths",
+      "unit_label_ru": "на 100 тыс. жителей",
+      "unit_label_en": "per 100,000 people",
+      "polarity": "negative",
+      "theme": "transport",
+      "precision": 1,
+      "order": 52,
+      "question_ru": "Где опаснее на дорогах?",
+      "question_en": "Where are the roads most dangerous?"
+    },
+    {
+      "key": "Y477110152:00",
+      "short_title_ru": "Домохозяйства с доступом в интернет",
+      "short_title_en": "Households with internet access",
+      "unit_label_ru": "% домохозяйств",
+      "unit_label_en": "% of households",
+      "polarity": "positive",
+      "theme": "transport",
+      "precision": 1,
+      "order": 53
+    },
+    {
+      "key": "Y477110435:00",
+      "short_title_ru": "Абоненты фиксированного интернета",
+      "short_title_en": "Fixed broadband subscriptions",
+      "unit_label_ru": "на 100 жителей",
+      "unit_label_en": "per 100 people",
+      "polarity": "positive",
+      "theme": "transport",
+      "precision": 1,
+      "order": 54
+    },
+    {
+      "key": "Y477110053:00",
+      "short_title_ru": "Выбросы в воздух от предприятий",
+      "short_title_en": "Air emissions from stationary sources",
+      "unit_label_ru": "тыс. т",
+      "unit_label_en": "thousand tonnes",
+      "polarity": "negative",
+      "theme": "environment",
+      "precision": 0,
+      "order": 55,
+      "absolute": true,
+      "question_ru": "Где предприятия больше загрязняют воздух?",
+      "question_en": "Where do industries pollute the air most?"
+    },
+    {
+      "key": "Y477110070:00",
+      "short_title_ru": "Доля уловленных загрязняющих веществ",
+      "short_title_en": "Share of air pollutants captured",
+      "unit_label_ru": "%",
+      "unit_label_en": "%",
+      "polarity": "positive",
+      "theme": "environment",
+      "precision": 1,
+      "order": 56
+    },
+    {
+      "key": "Y477110203:00",
+      "short_title_ru": "Лесистость",
+      "short_title_en": "Forest cover",
+      "unit_label_ru": "% территории",
+      "unit_label_en": "% of area",
+      "polarity": "neutral",
+      "theme": "environment",
+      "precision": 1,
+      "order": 57
+    },
+    {
+      "key": "Y477110111:00",
+      "short_title_ru": "Индекс потребительских цен",
+      "short_title_en": "Consumer price index",
+      "unit_label_ru": "% к декабрю прошлого года",
+      "unit_label_en": "% of previous December",
+      "polarity": "negative",
+      "theme": "prices",
+      "precision": 1,
+      "order": 58
+    },
+    {
+      "key": "Y477110395:00",
+      "short_title_ru": "Стоимость набора товаров и услуг",
+      "short_title_en": "Cost of a basket of goods and services",
+      "unit_label_ru": "руб. в месяц",
+      "unit_label_en": "RUB per month",
+      "polarity": "neutral",
+      "theme": "prices",
+      "precision": 0,
+      "order": 59,
+      "question_ru": "Где дороже жить?",
+      "question_en": "Where is living most expensive?"
+    },
+    {
+      "key": "RL_MORTGAGE_COUNT_PC:00",
+      "short_title_ru": "Выдано ипотечных кредитов",
+      "short_title_en": "Mortgage loans granted",
+      "unit_label_ru": "на 1 000 жителей в год",
+      "unit_label_en": "per 1,000 residents a year",
+      "polarity": "neutral",
+      "theme": "credit",
+      "precision": 1,
+      "order": 60,
+      "question_ru": "Где чаще берут ипотеку?",
+      "question_en": "Where do people take out mortgages most often?"
+    },
+    {
+      "key": "RL_MORTGAGE_AVERAGE:00",
+      "short_title_ru": "Средний размер ипотечного кредита",
+      "short_title_en": "Average mortgage size",
+      "unit_label_ru": "тыс. руб.",
+      "unit_label_en": "RUB thousand",
+      "polarity": "neutral",
+      "theme": "credit",
+      "precision": 0,
+      "order": 61,
+      "real": {
+        "method": "prices",
+        "index": "Y477110111:00"
+      }
+    },
+    {
+      "key": "RL_MORTGAGE_RATE:00",
+      "short_title_ru": "Ставка по ипотеке",
+      "short_title_en": "Mortgage rate",
+      "unit_label_ru": "% годовых",
+      "unit_label_en": "% a year",
+      "polarity": "neutral",
+      "theme": "credit",
+      "precision": 2,
+      "order": 62
+    },
+    {
+      "key": "RL_MORTGAGE_DEBT_PC:00",
+      "short_title_ru": "Ипотечный долг на жителя",
+      "short_title_en": "Mortgage debt per resident",
+      "unit_label_ru": "руб.",
+      "unit_label_en": "RUB",
+      "polarity": "neutral",
+      "theme": "credit",
+      "precision": 0,
+      "order": 63,
+      "real": {
+        "method": "prices",
+        "index": "Y477110111:00"
+      }
+    },
+    {
+      "key": "RL_MORTGAGE_OVERDUE_SHARE:00",
+      "short_title_ru": "Просрочка по ипотеке",
+      "short_title_en": "Overdue mortgage debt",
+      "unit_label_ru": "% долга",
+      "unit_label_en": "% of debt",
+      "polarity": "negative",
+      "theme": "credit",
+      "precision": 2,
+      "order": 64
+    },
+    {
+      "key": "RL_RETAIL_DEBT_PC:00",
+      "short_title_ru": "Кредитный долг на жителя",
+      "short_title_en": "Household loan debt per resident",
+      "unit_label_ru": "руб.",
+      "unit_label_en": "RUB",
+      "polarity": "neutral",
+      "theme": "credit",
+      "precision": 0,
+      "order": 65,
+      "question_ru": "Где больше всего должны банкам?",
+      "question_en": "Where do people owe banks the most?",
+      "real": {
+        "method": "prices",
+        "index": "Y477110111:00"
+      }
+    },
+    {
+      "key": "RL_RETAIL_OVERDUE_SHARE:00",
+      "short_title_ru": "Просрочка по кредитам населения",
+      "short_title_en": "Overdue household debt",
+      "unit_label_ru": "% долга",
+      "unit_label_en": "% of debt",
+      "polarity": "negative",
+      "theme": "credit",
+      "precision": 1,
+      "order": 66
+    },
+    {
+      "key": "RL_SME_COUNT_PC:00",
+      "short_title_ru": "Малый и средний бизнес",
+      "short_title_en": "Small and medium-sized businesses",
+      "unit_label_ru": "на 1 000 жителей",
+      "unit_label_en": "per 1,000 residents",
+      "polarity": "positive",
+      "theme": "business",
+      "precision": 1,
+      "order": 67,
+      "question_ru": "Где больше предпринимателей?",
+      "question_en": "Where are there more entrepreneurs?"
+    },
+    {
+      "key": "RL_SME_WORKERS_PC:00",
+      "short_title_ru": "Работники малого и среднего бизнеса",
+      "short_title_en": "SME employees",
+      "unit_label_ru": "на 1 000 жителей",
+      "unit_label_en": "per 1,000 residents",
+      "polarity": "positive",
+      "theme": "business",
+      "precision": 0,
+      "order": 68
+    },
+    {
+      "key": "RL_SME_LOANS_OVERDUE_SHARE:00",
+      "short_title_ru": "Просрочка по кредитам бизнеса",
+      "short_title_en": "Overdue SME loans",
+      "unit_label_ru": "% долга",
+      "unit_label_en": "% of debt",
+      "polarity": "negative",
+      "theme": "business",
+      "precision": 1,
+      "order": 69
+    }
+  ]
+}

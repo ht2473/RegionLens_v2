@@ -1,0 +1,11 @@
+{% load i18n i18n_urls %}
+{# Под примечаниями Росстата на английской странице: перевод — RegionLens, оригинал — на русской. #}
+{% if LANGUAGE_CODE != "ru" %}
+  {% switch_language_url "ru" as original_url %}
+  <p class="translation-caveat">
+    {% blocktranslate trimmed %}
+      Примечания Росстата переведены RegionLens и официальным текстом не являются;
+      оригинал — в <a href="{{ original_url }}" hreflang="ru">русской версии страницы</a>.
+    {% endblocktranslate %}
+  </p>
+{% endif %}

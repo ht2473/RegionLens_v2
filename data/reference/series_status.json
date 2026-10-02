@@ -1,0 +1,330 @@
+{
+  "meta": {
+    "purpose": "Состояние публикации рядов у источника: продолжается или прекращена. Показывается на странице показателя, в паспорте региона и в документах. Ряда нет в перечне — сведений о продолжении нет: его значения обновятся с новой версией набора.",
+    "checked": "24.09.2026",
+    "evidence": "Сборник «Регионы России» с 2026 года выходит в формате электронных таблиц — страница Росстата rosstat.gov.ru/folder/210/document/13204; набор «Если быть точным» обновляется по мере выхода версий. Демография — «Если быть точным», материалы от 15.05.2026 и о 2025 годе (tochno.st). Продолжение — ежемесячный бюллетень мониторинга субъектов и файл ВРП Росстата (проверено 24.09.2026). Ряды Банка России и ФНС собираются проектом из сервиса данных Банка России и статистики реестра МСП (проверено 25.09.2026).",
+    "fields_note": "status: continued — источник продолжает публикацию, source — где; discontinued — публикация прекращена, since — год прекращения, reason_* — что именно известно."
+  },
+  "sources": {
+    "bulletin": {
+      "title_ru": "ежемесячный бюллетень Росстата «Информация для ведения мониторинга социально-экономического положения субъектов Российской Федерации»",
+      "title_en": "Rosstat's monthly bulletin for monitoring the socio-economic situation of the regions"
+    },
+    "grp": {
+      "title_ru": "таблица Росстата «Валовой региональный продукт по субъектам», ежегодно",
+      "title_en": "Rosstat's annual table of gross regional product by region"
+    },
+    "cbr": {
+      "title_ru": "сервис получения данных Банка России, ежемесячно",
+      "title_en": "Bank of Russia data service, monthly"
+    },
+    "fns": {
+      "title_ru": "Единый реестр субъектов малого и среднего предпринимательства ФНС России, ежемесячно на 10-е число",
+      "title_en": "Federal Tax Service unified register of small and medium-sized businesses, monthly on the 10th"
+    }
+  },
+  "series": [
+    {
+      "key": "Y477110374:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110378:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110363:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110362:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110418:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110108:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110224:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110126:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110415:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110017:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110380:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110379:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110111:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110395:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110107:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110110:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110223:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110128:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110016:00",
+      "status": "continued",
+      "source": "bulletin"
+    },
+    {
+      "key": "Y477110005:00",
+      "status": "continued",
+      "source": "grp"
+    },
+    {
+      "key": "Y477110006:00",
+      "status": "continued",
+      "source": "grp"
+    },
+    {
+      "key": "Y477110109:00",
+      "status": "continued",
+      "source": "grp"
+    },
+    {
+      "key": "Y477110461:00",
+      "status": "discontinued",
+      "since": 2025,
+      "reason_ru": "Росстат не публикует оценки численности населения по субъектам с 2025 года; последние открытые — среднегодовая за 2024 год и на 1 января 2025 года.",
+      "reason_en": "Rosstat has not published regional population estimates since 2025; the last open ones are the 2024 annual average and the estimate for 1 January 2025."
+    },
+    {
+      "key": "Y477110408:00",
+      "status": "discontinued",
+      "since": 2025,
+      "reason_ru": "Росстат не публикует годовые сведения о численности, возрастном составе и миграции населения по субъектам с 2025 года.",
+      "reason_en": "Rosstat has not published annual regional data on population size, age structure and migration since 2025."
+    },
+    {
+      "key": "Y477110051:00",
+      "status": "discontinued",
+      "since": 2025,
+      "reason_ru": "Росстат не публикует годовые сведения о численности, возрастном составе и миграции населения по субъектам с 2025 года.",
+      "reason_en": "Rosstat has not published annual regional data on population size, age structure and migration since 2025."
+    },
+    {
+      "key": "Y477110052:00",
+      "status": "discontinued",
+      "since": 2025,
+      "reason_ru": "Росстат не публикует годовые сведения о численности, возрастном составе и миграции населения по субъектам с 2025 года.",
+      "reason_en": "Rosstat has not published annual regional data on population size, age structure and migration since 2025."
+    },
+    {
+      "key": "Y477110197:00",
+      "status": "discontinued",
+      "since": 2025,
+      "reason_ru": "Росстат не публикует годовые сведения о численности, возрастном составе и миграции населения по субъектам с 2025 года.",
+      "reason_en": "Rosstat has not published annual regional data on population size, age structure and migration since 2025."
+    },
+    {
+      "key": "Y477110402:00",
+      "status": "discontinued",
+      "since": 2025,
+      "reason_ru": "Росстат не публикует сведения о рождениях и смертях по субъектам с 2025 года.",
+      "reason_en": "Rosstat has not published regional data on births and deaths since 2025."
+    },
+    {
+      "key": "Y477110232:00",
+      "status": "discontinued",
+      "since": 2025,
+      "reason_ru": "Росстат не публикует сведения о рождениях и смертях по субъектам с 2025 года.",
+      "reason_en": "Rosstat has not published regional data on births and deaths since 2025."
+    },
+    {
+      "key": "Y477110196:00",
+      "status": "discontinued",
+      "since": 2025,
+      "reason_ru": "Росстат не публикует сведения о рождениях и смертях по субъектам с 2025 года.",
+      "reason_en": "Rosstat has not published regional data on births and deaths since 2025."
+    },
+    {
+      "key": "Y477110198:00",
+      "status": "discontinued",
+      "since": 2025,
+      "reason_ru": "Росстат не публикует сведения о рождениях и смертях по субъектам с 2025 года.",
+      "reason_en": "Rosstat has not published regional data on births and deaths since 2025."
+    },
+    {
+      "key": "Y477110369:00",
+      "status": "discontinued",
+      "since": 2025,
+      "reason_ru": "Росстат не публикует сведения о рождениях и смертях по субъектам с 2025 года.",
+      "reason_en": "Rosstat has not published regional data on births and deaths since 2025."
+    },
+    {
+      "key": "Y477110256:00",
+      "status": "discontinued",
+      "since": 2024,
+      "reason_ru": "Росстат не публикует ожидаемую продолжительность жизни по субъектам с конца 2024 года.",
+      "reason_en": "Rosstat has not published regional life expectancy since late 2024."
+    },
+    {
+      "key": "RL_MORTGAGE_COUNT:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_MORTGAGE_VOLUME:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_MORTGAGE_DEBT:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_MORTGAGE_OVERDUE:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_MORTGAGE_TERM:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_MORTGAGE_RATE:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_RETAIL_VOLUME:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_RETAIL_DEBT:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_RETAIL_OVERDUE:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_SME_LOANS_VOLUME:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_SME_LOANS_DEBT:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_SME_LOANS_OVERDUE:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_MORTGAGE_COUNT_PC:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_MORTGAGE_AVERAGE:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_MORTGAGE_DEBT_PC:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_MORTGAGE_OVERDUE_SHARE:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_RETAIL_DEBT_PC:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_RETAIL_OVERDUE_SHARE:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_SME_LOANS_OVERDUE_SHARE:00",
+      "status": "continued",
+      "source": "cbr"
+    },
+    {
+      "key": "RL_SME_COUNT:00",
+      "status": "continued",
+      "source": "fns"
+    },
+    {
+      "key": "RL_SME_WORKERS:00",
+      "status": "continued",
+      "source": "fns"
+    },
+    {
+      "key": "RL_SME_COUNT_PC:00",
+      "status": "continued",
+      "source": "fns"
+    },
+    {
+      "key": "RL_SME_WORKERS_PC:00",
+      "status": "continued",
+      "source": "fns"
+    }
+  ]
+}

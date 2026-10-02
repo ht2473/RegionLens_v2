@@ -1,0 +1,523 @@
+{
+  "meta": {
+    "title": "Географические характеристики субъектов для карт",
+    "coordinates_source": "Natural Earth, точки подписей административных единиц",
+    "tiles_note": "Позиции плиточной картограммы составлены вручную: сетка сохраняет взаимное расположение субъектов, но не их площадь и форму.",
+    "tile_grid": {
+      "columns": 24,
+      "rows": 13
+    }
+  },
+  "regions": {
+    "RU-AD": {
+      "tile_x": 4,
+      "tile_y": 10,
+      "longitude": 40.1293,
+      "latitude": 44.4658
+    },
+    "RU-AL": {
+      "tile_x": 14,
+      "tile_y": 7,
+      "longitude": 86.937,
+      "latitude": 50.9782
+    },
+    "RU-ALT": {
+      "tile_x": 13,
+      "tile_y": 6,
+      "longitude": 82.8667,
+      "latitude": 52.4268
+    },
+    "RU-AMU": {
+      "tile_x": 19,
+      "tile_y": 6,
+      "longitude": 128.354,
+      "latitude": 52.9236
+    },
+    "RU-ARK": {
+      "tile_x": 5,
+      "tile_y": 1,
+      "longitude": 41.9939,
+      "latitude": 63.3132
+    },
+    "RU-AST": {
+      "tile_x": 7,
+      "tile_y": 9,
+      "longitude": 47.7227,
+      "latitude": 47.0334
+    },
+    "RU-BA": {
+      "tile_x": 9,
+      "tile_y": 5,
+      "longitude": 56.5575,
+      "latitude": 54.2086
+    },
+    "RU-BEL": {
+      "tile_x": 4,
+      "tile_y": 7,
+      "longitude": 37.277,
+      "latitude": 50.8757
+    },
+    "RU-BRY": {
+      "tile_x": 2,
+      "tile_y": 5,
+      "longitude": 33.2803,
+      "latitude": 53.0868
+    },
+    "RU-BU": {
+      "tile_x": 17,
+      "tile_y": 6,
+      "longitude": 109.341,
+      "latitude": 52.9061
+    },
+    "RU-CE": {
+      "tile_x": 8,
+      "tile_y": 11,
+      "longitude": 45.757,
+      "latitude": 43.2153
+    },
+    "RU-CHE": {
+      "tile_x": 10,
+      "tile_y": 5,
+      "longitude": 60.2383,
+      "latitude": 54.1131
+    },
+    "RU-CHU": {
+      "tile_x": 22,
+      "tile_y": 0,
+      "longitude": 170.516,
+      "latitude": 66.7517
+    },
+    "RU-CR": {
+      "tile_x": 2,
+      "tile_y": 9,
+      "longitude": 34.2784,
+      "latitude": 45.3115
+    },
+    "RU-CU": {
+      "tile_x": 7,
+      "tile_y": 5,
+      "longitude": 47.1662,
+      "latitude": 55.4883
+    },
+    "RU-DA": {
+      "tile_x": 9,
+      "tile_y": 11,
+      "longitude": 47.1424,
+      "latitude": 42.36
+    },
+    "RU-IN": {
+      "tile_x": 7,
+      "tile_y": 11,
+      "longitude": 44.8468,
+      "latitude": 43.3661
+    },
+    "RU-IRK": {
+      "tile_x": 16,
+      "tile_y": 4,
+      "longitude": 105.966,
+      "latitude": 56.8255
+    },
+    "RU-IVA": {
+      "tile_x": 5,
+      "tile_y": 3,
+      "longitude": 41.6244,
+      "latitude": 57.1213
+    },
+    "RU-KAM": {
+      "tile_x": 21,
+      "tile_y": 2,
+      "longitude": 160.187,
+      "latitude": 56.5325
+    },
+    "RU-KB": {
+      "tile_x": 5,
+      "tile_y": 11,
+      "longitude": 43.3982,
+      "latitude": 43.3757
+    },
+    "RU-KC": {
+      "tile_x": 4,
+      "tile_y": 11,
+      "longitude": 41.6866,
+      "latitude": 43.7073
+    },
+    "RU-KDA": {
+      "tile_x": 3,
+      "tile_y": 10,
+      "longitude": 39.4688,
+      "latitude": 45.8397
+    },
+    "RU-KEM": {
+      "tile_x": 14,
+      "tile_y": 5,
+      "longitude": 87.1676,
+      "latitude": 54.6462
+    },
+    "RU-KGD": {
+      "tile_x": 0,
+      "tile_y": 4,
+      "longitude": 21.2287,
+      "latitude": 54.6636
+    },
+    "RU-KGN": {
+      "tile_x": 11,
+      "tile_y": 5,
+      "longitude": 65.3505,
+      "latitude": 55.4316
+    },
+    "RU-KHA": {
+      "tile_x": 20,
+      "tile_y": 4,
+      "longitude": 135.443,
+      "latitude": 57.0232
+    },
+    "RU-KHM": {
+      "tile_x": 10,
+      "tile_y": 2,
+      "longitude": 71.3806,
+      "latitude": 61.4315
+    },
+    "RU-KIR": {
+      "tile_x": 7,
+      "tile_y": 3,
+      "longitude": 50.1112,
+      "latitude": 58.1926
+    },
+    "RU-KK": {
+      "tile_x": 15,
+      "tile_y": 6,
+      "longitude": 89.8405,
+      "latitude": 53.3643
+    },
+    "RU-KL": {
+      "tile_x": 6,
+      "tile_y": 9,
+      "longitude": 45.4681,
+      "latitude": 46.5191
+    },
+    "RU-KLU": {
+      "tile_x": 3,
+      "tile_y": 5,
+      "longitude": 35.3416,
+      "latitude": 54.2421
+    },
+    "RU-KO": {
+      "tile_x": 9,
+      "tile_y": 1,
+      "longitude": 55.8183,
+      "latitude": 64.1194
+    },
+    "RU-KOS": {
+      "tile_x": 6,
+      "tile_y": 3,
+      "longitude": 43.4689,
+      "latitude": 58.3882
+    },
+    "RU-KR": {
+      "tile_x": 3,
+      "tile_y": 1,
+      "longitude": 33.1446,
+      "latitude": 63.5295
+    },
+    "RU-KRS": {
+      "tile_x": 3,
+      "tile_y": 7,
+      "longitude": 36.2921,
+      "latitude": 51.7358
+    },
+    "RU-KYA": {
+      "tile_x": 15,
+      "tile_y": 1,
+      "longitude": 95.2029,
+      "latitude": 65.5602
+    },
+    "RU-LEN": {
+      "tile_x": 2,
+      "tile_y": 2,
+      "longitude": 32.7736,
+      "latitude": 59.9905
+    },
+    "RU-LIP": {
+      "tile_x": 4,
+      "tile_y": 6,
+      "longitude": 39.2073,
+      "latitude": 52.7462
+    },
+    "RU-MAG": {
+      "tile_x": 20,
+      "tile_y": 1,
+      "longitude": 153.797,
+      "latitude": 62.6257
+    },
+    "RU-ME": {
+      "tile_x": 7,
+      "tile_y": 4,
+      "longitude": 47.9131,
+      "latitude": 56.5407
+    },
+    "RU-MO": {
+      "tile_x": 6,
+      "tile_y": 5,
+      "longitude": 44.4631,
+      "latitude": 54.1154
+    },
+    "RU-MOS": {
+      "tile_x": 4,
+      "tile_y": 4,
+      "longitude": 38.671,
+      "latitude": 55.1508
+    },
+    "RU-MOW": {
+      "tile_x": 3,
+      "tile_y": 4,
+      "longitude": 37.6188,
+      "latitude": 55.7177
+    },
+    "RU-MUR": {
+      "tile_x": 3,
+      "tile_y": 0,
+      "longitude": 34.3212,
+      "latitude": 67.9609
+    },
+    "RU-NEN": {
+      "tile_x": 9,
+      "tile_y": 0,
+      "longitude": 56.2877,
+      "latitude": 67.8271
+    },
+    "RU-NGR": {
+      "tile_x": 2,
+      "tile_y": 3,
+      "longitude": 32.9454,
+      "latitude": 58.4228
+    },
+    "RU-NIZ": {
+      "tile_x": 6,
+      "tile_y": 4,
+      "longitude": 44.7751,
+      "latitude": 56.1384
+    },
+    "RU-NVS": {
+      "tile_x": 13,
+      "tile_y": 4,
+      "longitude": 80.0832,
+      "latitude": 55.3139
+    },
+    "RU-OMS": {
+      "tile_x": 12,
+      "tile_y": 4,
+      "longitude": 73.3995,
+      "latitude": 56.0471
+    },
+    "RU-ORE": {
+      "tile_x": 9,
+      "tile_y": 7,
+      "longitude": 56.2149,
+      "latitude": 51.5157
+    },
+    "RU-ORL": {
+      "tile_x": 3,
+      "tile_y": 6,
+      "longitude": 36.4166,
+      "latitude": 52.8778
+    },
+    "RU-PER": {
+      "tile_x": 9,
+      "tile_y": 3,
+      "longitude": 56.5878,
+      "latitude": 58.8735
+    },
+    "RU-PNZ": {
+      "tile_x": 6,
+      "tile_y": 6,
+      "longitude": 44.8159,
+      "latitude": 53.0562
+    },
+    "RU-PRI": {
+      "tile_x": 20,
+      "tile_y": 9,
+      "longitude": 134.594,
+      "latitude": 44.8622
+    },
+    "RU-PSK": {
+      "tile_x": 1,
+      "tile_y": 3,
+      "longitude": 29.1229,
+      "latitude": 57.2449
+    },
+    "RU-ROS": {
+      "tile_x": 4,
+      "tile_y": 8,
+      "longitude": 41.2613,
+      "latitude": 47.9913
+    },
+    "RU-RYA": {
+      "tile_x": 5,
+      "tile_y": 5,
+      "longitude": 40.6258,
+      "latitude": 54.3363
+    },
+    "RU-SA": {
+      "tile_x": 18,
+      "tile_y": 0,
+      "longitude": 130.989,
+      "latitude": 65.5964
+    },
+    "RU-SAK": {
+      "tile_x": 22,
+      "tile_y": 8,
+      "longitude": 152.467,
+      "latitude": 47.3479
+    },
+    "RU-SAM": {
+      "tile_x": 8,
+      "tile_y": 6,
+      "longitude": 50.4377,
+      "latitude": 53.1783
+    },
+    "RU-SAR": {
+      "tile_x": 7,
+      "tile_y": 7,
+      "longitude": 46.6368,
+      "latitude": 51.6742
+    },
+    "RU-SE": {
+      "tile_x": 6,
+      "tile_y": 11,
+      "longitude": 44.1653,
+      "latitude": 42.9969
+    },
+    "RU-SEV": {
+      "tile_x": 1,
+      "tile_y": 9,
+      "longitude": 33.6396,
+      "latitude": 44.5182
+    },
+    "RU-SMO": {
+      "tile_x": 2,
+      "tile_y": 4,
+      "longitude": 33.0803,
+      "latitude": 54.6726
+    },
+    "RU-SPE": {
+      "tile_x": 1,
+      "tile_y": 2,
+      "longitude": 30.2901,
+      "latitude": 59.8064
+    },
+    "RU-STA": {
+      "tile_x": 5,
+      "tile_y": 10,
+      "longitude": 43.2791,
+      "latitude": 44.981
+    },
+    "RU-SVE": {
+      "tile_x": 10,
+      "tile_y": 3,
+      "longitude": 61.7078,
+      "latitude": 58.8952
+    },
+    "RU-TA": {
+      "tile_x": 8,
+      "tile_y": 5,
+      "longitude": 50.7364,
+      "latitude": 55.374
+    },
+    "RU-TAM": {
+      "tile_x": 5,
+      "tile_y": 6,
+      "longitude": 41.5945,
+      "latitude": 52.7808
+    },
+    "RU-TOM": {
+      "tile_x": 13,
+      "tile_y": 3,
+      "longitude": 82.2299,
+      "latitude": 58.4467
+    },
+    "RU-TUL": {
+      "tile_x": 4,
+      "tile_y": 5,
+      "longitude": 37.4161,
+      "latitude": 54.0668
+    },
+    "RU-TVE": {
+      "tile_x": 3,
+      "tile_y": 3,
+      "longitude": 34.5445,
+      "latitude": 57.0297
+    },
+    "RU-TY": {
+      "tile_x": 15,
+      "tile_y": 7,
+      "longitude": 93.9927,
+      "latitude": 51.6051
+    },
+    "RU-TYU": {
+      "tile_x": 11,
+      "tile_y": 4,
+      "longitude": 68.5186,
+      "latitude": 57.2639
+    },
+    "RU-UD": {
+      "tile_x": 8,
+      "tile_y": 4,
+      "longitude": 52.7957,
+      "latitude": 57.3433
+    },
+    "RU-ULY": {
+      "tile_x": 7,
+      "tile_y": 6,
+      "longitude": 47.3773,
+      "latitude": 53.9248
+    },
+    "RU-VGG": {
+      "tile_x": 6,
+      "tile_y": 8,
+      "longitude": 44.4488,
+      "latitude": 49.5014
+    },
+    "RU-VLA": {
+      "tile_x": 5,
+      "tile_y": 4,
+      "longitude": 40.6207,
+      "latitude": 55.8966
+    },
+    "RU-VLG": {
+      "tile_x": 4,
+      "tile_y": 2,
+      "longitude": 40.9333,
+      "latitude": 59.6397
+    },
+    "RU-VOR": {
+      "tile_x": 5,
+      "tile_y": 7,
+      "longitude": 40.5223,
+      "latitude": 50.7774
+    },
+    "RU-YAN": {
+      "tile_x": 11,
+      "tile_y": 0,
+      "longitude": 75.1874,
+      "latitude": 65.4117
+    },
+    "RU-YAR": {
+      "tile_x": 4,
+      "tile_y": 3,
+      "longitude": 39.2547,
+      "latitude": 57.7329
+    },
+    "RU-YEV": {
+      "tile_x": 20,
+      "tile_y": 7,
+      "longitude": 132.758,
+      "latitude": 48.64
+    },
+    "RU-ZAB": {
+      "tile_x": 18,
+      "tile_y": 6,
+      "longitude": 116.559,
+      "latitude": 52.159
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{% load i18n %}
+{% comment %}
+  Полоска места (Position.scale_position): у оцениваемых — от худшего к лучшему, края
+  в 15 % — зоны слабых и сильных сторон. Параметры: position; ends — подписать концы.
+{% endcomment %}
+<div class="rank-strip{% if position.is_assessed %} rank-strip--assessed{% endif %}"
+     style="--at: {{ position.scale_position }}" aria-hidden="true">
+  <span class="rank-strip__track"></span>
+  <span class="rank-strip__mark rank-strip__mark--{{ position.tone }}"></span>
+</div>
+{% if ends %}
+  <div class="rank-strip__ends" aria-hidden="true">
+    {% if position.is_assessed %}
+      <span>{% translate "хуже" %}</span><span>{% translate "лучше" %}</span>
+    {% else %}
+      <span>{% translate "меньше" %}</span><span>{% translate "больше" %}</span>
+    {% endif %}
+  </div>
+{% endif %}

@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% load i18n static formatting %}
+
+{% comment %}
+  Перечень регионов: поиск по названию и центру (data-filter-input), карта-указатель
+  и округа с центрами и численностью. Строка и регион на карте связаны data-territory.
+{% endcomment %}
+
+{% block meta_description %}{% translate "Все 85 регионов России по федеральным округам: центр, численность населения и паспорт каждого региона — главное словами, сильные и слабые стороны, основные показатели." %}{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/regions.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page regions">
+
+  <div class="regions-head">
+    <header class="page-intro regions-head__intro">
+      <div class="page-intro__text">
+        <h1 class="page-intro__title">{% translate "Регионы" %}</h1>
+        <p class="page-intro__lead">
+          {% blocktranslate trimmed with total=total_regions districts=districts|length %}
+            {{ total }} регионов России в {{ districts }} федеральных округах. У каждого —
+            паспорт: главное словами, сильные и слабые стороны, основные показатели
+            и место среди регионов.
+          {% endblocktranslate %}
+        </p>
+
+        <form class="find-form" method="get" role="search">
+          <label class="find-field">
+            <svg aria-hidden="true"><use href="#icon-search"></use></svg>
+            <span class="visually-hidden">{% translate "Найти регион" %}</span>
+            <input type="search" name="q" value="{{ query }}" autocomplete="off"
+                   data-filter-input="#territory-groups" data-filter-empty="#territory-empty"
+                   placeholder="{% translate 'Регион или его центр' %}">
+          </label>
+        </form>
+        <p class="find-form__hint">
+          {% if query or selected_district %}
+            <a href="{% url 'catalog:territory-list' %}">
+              {% translate "Показать все регионы" %}
+              <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+            </a>
+          {% else %}
+            {% translate "Например: Казань, Тыва, Калининград." %}
+          {% endif %}
+        </p>
+
+        {% if largest %}
+          <div class="regions-quick">
+            <p class="regions-quick__title">{% translate "Самые населённые" %}</p>
+            <ul class="choice-list">
+              {% for territory in largest %}
+                <li>
+                  <a class="choice-chip" data-territory="{{ territory.code }}"
+                     href="{% url 'catalog:territory-detail' slug=territory.slug %}">{{ territory.name }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+      </div>
+    </header>
+
+    {% if regions_map %}
+      <figure class="regions-map">
+        {% translate "Карта регионов России" as regions_map_caption %}
+        {% include "maps/partials/_geo_map.html" with geo_map=regions_map geo_caption=regions_map_caption plain=True %}
+        <figcaption>{% translate "Нажмите на регион — откроется его паспорт. Малые регионы — во врезках под картой." %}</figcaption>
+      </figure>
+    {% endif %}
+  </div>
+
+  {% if grouped|length > 1 %}
+    <nav class="toc-pills" data-toc aria-label="{% translate 'Федеральные округа' %}">
+      <ul>
+        {% for group in grouped %}
+          <li>
+            <a href="#district-{{ group.district.code|default:'none' }}">
+              {{ group.short_title }}<span class="toc-pills__count numeric">{{ group.territories|length }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </nav>
+  {% endif %}
+
+  <div id="territory-groups">
+    {% for group in grouped %}
+      <section class="page-section regions-district toc-target" data-filter-group
+               id="district-{{ group.district.code|default:'none' }}"
+               aria-labelledby="district-{{ group.district.code|default:'none' }}-title">
+        <div class="page-section__head">
+          <h2 class="page-section__title" id="district-{{ group.district.code|default:'none' }}-title">
+            {{ group.district.name|default:_("Без округа") }}
+          </h2>
+          <p class="page-section__note">
+            {% translate "Регионов" %}: <span class="numeric" data-filter-count>{{ group.territories|length }}</span>{% if group.people_text %} · {% blocktranslate trimmed with people=group.people_text %}население {{ people }}{% endblocktranslate %}{% endif %}
+          </p>
+        </div>
+
+        <ul class="region-list">
+          {% for row in group.rows %}
+            {% with territory=row.territory %}
+              {# Код ISO участвует в поиске, но не показывается. #}
+              <li class="region-entry" data-filter-item data-territory="{{ territory.code }}"
+                  data-filter-text="{{ territory.name }} {{ territory.capital }} {{ territory.code }} {{ territory.iso_code }}">
+                <a class="region-entry__name" href="{% url 'catalog:territory-detail' slug=territory.slug %}">{{ territory.name }}</a>
+                <span class="region-entry__meta">
+                  {% if territory.capital %}<span>{{ territory.capital }}</span>{% endif %}
+                  {% if row.people %}<span class="numeric">{{ row.people }}</span>{% endif %}
+                </span>
+                {% if territory.data_since_year %}
+                  <span class="region-entry__note">
+                    {% blocktranslate trimmed with year=territory.data_since_year|year %}
+                      данные с {{ year }} года
+                    {% endblocktranslate %}
+                  </span>
+                {% endif %}
+              </li>
+            {% endwith %}
+          {% endfor %}
+        </ul>
+      </section>
+    {% empty %}
+      <div class="empty-state">
+        <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+        <p class="empty-state__title">{% translate "Регионы не найдены" %}</p>
+        <p class="empty-state__hint">{% translate "Измените условия поиска." %}</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  {# Показывается сценарием отбора, если ничего не подошло. #}
+  <div class="empty-state" id="territory-empty" hidden>
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "Регионы не найдены" %}</p>
+    <p class="empty-state__hint">{% translate "Проверьте название — или найдите регион на карте выше." %}</p>
+  </div>
+
+  {% if population_year %}
+    <p class="page-section__footnote">
+      {% blocktranslate trimmed with year=population_year|year %}
+        Численность населения — по последним данным Росстата ({{ year }} год).
+      {% endblocktranslate %}
+    </p>
+  {% endif %}
+
+</div>
+{% endblock %}

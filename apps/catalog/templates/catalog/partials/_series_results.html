@@ -1,0 +1,150 @@
+{% load i18n formatting %}
+{# Перечень рядов полного каталога — фрагмент HTMX вместе с числом найденного и порядком. #}
+
+<div class="catalog-all__bar">
+  <p class="catalog-all__count">
+    {% translate "Рядов" %}: <strong class="numeric">{{ paginator.count|default:0|ru_number:0 }}</strong>
+    <span id="catalog-indicator" class="htmx-indicator">{% translate "Обновление…" %}</span>
+  </p>
+
+  <label class="catalog-all__sort">
+    <span>{% translate "Порядок" %}</span>
+    <select class="select" id="catalog-sort" name="sort">
+      <option value="coverage" {% if sort == 'coverage' %}selected{% endif %}>
+        {% translate "по покрытию регионов" %}
+      </option>
+      <option value="years" {% if sort == 'years' %}selected{% endif %}>
+        {% translate "по длине ряда" %}
+      </option>
+      <option value="recent" {% if sort == 'recent' %}selected{% endif %}>
+        {% translate "по свежести данных" %}
+      </option>
+      <option value="name" {% if sort == 'name' %}selected{% endif %}>
+        {% translate "по названию" %}
+      </option>
+    </select>
+  </label>
+</div>
+
+{% if series_list %}
+  <div class="data-table-wrapper">
+    <table class="data-table series-table">
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Ряд наблюдений" %}</th>
+          <th scope="col">{% translate "Единица" %}</th>
+          <th scope="col">{% translate "Покрытие регионов" %}</th>
+          <th scope="col" class="is-numeric">{% translate "Годы" %}</th>
+          <th scope="col">{% translate "Сопоставимость" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for series in series_list %}
+          <tr>
+            <td class="series-table__name">
+              <a class="series-table__title"
+                 href="{% url 'catalog:series-detail' slug=series.indicator.slug %}?series={{ series.key }}">{{ series.indicator.name }}</a>
+              {% if series.has_subsection %}
+                <span class="series-table__variant">{{ series.name }}</span>
+              {% endif %}
+              <span class="series-table__meta">
+                {{ series.indicator.section.name }} · <span class="numeric">{{ series.indicator.code }}</span>
+              </span>
+            </td>
+
+            <td class="series-table__unit">{{ series.unit.short_name|default:"—" }}</td>
+
+            <td class="series-table__coverage">
+              {{ series.region_coverage|coverage_bar }}
+              <span class="series-table__meta numeric">
+                {% blocktranslate trimmed with count=series.region_count %}{{ count }} из 85{% endblocktranslate %}
+              </span>
+            </td>
+
+            <td class="is-numeric series-table__years">
+              {% if series.first_year %}
+                <span>{{ series.first_year|year }}–{{ series.last_year|year }}</span>
+                <span class="series-table__meta">
+                  {% blocktranslate trimmed with count=series.year_count %}лет: {{ count }}{% endblocktranslate %}
+                </span>
+              {% else %}—{% endif %}
+            </td>
+
+            <td class="series-table__marks">
+              {% if series.break_count %}
+                <span class="badge badge--attention"
+                      title="{% translate 'Методика наблюдения менялась: точки ряда до и после отметки несопоставимы' %}">
+                  {% translate "разрывов" %}: {{ series.break_count }}
+                </span>
+              {% else %}
+                <span class="badge badge--neutral">{% translate "без разрывов" %}</span>
+              {% endif %}
+
+              {% if series.revision_count %}
+                <span class="badge badge--outline"
+                      title="{% translate 'Значения пересматривались между выпусками сборников' %}">
+                  {% translate "пересмотры" %}: {{ series.revision_count }}
+                </span>
+              {% endif %}
+
+              {% if not series.is_analysis_ready %}
+                <span class="badge badge--outline"
+                      title="{% translate 'Покрытие недостаточно для рейтингов и сравнительного анализа' %}">
+                  {% translate "ограниченно" %}
+                </span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if is_paginated %}
+    <nav class="pagination" aria-label="{% translate 'Постраничная навигация' %}">
+      <span>
+        {% blocktranslate trimmed with start=page_obj.start_index end=page_obj.end_index total=paginator.count %}
+          Показаны {{ start }}–{{ end }} из {{ total }}
+        {% endblocktranslate %}
+      </span>
+
+      <span class="pagination__pages">
+        {% if page_obj.has_previous %}
+          <a class="pagination__page" href="{% querystring page=page_obj.previous_page_number %}"
+             hx-get="{% querystring page=page_obj.previous_page_number %}"
+             hx-target="#catalog-results" hx-push-url="true"
+             aria-label="{% translate 'Предыдущая страница' %}">←</a>
+        {% endif %}
+
+        {% for number in paginator.page_range %}
+          {% if number == page_obj.number %}
+            <span class="pagination__page is-current" aria-current="page">{{ number }}</span>
+          {% elif number <= 2 or number > paginator.num_pages|add:-2 or number|add:-2 <= page_obj.number and number|add:2 >= page_obj.number %}
+            <a class="pagination__page" href="{% querystring page=number %}"
+               hx-get="{% querystring page=number %}"
+               hx-target="#catalog-results" hx-push-url="true">{{ number }}</a>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+          <a class="pagination__page" href="{% querystring page=page_obj.next_page_number %}"
+             hx-get="{% querystring page=page_obj.next_page_number %}"
+             hx-target="#catalog-results" hx-push-url="true"
+             aria-label="{% translate 'Следующая страница' %}">→</a>
+        {% endif %}
+      </span>
+    </nav>
+  {% endif %}
+
+{% else %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "Ничего не найдено" %}</p>
+    <p class="empty-state__hint">
+      {% translate "Измените условия поиска или снимите часть отборов." %}
+    </p>
+    <a class="button button--secondary button--sm" href="{% url 'catalog:indicator-list' %}?view=all">
+      {% translate "Снять все отборы" %}
+    </a>
+  </div>
+{% endif %}

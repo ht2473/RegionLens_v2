@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% load i18n static formatting %}
+
+{# О наборе данных: охват, источник и цитирование, полнота рядов, итог проверок, ограничения. #}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "О наборе данных" %}</h1>
+      <p class="page-intro__lead">
+        {% blocktranslate trimmed with title=data_source.title processor=data_source.processor %}
+          Сборник Росстата «{{ title }}» в обработке «{{ processor }}»: что в нём есть,
+          насколько полны ряды, какие проверки прошли данные и как на них ссылаться.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  </header>
+
+  {% if summary %}
+    <section class="page-section" aria-labelledby="dataset-scope">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="dataset-scope">{% translate "Охват" %}</h2>
+      </div>
+      <dl class="figure-list figure-list--row">
+        <div>
+          <dt>{% translate "наблюдений" %}</dt>
+          <dd class="numeric">{{ summary.observations|ru_number:0 }}</dd>
+        </div>
+        <div>
+          <dt>{% translate "из них со значением" %}</dt>
+          <dd class="numeric">{{ summary.values_present|ru_number:0 }}</dd>
+        </div>
+        <div>
+          <dt>{% translate "показателей" %}</dt>
+          <dd class="numeric">{{ summary.indicators|ru_number:0 }}</dd>
+        </div>
+        <div>
+          <dt>{% translate "рядов" %}</dt>
+          <dd class="numeric">{{ summary.series|ru_number:0 }}</dd>
+        </div>
+        <div>
+          <dt>{% translate "разделов" %}</dt>
+          <dd class="numeric">{{ summary.sections }}</dd>
+        </div>
+        <div>
+          <dt>{% translate "выпусков изданий" %}</dt>
+          <dd class="numeric">{{ summary.editions }}</dd>
+        </div>
+        <div>
+          <dt>{% translate "период" %}</dt>
+          <dd class="numeric">{{ summary.first_year|year }}–{{ summary.last_year|year }}</dd>
+        </div>
+      </dl>
+    </section>
+  {% endif %}
+
+  <section class="page-section" aria-labelledby="dataset-source">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="dataset-source">{% translate "Источник" %}</h2>
+    </div>
+    <div class="dataset-source">
+      <dl class="about-credits">
+        <dt>{% translate "Наименование" %}</dt>
+        <dd lang="ru">{{ data_source.title }}</dd>
+
+        <dt>{% translate "Правообладатель" %}</dt>
+        <dd>{{ data_source.origin }}</dd>
+
+        <dt>{% translate "Обработка" %}</dt>
+        <dd lang="ru">{{ data_source.processor }}</dd>
+
+        <dt>{% translate "Лицензия" %}</dt>
+        <dd>{{ data_source.license }}</dd>
+
+        <dt>{% translate "Версия" %}</dt>
+        <dd class="numeric">{{ data_source.version }}</dd>
+
+        <dt>{% translate "Адрес" %}</dt>
+        <dd><a href="{{ data_source.url }}" target="_blank" rel="noopener noreferrer">{{ data_source.url }}</a></dd>
+      </dl>
+
+      <figure class="dataset-cite">
+        <figcaption>{% translate "Ссылка для цитирования" %}</figcaption>
+        <p>
+          «<span lang="ru">{{ data_source.title }}</span>» // {{ data_source.origin }};
+          {% translate "обработка" %}: «<span lang="ru">{{ data_source.processor }}</span>», {{ project.current_year }}.
+          URL: {{ data_source.url }}
+        </p>
+      </figure>
+    </div>
+  </section>
+
+  {% if coverage %}
+    <section class="page-section" aria-labelledby="dataset-coverage">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="dataset-coverage">{% translate "Полнота рядов" %}</h2>
+        <p class="page-section__note">{% translate "Доля субъектов, по которым в ряду есть значения" %}</p>
+      </div>
+      <ul class="coverage-bars">
+        {% for bucket in coverage %}
+          <li class="coverage-bars__row">
+            <span class="coverage-bars__label">{{ bucket.bucket }}</span>
+            <span class="coverage-bars__track" aria-hidden="true">
+              <span class="coverage-bars__bar coverage-bars__bar--{{ bucket.bucket_code }}"
+                    style="width: {{ bucket.share|stringformat:'.1f' }}%"></span>
+            </span>
+            <span class="coverage-bars__value numeric">
+              {{ bucket.series_count|ru_number:0 }}
+              <span class="coverage-bars__share">{{ bucket.share_text }} %</span>
+            </span>
+          </li>
+        {% endfor %}
+      </ul>
+      <p class="page-section__footnote">
+        {% blocktranslate trimmed %}
+          Для рейтингов и инструментов анализа годятся ряды с покрытием не менее 80 %
+          субъектов и не менее десяти лет наблюдений; остальные открываются на своих страницах
+          с пометкой «ограниченно».
+        {% endblocktranslate %}
+      </p>
+    </section>
+  {% endif %}
+
+  {% if quality_summary %}
+    <section class="page-section" id="quality" aria-labelledby="dataset-checks">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="dataset-checks">{% translate "Проверки при загрузке" %}</h2>
+        <p class="page-section__note">{% translate "Замечания последней загрузки данных по видам проверок" %}</p>
+      </div>
+      <ul class="check-list">
+        {% for item in quality_summary %}
+          <li class="check-list__row">
+            <span class="check-list__title">{{ item.title }}</span>
+            <span class="badge {% if item.severity == 'error' %}badge--negative{% elif item.severity == 'warning' %}badge--attention{% else %}badge--neutral{% endif %}">
+              {{ item.severity_title }}
+            </span>
+            <span class="check-list__count numeric">{{ item.count|ru_number:0 }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  <section class="page-section" aria-labelledby="dataset-limits">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="dataset-limits">{% translate "Известные ограничения" %}</h2>
+    </div>
+
+    <dl class="dataset-limits">
+      <div>
+        <dt>{% translate "Значения отстают от текущего года" %}</dt>
+        <dd>
+          {% blocktranslate trimmed %}
+            Набор обновляется по мере выхода новых версий, и сайт работает на последней из них.
+            Ряды, которые Росстат публикует в ежемесячном бюллетене и таблице ВРП, продолжаются
+            по ним после последнего года набора и сверяются с ним; с новой версией набора
+            граница сдвигается сама. Часть рядов, прежде всего демографических, Росстат
+            публиковать перестал.
+          {% endblocktranslate %}
+          <a href="{% url 'catalog:sources' %}">{% translate "Какие ряды продолжаются и откуда" %}</a>
+        </dd>
+      </div>
+      <div>
+        <dt>{% translate "Пропуски закодированы числами" %}</dt>
+        <dd>
+          {% blocktranslate trimmed %}
+            В исходных файлах отсутствие данных записано значениями −99999999 и −77777777.
+            При загрузке они переведены в пропуски с сохранением причины: «нет данных»
+            и «значение скрыто источником» — разные ситуации, и ни одна из них не равна нулю.
+          {% endblocktranslate %}
+        </dd>
+      </div>
+      <div>
+        <dt>{% translate "Единицы измерения различаются между выпусками" %}</dt>
+        <dd>
+          {% blocktranslate trimmed %}
+            Для страны в целом источник иногда объявляет укрупнённую единицу измерения.
+            При загрузке такие значения приведены к единице измерения территорий, иначе
+            итог по России оказался бы в тысячу раз меньше суммы регионов.
+          {% endblocktranslate %}
+        </dd>
+      </div>
+      <div>
+        <dt>{% translate "Состав территорий" %}</dt>
+        <dd>
+          {% blocktranslate trimmed %}
+            Набор охватывает 85 субъектов Российской Федерации. Субъектов, принятых
+            в состав Российской Федерации в 2022 году, в источнике нет. Ряды по Республике Крым
+            и Севастополю начинаются с 2014 года.
+          {% endblocktranslate %}
+        </dd>
+      </div>
+      <div>
+        <dt>{% translate "Достоверность значений" %}</dt>
+        <dd>
+          {% blocktranslate trimmed %}
+            Источник не проверяет значения на правдоподобность. RegionLens проверяет их
+            согласованность при каждой загрузке данных; итог — в разделе «Проверки при
+            загрузке» выше.
+          {% endblocktranslate %}
+        </dd>
+      </div>
+    </dl>
+  </section>
+
+</div>
+{% endblock %}

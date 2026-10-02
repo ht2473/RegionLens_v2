@@ -1,0 +1,47 @@
+{% load i18n formatting %}
+{# График динамики ряда: территория, её округ и страна; фрагмент при смене ряда. #}
+
+{% if timeline_option %}
+  <div class="chart-frame">
+    <div class="chart-frame__header">
+      <div>
+        <div class="chart-frame__title">{{ timeline_series.full_title }}</div>
+        <div class="chart-frame__subtitle">
+          {{ timeline_years.0|year }}–{{ timeline_years|last|year }}
+          {% if timeline_series.unit %}
+            · {{ timeline_series.unit.short_name }}
+          {% endif %}
+        </div>
+      </div>
+      <span id="timeline-indicator" class="htmx-indicator text-muted"
+            style="font-size: var(--text-xs)">{% translate "Обновление…" %}</span>
+    </div>
+
+    <rl-chart class="chart" data-options="territory-timeline-option"></rl-chart>
+    {{ timeline_option|json_script:"territory-timeline-option" }}
+
+    <div class="chart-frame__footer">
+      {% if timeline_corridor %}
+        {% blocktranslate trimmed %}
+          Заливка — коридор между первым и третьим квартилем: внутри него лежит половина
+          субъектов страны. Линия внутри коридора означает обычный уровень, выше
+          или ниже — выделяющийся.
+        {% endblocktranslate %}
+      {% endif %}
+      {% blocktranslate trimmed %}
+        Разрыв линии — значения в источнике нет; через пропуск точки не соединяются.
+      {% endblocktranslate %}
+      {% if timeline_series.break_count %}
+        · <a href="{% url 'catalog:series-detail' slug=timeline_series.indicator.slug %}?series={{ timeline_series.key }}">
+            {% translate "разрывов сопоставимости у ряда" %}: {{ timeline_series.break_count }}
+          </a>
+      {% endif %}
+    </div>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "По этому ряду нет данных для территории" %}</p>
+    <p class="empty-state__hint">{% translate "Выберите другой ряд наблюдений." %}</p>
+  </div>
+{% endif %}

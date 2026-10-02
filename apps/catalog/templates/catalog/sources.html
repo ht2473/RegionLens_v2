@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% load i18n static formatting %}
+
+{# Источники данных: набор, издания Росстата, продолжающиеся и прекращённые ряды. #}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "Источники данных" %}</h1>
+      <p class="page-intro__lead">
+        {% blocktranslate trimmed with title=data_source.title %}
+          Основа — набор «{{ title }}», собранный из сборников Росстата; сайт работает
+          на его последней версии. Ряды, которые Росстат публикует и после последнего года
+          набора, продолжаются по другим его изданиям: они собираются автоматически,
+          сверяются с набором за общие годы и хранятся в архиве в том виде, в каком получены.
+          Ипотека, кредиты и малый бизнес — ряды по данным Банка России и ФНС, помесячно.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  </header>
+
+  <section class="page-section" aria-labelledby="sources-editions">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="sources-editions">{% translate "Издания" %}</h2>
+    </div>
+    <div class="sources-grid">
+      <article class="card sources-card">
+        <h3 class="sources-card__title" lang="ru">{{ data_source.title }}</h3>
+        <dl class="about-credits">
+          <dt>{% translate "Издатель" %}</dt>
+          <dd>{{ data_source.origin }}; {% translate "обработка" %} — «<span lang="ru">{{ data_source.processor }}</span>»</dd>
+          <dt>{% translate "Условия" %}</dt>
+          <dd>{{ data_source.license }}</dd>
+          <dt>{% translate "Версия" %}</dt>
+          <dd class="numeric">{{ data_source.version }}</dd>
+          <dt>{% translate "Состояние" %}</dt>
+          <dd>{% translate "выпуск завершён в 2025 году" %}</dd>
+        </dl>
+        <p><a href="{{ data_source.url }}" rel="noopener noreferrer">{{ data_source.url }}</a></p>
+      </article>
+      {% for entry in sources %}
+        {% with source=entry.source latest=entry.latest %}
+          <article class="card sources-card">
+            <h3 class="sources-card__title">{{ source.title }}</h3>
+            <dl class="about-credits">
+              <dt>{% translate "Издатель" %}</dt>
+              <dd>{{ source.publisher }}</dd>
+              <dt>{% translate "Условия" %}</dt>
+              <dd>{{ source.licence }}</dd>
+              <dt>{% translate "Последний выпуск" %}</dt>
+              <dd>
+                {% if latest %}
+                  {{ latest.display_title }}
+                {% else %}
+                  {% translate "ещё не получен" %}
+                {% endif %}
+              </dd>
+              <dt>{% translate "Проверка" %}</dt>
+              <dd>
+                {% if source.checked_at %}
+                  {% blocktranslate trimmed with date=source.checked_at|date:"d.m.Y" %}последняя — {{ date }}{% endblocktranslate %}
+                {% else %}—{% endif %}
+              </dd>
+            </dl>
+            <p><a href="{{ source.page_url }}" rel="noopener noreferrer">{{ source.page_url }}</a></p>
+          </article>
+        {% endwith %}
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if continued %}
+    <section class="page-section" aria-labelledby="sources-continued">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="sources-continued">{% translate "Какие ряды продолжаются" %}</h2>
+        <p class="page-section__note">
+          {% translate "Годы после набора, способ получения годового значения и совпадение с набором за общие годы" %}
+        </p>
+      </div>
+      {% for group in continued %}
+        <h3 class="sources-group__title">{{ group.title }}</h3>
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <caption class="visually-hidden">{{ group.title }}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{% translate "Показатель" %}</th>
+                <th scope="col" class="is-numeric">{% translate "Годы из издания" %}</th>
+                <th scope="col">{% translate "Сшивка с набором" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in group.rows %}
+                {% with link=row.link %}
+                  <tr>
+                    <th scope="row" class="sources-table__title">
+                      {% if row.slug %}
+                        <a href="{% url 'catalog:series-detail' slug=row.slug %}?series={{ link.series_key }}">{{ row.item.short_title }}</a>
+                      {% else %}
+                        {{ row.item.short_title|default:link.series_key }}
+                      {% endif %}
+                      {% if link.method_text %}
+                        <div class="text-muted sources-table__note">{{ link.method_text|capfirst }}</div>
+                      {% endif %}
+                    </th>
+                    <td class="is-numeric">
+                      {% if link.is_revision %}
+                        {% translate "все годы" %}
+                      {% elif link.junction_year %}
+                        {{ link.junction_year }}{% if link.last_year != link.junction_year %}–{{ link.last_year }}{% endif %}
+                      {% else %}—{% endif %}
+                    </td>
+                    <td>
+                      {% if link.is_revision %}
+                        <span class="badge badge--neutral">{% translate "новая редакция" %}</span>
+                      {% elif link.is_conditional %}
+                        <span class="badge badge--attention">{% translate "условная" %}</span>
+                      {% else %}
+                        <span class="badge badge--positive">{% translate "полная" %}</span>
+                      {% endif %}
+                      {% if link.within_percent is not None and not link.is_revision %}
+                        <div class="text-muted sources-table__note">
+                          {% blocktranslate trimmed with share=link.within_percent first=link.compared_from last=link.compared_to %}
+                            совпадает с набором у {{ share }} % пар «регион × год» за {{ first }}–{{ last }}
+                          {% endblocktranslate %}
+                        </div>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endwith %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endfor %}
+      <p class="page-section__footnote">
+        {% blocktranslate trimmed %}
+          Полная сшивка — значения издания за общие годы совпадают с набором в пределах допуска
+          не меньше чем у 90 % пар «регион × год». Условная — ряд продолжается, но уровни до
+          и после стыка несопоставимы: на стыке стоит разрыв, и изменение через него не
+          считается. Новая редакция — издание заменяет значения набора как более поздняя
+          публикация того же ряда. Значения последнего года — предварительные.
+        {% endblocktranslate %}
+        <a href="{% url 'content:methodology' %}#m-sources">{% translate "Подробнее в методике" %}</a>
+      </p>
+    </section>
+  {% endif %}
+
+  {% if collected %}
+    <section class="page-section" aria-labelledby="sources-collected">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="sources-collected">{% translate "Ряды Банка России и ФНС" %}</h2>
+        <p class="page-section__note">
+          {% translate "Годовое значение строится из месяцев; последний месяц — в «Что сейчас» паспорта и на странице показателя" %}
+        </p>
+      </div>
+      {% for group in collected %}
+        <h3 class="sources-group__title">{{ group.title }}</h3>
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <caption class="visually-hidden">{{ group.title }}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{% translate "Показатель" %}</th>
+                <th scope="col" class="is-numeric">{% translate "Годы" %}</th>
+                <th scope="col">{% translate "Последние данные" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in group.rows %}
+                <tr>
+                  <th scope="row" class="sources-table__title">
+                    <a href="{% url 'catalog:series-detail' slug=row.slug %}?series={{ row.key }}">{{ row.title }}</a>
+                    {% if row.method %}<div class="text-muted sources-table__note">{{ row.method|capfirst }}</div>{% endif %}
+                  </th>
+                  <td class="is-numeric">{% if row.first_year %}{{ row.first_year }}–{{ row.last_year }}{% else %}—{% endif %}</td>
+                  <td>{{ row.period|default:"—" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endfor %}
+      <p class="page-section__footnote">
+        {% blocktranslate trimmed %}
+          Ряды на жителя делятся на среднегодовую численность населения, по которой Росстат
+          считает ВРП на душу; после последнего опубликованного года численность не меняется.
+          Значение по России у реестра МСП — сумма 85 субъектов: в итог ФНС входят и субъекты,
+          которых нет в справочнике проекта.
+        {% endblocktranslate %}
+        <a href="{% url 'content:methodology' %}#m-monthly">{% translate "Подробнее в методике" %}</a>
+      </p>
+    </section>
+  {% endif %}
+
+  {% if discontinued %}
+    <section class="page-section" aria-labelledby="sources-stopped">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="sources-stopped">{% translate "Какие ряды прекращены" %}</h2>
+        <p class="page-section__note">{% translate "Росстат перестал публиковать их по субъектам; новых значений не будет" %}</p>
+      </div>
+      <div class="data-table-wrapper">
+        <table class="data-table">
+          <caption class="visually-hidden">{% translate "Какие ряды прекращены" %}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Показатель" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Прекращён" %}</th>
+              <th scope="col">{% translate "Что известно" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in discontinued %}
+              <tr>
+                <th scope="row" class="sources-table__title">
+                  {% if row.slug %}
+                    <a href="{% url 'catalog:series-detail' slug=row.slug %}?series={{ row.status.key }}">{{ row.item.short_title|default:row.status.key }}</a>
+                  {% else %}
+                    {{ row.item.short_title|default:row.status.key }}
+                  {% endif %}
+                </th>
+                <td class="is-numeric">{{ row.status.since }}</td>
+                <td>{{ row.status.detail }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% endif %}
+
+</div>
+{% endblock %}

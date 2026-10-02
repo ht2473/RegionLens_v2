@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% load i18n static formatting %}
+
+{# Каталог по темам: плитка на показатель основного набора ведёт на его страницу. #}
+
+{% block meta_description %}{% translate "Основные социально-экономические показатели регионов России по темам: население, здоровье, доходы, работа, экономика, малый бизнес, жильё, кредиты, образование, дороги, природа и цены." %}{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/catalog.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page catalog">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "Показатели" %}</h1>
+      <p class="page-intro__lead">
+        {% blocktranslate trimmed with count=featured_total themes=themes|length %}
+          {{ count }} основных показателей в {{ themes }} темах. У каждого — своя страница:
+          где больше и где меньше, как менялся и откуда данные.
+        {% endblocktranslate %}
+      </p>
+
+      {# Поиск ведёт в полный перечень: основной набор виден целиком и без поиска. #}
+      <form class="find-form" method="get" action="{% url 'catalog:indicator-list' %}" role="search">
+        <input type="hidden" name="view" value="all">
+        <label class="find-field">
+          <svg aria-hidden="true"><use href="#icon-search"></use></svg>
+          <span class="visually-hidden">{% translate "Поиск по всем рядам" %}</span>
+          <input type="search" name="q" autocomplete="off"
+                 placeholder="{% blocktranslate trimmed with total=total_series|ru_number:0 %}Найти среди всех {{ total }} рядов{% endblocktranslate %}">
+        </label>
+        <button class="button button--primary find-form__submit" type="submit">{% translate "Найти" %}</button>
+      </form>
+      <p class="find-form__hint">
+        {% translate "Например: безработица, ВРП, Y477110005." %}
+        <a href="{% url 'catalog:indicator-list' %}?view=all">
+          {% blocktranslate trimmed with total=total_series|ru_number:0 %}
+            Полный перечень — {{ total }} рядов с отборами
+          {% endblocktranslate %}
+          <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+        </a>
+      </p>
+    </div>
+  </header>
+
+  {% if not warehouse_ready %}
+    <div class="callout callout--warning catalog__notice">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Данные ещё не загружены" %}</div>
+        <p>{% translate "Страница заработает, когда администратор загрузит набор данных." %}</p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if questions %}
+    <section class="page-section catalog-questions" aria-labelledby="catalog-questions-title">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="catalog-questions-title">{% translate "С чего начать" %}</h2>
+        <p class="page-section__note">{% translate "Вопрос открывает рейтинг регионов по нужному показателю" %}</p>
+      </div>
+      <ul class="choice-list">
+        {% for row in questions %}
+          <li>
+            <a class="choice-chip" href="{% url 'rankings:index' %}?series={{ row.item.key }}">{{ row.item.question }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  {# Оглавление тем закреплено под шапкой; текущую тему отмечает data-toc. #}
+  <nav class="toc-pills" data-toc aria-label="{% translate 'Темы' %}">
+    <ul>
+      {% for block in themes %}
+        <li>
+          <a href="#theme-{{ block.theme.slug }}">
+            {{ block.theme.title }}<span class="toc-pills__count numeric">{{ block.rows|length }}</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </nav>
+
+  {% for block in themes %}
+    <section class="page-section catalog-theme toc-target" id="theme-{{ block.theme.slug }}"
+             aria-labelledby="theme-{{ block.theme.slug }}-title">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="theme-{{ block.theme.slug }}-title">{{ block.theme.title }}</h2>
+        {% if block.theme.lead %}<p class="page-section__note">{{ block.theme.lead }}</p>{% endif %}
+      </div>
+
+      <ul class="catalog-grid">
+        {% for row in block.rows %}
+          {# Ссылка растянута на всю плитку. #}
+          <li class="stat-tile catalog-tile">
+            <a class="catalog-tile__title"
+               href="{% url 'catalog:series-detail' slug=row.series.indicator.slug %}?series={{ row.item.key }}">{{ row.item.short_title }}</a>
+            {% if row.tile %}
+              <p class="stat-tile__value">
+                <span class="numeric">{{ row.tile.value }}</span>
+                <span class="stat-tile__unit">{{ row.item.unit_label }}</span>{% include "catalog/partials/_origin_mark.html" with origin=row.tile.origin %}
+              </p>
+              <div class="stat-tile__foot">
+                <p class="stat-tile__change">
+                  {% if row.tile.change %}
+                    <span class="stat-tile__delta numeric verdict verdict--{{ row.tile.tone }}">{{ row.tile.change }}</span>
+                    <span class="stat-tile__period">
+                      {% if row.tile.nominal %}
+                        {% blocktranslate trimmed with year=row.tile.year previous=row.tile.previous_year nominal=row.tile.nominal %}
+                          реально, {{ year }} к {{ previous }}; в рублях {{ nominal }}
+                        {% endblocktranslate %}
+                      {% else %}
+                        {% blocktranslate trimmed with year=row.tile.year previous=row.tile.previous_year %}
+                          {{ year }} к {{ previous }}
+                        {% endblocktranslate %}
+                      {% endif %}
+                    </span>
+                  {% elif row.tile.break_year %}
+                    <span class="stat-tile__period">
+                      {% blocktranslate trimmed with year=row.tile.break_year %}
+                        к прошлому году не сравнивается: разрыв сопоставимости в {{ year }} году
+                      {% endblocktranslate %}
+                    </span>
+                  {% else %}
+                    <span class="stat-tile__period">{{ row.tile.year }}</span>
+                  {% endif %}
+                </p>
+                {% if row.tile.spark %}
+                  <svg class="sparkline" viewBox="0 0 {{ row.tile.spark.width }} {{ row.tile.spark.height }}"
+                       preserveAspectRatio="none" aria-hidden="true">
+                    <path class="sparkline__line" d="{{ row.tile.spark.path }}"></path>
+                    <path class="sparkline__end" d="M{{ row.tile.spark.end_x }} {{ row.tile.spark.end_y }}h0"></path>
+                  </svg>
+                {% endif %}
+              </div>
+            {% else %}
+              <p class="catalog-tile__empty">{% translate "По России значения нет — только по регионам" %}</p>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endfor %}
+
+  <p class="page-section__footnote catalog__footnote">
+    {% blocktranslate trimmed %}
+      Числа на плитках — по России за последний год с данными. Цвет изменения — оценка,
+      а не направление: рост безработицы или бедности отмечен как ухудшение; изменение
+      процентных величин — в процентных пунктах. Названия здесь короткие; формулировка
+      сборника Росстата и методические оговорки — на странице показателя.
+    {% endblocktranslate %}
+  </p>
+
+</div>
+{% endblock %}

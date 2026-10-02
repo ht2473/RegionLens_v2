@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "purpose": "Связи рядов склада с показателями внешних источников: откуда и каким способом берётся годовое значение после последнего года набора. Итог сверки с набором по общим годам считает сборка склада (витрина mart_source_link).",
+    "methods": {
+      "annual": "годовое значение таблицы (среднее за год, как у рабочей силы)",
+      "year_total": "нарастающий итог за январь — декабрь",
+      "december": "значение декабря (на конец года)",
+      "quarter_end": "значение IV квартала (на конец года)",
+      "mean_months": "среднее двенадцати месяцев — расчёт",
+      "mean_quarters": "среднее четырёх кварталов — расчёт",
+      "real_wage": "рост средней номинальной зарплаты, делённый на рост среднегодовых цен, — расчёт",
+      "per_capita": "итог источника на жителя; численность — из набора по итоговому ряду total_series, после последнего известного года — замороженная, — расчёт"
+    },
+    "tolerance_note": "Допуск сверки: relative — доля расхождения с набором, points — пункты (для индексов и долей в процентах). Связь полная, если в последние три общих года в допуске не меньше 90 % пар «субъект × год»; иначе условная, и на стыке ставится разрыв."
+  },
+  "links": [
+    {"series": "Y477110374:00", "source": "rosstat_bulletin", "measure": "income", "method": "mean_quarters", "tolerance": {"relative": 0.02}},
+    {"series": "Y477110378:00", "source": "rosstat_bulletin", "measure": "wage", "method": "mean_months", "tolerance": {"relative": 0.02}},
+    {"series": "Y477110363:00", "source": "rosstat_bulletin", "measure": "real_income", "method": "year_total", "tolerance": {"points": 0.15}},
+    {"series": "Y477110362:00", "source": "rosstat_bulletin", "measure": "wage", "method": "real_wage", "deflator": "cpi_december", "tolerance": {"points": 1.0}},
+    {"series": "Y477110418:00", "source": "rosstat_bulletin", "measure": "unemployment_rate", "method": "annual", "tolerance": {"points": 0.15}},
+    {"series": "Y477110107:00", "source": "rosstat_bulletin", "measure": "investment", "method": "year_total", "tolerance": {"relative": 0.005}},
+    {"series": "Y477110108:00", "source": "rosstat_bulletin", "measure": "investment", "method": "per_capita", "total_series": "Y477110107:00", "tolerance": {"relative": 0.01}},
+    {"series": "Y477110110:00", "source": "rosstat_bulletin", "measure": "investment_index", "method": "year_total", "tolerance": {"points": 0.15}},
+    {"series": "Y477110223:00", "source": "rosstat_bulletin", "measure": "retail", "method": "year_total", "tolerance": {"relative": 0.005}},
+    {"series": "Y477110224:00", "source": "rosstat_bulletin", "measure": "retail", "method": "per_capita", "total_series": "Y477110223:00", "tolerance": {"relative": 0.01}},
+    {"series": "Y477110128:00", "source": "rosstat_bulletin", "measure": "retail_index", "method": "year_total", "tolerance": {"points": 0.15}},
+    {"series": "Y477110126:00", "source": "rosstat_bulletin", "measure": "industry_index", "method": "year_total", "tolerance": {"points": 0.15}},
+    {"series": "Y477110415:00", "source": "rosstat_bulletin", "measure": "unprofitable_share", "method": "year_total", "tolerance": {"points": 0.15}},
+    {"series": "Y477110016:00", "source": "rosstat_bulletin", "measure": "housing", "method": "year_total", "tolerance": {"relative": 0.005}},
+    {"series": "Y477110017:00", "source": "rosstat_bulletin", "measure": "housing", "method": "per_capita", "total_series": "Y477110016:00", "tolerance": {"relative": 0.01}},
+    {"series": "Y477110380:00", "source": "rosstat_bulletin", "measure": "price_primary", "method": "quarter_end", "tolerance": {"relative": 0.005}},
+    {"series": "Y477110379:00", "source": "rosstat_bulletin", "measure": "price_secondary", "method": "quarter_end", "tolerance": {"relative": 0.005}},
+    {"series": "Y477110111:00", "source": "rosstat_bulletin", "measure": "cpi_december", "method": "december", "tolerance": {"points": 0.15}},
+    {"series": "Y477110395:00", "source": "rosstat_bulletin", "measure": "basket", "method": "december", "tolerance": {"relative": 0.005}},
+    {"series": "Y477110005:00", "source": "rosstat_grp", "measure": "grp", "method": "annual", "tolerance": {"relative": 0.005}},
+    {"series": "Y477110006:00", "source": "rosstat_grp", "measure": "grp_per_capita", "method": "annual", "tolerance": {"relative": 0.005}},
+    {"series": "Y477110109:00", "source": "rosstat_grp", "measure": "grp_index", "method": "annual", "tolerance": {"points": 0.15}}
+  ]
+}

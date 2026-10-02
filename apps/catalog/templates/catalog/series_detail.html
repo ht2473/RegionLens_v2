@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{# Страница показателя; всё под шапкой — в _indicator_page.html, смена разреза заменяет его. #}
+
+{% block meta_description %}{% blocktranslate trimmed with name=heading %}{{ name }}: значение по России, регионы с наибольшими и наименьшими значениями, карта по годам, динамика, разрывы сопоставимости и пересмотры.{% endblocktranslate %}{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/live-map.css' %}">
+  <link rel="stylesheet" href="{% static 'css/indicator.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+  {# Модуль живой карты загружается вместе с входным, а не после него. #}
+  <link rel="modulepreload" href="{% static 'js/elements/live-map.js' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page indicator" id="indicator-page">
+  {% include "catalog/partials/_indicator_page.html" %}
+</div>
+
+{# Карточка региона (popover) — вне заменяемой части. #}
+<div class="region-card" id="region-card" popover role="dialog"
+     aria-label="{% translate 'Карточка региона' %}">
+  <div class="region-card__body" data-region-card-body></div>
+</div>
+{% endblock %}

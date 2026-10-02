@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load i18n static formatting %}
+
+{% comment %}
+  Полный перечень рядов с отборами (?view=all); без параметров — indicator_themes.html.
+  Отборы применяются сразу через HTMX с обновлением адреса.
+{% endcomment %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/catalog.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "Полный перечень рядов" %}</h1>
+      <p class="page-intro__lead">
+        {% blocktranslate trimmed with total=total_series|ru_number:0 ready=ready_series|ru_number:0 %}
+          {{ total }} рядов: сборник Росстата, ряды Банка России и ФНС. {{ ready }} из них пригодны
+          для сравнения регионов: покрывают не менее 80 % субъектов и не менее десяти лет.
+        {% endblocktranslate %}
+      </p>
+    </div>
+    <div class="page-intro__actions">
+      <a class="button button--secondary button--sm" href="{% url 'catalog:indicator-list' %}">
+        {% translate "Основные показатели по темам" %}
+      </a>
+    </div>
+  </header>
+
+  <form class="workspace" id="catalog-form"
+        hx-get="{% url 'catalog:indicator-list' %}"
+        hx-target="#catalog-results"
+        hx-push-url="true"
+        hx-trigger="change, search delay:300ms from:#catalog-query, keyup changed delay:400ms from:#catalog-query"
+        hx-indicator="#catalog-indicator">
+    {# Режим полного перечня: без него адрес без отборов открыл бы темы. #}
+    <input type="hidden" name="view" value="all">
+
+    {# --- Рейль отборов ------------------------------------------------------------------- #}
+    <aside class="filter-rail" id="catalog-rail" aria-label="{% translate 'Отбор рядов' %}">
+      {% include "partials/_rail_sheet_head.html" with sheet_title=_("Отбор рядов") %}
+
+      <div class="filter-rail__group">
+        <div class="filter-rail__title">{% translate "Поиск" %}</div>
+        <label class="rail-find">
+          <svg aria-hidden="true"><use href="#icon-search"></use></svg>
+          <span class="visually-hidden">{% translate "Поиск по названию или коду" %}</span>
+          <input type="search" id="catalog-query" name="q" value="{{ query }}"
+                 placeholder="{% translate 'Название или код' %}" autocomplete="off">
+        </label>
+        <p class="field__hint catalog-all__hint">
+          {% translate "Например: безработица, ВРП, Y477110005." %}
+          {% translate "Слова можно вводить в любом порядке; регистр и «ё» не важны." %}
+        </p>
+      </div>
+
+      <div class="filter-rail__group">
+        <div class="filter-rail__title">{% translate "Пригодность" %}</div>
+        <div class="stack stack--tight">
+          <label class="checkbox">
+            <input type="checkbox" name="ready" value="1" {% if only_ready %}checked{% endif %}>
+            <span>{% translate "Пригодны для сравнения регионов" %}</span>
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" name="comparable" value="1" {% if only_comparable %}checked{% endif %}>
+            <span>{% translate "Без разрывов сопоставимости" %}</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="filter-rail__group">
+        <div class="filter-rail__title">{% translate "Единица измерения" %}</div>
+        <div class="stack stack--tight">
+          {% for unit in unit_kinds %}
+            <label class="checkbox">
+              <input type="checkbox" name="unit" value="{{ unit.code }}"
+                     {% if unit.code in selected_units %}checked{% endif %}>
+              <span>{{ unit.title }}</span>
+              <span class="checkbox__count">{{ unit.count }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="filter-rail__group">
+        <div class="filter-rail__title">{% translate "Раздел сборника" %}</div>
+        <div class="stack stack--tight catalog-all__sections">
+          {% for section in sections %}
+            <label class="checkbox">
+              <input type="checkbox" name="section" value="{{ section.slug }}"
+                     {% if section.slug in selected_sections %}checked{% endif %}>
+              <span class="text-truncate" title="{{ section.name }}">{{ section.name }}</span>
+              <span class="checkbox__count">{{ section.count }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="filter-rail__foot">
+        <a class="filter-rail__reset" href="{% url 'catalog:indicator-list' %}?view=all">
+          <svg aria-hidden="true"><use href="#icon-refresh"></use></svg>
+          {% translate "Снять все отборы" %}
+        </a>
+      </div>
+    </aside>
+
+    {# --- Перечень ------------------------------------------------------------------------ #}
+    <div class="workspace__content">
+      <div id="catalog-results" class="fade-on-load" data-announce="{% translate 'Перечень обновлён' %}">
+        {% include "catalog/partials/_series_results.html" %}
+      </div>
+    </div>
+  </form>
+
+  {% include "partials/_rail_dock.html" with rail_id="catalog-rail" dock_title=_("Отбор рядов") %}
+
+</div>
+{% endblock %}

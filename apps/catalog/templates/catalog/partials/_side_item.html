@@ -1,0 +1,9 @@
+{% load formatting %}
+{# Сильная или слабая сторона: показатель, значение, место и сравнение со страной. #}
+<li class="sides__item"{% if more %} data-more-item{% endif %}>
+  <a class="sides__name" href="{% url 'rankings:index' %}?series={{ position.series.key }}&amp;year={{ position.year }}&amp;territory={{ territory.code }}">{{ position.series.short_title }}</a>
+  <span class="sides__place numeric">{{ position.place_text }}</span>
+  <span class="sides__detail">
+    <span class="numeric">{{ position.value|ru_number:position.series.precision }}</span> {{ position.series.unit_label }}{% if position.versus_country %} · {{ position.versus_country }}{% endif %}
+  </span>
+</li>

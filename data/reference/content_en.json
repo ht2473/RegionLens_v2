@@ -1,0 +1,467 @@
+{
+  "meta": {
+    "purpose": "Английские версии содержимого: разделов методологии и терминов глоссария. Содержимое наполняется командой seed_content на русском языке; английские версии хранятся отдельным файлом, чтобы их можно было править как текст и переносить между стендами вместе с кодом.",
+    "matching": "Записи сопоставляются по устойчивому идентификатору: код раздела методологии и адресный идентификатор термина. Идентификатор не зависит от языка.",
+    "version": "1.2",
+    "source": "Поле source — отпечаток русского оригинала (apps.core.translation_qa.source_hash полей в порядке seed_content_en.TARGETS). Изменился оригинал — отпечаток не совпадает, перевод помечается устаревшим: seed_content_en --check и tests/unit/test_translations.py."
+  },
+  "MethodologySection": {
+    "missing-values": {
+      "title": "Gaps and the source’s service codes",
+      "summary": "The values −99999999 and −77777777 are not numbers but marks of absent data.",
+      "formula": "",
+      "body": "In the source dataset −99999999 means “no data” and −77777777 means “value withheld for confidentiality”. On loading, both marks become an empty value, and the reason is kept as a quality flag. Zero is never put in their place: zero is a valid value of many indicators.\n\nOn charts a gap is not bridged by a line; on the map a region without a value is hatched.",
+      "source": "157b8fc5b2478faed093d6d34354135eb0aa7ea9"
+    },
+    "deduplication": {
+      "title": "One observation in different issues",
+      "summary": "If issues disagree, the value from the later one is in force; earlier ones are kept in “Revisions”.",
+      "formula": "",
+      "body": "An observation is defined by the indicator, the breakdown, the territory and the year. One observation is printed in several issues of publications, most often unchanged. If the value differs between issues, that is a revision: the value from the latest issue is in force, and earlier versions are kept.\n\nIssues of Rosstat’s bulletin, of the GRP table and snapshots of Bank of Russia data are ordered by release date; for the compendia of the dataset the release date is taken as the end of the year of publication.",
+      "source": "ec78419a7b0e52f751090abc7efaa018690f1e1a"
+    },
+    "coverage": {
+      "title": "Suitability of a series for comparative analysis",
+      "summary": "A series takes part in comparisons if it covers 80 % of the regions and at least 10 years (Bank of Russia and Federal Tax Service series — 5 years).",
+      "formula": "region coverage = regions with a value / 85 ≥ 0.80;  years ≥ 10 (for series of external sources ≥ 5)",
+      "body": "Other series are shown in the catalogue and on the indicator page but are not offered in rankings and analysis tools: a ranking of a dozen regions or a correlation over three years does not describe the country.\n\nThe map, rankings and tools open on the latest complete year of a series — with values for at least 80 % of the largest number of regions in the series. An incomplete latest year stays available in the year choice.",
+      "source": "3fc34c7071d2d7763aaab24f1da07ba00d7132f9"
+    },
+    "normalization": {
+      "title": "Bringing indicators to a comparable form",
+      "summary": "Five ways to bring indicators to a scale from 0 to 100; the choice affects how robust the index is to outliers.",
+      "formula": "min-max: 100·(x − min) / (max − min);  z: 50 + 50·z/3, z = (x − μ) / σ;  robust: z = (x − Me) / (IQR / 1.349);  rank: 100·r / (n − 1);  logarithmic: min-max of ln x",
+      "body": "On the scale 100 is the best position; for indicators where less is better (poverty, mortality) the scale is reversed. Min-max keeps distances but depends on the extreme values: one outlying region squeezes the others. The z-score counts from the mean in standard deviations, and values beyond three deviations are truncated. The robust method does the same from the median with the interquartile range: outliers do not shift the reference point, and it is preferable for per capita indicators skewed to the right. The rank method keeps only the order. The logarithmic method compresses a long right tail and applies only to positive quantities.\n\nThe direction is set by hand for the core set and guessed from the wording for other series, and the author of an index can change it; a series without a direction does not enter the calculation.",
+      "source": "804330b5f59675ce61fc8ba0c3d3eefe59511604"
+    },
+    "weights": {
+      "title": "Determining indicator weights",
+      "summary": "Equal, expert, entropy, CRITIC and principal-component loading weights.",
+      "formula": "entropy: e_j = −(1/ln n) Σ p_ij ln p_ij;  weight: w_j = (1 − e_j) / Σ (1 − e_k)",
+      "body": "Equal weights make all indicators equally important, but three closely related indicators give their direction triple weight. Expert weights are set by the user. The entropy method gives more weight to an indicator that differentiates regions more; CRITIC also takes correlation into account, so a duplicating indicator gets less weight; principal-component weights rest on the structure of relations. The weights sum to one.\n\nThe robustness check recalculates the index under other scales and aggregations; the influence of the weights themselves is seen by switching the way they are determined.",
+      "source": "48f42a627de858c2728d34e7df7fc7cf252919f0"
+    },
+    "aggregation": {
+      "title": "Aggregating normalised values into an index",
+      "summary": "Additive and geometric aggregation, TOPSIS and distance to a benchmark.",
+      "formula": "additive: I = Σ w_j x_j;  geometric: I = Π x_j^(w_j);  TOPSIS: I = 100·d⁻ / (d⁺ + d⁻);  to the benchmark: I = 100·(1 − d / d_max)",
+      "body": "Additive aggregation allows full compensation: a failure on one indicator is offset by success on another. Geometric aggregation limits compensation; a zero score in it is replaced by a small positive value. TOPSIS rates closeness to the best combination of indicators (d⁺ is the distance to it, d⁻ to the worst). The distance to a benchmark compares a region with the combination of the best values achieved by different regions.\n\nA region enters the index if it has at least 60 % of the indicators; the weights of the missing ones are redistributed among those present. In TOPSIS and the distance to a benchmark a gap is replaced by the mean for the duration of the calculation.",
+      "source": "aa0c41d2d382c27af31d1c6267810a6642901bf3"
+    },
+    "correlation": {
+      "title": "Measures of association and significance testing",
+      "summary": "Pearson, Spearman, Kendall, partial correlation, lag and the fitted line; Benjamini–Hochberg correction for multiple comparisons.",
+      "formula": "r = Σ (x − x̄)(y − ȳ) / √(Σ (x − x̄)² Σ (y − ȳ)²);  correction: p′(k) = min over j ≥ k of m·p(j) / j",
+      "body": "The Pearson coefficient measures a linear relation and is sensitive to outliers, Spearman’s measures the relation of ranks and is the default, Kendall’s measures agreement of order on small samples. Pairs lacking a value are dropped; with fewer than eight pairs no coefficient is calculated.\n\nA matrix of ten indicators holds 45 pairs, and at the 5 % level two or three will come out “significant” by chance. The significance levels are therefore adjusted with the Benjamini–Hochberg correction, and the matrix shows the relations that remain significant after it. Partial correlation removes the influence of the other selected indicators. The lag check shifts the first indicator 0–5 years back. The fitted line is a regression with HC3 robust errors; it is drawn only if the slope is significant.\n\nLimitations: a relation does not mean causation — both indicators may follow a third.",
+      "source": "37a0aca2d7e6a98b8d858776e5644fcab0b4485f"
+    },
+    "inequality": {
+      "title": "Measuring inter-regional inequality",
+      "summary": "Coefficient of variation, Gini, Theil with a decomposition by district, Atkinson, decile ratio, Lorenz curve.",
+      "formula": "Gini: G = Σ Σ |x_i − x_j| / (2 n² x̄);  Theil: T = (1/n) Σ (x_i/x̄) ln(x_i/x̄);  Atkinson: A = 1 − [(1/n) Σ (x_i/x̄)^(1−ε)]^(1/(1−ε))",
+      "body": "The measures are sensitive to different parts of the distribution, so a set is shown. The coefficient of variation is the standard deviation divided by the mean. Gini responds mainly to the middle of the distribution. Theil responds more to the upper part and splits into differences between federal districts and within them. In Atkinson the parameter ε (0.5 by default) sets how much the lag of the lower part matters. The decile ratio is the ninth decile divided by the first. The Lorenz curve shows the whole distribution.\n\nWithout weighting, territories count equally and a measure describes the difference between regions; weighted by population, the difference in people’s living conditions. The dynamics of the measures are by default calculated on a constant composition — the regions with values in every year of the period — otherwise new regions entering a series would change the measures by themselves. If some values are withheld by the source, bounds of the measures under any withheld values within the observed range are shown alongside.\n\nLimitations: Theil and Atkinson are calculated only for positive values, Gini for non-negative ones; a measure that does not apply is not calculated, and the reason is given.",
+      "source": "710ab6e7f218b8a432653ed3d4cda6c1106aaab9"
+    },
+    "convergence": {
+      "title": "Sigma and beta convergence",
+      "summary": "Whether regions are converging in the level of an indicator and how fast: sigma, absolute and conditional beta convergence.",
+      "formula": "beta: ln(y_iT / y_i0) / T = α + β ln(y_i0) + ε_i;  speed: λ = −ln(1 + βT) / T;  half-life: ln 2 / λ",
+      "body": "Sigma convergence is a narrowing of the spread over time; the spread is the standard deviation of logarithms. Beta convergence is a negative relation between the average annual growth rate and the logarithm of the initial level. Conditional beta convergence adds federal district indicators and tests convergence to the level of one’s own district. The regression is estimated with HC3 robust errors. The half-life is the number of years in which, at the same pace, half of the gap disappears; over 200 years is called practically infinite.\n\nLimitations: one measure does not follow from the other; the conclusion depends on the boundaries of the segment; at least five years and 20 regions are needed.",
+      "source": "384d7472e10456bd77ca001a86dd1d09f8c9e014"
+    },
+    "spatial": {
+      "title": "Spatial autocorrelation",
+      "summary": "The global Moran index shows whether neighbouring regions are alike; local indices (LISA) show where exactly clusters and outliers are.",
+      "formula": "I = (n / Σ Σ w_ij) · Σ Σ w_ij (x_i − x̄)(x_j − x̄) / Σ (x_i − x̄)²",
+      "body": "Neighbours are set by one of three schemes: a shared border together with bridges and sea links (the default), a land border only, or the five nearest regions by distance between centres. Under the land scheme Kaliningrad and Sakhalin oblasts have no neighbours and do not enter the calculation. The influence of the surroundings is the mean over the neighbours.\n\nSignificance is tested by permutations: values are dealt to regions at random 999 times, and the observed index is compared with the resulting distribution. The smallest attainable significance level is 0.001; reopening gives the same result.\n\nLimitations: the conclusion depends on the neighbourhood scheme; one that holds under all three is more reliable.",
+      "source": "04ea52409801176684fd8cf155cf15ce94cd382f"
+    },
+    "comparability-breaks": {
+      "title": "Comparability breaks",
+      "summary": "The year from which a series cannot be compared with earlier years is taken from Rosstat’s methodological notes and the footnotes of its tables; no change is calculated across such a year.",
+      "formula": "",
+      "body": "Rosstat accompanies series with notes: “from 2017 — by a new method”, “data up to and including 2020 are given without…”. One note often describes several changes, so on loading it is parsed part by part: for each part the kind of change (method, classifier, territorial composition, range of observed objects, price base) and the year from which the series loses comparability are determined. “From 2017” gives a mark on 2017, “up to and including 2020” and “from 2000 to 2020” on 2021, “for 2011–2021 without the census results” on 2022. In a list “2000–2018 — …; 2019, 2020 — …” a mark is set at the start of each next period; a range under the new classifier (“for 2013–2018 according to OKVED2”) is marked at its start. A recalculation of a series after a census and the term of a document (“state programme for 2012–2020”) do not set a break.\n\nA change in territorial composition — redrawing of federal districts, inclusion of Crimea, Chechnya or new regions in the total — changes only the district and country values: a region’s change across such a mark is calculated. This kind is set only from a part of a note that speaks directly about territories.\n\nA change in the composition of one region — an autonomous okrug joining a krai or oblast, the change of the Moscow and Moscow Oblast border, “before 2007 — including data for St Petersburg” — sets a mark for that region only: its change across the mark is not calculated, the changes of other regions are.\n\nGRP, GRP per capita and the GRP volume index are taken from Rosstat’s table “Gross regional product by constituent entities of the Russian Federation”. Their marks are set from the footnotes of this table by the same rules; notes of the compendium on the earlier values do not set marks.\n\nThe region profile, the indicator page and the tiles do not compare across a break: instead of a change they name the year when the counting rules changed. “Inequality” and “Convergence” calculate across a break too, but warn about it and offer the segment after it. A conditional link of a series to a Rosstat publication also sets a break.\n\nLimitations: a break is identified from the text of a note; if the source did not describe a change, there is no mark.",
+      "source": "120804904984e912b268f01a958125a7256827f6"
+    },
+    "map-classes": {
+      "title": "Scale classes on the map",
+      "summary": "A colour on the map stands for a class — a range of values; the way of dividing into classes is named in the legend and chosen on the workspace.",
+      "formula": "quantiles: about n / k regions in each of k classes;  equal intervals: step = (max − min) / k",
+      "body": "By default the regions are divided into five classes by quantiles: each holds about the same number of regions. On the workspace you can choose from three to seven classes and another method: equal intervals split the range into equal parts, natural breaks (Jenks) put the boundaries at gaps in the distribution, standard deviations count classes from the mean. A change between two years is shown on a diverging scale with zero in the middle. A region without a value is hatched.\n\nLimitations: with equal intervals a single outlying region pushes the others into the lowest class; the same colour means the same class, not the same value.",
+      "source": "2a1f7470cbc689d7504a85fc310cb8ec8a863a33"
+    },
+    "standing": {
+      "title": "“Better” and “worse”, and the core set",
+      "summary": "A region’s position is put into words from the share of regions with a worse value; only indicators of the core set, whose direction has been checked, are assessed.",
+      "formula": "share = number of regions with a worse value / (n − 1);  from 0.85 — among the best, up to 0.15 — among the worst",
+      "body": "For indicators where growth is good, the worse value is the lower one; for unemployment and the like, the higher one. From 0.85 — “among the best values”, from 0.6 — “better than in most regions”, from 0.4 to 0.6 — “in the middle of the list”, below that — “worse than in most”, up to 0.15 — “among the worst”. A region’s strengths and weaknesses are the indicators on which it is among the best or worst 15 %.\n\nOnly indicators of the core set are assessed: their direction has been checked by hand. For other series the site says “higher” and “lower”. Indicators without a clear direction (loan size, share of spending on housing and utilities) and absolute quantities (population, output) are not assessed: a place on them reflects the size of the region.",
+      "source": "6d03a833253bff5dcc4f67b99d487d62029f952c"
+    },
+    "five-year-change": {
+      "title": "Change over five years and comparison with the country",
+      "summary": "The value of the latest year is compared with the value exactly five years earlier; percentages in percentage points, money in real terms.",
+      "formula": "quantities of one sign: (x_t − x_(t−5)) / x_(t−5);  percentages: x_t − x_(t−5), pp;  with the country: x / x_RF",
+      "body": "Indicators in per cent change in percentage points, positive quantities in per cent, quantities that pass through zero as a difference. A rate “% of the previous year” is not compared over five years. Monetary indicators are compared in real terms, with the change in roubles in brackets.\n\nAgainst the country, percentages are compared as a difference in points, other quantities as a share, and from a one-and-a-half-fold difference as a multiple. The home page tiles show the change over the latest year.\n\nLimitations: if a comparability break lies between the years or there is no value from five years earlier, no change is given.",
+      "source": "c9c6eece62a379ae7c91bb39eae9c1a17bf3ea1c"
+    },
+    "similar-regions": {
+      "title": "Similar regions",
+      "summary": "The nearest regions by a combination of six key indicators brought to a standard form.",
+      "formula": "z = (x − x̄) / s;  distance d(A, B) = √Σ (z_A − z_B)²",
+      "body": "The indicators are GRP per capita, population, life expectancy, per capita incomes, the average wage and the share of the population with incomes below the poverty line, each for its latest complete year. Standardisation puts roubles and percentages on an equal footing; the six regions with the smallest distance are considered similar. The indicator with the largest difference is named next to each.\n\nLimitations: the distance serves for ordering, not for statements like “twice as close”; regions lacking one of the indicators are not compared; shared borders are not taken into account.",
+      "source": "1d38ad106210c2b015b596adf56171dbd57227af"
+    },
+    "series-status": {
+      "title": "Publication status of series",
+      "summary": "Series are marked with whether the source continues to publish them.",
+      "formula": "",
+      "body": "The site runs on the latest version of the dataset; new versions are loaded as they appear. Rosstat publishes part of its indicators after the last year of the dataset too — in the monthly bulletin for monitoring the regions and in the GRP table; these series continue (section “Continuing series from Rosstat publications”).\n\nRosstat has stopped publishing regional demography — births, deaths, population, life expectancy, migration: these series are marked as having no new values. Bank of Russia and Federal Tax Service series are updated with every release.",
+      "source": "b023d82375b29e5110006bf730ef64f8270c1687"
+    },
+    "real-terms": {
+      "title": "Monetary indicators in real terms",
+      "summary": "The change in monetary indicators is cleared of price growth: by Rosstat’s indices for wages, incomes, GRP, investment and retail, and by the consumer price index for the rest.",
+      "formula": "real-quantity index: R = Π (I_k / 100);  price index: R = (x_t / x_s) / Π (P_k / 100);  volume of the total: R = (x_t / x_s) · Π (V_k / 100) / (X_t / X_s)",
+      "body": "R is the ratio of the value in the final year t to the initial year s at constant prices; indices to the previous year are multiplied over the years after the initial one. For the wage and per capita incomes Rosstat’s real wage and real income indices are used. GRP, investment and retail turnover are recalculated by volume indices of the regional total X; for a per capita indicator the population correction is the ratio of the total to the per capita value. Median income and wage, spending and housing prices are recalculated by the regional consumer price index, December to December.\n\nIncome in fixed baskets in the region profile is per capita income and the average wage divided by the cost of the fixed basket of goods and services of the same year; it is a RegionLens calculation. Rosstat uses the term purchasing power for a different indicator — how many units of individual goods an income buys.\n\nLimitations: for annual averages the December-to-December index is an approximation; if the index is missing for at least one year, only the change in roubles is given.",
+      "source": "b6f1d98e91c3b2767fa05ca76c64bf079cb33c0d"
+    },
+    "sources": {
+      "title": "Continuing series from Rosstat publications",
+      "summary": "Series that Rosstat publishes after the last year of the dataset continue from its monthly bulletin and the GRP table; before that, the values are checked against the dataset for the years they share.",
+      "formula": "The link is full if |x_ed − x_set| ≤ tolerance for 90 % or more of “region × year” pairs over the three common years before the last year of the set; otherwise it is conditional, with a break at the junction.",
+      "body": "The annual value is taken from the publication if Rosstat publishes it: the total for January–December, the value for December or for the fourth quarter. If there is no annual value, RegionLens calculates it: average income is the mean of four quarters, the average wage the mean of twelve months. Per-resident values after the last year for which Rosstat published regional population are divided by the population of that year. Such values are marked “computed”.\n\nThe publication’s values for the three years it shares with the dataset are compared with the dataset region by region. The tolerance is 0.5 % for published totals, 1 % for per-resident values, 2 % for means of months and quarters and 0.15 pp for indices and shares. If at least 90 % of “region × year” pairs fall within tolerance, the link is full. If fewer, it is conditional: the series continues, but a break is set at the junction and no change is calculated across it.\n\nThe GRP table is a later edition of the same series and replaces the dataset’s values for all years; earlier ones are visible in “Revisions”. Values for the last year of an issue are marked “prelim.”. The result of the check for each series is on the “Data sources” page.",
+      "source": "dd1bec7cbdf04d05e35840fc5fdaac98c6a5031d"
+    },
+    "monthly": {
+      "title": "Monthly data: Bank of Russia, Federal Tax Service and Rosstat’s bulletin",
+      "summary": "Mortgages, loans and small business are RegionLens series from Bank of Russia and Federal Tax Service data; wages, prices, unemployment and industry are also shown by month.",
+      "formula": "change over a year = x(t) / x(t − 12 months) − 1 for levels and year-to-date sums; x(t) − x(t − 12 months) for shares, rates and indices",
+      "body": "The Bank of Russia publishes by region since 2019 lending and debt on mortgages and other loans to individuals and to small and medium-sized businesses; the Federal Tax Service SME register publishes the number of small and medium enterprises and their employees on the 10th of each month. From Rosstat’s bulletin, the average wage, the consumer price index, the industrial production index and the unemployment rate averaged over three months are shown by month.\n\nThe annual value of a RegionLens series is built from the months of one release: lending is the sum of twelve months, debt is taken on 1 January of the next year, term and rate are the mean of the months weighted by lending volume, the number of small and medium enterprises is taken from the register on 10 January of the next year. An incomplete year gets no annual value. Per-resident values are divided by the average annual population; after the last published year it stays unchanged.\n\nMonthly values are compared with the same period of the previous year. For suitability for comparison, five years of observations are enough for Bank of Russia and Federal Tax Service series.\n\nLimitations: the value for Russia in the SME register is the sum of the 85 regions of the reference list, while the Federal Tax Service total also includes entities that are not in the list.",
+      "source": "7545699208e9c42e361e955a8f9737d0306f162b"
+    }
+  },
+  "GlossaryTerm": {
+    "vrp": {
+      "term": "Gross regional product",
+      "short_definition": "The value of goods and services produced in a region during a year, less intermediate consumption.",
+      "definition": "The regional counterpart of gross domestic product. The sum of the GRP of all regions is smaller than the country’s GDP: it excludes the part of value added that cannot be attributed to a particular territory — defence, part of financial services, taxes on imports.\n\nComparisons mainly use GRP per capita. The data are published with a lag of about two years, so the last years of the series are usually empty.",
+      "synonyms": "GRP, ВРП",
+      "source": "38f703bee37806e054e78d530643d3e4aaa0e050"
+    },
+    "gini": {
+      "term": "Gini coefficient",
+      "short_definition": "A measure of the inequality of a distribution: 0 is full equality, 1 is maximum concentration.",
+      "definition": "It equals twice the area between the line of equal distribution and the Lorenz curve. On the site it is applied to the interregional distribution: it shows how unevenly the value of an indicator is spread among the regions.\n\nIt does not decompose into parts — the Theil index is used to decompose inequality by group.",
+      "synonyms": "Gini index, индекс Джини",
+      "source": "15a3507e7682e295210b980ecd9bd456596315c0"
+    },
+    "theil-index": {
+      "term": "Theil index",
+      "short_definition": "An entropy measure of inequality that decomposes into a between-group and a within-group part.",
+      "definition": "Unlike the Gini coefficient, it splits into parts: how much inequality falls on differences between federal districts and how much on differences between regions within one district.",
+      "synonyms": "Theil entropy, индекс Тейла",
+      "source": "7c258fd8bcb79f9209f1f36bcf5c3daa5574e7f1"
+    },
+    "sigma-convergence": {
+      "term": "Sigma convergence",
+      "short_definition": "A narrowing over time of the spread of an indicator between regions.",
+      "definition": "It is measured by the path of the coefficient of variation or of the standard deviation of logarithms. A falling curve means the regions are converging.\n\nIt does not follow from beta convergence: the laggards may grow faster while the spread widens under random shocks.",
+      "synonyms": "σ-convergence",
+      "source": "ca3346f1ce6c9db1e81ba1a1747e31f67ac9e214"
+    },
+    "beta-convergence": {
+      "term": "Beta convergence",
+      "short_definition": "A negative relation between the growth rate of an indicator and its initial level.",
+      "definition": "It is estimated by regressing the average annual growth rate on the logarithm of the value in the first year. A negative coefficient means that regions starting from a low level grow faster. Absolute convergence assumes a single equilibrium for all territories, conditional convergence an equilibrium of its own for each federal district.",
+      "synonyms": "β-convergence, conditional convergence, absolute convergence",
+      "source": "54c6ab4e10b85530498358f7026236ef15bf3a23"
+    },
+    "moran-index": {
+      "term": "Moran index",
+      "short_definition": "A measure of spatial autocorrelation: whether neighbouring territories resemble each other on an indicator.",
+      "definition": "It takes values roughly from −1 to 1. A positive value means spatial clusters of similar magnitudes, a negative one a “chequerboard” arrangement, a value near zero a random layout.\n\nIt depends on who counts as a neighbour: a common border, a border together with bridges and sea links, or the five nearest by distance give different results.",
+      "synonyms": "Moran’s I, индекс Морана",
+      "source": "85cb05ff328f286c81324712ecfa7a987f6d2dbc"
+    },
+    "series": {
+      "term": "Series",
+      "short_definition": "The pair “indicator + breakdown” — the unit of analysis on the site.",
+      "definition": "One and the same indicator is published in several breakdowns: “total”, “urban population”, “rural population”. Values from different breakdowns cannot be compared with one another, so the unit of analysis is the series. Besides the series of the dataset, RegionLens builds series from Bank of Russia and Federal Tax Service data.\n\nSeries covering at least 80 % of the regions and at least 10 years (5 years for Bank of Russia and Federal Tax Service series) are marked as suitable for comparative analysis.",
+      "synonyms": "time series, indicator breakdown",
+      "source": "619e4425e68870d1f451811ff664d8e3bd0e4d49"
+    },
+    "revision": {
+      "term": "Statistical revision",
+      "short_definition": "A change to a previously published value in a later edition.",
+      "definition": "The reasons for a revision are refinements of methodology, incoming reporting and recalculation after a census. A repetition of a value without a change is not counted as a revision.\n\nEvery version of a value is kept, so it is possible to see how the estimate changed over time. The value from the latest issue is taken as current.",
+      "synonyms": "revision, refinement of data",
+      "source": "196be38d04dfb3f7702f0fdaf1fbb3e3f709dd7c"
+    },
+    "comparability-break": {
+      "term": "Comparability break",
+      "short_definition": "The year from which the values of a series are no longer comparable with earlier ones.",
+      "definition": "It arises when the calculation methodology, the borders of the territory or the composition of the observed objects change. Breaks are extracted from the methodological notes of the source and marked on the charts so that a jump is not read as a change in the region. In the passport and on the tiles a change over a period that contains a break is not calculated; in the analysis tools it comes with a warning.",
+      "synonyms": "series break, разрыв ряда",
+      "source": "04f0726d29f98a8a5e885559f2f9793cd9b89ae0"
+    },
+    "hidden-value": {
+      "term": "Withheld value",
+      "short_definition": "A value not published by the source for reasons of confidentiality (code −77777777).",
+      "definition": "It differs from an absence of data (−99999999) in its reason: the data were collected but not disclosed — usually because the region has too few observed objects and the value would reveal the figure for a particular organisation.\n\nBoth marks are converted into an empty value, but the reason is kept and shown in the interface. In the Inequality tool the bounds of the measures are shown for a year with withheld values.",
+      "synonyms": "confidential value",
+      "source": "654ce239fffe95136e040b2d21cba1f72493b9fc"
+    },
+    "polarity": {
+      "term": "Direction of an indicator",
+      "short_definition": "Whether growth of the value counts as an improvement.",
+      "definition": "For life expectancy growth is good, for the poverty rate it is not. The direction drives the “better / worse” assessments and a region’s place in its profile, and in a composite index it reverses the scale of indicators where less is better. The map colour and the ranking on the workspace show magnitude: the place there is counted from the largest value. For the core set the direction has been checked by a person, for other series it is guessed from the wording; in an index it can be changed.",
+      "synonyms": "polarity, направленность",
+      "source": "209f4c2d958db732a792d9eec2a5837ebcfec1eb"
+    },
+    "composite-index": {
+      "term": "Composite index",
+      "short_definition": "A summary score assembled from several indicators by normalisation, weighting and aggregation.",
+      "definition": "Three decisions determine the result: the normalisation method, the way the weights are set and the aggregation scheme. Changing any of them changes the order of the regions, so the ranking is shown together with how stable the places are under different combinations.",
+      "synonyms": "composite indicator, сводный индекс",
+      "source": "61cb3be9f41f92dc7174c87a980185ca3bd4e25a"
+    },
+    "oktmo": {
+      "term": "OKTMO",
+      "short_definition": "The Russian Classification of Territories of Municipal Formations.",
+      "definition": "In the source set the OKTMO code is unusable as a territory key: for all federal districts and for the country it equals 00000000, and Arkhangelsk Oblast together with its autonomous okrug carries two different codes. RegionLens therefore uses its own territory reference list with ISO 3166-2:RU codes.",
+      "synonyms": "OKTMO code, код ОКТМО",
+      "source": "7acbd4324e0a90bf23c9356d4be4cc4d260ca922"
+    },
+    "per-capita": {
+      "term": "Per capita indicator",
+      "short_definition": "A quantity related to the population or another base: per person, per 1,000 residents, in per cent.",
+      "definition": "Only such indicators can be compared between regions of different size: Moscow and the Nenets Autonomous Okrug differ in population by a factor of hundreds, and the volume of GRP or the number of hospitals mostly reflects that. GRP per capita or doctors per 10,000 residents are comparable.\n\nAn indicator not related to the population is called absolute and is marked “abs.” in the series picker: a place on it speaks of the region’s size. Absolute quantities are not assessed as better or worse and are not compared with the country — for the country it is a sum, not an average.",
+      "synonyms": "relative indicator, per head, absolute indicator, abs., душевой показатель",
+      "source": "e107e6acc9ff1b4debe46f3b838176d38e349db0"
+    },
+    "poverty-line": {
+      "term": "Poverty line",
+      "short_definition": "The money income per person below which a resident counts as poor.",
+      "definition": "Until 2021 this role was played by the subsistence minimum, calculated from the cost of a consumer basket. Since 2021 the subsistence minimum is set from median income, and Rosstat measures poverty against the poverty line. The method of calculation also changed in 2013, so comparability breaks are marked in the series of the share of the population with incomes below the poverty line.",
+      "synonyms": "subsistence minimum, poverty rate, граница бедности, прожиточный минимум",
+      "source": "c3d0a2d27810bd39888d09cfad7593c94de95c6d"
+    },
+    "atkinson-index": {
+      "term": "Atkinson index",
+      "short_definition": "A measure of inequality in which the researcher decides how much the shortfall of the lower part matters.",
+      "definition": "It shows what share of the total quantity could be given up if the remainder were distributed equally without loss of overall welfare. The inequality aversion parameter ε is set on the page (0.5 by default): the larger it is, the more strongly the index responds to lagging regions. It is defined only for positive values.",
+      "synonyms": "индекс Аткинсона",
+      "source": "b083738a56e942f5f01ae9b3eca63a755e9d5037"
+    },
+    "coefficient-of-variation": {
+      "term": "Coefficient of variation",
+      "short_definition": "The standard deviation divided by the mean: spread as a share of the average level.",
+      "definition": "The simplest measure of differences between regions. It is dimensionless and therefore comparable between indicators in different units. It is undefined when the mean is zero or negative.",
+      "synonyms": "CV, коэффициент вариации",
+      "source": "7458d1eebcb0a80d8041454179084897bc33c01c"
+    },
+    "decile-ratio": {
+      "term": "Decile ratio",
+      "short_definition": "The ninth decile divided by the first: how many times the threshold of the top 10% of regions exceeds that of the bottom 10%.",
+      "definition": "It needs no preparation to read and is therefore often quoted, but it rests on just two points of the distribution and misses changes between them. It is not calculated if the first decile is zero or negative.",
+      "synonyms": "P90/P10, децильный коэффициент",
+      "source": "954a19d7f3a1ee7e00d7c1422c174586ff48d4a7"
+    },
+    "lorenz-curve": {
+      "term": "Lorenz curve",
+      "short_definition": "A plot of the cumulative share of a quantity against the cumulative share of regions ordered from the lowest value to the highest.",
+      "definition": "Under complete equality the curve coincides with the diagonal; the more it sags, the greater the inequality. Twice the area between the diagonal and the curve is the Gini coefficient. When weighted by population, the horizontal axis shows the cumulative share of residents.",
+      "synonyms": "кривая Лоренца",
+      "source": "efade25b76ba7d4d4f4a06c927775d3bc7768343"
+    },
+    "quantile": {
+      "term": "Quantile",
+      "short_definition": "A value that splits ordered values in a given proportion.",
+      "definition": "Quartiles split regions into four parts of equal size, deciles into ten; the median is the quantile that splits them in half. By default the map splits regions into five classes by quantiles: each class holds roughly the same number of regions.",
+      "synonyms": "quartile, decile, quintile, квантиль",
+      "source": "b3ec25b82f2283fecf9f17dec00c96f8730d6ed4"
+    },
+    "median": {
+      "term": "Median",
+      "short_definition": "The value with half of the regions above it and half below; in the interface — “middle of the regions”.",
+      "definition": "Unlike the mean, the median is not shifted by one outstanding region. The value for Russia of a per capita indicator is calculated for the country as a whole and leans towards the large regions, which is why the workspace shows the median — the level of a typical region — next to it.",
+      "synonyms": "middle of the regions, медиана",
+      "source": "6bcaf45309f9c0e8fdffcd708bc9588177c9c144"
+    },
+    "interquartile-range": {
+      "term": "Interquartile range",
+      "short_definition": "The difference between the third and first quartiles: the width of the band holding the middle half of the regions.",
+      "definition": "On charts of an indicator over time the shaded band is the corridor between the first and third quartiles: half of the country’s constituent entities lie inside it. A region’s line inside the corridor means a typical level, above or below it — an outstanding one. The range also measures spread in robust normalisation: outliers do not affect it.",
+      "synonyms": "IQR, corridor, межквартильный размах",
+      "source": "c9304dcf4eebf73d5ab719011227a46d7db30069"
+    },
+    "percentage-point": {
+      "term": "Percentage point",
+      "short_definition": "The difference between two quantities expressed in per cent.",
+      "definition": "If unemployment fell from 5% to 4%, it fell by 1 percentage point (pp), but by 20% of its former level. To keep these statements apart, changes and comparisons with the country for indicators in per cent are always given in percentage points on the site.",
+      "synonyms": "pp, процентный пункт",
+      "source": "5de8804eb6ff3cef7f29710492f61c5604fe69b8"
+    },
+    "correlation-coefficient": {
+      "term": "Correlation coefficient",
+      "short_definition": "A measure of the relation between two indicators from −1 (inverse) to 1 (direct); 0 means no relation.",
+      "definition": "The Pearson coefficient measures a linear relation between the values themselves and is sensitive to outliers. The Spearman coefficient is a relation between ranks: it captures any monotonic relation and resists outstanding regions, which is why it is the default. The Kendall coefficient measures the agreement in the order of pairs of regions and is more reliable on small samples.\n\nA relation does not mean a cause: two indicators may move together because both follow a third — most often the size and level of development of the region.",
+      "synonyms": "Pearson, Spearman, Kendall, rank correlation, коэффициент корреляции",
+      "source": "393e0a10f25d897510e596d2996ca62ff3d86b7c"
+    },
+    "significance-level": {
+      "term": "Significance level",
+      "short_definition": "The probability of obtaining an equally strong or stronger relation by chance if in fact there is none; denoted p.",
+      "definition": "A relation is considered confirmed at p < 0.05. When many pairs are tested at once, some pass this threshold by chance, so in the correlation matrix the level is adjusted with the Benjamini–Hochberg correction for multiple comparisons, and the adjusted value decides significance.\n\nValues below 0.001 are shown as “< 0.001”: a significance level is never zero.",
+      "synonyms": "p-value, multiple comparisons correction, Benjamini–Hochberg, уровень значимости",
+      "source": "21b80d67f8800464754ae2c19b03f84a4e13aef5"
+    },
+    "lisa": {
+      "term": "LISA",
+      "short_definition": "A local indicator of spatial association calculated for each region.",
+      "definition": "It assigns a region to one of four types: “high among high” and “low among low” are spatial clusters; “high among low” and “low among high” are spatial outliers, regions that stand out from their surroundings. The type is named only where the relation is significant by the permutation test.",
+      "synonyms": "local Moran, Local Indicators of Spatial Association",
+      "source": "348f469bdd368116c0caeafa40579d113bc702d7"
+    },
+    "partial-correlation": {
+      "term": "Partial correlation",
+      "short_definition": "The relation of two indicators with the influence of the other selected ones removed.",
+      "definition": "If the coefficient drops markedly compared with the pairwise one, the relation was largely explained by third indicators — most often population size or the level of development of the region. Only regions with data on all selected series enter the calculation.",
+      "synonyms": "частная корреляция",
+      "source": "3a01881bfb578f4fe96438eba40060051ee223e2"
+    },
+    "normalization": {
+      "term": "Normalisation",
+      "short_definition": "Bringing indicators in different units to a common scale from 0 to 100.",
+      "definition": "It is needed before indicators are combined into a composite index: roubles, per cent and years cannot be added. There are five methods — min-max, z-score, robust, rank and logarithmic — and the choice affects the final ranking: with rank normalisation outliers have no effect at all, with min-max one outstanding region squeezes the others into a narrow band.",
+      "synonyms": "normalization, scaling, standardisation, нормализация",
+      "source": "c483761c03d3a524e74144dfb29403a3e46bf3d6"
+    },
+    "topsis": {
+      "term": "TOPSIS",
+      "short_definition": "An aggregation method: a region is scored by its closeness to the best combination of indicators and its distance from the worst.",
+      "definition": "The name stands for Technique for Order of Preference by Similarity to Ideal Solution. The best and worst combinations are made up of the extreme values on each indicator; the score is the distance to the worst as a share of the two distances, from 0 to 100. Unlike additive aggregation it takes the region’s profile into account, not only its overall level.",
+      "synonyms": "ideal solution method",
+      "source": "dca404f6cb92e8092a68ac220323ef2dea4d45eb"
+    },
+    "edition": {
+      "term": "Edition of a statistical yearbook",
+      "short_definition": "A Rosstat publication for a particular year, for example “Healthcare in Russia. 2023”.",
+      "definition": "The dataset was assembled from editions of Rosstat publications for 2022–2025. The same value for a year is printed in several editions and may differ between them — that is a revision. The value from the latest edition is the current one; earlier versions are kept and shown in the revision analysis. Releases of Rosstat’s bulletin and GRP table that continue the series, and snapshots of the Bank of Russia data service, are editions too.",
+      "synonyms": "edition, publication, yearbook, выпуск сборника",
+      "source": "eaeafc4e1cc8fe207777d718603774f45e7edfec"
+    },
+    "okato": {
+      "term": "OKATO",
+      "short_definition": "The Russian Classification of Objects of Administrative-Territorial Division.",
+      "definition": "The code of a constituent entity has eight digits, of which the first two are significant: 45000000 is Moscow, 92000000 is Tatarstan. It is shown in the region profile next to the ISO code. A transition from OKATO to OKTMO mentioned in a source note is marked as a change of classifier.",
+      "synonyms": "OKATO code, код ОКАТО",
+      "source": "4fdce5a0941d81fa268d4873ae656f22b3c7cd46"
+    },
+    "featured-set": {
+      "term": "Core set of indicators",
+      "short_definition": "Indicators in twelve topics by which a region is described in plain language.",
+      "definition": "The set was selected by hand from the series of the Rosstat dataset and the Bank of Russia and Federal Tax Service series: a few key indicators for each topic — population, health, income and spending, work, economy, small business, housing, credit, education and culture, roads and communications, nature, prices. Each has a checked direction (whether growth counts as an improvement), a short name and a unit.\n\nOnly these indicators receive “better / worse” assessments, feed a region’s strengths and weaknesses and the conclusions of the region profile. All other series are available in the full list and in the analysis tools.",
+      "synonyms": "core indicators, основной набор",
+      "source": "d9a35a11cc3059857f73dae5bb440e93ed74266d"
+    },
+    "map-class": {
+      "term": "Scale class",
+      "short_definition": "A range of values painted in one colour on the map.",
+      "definition": "The colour of a region on a choropleth map stands not for the value itself but for the class it falls into. Class boundaries are labelled in the legend together with the classification method: quantiles, equal intervals, natural breaks or standard deviations. The picture depends on the method: the same data look different with quantiles and with equal intervals.",
+      "synonyms": "choropleth class, класс шкалы",
+      "source": "b9ee9e87fb477662900eb6052612aa7e814321f4"
+    },
+    "constant-composition": {
+      "term": "Constant composition",
+      "short_definition": "Constituent entities that have values in every year of the chosen period.",
+      "definition": "The dynamics of inequality and spread measures are computed on a constant composition: otherwise the entry of new constituent entities into a series would change the measures by itself. Those outside the constant composition are listed next to the result, and the “all constituent entities” switch returns the calculation over all of them each year.",
+      "synonyms": "balanced panel, постоянный состав",
+      "source": "ff93ac6551eb52dfc2390b16c5300e63240f3d59"
+    },
+    "hidden-bounds": {
+      "term": "Bounds under withheld values",
+      "short_definition": "The smallest and largest value of a measure for any withheld values within the observed range.",
+      "definition": "Manski’s approach to partially observed data: besides the estimate over the observed constituent entities, the interval containing the measure for any admissible withheld values is shown. Its width shows how much the conclusion depends on what the source did not disclose.",
+      "synonyms": "Manski bounds, границы Манского",
+      "source": "d2eb88228a08de04dcf08af7ae643b3f0980f6ca"
+    },
+    "publication-status": {
+      "term": "Publication status",
+      "short_definition": "Whether the source continues to publish a series.",
+      "definition": "Marked for the series about which this is known: the series is updated with values of a Rosstat publication (which one and from which year), publication continues (and where) or has stopped (since which year). Rosstat has stopped publishing regional demographic data, and the values of these series will no longer be updated. Bank of Russia and Federal Tax Service series are updated with every release of these sources.",
+      "synonyms": "discontinued series, состояние публикации",
+      "source": "ff41d71b8e6372321eae63b4a58e600a2af13f96"
+    },
+    "real-terms": {
+      "term": "Real terms",
+      "short_definition": "A quantity at constant prices, adjusted for price growth.",
+      "definition": "A change in a monetary indicator in real terms shows how the quantity itself changed, without inflation. It is computed by the indices of real wages and incomes, the physical volume of GRP, investment and trade, or by the consumer price index.",
+      "synonyms": "constant prices, deflation, реальное выражение",
+      "source": "d6b797024d8e36313229a72aab5d900632c6141e"
+    },
+    "volume-index": {
+      "term": "Physical volume index",
+      "short_definition": "The change in a quantity at constant prices against the previous year, in per cent.",
+      "definition": "Rosstat computes it for GRP, investment, retail trade and services: the value of the current year is converted into the prices of the previous one. The product of the indices over several years gives the real change over the period.",
+      "synonyms": "volume index, индекс физического объёма",
+      "source": "d5c8e35d81e742a6925cd390460942fe0600c1bb"
+    },
+    "fixed-basket": {
+      "term": "Fixed basket of goods and services",
+      "short_definition": "A basket of consumer goods and services, the same for all regions; Rosstat compares prices between regions by its cost.",
+      "definition": "The region profile divides per capita income and the average wage of the same year by the cost of the basket — this is income in fixed baskets, a RegionLens calculation. Rosstat uses the term purchasing power for a different indicator — how many units of individual goods an income buys.",
+      "synonyms": "fixed basket cost, income in fixed baskets, фиксированный набор",
+      "source": "adf814d75305647ff4173ceeb06274a3757116d4"
+    },
+    "series-splice": {
+      "term": "Series splice",
+      "short_definition": "Continuing a dataset series with another publication’s values after checking the shared years.",
+      "definition": "The publication’s values for the three shared years before the dataset’s last year are compared with the dataset region by region. If at least 90% of region-year pairs are within the tolerance, the splice is full; otherwise it is conditional: the series continues, but a comparability break stands at the junction, and change across it is not computed.",
+      "synonyms": "conditional splice, full splice, source junction, series continuation",
+      "source": "341b3bda2ee7ca3a7c9b856a0efafb3a013ca6d8"
+    },
+    "preliminary-value": {
+      "term": "Preliminary value",
+      "short_definition": "A value the source will still revise: the “prelim.” mark.",
+      "definition": "Marked this way are values a Rosstat release calls preliminary or an estimate, and the values of a release’s last complete year. A later release replaces them with revised ones, and the change is shown in “Revisions”.",
+      "synonyms": "prelim., estimate, operational data",
+      "source": "8526efbb54b69b9d9b5caf815396aae80769aeb9"
+    },
+    "frozen-denominator": {
+      "term": "Frozen denominator",
+      "short_definition": "The population of the last published year used for per-resident values of later years.",
+      "definition": "Rosstat publishes regional population with a delay. Per-resident values for later years are divided by the population of the last published year: investment, retail turnover and housing completions by the one Rosstat used for the total, Bank of Russia and Federal Tax Service series by the average annual population Rosstat uses for GRP per capita. Population change after that year is not taken into account; the value is marked as computed.",
+      "synonyms": "denominator, population of the last year",
+      "source": "58eb535dde38c066434ad595f07b23ae07a8864c"
+    },
+    "year-to-date": {
+      "term": "Year to date",
+      "short_definition": "A sum or index from the start of the year to the reporting month: “January–July”.",
+      "definition": "The value for the period from January to the reporting month inclusive. Lending is compared year to date with the same period a year earlier because single months fluctuate with the seasons. The consumer price index relative to the previous December is also cumulative: it shows price growth since the start of the year.",
+      "synonyms": "since the start of the year, YTD",
+      "source": "961b913cef03cd000a1a691b40995fc857a06905"
+    },
+    "same-period": {
+      "term": "Same period a year earlier",
+      "short_definition": "Comparison with the same month or the same part of the year one year before.",
+      "definition": "Monthly values are compared this way because a month and the same month a year earlier share the same seasonal swings. Levels and sums are compared as a percentage, shares, rates and indices as a difference in points.",
+      "synonyms": "year on year, YoY",
+      "source": "9dff5dd4a87feef2a53f26cd09eed2c5ed27aae7"
+    },
+    "sme-register": {
+      "term": "SME register",
+      "short_definition": "The Federal Tax Service’s unified register of small and medium-sized businesses.",
+      "definition": "The Federal Tax Service keeps the register from tax reporting and updates it on the 10th of each month. It includes organisations and sole proprietors that meet the conditions on headcount and income. From the register, RegionLens shows the number of small and medium-sized businesses and their employees in a region and per 1,000 residents.",
+      "synonyms": "unified SME register, small and medium-sized businesses",
+      "source": "4929ebc3117f0910884a04baacf3bd7e28e2962c"
+    },
+    "overdue-debt": {
+      "term": "Overdue debt",
+      "short_definition": "The part of loan debt not repaid on time.",
+      "definition": "The Bank of Russia publishes it together with all loan debt at the start of the month. The overdue share is its ratio to all debt: how much of the region’s borrowers’ debt is not serviced on time.",
+      "synonyms": "arrears, overdue share",
+      "source": "2e09d162f926013f7cb6adb52894a8fa82d112bf"
+    }
+  }
+}

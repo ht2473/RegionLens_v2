@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+{% load i18n static formatting workspace exports accounts %}
+
+{% comment %}
+  Паспорт территории: где это и главное, плитки, сильные и слабые стороны, основной набор
+  по темам, динамика, похожие регионы и сведения о данных.
+{% endcomment %}
+
+{% block meta_description %}{% blocktranslate trimmed with name=territory.name %}{{ name }}: ключевые социально-экономические показатели, позиции в рейтингах регионов, динамика и полнота данных.{% endblocktranslate %}{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/passport.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page passport">
+
+  {# --- Шапка: где это и главное ------------------------------------------------------- #}
+  <header class="passport-head">
+    <div class="passport-head__text">
+      <p class="passport-head__kicker">
+        {% if territory.parent %}{{ territory.parent.name }}{% endif %}
+        {% if territory.capital %} · {% translate "центр" %}: {{ territory.capital }}{% endif %}
+        {% if territory.area_km2 %} · {{ territory.area_km2|ru_number:0 }} {% translate "км²" %}{% endif %}
+        {% if territory.utc_offset %} · UTC+{{ territory.utc_offset }}{% endif %}
+      </p>
+      <h1 class="passport-head__title">{{ territory.name }}</h1>
+
+      {% if warehouse_ready and passport.positions %}
+        {# Главное словами — из тех же чисел, что ниже. #}
+        <ul class="passport-head__lead" aria-label="{% translate 'Главное' %}">
+          {% for line in passport.summary %}<li>{{ line }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+
+      <div class="passport-head__actions">
+        {% if territory.is_region and not territory.is_aggregate %}{% my_region_button territory %}{% endif %}
+        {% favorite_button "territory" territory.code %}
+        {% export_button "territory" territory=territory.code title=territory.name %}
+        <a class="button button--secondary button--sm"
+           href="{% url 'compare:index' %}?territory={{ territory.code }}">
+          <svg aria-hidden="true"><use href="#icon-compare"></use></svg>
+          {% translate "Сравнить" %}
+        </a>
+        <a class="button button--secondary button--sm"
+           href="{% url 'maps:choropleth' %}?territory={{ territory.code }}">
+          <svg aria-hidden="true"><use href="#icon-map"></use></svg>
+          {% translate "На карте" %}
+        </a>
+      </div>
+    </div>
+
+    {% if locator %}
+      <figure class="passport-head__locator">
+        {% include "maps/partials/_geo_map.html" with geo_map=locator geo_caption=territory.name plain=True %}
+        <figcaption>{% translate "Соседние регионы — ссылки на их паспорта." %}</figcaption>
+      </figure>
+    {% endif %}
+  </header>
+
+  {% if territory.note_ru %}
+    <div class="callout callout--info passport__notice">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Особенности учёта" %}</div>
+        <p>{{ territory.note }}</p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if not warehouse_ready %}
+    <div class="callout callout--warning passport__notice">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Данные ещё не загружены" %}</div>
+        <p>{% translate "Страница заработает, когда администратор загрузит набор данных." %}</p>
+      </div>
+    </div>
+  {% else %}
+
+  {# --- Оглавление паспорта: закреплено под шапкой, текущий раздел отмечает ui/toc.js --- #}
+  <nav class="toc-pills passport__toc" data-toc aria-label="{% translate 'Разделы паспорта' %}">
+    <ul>
+      {% if now %}<li><a href="#passport-now">{% translate "Что сейчас" %}</a></li>{% endif %}
+      {% if metrics %}<li><a href="#passport-metrics">{% translate "Главные показатели" %}</a></li>{% endif %}
+      {% if passport.positions %}
+        <li><a href="#passport-sides">{% translate "Сильные и слабые" %}</a></li>
+        <li><a href="#passport-all">{% translate "Все показатели" %}</a></li>
+      {% endif %}
+      <li><a href="#passport-timeline">{% translate "Динамика" %}</a></li>
+      <li><a href="#passport-similar">{% translate "Похожие регионы" %}</a></li>
+      <li><a href="#passport-facts">{% translate "Соседи и данные" %}</a></li>
+    </ul>
+  </nav>
+
+  {# --- Что сейчас: последние месяцы -------------------------------------------------------- #}
+  {% if now %}
+    <section class="page-section" aria-labelledby="passport-now">
+      <div class="page-section__head">
+        <h2 class="page-section__title toc-target" id="passport-now">{% translate "Что сейчас" %}</h2>
+        <p class="page-section__note">{% translate "Последние месяцы и изменение к тому же периоду прошлого года" %}</p>
+      </div>
+      {% include "catalog/partials/_now_grid.html" with rows=now %}
+    </section>
+  {% endif %}
+
+  {# --- Главные показатели ------------------------------------------------------------- #}
+  {% if metrics %}
+    <section class="page-section" aria-labelledby="passport-metrics">
+      <div class="page-section__head">
+        <h2 class="page-section__title toc-target" id="passport-metrics">{% translate "Главные показатели" %}</h2>
+        <p class="page-section__note">{% translate "Значение, место среди регионов и ход за двенадцать лет" %}</p>
+      </div>
+      <ul class="stat-grid">
+        {% for metric in metrics %}
+          {% with position=metric.position %}
+            <li class="stat-tile">
+              <a class="stat-tile__title"
+                 href="{% url 'rankings:index' %}?series={{ metric.series.key }}&amp;territory={{ territory.code }}">{{ metric.series.short_title }}</a>
+              <p class="stat-tile__value">
+                <span class="numeric">{{ metric.current.value|ru_number:metric.series.precision }}</span>
+                <span class="stat-tile__unit">{{ metric.series.unit_label }}, {{ metric.current.year|year }}</span>{% include "catalog/partials/_origin_mark.html" with origin=position.origin %}
+              </p>
+              {% if position.status.is_discontinued %}
+                <p class="stat-tile__stopped" title="{{ position.status.detail }}">{{ position.status.label|capfirst }}</p>
+              {% endif %}
+              {% if position %}
+                {% include "catalog/partials/_rank_strip.html" with ends=True %}
+                <p class="stat-tile__facts">
+                  <span class="verdict verdict--{{ position.tone }}">{{ position.standing|capfirst }}</span>
+                  <span>{{ position.place_text }}</span>
+                  {% if position.versus_country %}<span>{{ position.versus_country|capfirst }}</span>{% endif %}
+                  {% if position.trend %}
+                    <span class="verdict verdict--{{ position.trend_tone }} stat-tile__trend">{{ position.trend|capfirst }}</span>
+                  {% endif %}
+                </p>
+              {% endif %}
+              <div class="stat-tile__foot">
+                {% if metric.spark %}
+                  <svg class="sparkline" viewBox="0 0 {{ metric.spark.width }} {{ metric.spark.height }}"
+                       preserveAspectRatio="none" aria-hidden="true">
+                    <path class="sparkline__line" d="{{ metric.spark.path }}"></path>
+                    <path class="sparkline__end" d="M{{ metric.spark.end_x }} {{ metric.spark.end_y }}h0"></path>
+                  </svg>
+                {% endif %}
+              </div>
+            </li>
+          {% endwith %}
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  {% if passport.positions %}
+    {# --- Сильные и слабые стороны ------------------------------------------------------- #}
+    <section class="page-section" aria-labelledby="passport-sides">
+      <div class="page-section__head">
+        <h2 class="page-section__title toc-target" id="passport-sides">{% translate "Сильные и слабые стороны" %}</h2>
+        <p class="page-section__note">{% translate "Показатели, по которым регион в числе 15 % лучших или худших" %}</p>
+      </div>
+
+      <div class="sides">
+        {% for column in passport_columns %}
+          <div class="sides__column sides__column--{{ column.modifier }}">
+            <h3 class="sides__title">
+              {{ column.title }}
+              <span class="sides__count numeric">{{ column.count }}</span>
+            </h3>
+            {% if column.items %}
+              {# Лишние пункты прячет static/js/ui/more.js, кнопка «Ещё N» — после перечня. #}
+              <ol class="sides__list" id="sides-{{ column.modifier }}" data-more-list>
+                {% for position in column.items %}
+                  {% include "catalog/partials/_side_item.html" %}
+                {% endfor %}
+                {% for position in column.more %}
+                  {% include "catalog/partials/_side_item.html" with more=True %}
+                {% endfor %}
+              </ol>
+              {% if column.more %}
+                {% blocktranslate trimmed asvar more_label with count=column.more|length %}
+                  Ещё {{ count }}
+                {% endblocktranslate %}
+                <button type="button" class="sides__more" data-more-toggle
+                        aria-controls="sides-{{ column.modifier }}" aria-expanded="true" hidden
+                        data-more-label="{{ more_label }}"
+                        data-less-label="{% translate 'Свернуть' %}">{{ more_label }}</button>
+              {% endif %}
+            {% else %}
+              <p class="sides__empty">{{ column.empty }}</p>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+
+      <p class="page-section__footnote">
+        {% blocktranslate trimmed %}
+          Оценка учитывает направленность показателя: у безработицы, бедности и смертности
+          лучшим считается низкое значение. Показатели без однозначной оценки (доля горожан,
+          цены на жильё) и величины, зависящие от размера региона (численность, объём ВРП,
+          выбросы), в оценку не входят.
+        {% endblocktranslate %}
+      </p>
+    </section>
+
+    {# --- Основной набор по темам -------------------------------------------------------- #}
+    <section class="page-section" aria-labelledby="passport-all">
+      <div class="page-section__head">
+        <h2 class="page-section__title toc-target" id="passport-all">{% translate "Все основные показатели" %}</h2>
+        <p class="page-section__note">
+          {% blocktranslate trimmed with count=passport.positions|length %}
+            {{ count }} показателей по темам; место — среди регионов, первое — лучшее
+          {% endblocktranslate %}
+          <button type="button" class="facts-table__all" data-fold-all aria-controls="passport-facts-table"
+                  aria-expanded="false" hidden
+                  data-open-label="{% translate 'Развернуть все' %}"
+                  data-close-label="{% translate 'Свернуть все' %}">{% translate "Развернуть все" %}</button>
+        </p>
+      </div>
+
+      <nav class="theme-index" aria-label="{% translate 'Темы' %}">
+        <ul>
+          {% for block in passport.themes %}
+            <li><a href="#theme-{{ block.theme.slug }}">{{ block.theme.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </nav>
+
+      <table class="facts-table" id="passport-facts-table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Показатель" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Значение" %}</th>
+            <th scope="col">{% translate "Положение среди регионов" %}</th>
+            <th scope="col">{% translate "С Россией" %}</th>
+            <th scope="col">{% translate "За пять лет" %}</th>
+          </tr>
+        </thead>
+        {# Темы свёрнуты (static/js/ui/fold.js): строки не обернуть в details, поэтому #}
+        {# переключатель — кнопка в заголовке; без сценариев таблица видна целиком.    #}
+        {% for block in passport.themes %}
+          <tbody class="toc-target" id="theme-{{ block.theme.slug }}" data-fold>
+            <tr class="facts-table__theme">
+              <th scope="rowgroup" colspan="5">
+                <span class="facts-table__theme-name">{{ block.theme.title }}</span>
+                <button type="button" class="facts-table__toggle" data-fold-toggle hidden
+                        aria-expanded="true">
+                  <span class="facts-table__toggle-name">{{ block.theme.title }}</span>
+                  <span class="facts-table__verdicts">
+                    <span>{% translate "показателей" %}: <b class="numeric">{{ block.positions|length }}</b></span>
+                    {% if block.better %}<span class="facts-table__verdict--good">{% translate "лучше большинства" %}: <b class="numeric">{{ block.better }}</b></span>{% endif %}
+                    {% if block.worse %}<span class="facts-table__verdict--bad">{% translate "хуже" %}: <b class="numeric">{{ block.worse }}</b></span>{% endif %}
+                  </span>
+                  <svg class="fold__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
+                </button>
+              </th>
+            </tr>
+            {% for position in block.positions %}
+              <tr>
+                <th scope="row" class="facts-table__title">
+                  <a href="{% url 'rankings:index' %}?series={{ position.series.key }}&amp;year={{ position.year }}&amp;territory={{ territory.code }}">{{ position.series.short_title }}</a>
+                </th>
+                <td class="facts-table__value">
+                  <span class="numeric">{{ position.value|ru_number:position.series.precision }}</span>
+                  <span class="facts-table__unit">{{ position.series.unit_label }}, {{ position.year|year }}</span>{% include "catalog/partials/_origin_mark.html" with origin=position.origin %}
+                  {% if position.status.is_discontinued %}
+                    <span class="facts-table__stopped" title="{{ position.status.detail }}">{{ position.status.label }}</span>
+                  {% endif %}
+                </td>
+                <td class="facts-table__standing">
+                  <div class="facts-table__position">
+                    {% include "catalog/partials/_rank_strip.html" %}
+                    <p>
+                      <span class="verdict verdict--{{ position.tone }}">{{ position.standing|capfirst }}</span>
+                      <span class="facts-table__place">{{ position.place_text }}</span>
+                    </p>
+                  </div>
+                </td>
+                {# Пустое сравнение — прочерк; на телефоне скрыто (is-empty). #}
+                <td class="facts-table__versus{% if not position.versus_country %} is-empty{% endif %}">{{ position.versus_country|capfirst|default:"—" }}</td>
+                <td class="facts-table__trend{% if not position.trend %} is-empty{% endif %}">
+                  {% if position.trend %}
+                    <span class="verdict verdict--{{ position.trend_tone }}">{{ position.trend|capfirst }}</span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        {% endfor %}
+      </table>
+
+      <p class="page-section__footnote">
+        {% blocktranslate trimmed %}
+          Изменение за пять лет не считается там, где внутри этого срока Росстат менял
+          методику или круг наблюдения: разность значений до и после такого разрыва
+          означает смену методики, а не перемену в регионе. У темпов роста («% к прошлому
+          году») изменение за пять лет не приводится.
+        {% endblocktranslate %}
+        {% blocktranslate trimmed %}
+          Значение по России — не середина списка регионов: зарплаты и доходы по стране
+          поднимают Москва и северные регионы. Поэтому регион может быть лучше большинства
+          и при этом ниже, чем по России.
+        {% endblocktranslate %}
+        {% blocktranslate trimmed %}
+          Денежные показатели оцениваются по реальному изменению — за вычетом роста цен:
+          по индексам реальной зарплаты и доходов Росстата, физического объёма ВРП,
+          инвестиций и оборота торговли, для остальных — по индексу потребительских цен региона.
+        {% endblocktranslate %}
+        {% if passport.discontinued %}
+          {% blocktranslate trimmed %}
+            По части демографических показателей Росстат прекратил публикацию: их значения
+            больше не обновятся.
+          {% endblocktranslate %}
+        {% endif %}
+      </p>
+    </section>
+  {% endif %}
+
+  {# --- Динамика ------------------------------------------------------------------------ #}
+  <section class="page-section" aria-labelledby="passport-timeline">
+    <div class="page-section__head">
+      <h2 class="page-section__title toc-target" id="passport-timeline">{% translate "Динамика на фоне округа и страны" %}</h2>
+    </div>
+
+    <form class="passport-timeline__picker" hx-get="{{ request.path }}" hx-target="#territory-timeline"
+          hx-push-url="true" hx-trigger="change" hx-indicator="#timeline-indicator">
+      {% include "partials/_series_select.html" with series=timeline_series %}
+    </form>
+
+    <div class="passport-timeline" id="territory-timeline">
+      {% include "catalog/partials/_territory_timeline.html" %}
+    </div>
+  </section>
+
+  {# --- Похожие и соседние; сведения о данных --------------------------------------------- #}
+  <section class="page-section" aria-labelledby="passport-similar">
+    <div class="page-section__head">
+      <h2 class="page-section__title toc-target" id="passport-similar">{% translate "Похожие регионы" %}</h2>
+      <p class="page-section__note">
+        {% translate "По сочетанию шести ключевых показателей, а не по расположению на карте" %}
+      </p>
+    </div>
+    {# Перечень догружается при первом раскрытии; ?similar=1 открывает блок сразу. #}
+    <details class="similar-block"{% if similar_requested %} open{% else %}
+             hx-get="{{ similar_url }}" hx-trigger="toggle once" hx-target="#{{ similar_id }}"
+             hx-swap="outerHTML" hx-push-url="true"
+             hx-indicator=".similar-block__wait, .similar-block__fallback"{% endif %}>
+      <summary class="similar-block__summary">
+        <span class="similar-block__closed">{% translate "Показать похожие регионы" %}</span>
+        <span class="similar-block__opened">{% translate "Скрыть похожие регионы" %}</span>
+        <svg class="fold__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
+      </summary>
+      {% include "catalog/partials/_similar.html" %}
+    </details>
+  </section>
+
+  <section class="page-section passport-facts toc-target" id="passport-facts" aria-label="{% translate 'Соседи и данные' %}">
+    <div class="passport-facts__card">
+      <h3 class="passport-facts__title">
+        {% translate "Сопредельные субъекты" %}
+        <span class="sides__count numeric">{{ neighbours|length }}</span>
+      </h3>
+      <ul class="choice-list passport-facts__neighbours">
+        {% for neighbour in neighbours %}
+          <li><a class="choice-chip" href="{% url 'catalog:territory-detail' slug=neighbour.slug %}">{{ neighbour.name }}</a></li>
+        {% empty %}
+          <li class="text-muted">{% translate "Сухопутных и морских связей не зарегистрировано" %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="passport-facts__card">
+      <h3 class="passport-facts__title">{% translate "Полнота данных" %}</h3>
+      <dl class="definition-list definition-list--compact">
+        <dt>{% translate "Рядов с данными" %}</dt>
+        <dd class="numeric">
+          {{ coverage.series_with_values }} {% translate "из" %} {{ coverage.series_total }}
+          ({{ coverage.share|percent:0 }})
+        </dd>
+        <dt>{% translate "Период наблюдений" %}</dt>
+        <dd class="numeric">{{ coverage.first_year|year }}–{{ coverage.last_year|year }}</dd>
+        {% if territory.data_since_year %}
+          <dt>{% translate "Данные доступны с" %}</dt>
+          <dd class="numeric">{{ territory.data_since_year|year }}</dd>
+        {% endif %}
+        {% if territory.okato %}
+          <dt>{% translate "Код ОКАТО" %}</dt>
+          <dd class="numeric">{{ territory.okato }}</dd>
+        {% endif %}
+        <dt>{% translate "Код ISO 3166-2" %}</dt>
+        <dd class="numeric">{{ territory.code }}</dd>
+      </dl>
+    </div>
+  </section>
+
+  {% endif %}
+</div>
+{% endblock %}

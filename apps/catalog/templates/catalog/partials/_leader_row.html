@@ -1,0 +1,8 @@
+{# Строка перечня крайних регионов; для других годов ту же разметку собирает paintLeaders. #}
+<li class="leader-list__item">
+  <a class="leader-list__name" href="{{ row.href }}" data-code="{{ row.code }}">{{ row.name }}</a>
+  <span class="leader-list__value numeric">{{ row.value }}</span>
+  {% if row.share %}
+    <span class="leader-list__bar" style="--share: {{ row.share }}{% if row.colour %}; --bar: var({{ row.colour }}){% endif %}" aria-hidden="true"></span>
+  {% endif %}
+</li>
