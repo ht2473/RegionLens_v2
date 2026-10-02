@@ -24,6 +24,9 @@ MIN_SPAN_YEARS = 5
 # Минимальное число лет для оценки тенденции разброса.
 MIN_SIGMA_YEARS = 3
 
+# Относительное расхождение разброса по годам, неотличимое от ошибки округления.
+FLAT_TOLERANCE = 1e-9
+
 # Период полусокращения дольше этого срока считается бесконечным.
 MAX_MEANINGFUL_HALF_LIFE = 200.0
 
@@ -100,6 +103,9 @@ def sigma_trend(points: list[SigmaPoint]) -> dict[str, Any]:
 
     first, last = points[0], points[-1]
     change = last.std_log - first.std_log
+    # Постоянный разброс отличается по годам лишь ошибкой округления; наклон по такому шуму
+    # с почти нулевой ошибкой оценки вышел бы «значимым», и знак зависел бы от платформы.
+    flat = bool(np.allclose(deviations, deviations[0], rtol=FLAT_TOLERANCE, atol=0.0))
     return {
         "available": True,
         "fit": fit,
@@ -107,8 +113,12 @@ def sigma_trend(points: list[SigmaPoint]) -> dict[str, Any]:
         "last": last,
         "change": change,
         "relative_change": change / first.std_log if first.std_log else None,
-        "converging": bool(fit is not None and fit.slope.value < 0 and fit.slope.is_significant),
-        "diverging": bool(fit is not None and fit.slope.value > 0 and fit.slope.is_significant),
+        "converging": bool(
+            not flat and fit is not None and fit.slope.value < 0 and fit.slope.is_significant
+        ),
+        "diverging": bool(
+            not flat and fit is not None and fit.slope.value > 0 and fit.slope.is_significant
+        ),
     }
 
 
