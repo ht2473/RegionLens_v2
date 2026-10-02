@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import pytest
@@ -9,9 +10,6 @@ from django.core.management import call_command
 from playwright.sync_api import Page, expect
 
 pytestmark = [pytest.mark.e2e, pytest.mark.django_db(transaction=True)]
-
-# Время на отработку наблюдателя пересечений после прокрутки.
-SCROLL_SETTLE_MS = 600
 
 
 @pytest.fixture
@@ -52,11 +50,10 @@ class TestTableOfContents:
                 "(id) => document.querySelector(id).scrollIntoView({block: 'start'})",
                 anchor,
             )
-            page.wait_for_timeout(SCROLL_SETTLE_MS)
-
-            marked = page.locator("[data-toc] a.is-current")
-            expect(marked).to_have_count(1)
-            assert marked.get_attribute("href") == anchor
+            # Наблюдатель пересечений срабатывает не сразу: ожидание с повторами,
+            # а не пауза, иначе на медленной машине отмечен ещё прежний раздел.
+            expect(page.locator(f'[data-toc] a.is-current[href="{anchor}"]')).to_have_count(1)
+            expect(page.locator("[data-toc] a.is-current")).to_have_count(1)
 
 
 class TestInstantFilter:
@@ -72,16 +69,14 @@ class TestInstantFilter:
 
         field = page.locator("[data-filter-input]")
         field.fill("приморск")
-        page.wait_for_timeout(200)
 
         visible = page.locator("[data-filter-item]:not([hidden])")
-        assert visible.count() == 1
+        expect(visible).to_have_count(1)
         expect(visible.first).to_contain_text("Приморский")
 
         # Пустое поле возвращает перечень целиком.
         field.fill("")
-        page.wait_for_timeout(200)
-        assert page.locator("[data-filter-item]:not([hidden])").count() == cards.count()
+        expect(page.locator("[data-filter-item]:not([hidden])")).to_have_count(cards.count())
 
     def test_search_finds_a_region_by_its_capital(self, page: Page, site: Any) -> None:
         """Отбор идёт и по административному центру: его помнят чаще названия субъекта."""
@@ -89,10 +84,9 @@ class TestInstantFilter:
         page.wait_for_load_state("networkidle")
 
         page.locator("[data-filter-input]").fill("владивосток")
-        page.wait_for_timeout(200)
 
         visible = page.locator("[data-filter-item]:not([hidden])")
-        assert visible.count() == 1
+        expect(visible).to_have_count(1)
         expect(visible.first).to_contain_text("Приморский")
 
     def test_nothing_found_is_stated_explicitly(self, page: Page, site: Any) -> None:
@@ -101,9 +95,8 @@ class TestInstantFilter:
         page.wait_for_load_state("networkidle")
 
         page.locator("[data-filter-input]").fill("щщщ")
-        page.wait_for_timeout(200)
 
-        assert page.locator("[data-filter-item]:not([hidden])").count() == 0
+        expect(page.locator("[data-filter-item]:not([hidden])")).to_have_count(0)
         expect(page.locator("#territory-empty")).to_be_visible()
 
 
@@ -132,8 +125,9 @@ class TestSeriesCombobox:
 
         root.locator(".combobox__trigger").click()
         root.locator(".combobox__search input").fill("населен")
-        page.wait_for_timeout(200)
 
+        # Отбор закончен, когда часть позиций скрыта; затем — что осталась хотя бы одна.
+        expect(root.locator(".combobox__option[hidden]").first).to_be_attached()
         visible = root.locator(".combobox__option:not([hidden])")
         assert 0 < visible.count() < total
 
@@ -156,9 +150,8 @@ class TestSeriesCombobox:
 
         options = root.locator(".combobox__option:not([hidden])")
         options.nth(1).click()
-        page.wait_for_timeout(600)
 
-        assert root.locator("select").input_value() != before
+        expect(root.locator("select")).not_to_have_value(before)
         expect(root.locator(".combobox__panel")).to_be_hidden()
 
 
@@ -178,14 +171,12 @@ class TestThemeToggle:
         system = switch.locator('[data-theme-choice="system"]')
 
         dark.click()
-        page.wait_for_timeout(200)
-        assert page.locator("html").get_attribute("data-theme") == "dark"
+        expect(page.locator("html")).to_have_attribute("data-theme", "dark")
         expect(dark).to_have_attribute("aria-pressed", "true")
         expect(system).to_have_attribute("aria-pressed", "false")
 
         system.click()
-        page.wait_for_timeout(200)
-        assert page.locator("html").get_attribute("data-theme") is None
+        expect(page.locator("html")).not_to_have_attribute("data-theme", re.compile(".*"))
         expect(system).to_have_attribute("aria-pressed", "true")
 
     def test_menus_are_not_open_on_load(self, page: Page, site: Any) -> None:
