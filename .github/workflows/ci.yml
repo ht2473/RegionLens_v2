@@ -240,6 +240,8 @@ jobs:
           file: docker/Dockerfile
           # Без публикации в реестр: на стенд образ попадает сборкой из исходников.
           push: false
+          # Образ остаётся в Docker раннера для проверки запуска.
+          load: true
           tags: regionlens:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
