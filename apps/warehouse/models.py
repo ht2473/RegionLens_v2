@@ -116,6 +116,19 @@ class EtlRun(TimeStampedModel):
         """Сборка ждёт в очереди или идёт."""
         return self.status in {self.Status.QUEUED, self.Status.RUNNING}
 
+    @property
+    def missing_series(self) -> list[dict[str, str]]:
+        """Ссылки справочников и сохранённого на ряды, которых не оказалось в складе."""
+        found = (self.statistics or {}).get("statistics", {}).get("missing_series", [])
+        return list(found)
+
+    @property
+    def missing_project_series(self) -> list[dict[str, str]]:
+        """Те же ссылки, но только из справочников проекта: их правит разработчик."""
+        from .etl.integrity import PROJECT_ORIGINS
+
+        return [item for item in self.missing_series if item["origin"] in PROJECT_ORIGINS]
+
 
 class DataQualityCheck(TimeStampedModel):
     """Замечание проверки качества данных, найденное при сборке склада."""

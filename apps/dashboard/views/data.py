@@ -21,6 +21,7 @@ from django.views.generic import DetailView, FormView, ListView, UpdateView
 from apps.catalog.models import DatasetVersion
 from apps.core.navigation import Crumb
 from apps.warehouse import builds
+from apps.warehouse.etl import integrity
 from apps.warehouse.models import DataQualityCheck, EtlRun
 
 from .. import selectors
@@ -196,6 +197,7 @@ class EtlRunDetailView(AdminViewMixin, DetailView):
         context["page_title"] = _("Запуск загрузки №%(pk)s") % {"pk": run.pk}
         context["checks"] = list(run.quality_checks.all()[:30])
         context["checks_total"] = run.quality_checks.count()
+        context["missing_groups"] = integrity.grouped(run.missing_series)
         context["poll_seconds"] = PROGRESS_POLL_SECONDS
         return context
 

@@ -22,7 +22,17 @@ from apps.catalog.models import DatasetVersion
 from apps.warehouse.duckdb_client import writable_connection
 from apps.warehouse.models import EtlRun
 
-from . import catalog_sync, dimensions, facts, marts, monthly, quality, releases, source
+from . import (
+    catalog_sync,
+    dimensions,
+    facts,
+    integrity,
+    marts,
+    monthly,
+    quality,
+    releases,
+    source,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -210,6 +220,7 @@ class Pipeline:
 
             self._write_metadata(connection, profile, value_quality)
             self._step("keys", lambda: check_unique_keys(connection))
+            absent_series = self._check_references(connection)
 
             self._report("Синхронизация справочников")
             catalog_statistics = self._step(
@@ -244,6 +255,7 @@ class Pipeline:
                 "findings": quality_findings,
                 "releases": release_statistics,
                 "source_series": source_statistics,
+                "missing_series": absent_series,
             },
         )
 
@@ -301,6 +313,18 @@ class Pipeline:
         self._steps.append(result)
         logger.debug("Этап %s завершён за %.2f с", name, duration)
         return result
+
+    def _check_references(self, connection: duckdb.DuckDBPyConnection) -> list[dict[str, str]]:
+        """Сверить ссылки справочников и сохранённого пользователями с рядами склада."""
+        known = {
+            row[0] for row in connection.execute("SELECT series_key FROM dim_series").fetchall()
+        }
+        missing = self._step(
+            "references", lambda: [item.as_dict() for item in integrity.missing_series(known)]
+        ).detail
+        if missing:
+            self._report(f"Ссылки на ряды, которых нет в складе: {len(missing)}")
+        return list(missing)
 
     def _report(self, message: str) -> None:
         """Передать сообщение о ходе работы вызывающей стороне и в журнал запуска."""

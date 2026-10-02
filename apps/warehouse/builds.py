@@ -21,12 +21,12 @@ import duckdb
 from django.conf import settings
 from django.core.files.uploadedfile import UploadedFile
 from django.db import connection
-from django.utils import timezone
+from django.utils import timezone, translation
 
 from apps.core import alerts
 
 from .duckdb_client import writable_connection
-from .etl import source
+from .etl import integrity, source
 from .etl.pipeline import EtlError, Pipeline, PipelineResult
 from .models import EtlRun
 
@@ -254,6 +254,7 @@ def execute(
 
         run.finish(status=EtlRun.Status.SUCCESS)
 
+    _alert_missing(run)
     after_build()
     return result
 
@@ -271,6 +272,28 @@ def _alert_failed(run: EtlRun) -> None:
         "склад не собран",
         f"Сборка склада № {run.pk} завершилась с ошибкой:\n{run.error_message}\n\n"
         "Действует прежний склад: сайт показывает данные последней удачной сборки.\n\n"
+        f"Запуск в панели: {alerts.panel_address('dashboard:etl-run', run.pk)}",
+    )
+
+
+def _alert_missing(run: EtlRun) -> None:
+    """Письмо о справочниках проекта, ссылающихся на ряды, которых нет в собранном складе."""
+    missing = run.missing_project_series
+    if not missing:
+        return
+    with translation.override(settings.LANGUAGE_CODE):
+        lines = [
+            f"{group['title']}: " + ", ".join(item["key"] for item in group["items"])
+            for group in integrity.grouped(missing)
+        ]
+    alerts.notify(
+        "missing:" + ",".join(sorted(item["key"] for item in missing)),
+        "в складе нет рядов из справочников",
+        f"Склад собран (запуск № {run.pk}), но в нём нет рядов, на которые ссылаются "
+        "справочники проекта. Скорее всего, в новой версии набора у них сменились ключи; "
+        "показатели с этими ссылками остались без данных.\n\n"
+        + "\n".join(lines)
+        + "\n\nСправочники — файлы data/reference/.\n"
         f"Запуск в панели: {alerts.panel_address('dashboard:etl-run', run.pk)}",
     )
 

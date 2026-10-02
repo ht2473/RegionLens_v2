@@ -123,6 +123,29 @@
     </section>
   {% endif %}
 
+  {% if missing_groups %}
+    <section class="card admin-section">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Ссылки на ряды, которых нет в складе" %}</h2>
+      </div>
+      <p class="text-secondary">
+        {% blocktranslate trimmed %}
+          Справочники проекта и сохранённое пользователями ссылаются на эти ряды, а в собранном
+          складе их нет. Чаще всего это значит, что в новой версии набора у рядов сменились
+          ключи: показатели с такими ссылками остаются без данных.
+        {% endblocktranslate %}
+      </p>
+      <dl class="definition-list definition-list--compact">
+        {% for group in missing_groups %}
+          <dt>{{ group.title }}</dt>
+          <dd class="admin-keys">
+            {% for item in group.items %}<code>{{ item.key }}</code>{% if not group.is_project %} ({% translate "записей" %}: {{ item.detail }}){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
+          </dd>
+        {% endfor %}
+      </dl>
+    </section>
+  {% endif %}
+
   {% if checks %}
     <section class="card" style="margin-top: var(--space-5)">
       <div class="card__header">
