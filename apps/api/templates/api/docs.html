@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{# Описание программного интерфейса: зачем и с чего начать; поля ответов — в Swagger. #}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/cabinet.css' %}">
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "Программный интерфейс" %}</h1>
+      <p class="page-intro__lead">
+        {% blocktranslate trimmed %}
+          Чтение показателей регионов России программой: справочники, значения рядов
+          и рейтинги. Формат ответа — JSON, протокол — REST.
+        {% endblocktranslate %}
+      </p>
+    </div>
+    <div class="page-intro__actions">
+      <a class="button button--primary" href="{% url 'api:swagger' %}">Swagger UI</a>
+      <a class="button button--ghost" href="{% url 'api:schema' %}">OpenAPI</a>
+    </div>
+  </header>
+
+  <section class="page-section" aria-labelledby="api-start">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="api-start">{% translate "Начало работы" %}</h2>
+    </div>
+    <p class="api-text">
+      {% blocktranslate trimmed with rate=anonymous_rate %}
+        Данные открыты: ключ и вход не нужны.
+        Предел — {{ rate }} с одного адреса.
+      {% endblocktranslate %}
+    </p>
+    <pre class="code-block"><code>curl "{{ base_url }}territories/?level=region"
+
+curl "{{ base_url }}observations/?series=Y477110378:00&amp;year_from=2015"</code></pre>
+  </section>
+
+  <section class="page-section" aria-labelledby="api-endpoints">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="api-endpoints">{% translate "Точки интерфейса" %}</h2>
+    </div>
+
+    <div class="api-endpoints">
+      {% for endpoint in endpoints %}
+        <article class="api-endpoint">
+          <div class="api-endpoint__head">
+            <h3 class="api-endpoint__title">{{ endpoint.title }}</h3>
+            <code class="badge badge--outline">GET {{ endpoint.path }}</code>
+          </div>
+
+          <p class="api-text">{{ endpoint.summary }}</p>
+
+          {% if endpoint.parameters %}
+            <dl class="definition-list definition-list--compact">
+              {% for name, description in endpoint.parameters %}
+                <dt><code>{{ name }}</code></dt>
+                <dd>{{ description }}</dd>
+              {% endfor %}
+            </dl>
+          {% endif %}
+
+          <p class="api-endpoint__meta">
+            {% if endpoint.example %}<code>{{ endpoint.example }}</code>{% endif %}
+            {% if endpoint.detail_hint %}<span>{{ endpoint.detail_hint }}</span>{% endif %}
+          </p>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="api-rules">
+
+    <section aria-labelledby="api-limit">
+      <h2 class="api-rules__title" id="api-limit">{% translate "Предел числа обращений" %}</h2>
+      <p class="api-text">
+        {% blocktranslate trimmed with rate=anonymous_rate %}
+          Интерфейс открыт, ключ не нужен. Предел — {{ rate }} с одного адреса:
+          этого хватает, чтобы выгрузить несколько рядов целиком.
+        {% endblocktranslate %}
+      </p>
+      <p class="api-text api-text--quiet">
+        {% blocktranslate trimmed %}
+          При превышении возвращается ответ 429 с полем retry_after — числом секунд
+          до следующей допустимой попытки.
+        {% endblocktranslate %}
+      </p>
+    </section>
+
+    <section aria-labelledby="api-rules">
+      <h2 class="api-rules__title" id="api-rules">{% translate "Правила и ограничения" %}</h2>
+      <ul class="api-rules__list">
+        <li>
+          {% blocktranslate trimmed %}
+            Интерфейс только читает данные.
+          {% endblocktranslate %}
+        </li>
+        <li>
+          {% blocktranslate trimmed %}
+            Пропуски различаются: «нет данных» и «сведения скрыты» — разные признаки
+            качества.
+          {% endblocktranslate %}
+        </li>
+        <li>
+          {% blocktranslate trimmed %}
+            Наблюдения без указания территории возвращаются только по субъектам:
+            страна и округа — агрегаты, и их включение дало бы двойной учёт.
+          {% endblocktranslate %}
+        </li>
+        <li>
+          {% blocktranslate trimmed %}
+            Данные используются на условиях их источников: при публикации результатов
+            ссылка на источник обязательна.
+          {% endblocktranslate %}
+        </li>
+      </ul>
+      <p class="api-text api-text--quiet">
+        <a href="{% url 'core:terms' %}#api">{% translate "Условия использования" %}</a>
+      </p>
+    </section>
+
+  </div>
+
+</div>
+{% endblock %}

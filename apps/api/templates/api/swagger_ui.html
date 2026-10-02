@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+{# Оболочка Swagger — шаблон drf-spectacular с языком: описание схемы только по-русски. #}
+{# Сценарий запуска — файлом (?script). #}
+<html lang="ru">
+  <head>
+    <title>{{ title|default:"Swagger" }}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% if favicon_href %}<link rel="icon" href="{{ favicon_href }}">{% endif %}
+    <link rel="stylesheet" href="{{ swagger_ui_css }}">
+    <style>
+      html { box-sizing: border-box; overflow-y: scroll; }
+      *, *:after, *:before { box-sizing: inherit; }
+      body { margin: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="{{ swagger_ui_bundle }}"></script>
+    <script src="{{ swagger_ui_standalone }}"></script>
+    <script src="{{ script_url }}"></script>
+  </body>
+</html>

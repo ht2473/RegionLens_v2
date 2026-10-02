@@ -1,0 +1,23 @@
+{% load i18n %}
+{# Меню выгрузки (popover): ссылки на готовые файлы; ожидает export_options. #}
+{% if export_options %}
+  <button type="button" class="button button--sm button--secondary no-print"
+          popovertarget="export-menu" aria-haspopup="true">
+    <svg aria-hidden="true"><use href="#icon-download"></use></svg>
+    {% translate "Скачать" %}
+  </button>
+
+  <div class="menu-popover export-menu no-print" id="export-menu" popover
+       aria-label="{% translate 'Скачать' %}">
+    <ul class="export-menu__list">
+      {% for option in export_options %}
+        <li>
+          <a class="export-menu__action" href="{{ option.url }}" download>
+            <span class="export-menu__label">{{ option.label }}</span>
+            {% if option.hint %}<span class="export-menu__hint">{{ option.hint }}</span>{% endif %}
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
