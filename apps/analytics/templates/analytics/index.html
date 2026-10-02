@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load i18n static formatting %}
+
+{# Обзор раздела «Анализ»: инструменты — вопросами, на которые они отвечают. #}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/analytics.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "Анализ" %}</h1>
+      <p class="page-intro__lead">
+        {% blocktranslate trimmed %}
+          Шесть инструментов: различия между регионами, их сближение, связи показателей,
+          пространственные закономерности, сводные индексы и пересмотры статистики.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  </header>
+
+  <ul class="tool-cards">
+    {% for tool in tools %}
+      <li class="tool-card">
+        <p class="tool-card__name">
+          <svg aria-hidden="true"><use href="#icon-{{ tool.icon }}"></use></svg>
+          {{ tool.title }}
+        </p>
+        <a class="tool-card__question" href="{{ tool.url }}">{{ tool.question }}</a>
+        <p class="tool-card__summary">{{ tool.summary }}</p>
+        {% for child in tool.children %}
+          <p class="tool-card__next">
+            {% translate "Продолжение:" %} <a href="{{ child.url }}">{{ child.title|lower }}</a>
+          </p>
+        {% endfor %}
+        <p class="tool-card__methods">{{ tool.methods }}</p>
+      </li>
+    {% endfor %}
+  </ul>
+
+  {% if warehouse_ready and summary %}
+    <section class="page-section" aria-labelledby="analytics-basis-title">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="analytics-basis-title">{% translate "На чём выполняются расчёты" %}</h2>
+      </div>
+      <dl class="figure-list figure-list--row analytics-basis">
+        <div>
+          <dt>{% translate "рядов пригодны для сравнения" %}</dt>
+          <dd>{{ summary.series_ready|ru_number:0 }}</dd>
+        </div>
+        <div>
+          <dt>{% translate "субъектов — единица наблюдения" %}</dt>
+          <dd>{{ summary.regions }}</dd>
+        </div>
+        <div>
+          <dt>{% translate "годы наблюдений" %}</dt>
+          <dd>{{ summary.first_year|stringformat:"d" }}–{{ summary.last_year|stringformat:"d" }}</dd>
+        </div>
+      </dl>
+      <p class="analytics-text">
+        {% blocktranslate trimmed %}
+          В расчёты входят ряды, которые покрывают не менее 80 % субъектов и не менее десяти
+          лет наблюдений. Ряды с меньшим покрытием в расчёты не входят: вывод по части
+          регионов нельзя переносить на всю страну.
+        {% endblocktranslate %}
+      </p>
+    </section>
+  {% endif %}
+
+  <section class="page-section" aria-labelledby="analytics-reading-title">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="analytics-reading-title">{% translate "Как читать результаты расчётов" %}</h2>
+    </div>
+    <p class="analytics-text">
+      {% blocktranslate trimmed %}
+        У каждого результата указаны число наблюдений, уровень значимости и проверка
+        устойчивости. Если вывод зависит от способа расчёта, способ выбирается на странице и
+        назван в подписи.
+      {% endblocktranslate %}
+    </p>
+    <p class="analytics-text">
+      <a href="{% url 'content:methodology' %}">{% translate "Методика: формулы, условия применимости и ограничения каждого метода" %}</a>
+    </p>
+  </section>
+
+</div>
+{% endblock %}

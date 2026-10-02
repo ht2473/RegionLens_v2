@@ -1,0 +1,291 @@
+{% load i18n formatting %}
+{# Результаты корреляционного анализа: матрица, разбор пары, запаздывание. #}
+
+{% if not matrix %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "Выберите показатели для сопоставления" %}</p>
+    <p class="empty-state__hint">
+      {% blocktranslate trimmed with least=min_series %}
+        Нужно не менее {{ least }} рядов: связь считается между парами показателей.
+      {% endblocktranslate %}
+    </p>
+  </div>
+{% else %}
+
+  <header class="tool-subject">
+    <div class="tool-subject__text">
+      <h2 class="tool-subject__title">
+        {% translate "Связи между показателями" %} · {{ methods|dict_value:method }}
+      </h2>
+      <p class="tool-subject__meta">
+        {{ year|year }} · {% translate "показателей" %}: {{ columns|length }}
+        · {% translate "единица наблюдения — субъект Российской Федерации" %}
+      </p>
+    </div>
+    <span id="analytics-indicator" class="htmx-indicator tool-subject__busy">{% translate "Расчёт…" %}</span>
+  </header>
+
+  {# --- Матрица связей ------------------------------------------------------------------- #}
+  <div class="chart-frame">
+    <div class="chart-frame__header">
+      <div>
+        <div class="chart-frame__title">{% translate "Матрица парных связей" %}</div>
+        <div class="chart-frame__subtitle">
+          {% translate "показаны только коэффициенты, значимые с поправкой на множественность сравнений" %}
+        </div>
+      </div>
+    </div>
+    <rl-chart class="chart chart--tall" data-options="correlation-matrix-option"></rl-chart>
+    {{ matrix_option|json_script:"correlation-matrix-option" }}
+
+    {# Соответствие номеров на осях матрицы названиям. #}
+    <ol class="matrix-key">
+      {% for label in matrix.labels %}
+        <li class="matrix-key__item">
+          <span class="matrix-key__number numeric">{{ forloop.counter }}</span>
+          <span>{{ label }}</span>
+        </li>
+      {% endfor %}
+    </ol>
+
+    <div class="chart-frame__footer">
+      {% blocktranslate trimmed %}
+        Пустая ячейка означает, что коэффициент не удалось отличить от нуля на уровне
+        значимости 5 % с поправкой Бенджамини — Хохберга: при многих парах часть
+        из них выходит «значимой» случайно, и поправка сдерживает долю таких
+        ложных находок. Значения вместе с уровнями значимости приведены в перечне ниже.
+      {% endblocktranslate %}
+    </div>
+  </div>
+
+  {# --- Наиболее выраженные связи ----------------------------------------------------------- #}
+  {% if strongest %}
+    <div class="card" style="margin-top: var(--space-5)">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Наиболее выраженные связи" %}</h2>
+        <span class="card__meta">{% translate "только значимые с поправкой" %}</span>
+      </div>
+      <div class="data-table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Показатель" %}</th>
+              <th scope="col">{% translate "Показатель" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Коэффициент" %}</th>
+              <th scope="col">{% translate "Теснота" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Пар" %}</th>
+              <th scope="col" class="is-numeric">{% translate "p" %}</th>
+              <th scope="col" class="is-numeric">{% translate "p с поправкой" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in strongest %}
+              <tr>
+                <td class="data-table__long">{{ item.first_label }}</td>
+                <td class="data-table__long">{{ item.second_label }}</td>
+                <td class="is-numeric">
+                  <span class="{% if item.correlation.direction == 'positive' %}text-positive{% else %}text-negative{% endif %}">
+                    {{ item.correlation.coefficient|ru_number:2 }}
+                  </span>
+                </td>
+                <td class="text-secondary">{{ item.correlation.strength }}</td>
+                <td class="is-numeric text-secondary">{{ item.correlation.pairs }}</td>
+                <td class="is-numeric text-secondary">{{ item.correlation.p_value|p_level }}</td>
+                <td class="is-numeric">{{ item.correlation.p_adjusted|p_level }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="card__footer">
+        {% blocktranslate trimmed %}
+          «p с поправкой» — уровень значимости с поправкой Бенджамини — Хохберга
+          по всем парам матрицы; по нему и отбираются связи. Связь не означает причины.
+          Два показателя могут двигаться вместе, потому что оба следуют за третьим —
+          чаще всего за размером и уровнем развития региона.
+        {% endblocktranslate %}
+      </div>
+    </div>
+  {% endif %}
+
+  {# --- Разбор пары ------------------------------------------------------------------------- #}
+  {% if scatter_option %}
+    <div class="chart-frame" style="margin-top: var(--space-5)">
+      <div class="chart-frame__header">
+        <div>
+          <div class="chart-frame__title">
+            {{ pair_second.short }} {% translate "и" %} {{ pair_first.short }}
+          </div>
+          <div class="chart-frame__subtitle">
+            {% if pair.is_available %}
+              {{ methods|dict_value:method }}: {{ pair.coefficient|ru_number:2 }}
+              ({{ pair.strength }}) ·
+              {% translate "пар" %}: {{ pair.pairs }} ·
+              {{ pair.p_value|p_level:"p" }}{% if pair.p_adjusted is not None %},
+              {% translate "с поправкой" %} {{ pair.p_adjusted|p_level }}{% endif %}
+              {% if not pair.is_significant %}
+                · <span class="text-attention">{% translate "связь не подтверждена" %}</span>
+              {% endif %}
+            {% else %}
+              {% translate "коэффициент не рассчитан: слишком мало пар наблюдений" %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <rl-chart class="chart chart--tall" data-options="correlation-scatter-option"></rl-chart>
+      {{ scatter_option|json_script:"correlation-scatter-option" }}
+      <div class="chart-frame__footer">
+        {% blocktranslate trimmed %}
+          На диаграмме видно, держится ли связь на всех регионах или её создают несколько
+          выделяющихся.
+        {% endblocktranslate %}
+      </div>
+    </div>
+
+    {% if pair_fit %}
+      <div class="card" style="margin-top: var(--space-4)">
+        <div class="card__header">
+          <h2 class="card__title">{% translate "Линейная зависимость" %}</h2>
+          <span class="card__meta">
+            {% translate "робастные стандартные ошибки (HC3)" %}
+          </span>
+        </div>
+        <dl class="definition-list definition-list--compact">
+          <dt>{% translate "Наклон" %}</dt>
+          <dd class="numeric">
+            {{ pair_fit.slope.value|ru_number:4 }}
+            <span class="text-muted">{{ pair_fit.slope.p_value|p_level:"p" }}</span>
+          </dd>
+          <dt>{% translate "Свободный член" %}</dt>
+          <dd class="numeric">{{ pair_fit.intercept.value|ru_number:2 }}</dd>
+          <dt>{% translate "Доля объяснённого разброса" %}</dt>
+          <dd class="numeric">{{ pair_fit.r_squared|percent }}</dd>
+          <dt>{% translate "Субъектов в расчёте" %}</dt>
+          <dd class="numeric">{{ pair_fit.observations }}</dd>
+        </dl>
+        <div class="card__footer">
+          {% blocktranslate trimmed with x=pair_first.short y=pair_second.short %}
+            Наклон читается так: при увеличении показателя «{{ x }}» на единицу
+            показатель «{{ y }}» в среднем меняется на величину коэффициента.
+            Это описание совместного движения, а не утверждение о воздействии.
+          {% endblocktranslate %}
+        </div>
+      </div>
+    {% endif %}
+  {% endif %}
+
+  {# --- Запаздывание --------------------------------------------------------------------------- #}
+  {% if lag_option %}
+    <div class="chart-frame" style="margin-top: var(--space-5)">
+      <div class="chart-frame__header">
+        <div>
+          <div class="chart-frame__title">{% translate "Связь при сдвиге во времени" %}</div>
+          <div class="chart-frame__subtitle">
+            {% blocktranslate trimmed with x=pair_first.short y=pair_second.short target=lag_target_year|stringformat:"d" %}
+              «{{ x }}» за более ранние годы и «{{ y }}» за {{ target }} год
+            {% endblocktranslate %}
+          </div>
+        </div>
+      </div>
+      <rl-chart class="chart chart--short" data-options="correlation-lag-option"></rl-chart>
+      {{ lag_option|json_script:"correlation-lag-option" }}
+      <div class="chart-frame__footer">
+        {% blocktranslate trimmed %}
+          Если связь заметно сильнее при сдвиге в несколько лет, чем при нулевом,
+          это довод в пользу того, что первый показатель предшествует второму, но не
+          доказательство: одновременное движение обоих вслед за третьим даёт ту же картину.
+        {% endblocktranslate %}
+      </div>
+    </div>
+  {% endif %}
+
+  {# --- Частная корреляция ------------------------------------------------------------------------ #}
+  {% if partial %}
+    <div class="card" style="margin-top: var(--space-5)">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Частная корреляция" %}</h2>
+        <span class="card__meta">
+          {% translate "субъектов" %}: {{ partial.observations }} ·
+          {% translate "исключено влияние остальных показателей" %}
+        </span>
+      </div>
+      <div class="data-table-wrapper">
+        <table class="data-table matrix-table">
+          <thead>
+            <tr>
+              <th scope="col"></th>
+              {% for label in partial.labels %}
+                <th scope="col" class="is-numeric" title="{{ label }}">{{ forloop.counter }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in partial.rows %}
+              <tr>
+                <th scope="row" class="data-table__long">{{ forloop.counter }}. {{ row.label }}</th>
+                {% for value in row.values %}
+                  <td class="is-numeric {% if forloop.parentloop.counter0 == forloop.counter0 %}text-muted{% endif %}">
+                    {{ value|ru_number:2 }}
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="card__footer">
+        {% blocktranslate trimmed %}
+          Частная корреляция показывает связь двух показателей при исключённом влиянии
+          остальных выбранных. Заметное падение коэффициента по сравнению с парным
+          означает, что связь во многом объяснялась третьими показателями. В расчёт
+          входят только субъекты, по которым есть данные по всем выбранным рядам.
+        {% endblocktranslate %}
+      </div>
+    </div>
+  {% endif %}
+
+  {# --- Состав набора ---------------------------------------------------------------------------- #}
+  <div class="card" style="margin-top: var(--space-5)">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "Показатели в расчёте" %}</h2>
+    </div>
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col" class="is-numeric">№</th>
+            <th scope="col">{% translate "Показатель" %}</th>
+            <th scope="col">{% translate "Единица" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Год" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Субъектов с данными" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for column in columns %}
+            <tr>
+              <td class="is-numeric">{{ forloop.counter }}</td>
+              <td class="data-table__long">
+                <a href="{% url 'catalog:series-detail' slug=column.series.indicator.slug %}?series={{ column.key }}">
+                  {{ column.label }}
+                </a>
+              </td>
+              <td class="text-secondary">{{ column.unit|default:"—" }}</td>
+              <td class="is-numeric {% if column.year != year %}text-attention{% endif %}">
+                {{ column.year|year }}
+              </td>
+              <td class="is-numeric text-secondary">{{ column.covered }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="card__footer">
+      {% blocktranslate trimmed with target=year|stringformat:"d" %}
+        Год, отличающийся от выбранного ({{ target }}), выделен цветом: у показателя
+        нет данных за этот год, и взят ближайший доступный.
+      {% endblocktranslate %}
+    </div>
+  </div>
+
+{% endif %}

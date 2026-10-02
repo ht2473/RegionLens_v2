@@ -1,0 +1,76 @@
+{% extends "analytics/tool.html" %}
+{% load i18n formatting %}
+
+{# Конвергенция: ряд, отрезок и постановка — слева; сигма, бета и период полусокращения — справа. #}
+
+{% block filters %}
+  <div class="filter-rail__group">
+    {% include "partials/_series_select.html" %}
+  </div>
+
+  <div class="filter-rail__group">
+    <div class="field">
+      <label class="field__label" for="convergence-first">{% translate "Начальный год" %}</label>
+      <select class="select" id="convergence-first" name="first">
+        {% for item in years %}
+          <option value="{{ item|year }}" {% if item == first_year %}selected{% endif %}>{{ item|year }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="convergence-last">{% translate "Конечный год" %}</label>
+      <select class="select" id="convergence-last" name="last">
+        {% for item in years reversed %}
+          <option value="{{ item|year }}" {% if item == last_year %}selected{% endif %}>{{ item|year }}</option>
+        {% endfor %}
+      </select>
+      <span class="field__hint">
+        {% blocktranslate trimmed %}
+          Вывод о сближении сильно зависит от границ отрезка. Стоит проверить
+          несколько периодов, прежде чем делать заключение.
+        {% endblocktranslate %}
+      </span>
+    </div>
+  </div>
+
+  <div class="filter-rail__group">
+    <div class="filter-rail__title">{% translate "Состав субъектов в разбросе" %}</div>
+    <div class="stack stack--tight">
+      {% for code, label in compositions.items %}
+        <label class="radio">
+          <input type="radio" name="composition" value="{{ code }}"
+                 {% if code == composition_mode %}checked{% endif %}>
+          <span>{{ label }}</span>
+        </label>
+      {% endfor %}
+    </div>
+    <span class="field__hint">
+      {% blocktranslate trimmed %}
+        Бета-конвергенция всегда считается по субъектам, у которых есть оба года отрезка.
+      {% endblocktranslate %}
+    </span>
+  </div>
+
+  <div class="filter-rail__group">
+    <div class="filter-rail__title">{% translate "Постановка задачи" %}</div>
+    <div class="stack stack--tight">
+      {% for code, label in modes.items %}
+        <label class="radio">
+          <input type="radio" name="mode" value="{{ code }}" {% if code == mode %}checked{% endif %}>
+          <span>{{ label }}</span>
+        </label>
+      {% endfor %}
+    </div>
+    <span class="field__hint">
+      {% blocktranslate trimmed %}
+        В условной постановке в модель добавлены фиктивные переменные федеральных
+        округов: проверяется сближение внутри округа, а не с общим уровнем страны.
+      {% endblocktranslate %}
+    </span>
+  </div>
+{% endblock %}
+
+{% block results %}
+  {% include "analytics/partials/_convergence_results.html" %}
+{% endblock %}

@@ -1,0 +1,206 @@
+{% load i18n formatting %}
+{# Результаты пространственного анализа: индекс Морана, диаграмма и карта LISA. #}
+
+{% if not global_moran %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "Пространственный анализ не выполнен" %}</p>
+    <p class="empty-state__hint">
+      {% translate "Нужны значения не менее чем по двадцати субъектам, связанным соседством." %}
+    </p>
+  </div>
+{% else %}
+
+  <header class="tool-subject">
+    <div class="tool-subject__text">
+      <h2 class="tool-subject__title">
+        {{ series.full_title }}
+      </h2>
+      <p class="tool-subject__meta">
+        {{ year|year }}
+        {% if series.unit %} · {{ series.unit.short_name }}{% endif %}
+        · {% translate "соседство" %}: {{ schemes|dict_value:scheme }}
+        · {% translate "субъектов в расчёте" %}: {{ global_moran.observations }}
+      </p>
+    </div>
+    <span id="analytics-indicator" class="htmx-indicator tool-subject__busy">{% translate "Расчёт…" %}</span>
+  </header>
+
+  {# --- Общий вывод --------------------------------------------------------------------- #}
+  <div class="card">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "Глобальный индекс Морана" %}</h2>
+      <span class="card__meta">
+        {% translate "перестановок" %}: {{ global_moran.permutations }}
+      </span>
+    </div>
+
+    <p style="font-weight: var(--weight-medium)">
+      {% if global_moran.direction == 'clustered' %}
+        {% translate "Похожие значения группируются в пространстве: соседние регионы похожи друг на друга сильнее, чем случайно выбранные." %}
+      {% elif global_moran.direction == 'dispersed' %}
+        {% translate "Соседние регионы различаются сильнее, чем случайно выбранные: значения чередуются в пространстве." %}
+      {% else %}
+        {% translate "Пространственной структуры не обнаружено: показатель распределён так, как если бы значения были розданы регионам случайно." %}
+      {% endif %}
+    </p>
+
+    <div class="grid grid--kpi" style="margin-top: var(--space-4)">
+      <div class="kpi">
+        <div class="kpi__label">{% translate "Индекс Морана" %}</div>
+        <div class="kpi__value numeric">{{ global_moran.value|ru_number:3 }}</div>
+        <div class="kpi__footer">
+          {% translate "при случайном распределении" %}: {{ global_moran.expected|ru_number:3 }}
+        </div>
+      </div>
+      <div class="kpi">
+        <div class="kpi__label">{% translate "Уровень значимости" %}</div>
+        <div class="kpi__value numeric">{{ global_moran.p_value|p_level }}</div>
+        <div class="kpi__footer">
+          {% if global_moran.is_significant %}
+            {% translate "структура отличается от случайной" %}
+          {% else %}
+            {% translate "отличие от случайного не подтверждено" %}
+          {% endif %}
+        </div>
+      </div>
+      <div class="kpi">
+        <div class="kpi__label">{% translate "Стандартизованное отклонение" %}</div>
+        <div class="kpi__value numeric">{{ global_moran.z_score|ru_number:2 }}</div>
+        <div class="kpi__footer">{% translate "во сколько σ индекс отличается от ожидаемого" %}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi__label">{% translate "Выделяющихся субъектов" %}</div>
+        <div class="kpi__value numeric">{{ significant_count }}</div>
+        <div class="kpi__footer">{% translate "со значимым локальным индексом" %}</div>
+      </div>
+    </div>
+
+    {% if isolated %}
+      <div class="card__footer">
+        {% blocktranslate trimmed with names=isolated|join:", " count=isolated|length %}
+          Без соседей при этой схеме ({{ count }}): {{ names }}. Такие субъекты
+          в расчёт локальных индексов не входят: пространственное окружение
+          для них не определено.
+        {% endblocktranslate %}
+      </div>
+    {% endif %}
+  </div>
+
+  {# --- Карта локальных кластеров ------------------------------------------------------------ #}
+  <div class="chart-frame" style="margin-top: var(--space-5)">
+    <div class="chart-frame__header">
+      <div>
+        <div class="chart-frame__title">{% translate "Локальные пространственные кластеры" %}</div>
+        <div class="chart-frame__subtitle">
+          {% translate "раскрашены только субъекты со значимым локальным индексом" %}
+        </div>
+      </div>
+    </div>
+    {% include "partials/_tile_map.html" %}
+    <div class="data-legend" style="margin-top: var(--space-3)">
+      {% for group in quadrants %}
+        <span class="data-legend__item">
+          <span class="map-legend__swatch"
+                style="background: var({{ quadrant_colours|dict_value:group.code }})"></span>
+          {{ group.label }} ({{ group.count }})
+        </span>
+      {% endfor %}
+      <span class="data-legend__item">
+        <span class="map-legend__swatch map-legend__swatch--no-data"></span>
+        {% translate "окружение неотличимо от случайного" %}
+      </span>
+    </div>
+    <div class="chart-frame__footer">
+      {% blocktranslate trimmed %}
+        «Высокие среди высоких» и «низкие среди низких» — пространственные сгущения.
+        «Высокий среди низких» и «низкий среди высоких» — пространственные исключения:
+        регион, выпадающий из своего окружения.
+      {% endblocktranslate %}
+    </div>
+  </div>
+
+  {# --- Диаграмма Морана ------------------------------------------------------------------------ #}
+  {% if moran_option %}
+    <div class="chart-frame" style="margin-top: var(--space-5)">
+      <div class="chart-frame__header">
+        <div>
+          <div class="chart-frame__title">{% translate "Диаграмма Морана" %}</div>
+          <div class="chart-frame__subtitle">
+            {% translate "значение территории и среднее значение её соседей" %}
+          </div>
+        </div>
+      </div>
+      <rl-chart class="chart chart--tall" data-options="moran-option"></rl-chart>
+      {{ moran_option|json_script:"moran-option" }}
+      <div class="chart-frame__footer">
+        {% blocktranslate trimmed %}
+          Наклон облака точек равен глобальному индексу Морана. Осевые линии проходят
+          через средние значения и делят поле на четыре четверти, каждая из которых
+          соответствует своему типу пространственного окружения.
+        {% endblocktranslate %}
+      </div>
+    </div>
+  {% endif %}
+
+  {# --- Перечни по типам ------------------------------------------------------------------------- #}
+  <div class="grid grid--halves" style="margin-top: var(--space-5)">
+    {% for group in quadrants %}
+      {% if group.count %}
+        <div class="card">
+          <div class="card__header">
+            <h2 class="card__title">
+              <span class="map-legend__swatch"
+                    style="background: var({{ quadrant_colours|dict_value:group.code }})"></span>
+              {{ group.label }}
+            </h2>
+            <span class="card__meta numeric">{{ group.count }}</span>
+          </div>
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">{% translate "Субъект" %}</th>
+                  <th scope="col" class="is-numeric">{% translate "Значение" %}</th>
+                  <th scope="col" class="is-numeric" title="{% translate 'Среднее у соседей в стандартных отклонениях' %}">
+                    {% translate "Соседи" %}
+                  </th>
+                  <th scope="col" class="is-numeric">{% translate "Соседей" %}</th>
+                  <th scope="col" class="is-numeric">{% translate "p" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for entry in group.items %}
+                  <tr>
+                    <td>{{ entry.name }}</td>
+                    <td class="is-numeric">{{ entry.value|ru_number }}</td>
+                    <td class="is-numeric text-secondary">{{ entry.spatial_lag|ru_number:2 }}</td>
+                    <td class="is-numeric text-secondary">{{ entry.neighbours }}</td>
+                    <td class="is-numeric text-secondary">{{ entry.p_value|p_level }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <div class="callout callout--methodology" style="margin-top: var(--space-5)">
+    <svg class="callout__icon" aria-hidden="true"><use href="#icon-book"></use></svg>
+    <div>
+      <div class="callout__title">{% translate "Как считается индекс" %}</div>
+      <p>
+        {% blocktranslate trimmed %}
+          Веса соседей каждой территории в сумме равны единице, поэтому число соседей не
+          влияет на результат. При случайном размещении значений индекс в среднем равен
+          −1/(n−1). Значимость проверяется перестановками: значения многократно случайно
+          раздаются территориям, и наблюдаемый индекс сравнивается с полученным
+          распределением.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  </div>
+
+{% endif %}

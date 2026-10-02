@@ -1,0 +1,327 @@
+{% load i18n formatting %}
+{# Результаты построения индекса: рейтинг, состав оценки, устойчивость. #}
+
+{% if undirected %}
+  <section class="index-directions" aria-labelledby="index-directions-title">
+    <h2 class="index-directions__title" id="index-directions-title">
+      {% translate "Направленность не определена" %}
+    </h2>
+    <p class="index-directions__lead">
+      {% blocktranslate trimmed %}
+        По формулировке не видно, лучше ли большее значение. Пока направленность
+        не задана, показатель в расчёт не входит.
+      {% endblocktranslate %}
+    </p>
+    <ul class="index-directions__list">
+      {% for item in undirected %}
+        <li class="index-directions__item">
+          <label class="index-directions__label" for="direction-new-{{ forloop.counter }}">{{ item.label }}</label>
+          <select class="select" id="direction-new-{{ forloop.counter }}" name="direction">
+            <option value="" selected>{% translate "— задайте —" %}</option>
+            <option value="{{ item.key }}:positive">{% translate "больше — лучше" %}</option>
+            <option value="{{ item.key }}:negative">{% translate "меньше — лучше" %}</option>
+          </select>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endif %}
+
+{% if not scores %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "Индекс не построен" %}</p>
+    <p class="empty-state__hint">
+      {% blocktranslate trimmed with least=min_series %}
+        Нужно не менее {{ least }} показателей с заданной направленностью: без ответа
+        на вопрос «лучше ли большее значение» вклад показателя в оценку не определён.
+      {% endblocktranslate %}
+    </p>
+  </div>
+{% else %}
+
+  <header class="tool-subject">
+    <div class="tool-subject__text">
+      <h2 class="tool-subject__title">
+        {% translate "Интегральный индекс" %} · {{ year|year }}
+      </h2>
+      <p class="tool-subject__meta">
+        {% translate "показателей" %}: {{ columns|length }}
+        · {% translate "субъектов в рейтинге" %}: {{ scores|length }}
+        · {{ normalization_methods|dict_value:normalization }}
+        · {{ weighting_methods|dict_value:weighting }}
+        · {{ aggregation_methods|dict_value:aggregation }}
+      </p>
+    </div>
+    <span id="analytics-indicator" class="htmx-indicator tool-subject__busy">{% translate "Расчёт…" %}</span>
+  </header>
+
+  {% if weights.note %}
+    <div class="callout callout--info" style="margin-bottom: var(--space-4)">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "О весах" %}</div>
+        <p>{{ weights.note }}</p>
+      </div>
+    </div>
+  {% endif %}
+
+  {# --- Устойчивость рейтинга -------------------------------------------------------------- #}
+  {% if sensitivity %}
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Насколько результат зависит от способа расчёта" %}</h2>
+        <span class="card__meta">{% translate "проверка устойчивости" %}</span>
+      </div>
+      <div class="data-table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Шкала" %}</th>
+              <th scope="col">{% translate "Свёртка" %}</th>
+              <th scope="col">{% translate "Первое место" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Среднее смещение" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Наибольшее" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Без изменений" %}</th>
+              <th scope="col"><span class="visually-hidden">{% translate "Действие" %}</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in sensitivity %}
+              <tr {% if row.code == compare %}class="is-selected"{% endif %}>
+                <td>{{ row.normalization }}</td>
+                <td>{{ row.aggregation }}</td>
+                <td>{{ row.leader }}</td>
+                <td class="is-numeric">{{ row.shift.mean_shift|ru_number:1 }}</td>
+                <td class="is-numeric">{{ row.shift.max_shift }}</td>
+                <td class="is-numeric text-secondary">{{ row.shift.unchanged }}</td>
+                {# Где оказался каждый регион — рейтинг двумя расчётами сразу. #}
+                <td>
+                  {% if row.code == compare %}
+                    <a class="button button--sm button--secondary"
+                       href="{% querystring compare=None %}"
+                       hx-get="{% querystring compare=None %}"
+                       hx-target="#analytics-results"
+                       hx-push-url="true">{% translate "убрать" %}</a>
+                  {% else %}
+                    <a class="button button--sm button--ghost"
+                       href="{% querystring compare=row.code %}"
+                       hx-get="{% querystring compare=row.code %}"
+                       hx-target="#analytics-results"
+                       hx-push-url="true">{% translate "показать рядом" %}</a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="card__footer">
+        {% blocktranslate trimmed %}
+          Столбец «среднее смещение» показывает, на сколько позиций в среднем переехали
+          бы субъекты, будь выбрано другое сочетание. Смещение в две-три позиции
+          обычно; смещение в двадцать означает, что места зависят от способа расчёта
+          сильнее, чем от данных.
+        {% endblocktranslate %}
+      </div>
+    </div>
+  {% endif %}
+
+  {# --- Состав оценки ---------------------------------------------------------------------- #}
+  {% if contribution_option %}
+    <div class="chart-frame" style="margin-top: var(--space-5)">
+      <div class="chart-frame__header">
+        <div>
+          <div class="chart-frame__title">{% translate "Из чего складывается оценка" %}</div>
+          <div class="chart-frame__subtitle">
+            {% translate "верхняя часть рейтинга; высота столбца — итоговая оценка" %}
+          </div>
+        </div>
+      </div>
+      <rl-chart class="chart chart--tall" data-options="contribution-option"></rl-chart>
+      {{ contribution_option|json_script:"contribution-option" }}
+      <div class="chart-frame__footer">
+        {% blocktranslate trimmed %}
+          Два субъекта с одинаковой оценкой могут иметь разный профиль:
+          состав столбца показывает, за счёт чего получено место.
+        {% endblocktranslate %}
+      </div>
+    </div>
+  {% endif %}
+
+  {# --- Рейтинг --------------------------------------------------------------------------------- #}
+  <div class="card" style="margin-top: var(--space-5)">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "Рейтинг по интегральному индексу" %}</h2>
+      <span class="card__meta numeric">{{ year|year }}</span>
+    </div>
+
+    {# Оба расчёта названы полностью. #}
+    {% if comparison %}
+      <div class="callout callout--info" style="margin: 0 var(--space-5) var(--space-4)">
+        <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+        <div>
+          <div class="callout__title">{% translate "Показаны два расчёта" %}</div>
+          <p style="margin: 0">
+            {% blocktranslate trimmed with base_scale=normalization_methods|dict_value:normalization base_fold=aggregation_methods|dict_value:aggregation other_scale=comparison.normalization other_fold=comparison.aggregation %}
+              Основной: {{ base_scale }}, {{ base_fold }}. Сравниваемый: {{ other_scale }},
+              {{ other_fold }}. Веса в обоих одинаковы — сравниваются только шкала
+              и свёртка.
+            {% endblocktranslate %}
+          </p>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col" class="is-numeric">{% translate "Место" %}</th>
+            <th scope="col">{% translate "Субъект" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Оценка" %}</th>
+            {% if comparison %}
+              <th scope="col" class="is-numeric">{% translate "Место при сравнении" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Смещение" %}</th>
+            {% endif %}
+            <th scope="col" class="is-numeric">{% translate "Показателей с данными" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in ranking %}
+            <tr>
+              <td class="is-numeric data-table__rank">{{ row.position }}</td>
+              <td class="data-table__name">
+                {% if row.slug %}
+                  <a href="{% url 'catalog:territory-detail' slug=row.slug %}">{{ row.score.name }}</a>
+                {% else %}{{ row.score.name }}{% endif %}
+              </td>
+              <td class="is-numeric">{{ row.score.value|ru_number:1 }}</td>
+              {% if comparison %}
+                <td class="is-numeric text-secondary">{{ row.other_position|default:"—" }}</td>
+                <td class="is-numeric">
+                  {% if row.shift is None %}
+                    <span class="text-muted">—</span>
+                  {% elif row.shift > 0 %}
+                    <span class="text-positive">↑ {{ row.shift }}</span>
+                  {% elif row.shift < 0 %}
+                    <span class="text-negative">↓ {{ row.shift }}</span>
+                  {% else %}
+                    <span class="text-muted">0</span>
+                  {% endif %}
+                </td>
+              {% endif %}
+              <td class="is-numeric {% if row.score.is_partial %}text-attention{% else %}text-secondary{% endif %}">
+                {{ row.score.covered }} / {{ row.score.total }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="card__footer">
+      {% blocktranslate trimmed with share=min_coverage|percent:0 %}
+        Субъекты, у которых данных меньше {{ share }} от числа показателей, в рейтинг
+        не включены: оценка по трём показателям из десяти несопоставима с оценкой
+        по всем десяти. Веса недостающих показателей перераспределяются между
+        имеющимися, иначе отсутствие данных штрафовало бы территорию так же,
+        как плохое значение.
+      {% endblocktranslate %}
+    </div>
+  </div>
+
+  {# --- Состав индекса ------------------------------------------------------------------------- #}
+  <div class="card" style="margin-top: var(--space-5)">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "Состав индекса" %}</h2>
+      <span class="card__meta">{{ weighting_methods|dict_value:weighting }}</span>
+    </div>
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Показатель" %}</th>
+            <th scope="col" class="data-table__aside">{% translate "Единица" %}</th>
+            <th scope="col">{% translate "Направленность" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Год" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Вес" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in weight_rows %}
+            <tr>
+              <td class="data-table__long">
+                <a href="{% url 'catalog:series-detail' slug=row.column.series.indicator.slug %}?series={{ row.column.key }}">
+                  {{ row.column.label }}
+                </a>
+              </td>
+              <td class="text-secondary data-table__aside">{{ row.column.unit|default:"—" }}</td>
+              <td class="index-direction">
+                <label class="visually-hidden" for="direction-{{ forloop.counter }}">
+                  {% blocktranslate trimmed with name=row.column.label %}Направленность: {{ name }}{% endblocktranslate %}
+                </label>
+                <select class="select" id="direction-{{ forloop.counter }}" name="direction">
+                  <option value="{{ row.column.key }}:positive" {% if row.column.polarity == 'positive' %}selected{% endif %}>{% translate "больше — лучше" %}</option>
+                  <option value="{{ row.column.key }}:negative" {% if row.column.polarity == 'negative' %}selected{% endif %}>{% translate "меньше — лучше" %}</option>
+                </select>
+                <span class="index-direction__origin">
+                  {% if row.column.direction.origin == "user" %}
+                    {% translate "задано вами" %}
+                  {% elif row.column.direction.origin == "featured" %}
+                    {% translate "основной набор" %}
+                  {% else %}
+                    {% translate "предложено по формулировке" %}
+                  {% endif %}
+                </span>
+              </td>
+              <td class="is-numeric {% if row.column.year != year %}text-attention{% endif %}">
+                {{ row.column.year|year }}
+              </td>
+              <td class="is-numeric">
+                {% if weighting == "expert" %}
+                  <label class="visually-hidden" for="weight-{{ forloop.counter }}">
+                    {% blocktranslate trimmed with name=row.column.label %}Вес: {{ name }}{% endblocktranslate %}
+                  </label>
+                  <input class="input numeric index-weight" type="number" id="weight-{{ forloop.counter }}"
+                         name="weight:{{ row.column.key }}" min="0" max="10" step="0.5"
+                         value="{{ row.expert|stringformat:'g' }}">
+                  <span class="index-direction__origin">{{ row.weight|percent:1 }}</span>
+                {% else %}
+                  {{ row.weight|percent:1 }}
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="card__footer">
+      {% blocktranslate trimmed %}
+        Для показателей «меньше — лучше» шкала разворачивается, поэтому сто по любой
+        оси означает «лучше». У основного набора направленность задана вручную,
+        у остальных рядов угадана по формулировке — проверьте её. Год, отличающийся
+        от выбранного, выделен цветом: у показателя нет данных за этот год, и взят
+        ближайший доступный.
+      {% endblocktranslate %}
+      {% if weighting == "expert" %}
+        {% translate "Веса задаются в произвольном масштабе; их сумма приводится к единице." %}
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="callout callout--methodology" style="margin-top: var(--space-5)">
+    <svg class="callout__icon" aria-hidden="true"><use href="#icon-book"></use></svg>
+    <div>
+      <div class="callout__title">{% translate "Порядок расчёта" %}</div>
+      <p>
+        {% blocktranslate trimmed %}
+          Значения приводятся к шкале от нуля до ста с учётом направленности показателя,
+          затем назначаются веса, затем выполняется свёртка. Веса по данным (энтропийные,
+          CRITIC, по главным компонентам) считаются после приведения к общей шкале, иначе
+          наибольший вес получил бы показатель с наибольшими числами.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  </div>
+
+{% endif %}

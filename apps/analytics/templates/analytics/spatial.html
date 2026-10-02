@@ -1,0 +1,42 @@
+{% extends "analytics/tool.html" %}
+{% load i18n formatting %}
+
+{# Пространственный анализ: ряд, год, схема соседства — слева; Моран и карта LISA — справа. #}
+
+{% block filters %}
+  <div class="filter-rail__group">
+    {% include "partials/_series_select.html" %}
+  </div>
+
+  <div class="filter-rail__group">
+    <div class="field">
+      <label class="field__label" for="spatial-year">{% translate "Год" %}</label>
+      <select class="select" id="spatial-year" name="year">
+        {% for item in years reversed %}
+          <option value="{{ item|year }}" {% if item == year %}selected{% endif %}>{{ item|year }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="filter-rail__group">
+    <div class="filter-rail__title">{% translate "Что считать соседством" %}</div>
+    <div class="stack stack--tight">
+      {% for code, label in schemes.items %}
+        <label class="radio">
+          <input type="radio" name="scheme" value="{{ code }}" {% if code == scheme %}checked{% endif %}>
+          <span>{{ label }}</span>
+        </label>
+      {% endfor %}
+    </div>
+    <span class="field__hint">
+      {% blocktranslate trimmed %}
+        Вывод зависит от схемы соседства; надёжнее тот, что держится при всех трёх.
+      {% endblocktranslate %}
+    </span>
+  </div>
+{% endblock %}
+
+{% block results %}
+  {% include "analytics/partials/_spatial_results.html" %}
+{% endblock %}

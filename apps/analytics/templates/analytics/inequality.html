@@ -1,0 +1,99 @@
+{% extends "analytics/tool.html" %}
+{% load i18n formatting %}
+
+{# Неравенство: ряд, год, взвешивание и ε — слева; меры, Лоренц, динамика, разложение — справа. #}
+
+{% block filters %}
+  <div class="filter-rail__group">
+    {% include "partials/_series_select.html" %}
+  </div>
+
+  <div class="filter-rail__group">
+    <div class="field">
+      <label class="field__label" for="inequality-year">{% translate "Год" %}</label>
+      <select class="select" id="inequality-year" name="year">
+        {% for item in years reversed %}
+          <option value="{{ item|year }}" {% if item == year %}selected{% endif %}>{{ item|year }}</option>
+        {% endfor %}
+      </select>
+      <span class="field__hint">
+        {% translate "Определяет срез, по которому рассчитаны меры и кривая Лоренца" %}
+      </span>
+    </div>
+  </div>
+
+  <div class="filter-rail__group">
+    <div class="filter-rail__title">{% translate "Динамика мер" %}</div>
+    <div class="field">
+      <label class="field__label" for="inequality-first">{% translate "Начальный год" %}</label>
+      <select class="select" id="inequality-first" name="first">
+        {% for item in years %}
+          <option value="{{ item|year }}" {% if item == first_year %}selected{% endif %}>{{ item|year }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label class="field__label" for="inequality-last">{% translate "Конечный год" %}</label>
+      <select class="select" id="inequality-last" name="last">
+        {% for item in years reversed %}
+          <option value="{{ item|year }}" {% if item == last_year %}selected{% endif %}>{{ item|year }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="filter-rail__group">
+    <div class="filter-rail__title">{% translate "Состав субъектов в динамике" %}</div>
+    <div class="stack stack--tight">
+      {% for code, label in compositions.items %}
+        <label class="radio">
+          <input type="radio" name="composition" value="{{ code }}"
+                 {% if code == composition_mode %}checked{% endif %}>
+          <span>{{ label }}</span>
+        </label>
+      {% endfor %}
+    </div>
+    <span class="field__hint">
+      {% blocktranslate trimmed %}
+        Когда в ряд входят новые субъекты, меры меняются от одного этого. На постоянном
+        составе динамика сравнивает одни и те же регионы.
+      {% endblocktranslate %}
+    </span>
+  </div>
+
+  <div class="filter-rail__group">
+    <div class="filter-rail__title">{% translate "Единица наблюдения" %}</div>
+    <div class="stack stack--tight">
+      {% for code, label in weighting_options.items %}
+        <label class="radio">
+          <input type="radio" name="weighting" value="{{ code }}"
+                 {% if code == weighting %}checked{% endif %}>
+          <span>{{ label }}</span>
+        </label>
+      {% endfor %}
+    </div>
+    <span class="field__hint">
+      {% blocktranslate trimmed %}
+        Без взвешивания меры отвечают на вопрос о различии территорий, со взвешиванием
+        по населению — о различии условий жизни людей. Ответы часто расходятся.
+      {% endblocktranslate %}
+    </span>
+  </div>
+
+  <div class="filter-rail__group">
+    <div class="field">
+      <label class="field__label" for="inequality-epsilon">
+        {% translate "Неприятие неравенства (индекс Аткинсона)" %}
+      </label>
+      <input class="input numeric" type="number" id="inequality-epsilon" name="epsilon"
+             min="0.1" max="2" step="0.1" value="{{ epsilon|stringformat:'.1f' }}">
+      <span class="field__hint">
+        {% translate "Чем выше значение, тем сильнее учитывается отставание нижней части" %}
+      </span>
+    </div>
+  </div>
+{% endblock %}
+
+{% block results %}
+  {% include "analytics/partials/_inequality_results.html" %}
+{% endblock %}

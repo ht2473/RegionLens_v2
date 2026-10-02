@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load i18n static workspace %}
+
+{% comment %}
+  Каркас страницы инструмента: шапка с вопросом и методами, рейль-пульт и холст;
+  смена параметра обновляет только холст. Наследник заполняет блоки filters и results.
+{% endcomment %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/analytics.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'vendor/echarts.min.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro tool-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{{ tool.title }}</h1>
+      <p class="page-intro__lead">{{ tool.question }}</p>
+      <p class="page-intro__meta">{{ tool.methods }}</p>
+      {# Продолжение разбора: отдельной карточки в перечне раздела у него нет. #}
+      {% for child in tool.children %}
+        <p class="tool-intro__next">
+          {% translate "Продолжение разбора:" %}
+          <a href="{{ child.url }}">{{ child.title }}</a> — {{ child.question|lower }}
+        </p>
+      {% endfor %}
+    </div>
+    <div class="page-intro__actions">
+      {% if methodology %}
+        {# Ссылка — прямо к разделу методики. #}
+        <a class="button button--sm button--secondary"
+           href="{% url 'content:methodology' %}#{{ methodology.anchor }}">
+          <svg aria-hidden="true"><use href="#icon-book"></use></svg>
+          {% translate "Как это считается" %}
+        </a>
+      {% endif %}
+      {% save_query_button tool.code %}
+    </div>
+  </header>
+
+  {% if not warehouse_ready %}
+    <div class="callout callout--warning">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Данные ещё не загружены" %}</div>
+        <p>{% translate "Страница заработает, когда администратор загрузит набор данных." %}</p>
+      </div>
+    </div>
+  {% else %}
+
+  <form class="workspace" id="analytics-form"
+        hx-get="{{ tool.url }}"
+        hx-target="#analytics-results"
+        hx-push-url="true"
+        hx-trigger="change"
+        hx-swap="innerHTML transition:true"
+        hx-indicator="#analytics-results">
+
+    <aside class="filter-rail" id="analytics-rail" aria-label="{% translate 'Параметры расчёта' %}">
+      {% include "partials/_rail_sheet_head.html" with sheet_title=_("Параметры расчёта") %}
+
+      {% block filters %}{% endblock %}
+
+      <div class="filter-rail__foot">
+        <a class="filter-rail__reset" href="{{ tool.url }}">
+          <svg aria-hidden="true"><use href="#icon-refresh"></use></svg>
+          {% translate "Сбросить параметры" %}
+        </a>
+      </div>
+    </aside>
+
+    <div class="workspace__content">
+      <div id="analytics-results" class="canvas tool-canvas" data-announce="{% translate 'Расчёт обновлён' %}">
+        {% block results %}{% endblock %}
+      </div>
+    </div>
+  </form>
+
+  {% include "partials/_rail_dock.html" with rail_id="analytics-rail" dock_title=_("Параметры расчёта") %}
+
+  {% endif %}
+</div>
+{% endblock %}

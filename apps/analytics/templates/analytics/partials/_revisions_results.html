@@ -1,0 +1,253 @@
+{% load i18n formatting %}
+{# Результаты разбора пересмотров: объём, распределения и перечни. #}
+
+{% if not summary.observations %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "Пересмотры не обнаружены" %}</p>
+    <p class="empty-state__hint">
+      {% translate "В данных нет наблюдений, значения которых различались бы между выпусками изданий." %}
+    </p>
+  </div>
+{% else %}
+
+  <header class="tool-subject">
+    <div class="tool-subject__text">
+      <h2 class="tool-subject__title">
+        {% translate "Расхождения значений между выпусками изданий" %}
+      </h2>
+      <p class="tool-subject__meta">
+        {{ summary.first_year|year }}–{{ summary.last_year|year }}
+        · {% translate "рядов" %}: {{ summary.series }}
+      </p>
+    </div>
+    <span id="analytics-indicator" class="htmx-indicator tool-subject__busy">{% translate "Обновление…" %}</span>
+  </header>
+
+  {# --- Объём явления --------------------------------------------------------------------- #}
+  <div class="grid grid--kpi">
+    <div class="kpi">
+      <div class="kpi__label">{% translate "Пересмотренных наблюдений" %}</div>
+      <div class="kpi__value numeric">{{ summary.observations|ru_number:0 }}</div>
+      <div class="kpi__footer">{% translate "значение различается между изданиями" %}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi__label">{% translate "Затронуто рядов" %}</div>
+      <div class="kpi__value numeric">{{ summary.series }}</div>
+      <div class="kpi__footer">{% translate "из числа опубликованных в нескольких изданиях" %}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi__label">{% translate "Типичный размер пересмотра" %}</div>
+      <div class="kpi__value numeric">{{ summary.median_change|percent:1 }}</div>
+      <div class="kpi__footer">{% translate "медиана относительного изменения" %}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi__label">{% translate "Крупных пересмотров" %}</div>
+      <div class="kpi__value numeric">{{ summary.large_count }}</div>
+      <div class="kpi__footer">
+        {% blocktranslate trimmed with limit=large_revision|percent:0 %}
+          изменение свыше {{ limit }}
+        {% endblocktranslate %}
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout--info" style="margin-top: var(--space-4)">
+    <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+    <div>
+      <div class="callout__title">{% translate "Почему медиана, а не среднее" %}</div>
+      <p>
+        {% blocktranslate trimmed with mean=summary.mean_change|percent:0 largest=summary.max_change|percent:0 %}
+          Среднее относительное изменение по всем пересмотрам составляет {{ mean }},
+          а наибольшее — {{ largest }}. Такие величины почти всегда означают смену
+          единицы измерения между изданиями, а не пересмотр самой величины, и тянут
+          среднее за собой. Типичный размер расхождения описывается медианой.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  </div>
+
+  {# --- Распределения ------------------------------------------------------------------------ #}
+  <div class="grid grid--halves" style="margin-top: var(--space-5)">
+    <div class="chart-frame">
+      <div class="chart-frame__header">
+        <div>
+          <div class="chart-frame__title">{% translate "Насколько сильно меняются значения" %}</div>
+          <div class="chart-frame__subtitle">{% translate "по величине относительного изменения" %}</div>
+        </div>
+      </div>
+      <rl-chart class="chart chart--short" data-options="revision-distribution-option"></rl-chart>
+      {{ distribution_option|json_script:"revision-distribution-option" }}
+      <div class="chart-frame__footer">
+        {% blocktranslate trimmed %}
+          Расхождение в сотые доли процента — округление при пересчёте; расхождение
+          в четверть величины — смена методики или исправление ошибки.
+        {% endblocktranslate %}
+      </div>
+    </div>
+
+    {% if year_option %}
+      <div class="chart-frame">
+        <div class="chart-frame__header">
+          <div>
+            <div class="chart-frame__title">{% translate "За какие годы пересматривают" %}</div>
+            <div class="chart-frame__subtitle">{% translate "по отчётному году наблюдения" %}</div>
+          </div>
+        </div>
+        <rl-chart class="chart chart--short" data-options="revision-year-option"></rl-chart>
+        {{ year_option|json_script:"revision-year-option" }}
+        <div class="chart-frame__footer">
+          {% blocktranslate trimmed %}
+            Если пересматриваются только недавние годы — это уточнение оперативных
+            данных. Если и давние тоже — пересчёт ряда по новой методике, и сравнивать
+            выводы, сделанные по разным изданиям, нельзя.
+          {% endblocktranslate %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  {# --- Разделы ------------------------------------------------------------------------------- #}
+  <div class="card" style="margin-top: var(--space-5)">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "Разделы сборников" %}</h2>
+      <span class="card__meta">{% translate "по числу пересмотренных наблюдений" %}</span>
+    </div>
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Раздел" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Наблюдений" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Рядов" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Типичное изменение" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Наибольшее" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in sections %}
+            <tr>
+              <td class="data-table__long">{{ item.name }}</td>
+              <td class="is-numeric">{{ item.revision_count }}</td>
+              <td class="is-numeric text-secondary">{{ item.series_count }}</td>
+              <td class="is-numeric">{{ item.median_change|percent:1 }}</td>
+              <td class="is-numeric text-secondary">{{ item.max_change|percent:0 }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# --- Ряды ------------------------------------------------------------------------------------ #}
+  <div class="card" style="margin-top: var(--space-5)">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "Ряды, пересматриваемые чаще всего" %}</h2>
+      {% if section %}
+        <span class="card__meta">{% translate "отобран раздел" %}</span>
+      {% endif %}
+    </div>
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Ряд наблюдений" %}</th>
+            <th scope="col">{% translate "Раздел" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Наблюдений" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Территорий" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Годы" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Типичное изменение" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in series_rows %}
+            <tr>
+              <td class="data-table__long">{{ item.full_title }}</td>
+              <td class="data-table__name text-secondary" style="font-size: var(--text-xs)">{{ item.section_name }}</td>
+              <td class="is-numeric">{{ item.revision_count }}</td>
+              <td class="is-numeric text-secondary">{{ item.territory_count }}</td>
+              <td class="is-numeric text-secondary">
+                {{ item.first_year|year }}–{{ item.last_year|year }}
+              </td>
+              <td class="is-numeric">{{ item.median_change|percent:1 }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# --- Крупные расхождения --------------------------------------------------------------------- #}
+  <div class="card" style="margin-top: var(--space-5)">
+    <div class="card__header">
+      <h2 class="card__title">{% translate "Наиболее крупные расхождения" %}</h2>
+      <span class="card__meta">{% translate "изменение от 1 % до пятикратного" %}</span>
+    </div>
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">{% translate "Ряд наблюдений" %}</th>
+            <th scope="col">{% translate "Субъект" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Год" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Первая версия" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Последняя версия" %}</th>
+            <th scope="col" class="is-numeric">{% translate "Изменение" %}</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in examples %}
+            <tr>
+              <td class="data-table__long">{{ item.full_title }}</td>
+              <td class="data-table__name">{{ item.territory_name }}</td>
+              <td class="is-numeric">{{ item.year|year }}</td>
+              <td class="is-numeric text-secondary">{{ item.first_value|ru_number }}</td>
+              <td class="is-numeric">{{ item.last_value|ru_number }}</td>
+              <td class="is-numeric">
+                <span class="{% if item.rel_change > 0 %}text-positive{% else %}text-negative{% endif %}">
+                  {{ item.rel_change|percent_delta:1 }}
+                </span>
+              </td>
+              <td>
+                <button type="button" class="button button--ghost button--sm"
+                        hx-get="{% url 'analytics:revision-trace' %}?series={{ item.series_key|urlencode }}&amp;territory={{ item.territory_code }}&amp;year={{ item.year|year }}"
+                        hx-target="#revision-trace-{{ forloop.counter }}"
+                        hx-swap="innerHTML">
+                  {% translate "версии" %}
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="7" class="revision-trace" id="revision-trace-{{ forloop.counter }}"></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="card__footer">
+      {% blocktranslate trimmed %}
+        Расхождения свыше пятикратных отсеяны: почти всегда это смена единицы
+        измерения между изданиями, а не пересмотр самой величины. Кнопка «версии»
+        показывает, в каком издании какое значение было напечатано.
+      {% endblocktranslate %}
+    </div>
+  </div>
+
+  <div class="callout callout--methodology" style="margin-top: var(--space-5)">
+    <svg class="callout__icon" aria-hidden="true"><use href="#icon-book"></use></svg>
+    <div>
+      <div class="callout__title">{% translate "Как определяется пересмотр" %}</div>
+      <p>
+        {% blocktranslate trimmed %}
+          Одно наблюдение — ряд, территория и год — выходит в нескольких выпусках изданий.
+          Сохраняются все версии; пересмотр — наблюдение, значения которого в разных
+          выпусках различаются. На сайте показывается значение из самого позднего выпуска,
+          как у источника. Расхождение считается от первой опубликованной версии к
+          последней.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  </div>
+
+{% endif %}

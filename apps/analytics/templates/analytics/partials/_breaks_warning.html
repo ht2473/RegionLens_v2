@@ -1,0 +1,26 @@
+{% load i18n formatting %}
+{# Разрывы сопоставимости внутри периода: сравнение за период смешивает разные правила счёта. #}
+{% if methodological_breaks %}
+  <div class="callout callout--warning tool-breaks">
+    <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+    <div>
+      <div class="callout__title">{% translate "Внутри периода менялись правила счёта" %}</div>
+      <ul class="break-list">
+        {% for item in methodological_breaks %}
+          <li class="break-list__item" title="{{ item.description }}">
+            <span class="break-list__year">{{ item.year|year }}</span>
+            <span>{{ item.label }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+      <p>{{ breaks_consequence }}</p>
+      {% if comparable_from %}
+        <p class="tool-breaks__link">
+          <a href="{% querystring first=comparable_from %}">
+            {% blocktranslate trimmed with year=comparable_from|year %}Считать с {{ year }} года — по одним правилам{% endblocktranslate %}
+          </a>
+        </p>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}

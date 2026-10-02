@@ -1,0 +1,57 @@
+{% extends "analytics/tool.html" %}
+{% load i18n formatting %}
+
+{# Конструктор индекса: показатели, год, шкала, веса, свёртка — слева; результат — справа. #}
+{# Направленность и экспертные веса задаются в таблице состава: она перерисовывается с расчётом. #}
+
+{% block filters %}
+  {% include "partials/_series_multiselect.html" %}
+
+  <div class="filter-rail__group">
+    <div class="field">
+      <label class="field__label" for="index-year">{% translate "Год" %}</label>
+      <select class="select" id="index-year" name="year">
+        {% for item in years reversed %}
+          <option value="{{ item|year }}" {% if item == year %}selected{% endif %}>{{ item|year }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="index-normalization">{% translate "Приведение к общей шкале" %}</label>
+      <select class="select" id="index-normalization" name="normalization">
+        {% for code, label in normalization_methods.items %}
+          <option value="{{ code }}" {% if code == normalization %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="index-weighting">{% translate "Веса показателей" %}</label>
+      <select class="select" id="index-weighting" name="weighting">
+        {% for code, label in weighting_methods.items %}
+          <option value="{{ code }}" {% if code == weighting %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="index-aggregation">{% translate "Свёртка" %}</label>
+      <select class="select" id="index-aggregation" name="aggregation">
+        {% for code, label in aggregation_methods.items %}
+          <option value="{{ code }}" {% if code == aggregation %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <span class="field__hint">
+        {% blocktranslate trimmed %}
+          Аддитивная свёртка допускает полное возмещение: провал по одному показателю
+          покрывается избытком по другому. Геометрическая возмещение ограничивает.
+        {% endblocktranslate %}
+      </span>
+    </div>
+  </div>
+{% endblock %}
+
+{% block results %}
+  {% include "analytics/partials/_index_results.html" %}
+{% endblock %}

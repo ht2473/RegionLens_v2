@@ -1,0 +1,57 @@
+{% load i18n formatting %}
+{# Состав субъектов в динамике: кто вошёл в расчёт по годам и кто нет. #}
+<div class="composition">
+  <p class="composition__lead">
+    {% if constant_used %}
+      {% blocktranslate trimmed with count=composition.constant total=composition.fullest %}
+        Постоянный состав: {{ count }} субъектов из {{ total }} — со значениями во всех годах периода.
+      {% endblocktranslate %}
+    {% elif composition_mode == "constant" %}
+      {% blocktranslate trimmed with count=composition.constant %}
+        Постоянный состав — {{ count }} субъектов: для мер этого мало, поэтому по каждому году
+        взяты все субъекты со значением.
+      {% endblocktranslate %}
+    {% elif composition.changes %}
+      {% blocktranslate trimmed %}
+        Состав меняется: по каждому году взяты все субъекты со значением, поэтому изменение мер
+        складывается из изменения различий и смены состава.
+      {% endblocktranslate %}
+    {% else %}
+      {% blocktranslate trimmed with count=composition.constant %}
+        Состав не меняется: {{ count }} субъектов со значениями во всех годах периода.
+      {% endblocktranslate %}
+    {% endif %}
+  </p>
+
+  {% if composition.outsiders %}
+    {# Длинный перечень свёрнут, короткий открыт сразу. #}
+    <details class="composition__details"{% if composition.outsiders <= 10 %} open{% endif %}>
+    <summary class="composition__title">
+      {% if constant_used %}
+        {% blocktranslate trimmed with count=composition.outsiders %}Не вошли — {{ count }}{% endblocktranslate %}
+      {% else %}
+        {% blocktranslate trimmed with count=composition.outsiders %}Значения не во всех годах — {{ count }}{% endblocktranslate %}
+      {% endif %}
+    </summary>
+    <ul class="composition__list">
+      {% for item in composition.entered %}
+        <li>{% blocktranslate trimmed with name=item.name year=item.first_year %}{{ name }} — с {{ year }} года{% endblocktranslate %}</li>
+      {% endfor %}
+      {% for item in composition.left %}
+        <li>{% blocktranslate trimmed with name=item.name year=item.last_year %}{{ name }} — по {{ year }} год{% endblocktranslate %}</li>
+      {% endfor %}
+      {% for item in composition.gapped %}
+        <li>{% blocktranslate trimmed with name=item.name count=item.gaps %}{{ name }} — пропущено лет: {{ count }}{% endblocktranslate %}</li>
+      {% endfor %}
+    </ul>
+    </details>
+  {% endif %}
+
+  {% if constant_used and composition.sparse %}
+    <p class="composition__note">
+      {% blocktranslate trimmed with years=composition.sparse|join:", " share=composition.share|percent:0 %}
+        Не вошли годы {{ years }}: значения в них меньше чем у {{ share }} субъектов.
+      {% endblocktranslate %}
+    </p>
+  {% endif %}
+</div>

@@ -1,0 +1,103 @@
+{% load i18n formatting %}
+{# Опубликованные версии одного наблюдения — фрагментом по запросу из таблицы пересмотров. #}
+
+{% if not versions %}
+  <div class="text-muted" style="font-size: var(--text-xs)">
+    {% translate "Версии этого наблюдения не найдены." %}
+  </div>
+{% else %}
+  <div class="stack stack--tight" style="padding: var(--space-2) 0">
+    <div class="text-secondary" style="font-size: var(--text-xs)">
+      {% blocktranslate trimmed with territory=trace_territory year=trace_year|stringformat:"d" %}
+        {{ territory }}, {{ year }} год — как значение публиковалось в разных изданиях:
+      {% endblocktranslate %}
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th scope="col" class="is-numeric">{% translate "Выпуск" %}</th>
+          <th scope="col">{% translate "Издание" %}</th>
+          <th scope="col" class="is-numeric">{% translate "Опубликованное значение" %}</th>
+          <th scope="col">{% translate "Качество" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in versions %}
+          <tr>
+            <td class="is-numeric">{{ item.edition_label|default:item.edition_year }}</td>
+            <td>{{ item.publication|default:item.edition_code }}</td>
+            <td class="is-numeric">{{ item.value|ru_number }}</td>
+            <td class="text-secondary" style="font-size: var(--text-xs)">
+              <span class="quality-dot quality-dot--{% if item.quality == 0 %}observed{% elif item.quality == 1 %}no-data{% elif item.quality == 2 %}hidden{% else %}no-data{% endif %}"></span>
+              {{ item.quality|quality_label }}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {# Треугольник пересмотров (как ALFRED): строка — год величины, столбец — выпуск сборника. #}
+    {% if triangle.available %}
+      <div class="stack stack--tight" style="margin-top: var(--space-4)">
+        <div class="text-secondary" style="font-size: var(--text-xs)">
+          {% translate "Весь ряд по выпускам: строка — год наблюдения, столбец — выпуск сборника" %}
+        </div>
+
+        <div class="data-table-wrapper">
+          <table class="data-table triangle">
+            <thead>
+              <tr>
+                <th scope="col" class="is-numeric">{% translate "Год" %}</th>
+                {% for edition in triangle.editions %}
+                  <th scope="col" class="is-numeric">{{ edition }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in triangle.rows %}
+                <tr {% if row.year == trace_year %}class="is-selected"{% endif %}>
+                  <th scope="row" class="is-numeric numeric">{{ row.year|year }}</th>
+                  {% for cell in row.cells %}
+                    {% if not cell.known %}
+                      {# Выпуск этого года не печатал — ячейка пуста. #}
+                      <td class="triangle__empty"></td>
+                    {% else %}
+                      <td class="is-numeric {% if cell.revised %}triangle__revised{% endif %}">
+                        {{ cell.value|ru_number }}
+                        {% if cell.revised %}
+                          {# Два знака: при одном пересмотр в четверть процента печатался бы нулём. #}
+                          <span class="triangle__change {% if cell.change > 0 %}text-positive{% else %}text-negative{% endif %}">
+                            {{ cell.change|percent:2 }}
+                          </span>
+                        {% endif %}
+                      </td>
+                    {% endif %}
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        {% if triangle.horizons %}
+          <div class="text-muted" style="font-size: var(--text-2xs)">
+            {% translate "Насколько значение меняется после первой публикации" %}:
+            {# Без согласования числа: множественные формы сборщик переводов не поддерживает. #}
+            {% for item in triangle.horizons %}
+              {% blocktranslate trimmed with step=item.step|stringformat:"d" mean=item.mean|percent:1 count=item.count|stringformat:"d" %}
+                выпусков спустя: {{ step }} — среднее изменение {{ mean }}, наблюдений: {{ count }}
+              {% endblocktranslate %}{% if not forloop.last %};{% endif %}
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-muted" style="font-size: var(--text-2xs)">
+            {% blocktranslate trimmed %}
+              Повторных публикаций у этого ряда нет: каждый выпуск печатает свои годы
+              и прежние не переиздаёт, поэтому сравнивать нечего.
+            {% endblocktranslate %}
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+{% endif %}

@@ -1,0 +1,41 @@
+{% extends "analytics/tool.html" %}
+{% load i18n formatting %}
+
+{# Пересмотры статистики: отбор по разделу — слева; объём, распределения и перечни — справа. #}
+
+{% block filters %}
+  <div class="filter-rail__group">
+    <div class="field">
+      <label class="field__label" for="revisions-section">{% translate "Раздел сборника" %}</label>
+      <select class="select" id="revisions-section" name="section">
+        <option value="">{% translate "все разделы" %}</option>
+        {% for item in sections %}
+          <option value="{{ item.section_code }}" {% if item.section_code == section %}selected{% endif %}>
+            {{ item.name }}
+          </option>
+        {% endfor %}
+      </select>
+      <span class="field__hint">
+        {% translate "Отбор действует на перечень рядов и на разбор крупных расхождений" %}
+      </span>
+    </div>
+  </div>
+
+  <div class="filter-rail__group">
+    <div class="filter-rail__title">{% translate "Выпуски изданий" %}</div>
+    <div class="stack stack--tight edition-list">
+      {% for item in editions %}
+        <div class="text-secondary">
+          {{ item.edition_label|default:item.edition_year }} — {{ item.publication }}
+        </div>
+      {% endfor %}
+    </div>
+    <span class="field__hint">
+      {% translate "Пересмотр порождается выпуском: чем больше изданий охватывает ряд, тем больше у наблюдения версий" %}
+    </span>
+  </div>
+{% endblock %}
+
+{% block results %}
+  {% include "analytics/partials/_revisions_results.html" %}
+{% endblock %}

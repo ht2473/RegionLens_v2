@@ -1,0 +1,275 @@
+{% load i18n formatting %}
+{# Результаты проверки сближения: разброс во времени и связь темпа роста с уровнем. #}
+
+{% if not series or not sigma %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "Сближение по этому ряду не проверяется" %}</p>
+    <p class="empty-state__hint">
+      {% blocktranslate trimmed %}
+        Нужен ряд с положительными значениями не менее чем по двадцати субъектам
+        и отрезок длиной не менее пяти лет.
+      {% endblocktranslate %}
+    </p>
+  </div>
+{% else %}
+
+  <header class="tool-subject">
+    <div class="tool-subject__text">
+      <h2 class="tool-subject__title">
+        {{ series.full_title }}
+      </h2>
+      <p class="tool-subject__meta">
+        {{ first_year|year }}–{{ last_year|year }}
+        {% if series.unit %} · {{ series.unit.short_name }}{% endif %}
+        · {{ modes|dict_value:mode }}
+      </p>
+    </div>
+    <span id="analytics-indicator" class="htmx-indicator tool-subject__busy">{% translate "Расчёт…" %}</span>
+  </header>
+
+  {# --- Итог в двух утверждениях ----------------------------------------------------------- #}
+  <div class="grid grid--halves">
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Сигма-конвергенция" %}</h2>
+        <span class="card__meta">{% translate "сокращается ли разброс" %}</span>
+      </div>
+      {% if sigma_trend.available %}
+        <p style="font-weight: var(--weight-medium)">
+          {% if sigma_trend.converging %}
+            {% translate "Разброс значений между регионами устойчиво сокращается." %}
+          {% elif sigma_trend.diverging %}
+            {% translate "Разброс значений между регионами устойчиво растёт." %}
+          {% else %}
+            {% translate "Устойчивого изменения разброса не обнаружено." %}
+          {% endif %}
+        </p>
+        <dl class="definition-list definition-list--compact" style="margin-top: var(--space-3)">
+          <dt>{{ sigma_trend.first.year|year }}</dt>
+          <dd class="numeric">{{ sigma_trend.first.std_log|ru_number:4 }}</dd>
+          <dt>{{ sigma_trend.last.year|year }}</dt>
+          <dd class="numeric">{{ sigma_trend.last.std_log|ru_number:4 }}</dd>
+          <dt>{% translate "Изменение" %}</dt>
+          <dd class="numeric">
+            {{ sigma_trend.change|ru_delta:4 }}
+            {% if sigma_trend.relative_change %}({{ sigma_trend.relative_change|percent_delta }}){% endif %}
+          </dd>
+          {% if sigma_trend.fit %}
+            <dt>{% translate "Наклон тренда разброса" %}</dt>
+            <dd class="numeric">
+              {{ sigma_trend.fit.slope.value|ru_number:5 }}
+              <span class="text-muted">{{ sigma_trend.fit.slope.p_value|p_level:"p" }}</span>
+            </dd>
+          {% endif %}
+        </dl>
+      {% else %}
+        <p class="text-muted">{% translate "Недостаточно лет для оценки тенденции." %}</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Бета-конвергенция" %}</h2>
+        <span class="card__meta">{% translate "догоняют ли отстающие" %}</span>
+      </div>
+      {% if beta %}
+        <p style="font-weight: var(--weight-medium)">
+          {% if beta.is_converging %}
+            {% translate "Отстающие регионы росли быстрее передовых: сближение подтверждается." %}
+          {% elif beta.beta > 0 and beta.fit.slope.is_significant %}
+            {% translate "Передовые регионы росли быстрее отстающих: разрыв увеличивался." %}
+          {% else %}
+            {% translate "Связь темпа роста с исходным уровнем статистически не подтверждена." %}
+          {% endif %}
+        </p>
+        <dl class="definition-list definition-list--compact" style="margin-top: var(--space-3)">
+          <dt title="{% translate 'Коэффициент при логарифме значения в начальном году' %}">
+            {% translate "Коэффициент β" %}
+          </dt>
+          <dd class="numeric">
+            {{ beta.beta|ru_number:5 }}
+            <span class="text-muted">{{ beta.fit.slope.p_value|p_level:"p" }}</span>
+          </dd>
+          <dt>{% translate "Скорость сближения λ" %}</dt>
+          <dd class="numeric">
+            {% if beta.speed %}{{ beta.speed|percent:2 }} {% translate "в год" %}{% else %}—{% endif %}
+          </dd>
+          <dt title="{% translate 'За сколько лет исчезнет половина отставания при сохранении темпа' %}">
+            {% translate "Период полусокращения разрыва" %}
+          </dt>
+          <dd class="numeric">
+            {% if beta.half_life %}
+              {{ beta.half_life|ru_number:1 }} {% translate "года" %}
+            {% else %}
+              {% translate "не определён" %}
+            {% endif %}
+          </dd>
+          <dt>{% translate "Доля объяснённого разброса" %}</dt>
+          <dd class="numeric">{{ beta.fit.r_squared|percent }}</dd>
+          <dt>{% translate "Субъектов в расчёте" %}</dt>
+          <dd class="numeric">{{ beta.fit.observations }}</dd>
+        </dl>
+      {% else %}
+        <p class="text-muted">
+          {% translate "Данных для оценивания недостаточно: нужны положительные значения по большинству субъектов в обоих годах." %}
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# --- Состав субъектов и разрывы ----------------------------------------------------------- #}
+  <div class="tool-composition">
+    {% include "analytics/partials/_composition.html" %}
+    {% include "analytics/partials/_breaks_warning.html" %}
+  </div>
+
+  {# --- Графики ------------------------------------------------------------------------------ #}
+  {% if sigma_option %}
+    <div class="chart-frame" style="margin-top: var(--space-5)">
+      <div class="chart-frame__header">
+        <div>
+          <div class="chart-frame__title">{% translate "Разброс значений между регионами" %}</div>
+          <div class="chart-frame__subtitle">{{ first_year|year }}–{{ last_year|year }}{% if constant_used %} · {% translate "постоянный состав" %}{% endif %}</div>
+        </div>
+      </div>
+      <rl-chart class="chart" data-options="sigma-option"></rl-chart>
+      {{ sigma_option|json_script:"sigma-option" }}
+      <div class="chart-frame__footer">
+        {% blocktranslate trimmed %}
+          Стандартное отклонение логарифмов безразмерно и сопоставимо между
+          показателями, в отличие от разброса самих значений, который растёт
+          вместе со средним уровнем.
+        {% endblocktranslate %}
+        {% if breaks %}
+          {% translate "Пунктир — год разрыва сопоставимости." %}
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if beta_option %}
+    <div class="chart-frame" style="margin-top: var(--space-5)">
+      <div class="chart-frame__header">
+        <div>
+          <div class="chart-frame__title">{% translate "Темп роста и исходный уровень" %}</div>
+          <div class="chart-frame__subtitle">
+            {% translate "каждая точка — субъект" %} · {{ first_year|year }}–{{ last_year|year }}
+          </div>
+        </div>
+      </div>
+      <rl-chart class="chart chart--tall" data-options="beta-option"></rl-chart>
+      {{ beta_option|json_script:"beta-option" }}
+      <div class="chart-frame__footer">
+        {% blocktranslate trimmed %}
+          Наклон вниз означает, что регионы с низким исходным уровнем росли быстрее.
+          Линия проводится только при статистически подтверждённой связи.
+        {% endblocktranslate %}
+      </div>
+    </div>
+  {% endif %}
+
+  {# --- Крайние темпы роста -------------------------------------------------------------------- #}
+  {% if growth.fastest %}
+    <div class="grid grid--halves" style="margin-top: var(--space-5)">
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">{% translate "Росли быстрее всех" %}</h2>
+          <span class="card__meta numeric">{{ first_year|year }} → {{ last_year|year }}</span>
+        </div>
+        <ol class="rank-list">
+          {% for point in growth.fastest %}
+            <li class="rank-list__item">
+              <span class="rank-list__place numeric">{{ forloop.counter }}</span>
+              <span class="rank-list__name">{{ point.name }}</span>
+              <span class="rank-list__value numeric">{{ point.y|percent_delta:2 }}</span>
+              <span class="rank-list__ratio text-muted">
+                {{ point.start|ru_number }} → {{ point.end|ru_number }}
+              </span>
+            </li>
+          {% endfor %}
+        </ol>
+        <div class="card__footer">{% translate "Среднегодовой темп по логарифмам" %}</div>
+      </div>
+
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">{% translate "Росли медленнее всех" %}</h2>
+          <span class="card__meta numeric">{{ first_year|year }} → {{ last_year|year }}</span>
+        </div>
+        <ol class="rank-list">
+          {% for point in growth.slowest %}
+            <li class="rank-list__item">
+              <span class="rank-list__place numeric">{{ forloop.counter }}</span>
+              <span class="rank-list__name">{{ point.name }}</span>
+              <span class="rank-list__value numeric">{{ point.y|percent_delta:2 }}</span>
+              <span class="rank-list__ratio text-muted">
+                {{ point.start|ru_number }} → {{ point.end|ru_number }}
+              </span>
+            </li>
+          {% endfor %}
+        </ol>
+        <div class="card__footer">{% translate "Среднегодовой темп по логарифмам" %}</div>
+      </div>
+    </div>
+  {% endif %}
+
+  {# --- Коэффициенты модели ---------------------------------------------------------------------- #}
+  {% if beta %}
+    <div class="card" style="margin-top: var(--space-5)">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Оценённая модель" %}</h2>
+        <span class="card__meta">
+          {% if beta.fit.robust %}{% translate "робастные стандартные ошибки (HC3)" %}{% endif %}
+        </span>
+      </div>
+      <div class="data-table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Переменная" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Коэффициент" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Стандартная ошибка" %}</th>
+              <th scope="col" class="is-numeric">{% translate "t" %}</th>
+              <th scope="col" class="is-numeric">{% translate "p" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in beta.fit.coefficients %}
+              <tr>
+                <td>{{ item.name }}</td>
+                <td class="is-numeric">{{ item.value|ru_number:5 }}</td>
+                <td class="is-numeric text-secondary">{{ item.std_error|ru_number:5 }}</td>
+                <td class="is-numeric text-secondary">{{ item.t_value|ru_number:2 }}</td>
+                <td class="is-numeric">
+                  {% if item.is_significant %}
+                    <span class="badge badge--positive">{{ item.p_value|p_level }}</span>
+                  {% else %}
+                    <span class="text-muted">{{ item.p_value|p_level }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="callout callout--methodology" style="margin-top: var(--space-5)">
+    <svg class="callout__icon" aria-hidden="true"><use href="#icon-book"></use></svg>
+    <div>
+      <div class="callout__title">{% translate "Почему две меры и почему они расходятся" %}</div>
+      <p>
+        {% blocktranslate trimmed %}
+          Сигма-конвергенция — сокращение разброса значений между регионами,
+          бета-конвергенция — более быстрый рост регионов с низким исходным уровнем. Из
+          второй не следует первая: регионы могут догонять лидеров и при этом меняться
+          местами, так что разброс не сокращается. Период полусокращения продолжает
+          наблюдавшийся темп и прогнозом не является.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  </div>
+
+{% endif %}

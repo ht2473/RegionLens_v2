@@ -1,0 +1,343 @@
+{% load i18n formatting %}
+{# Результаты расчёта неравенства: меры, кривая Лоренца, динамика, разложение. #}
+
+{% if not series or not snapshot.available %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "Меры неравенства по этому ряду не рассчитаны" %}</p>
+    <p class="empty-state__hint">
+      {% translate "Для расчёта нужны значения не менее чем по пяти субъектам за выбранный год." %}
+    </p>
+  </div>
+{% else %}
+
+  <header class="tool-subject">
+    <div class="tool-subject__text">
+      <h2 class="tool-subject__title">
+        {{ series.full_title }}
+      </h2>
+      <p class="tool-subject__meta">
+        {{ year|year }}
+        {% if series.unit %} · {{ series.unit.short_name }}{% endif %}
+        · {% translate "субъектов" %}: {{ snapshot.count }}
+        · {{ weighting_options|dict_value:weighting }}
+      </p>
+    </div>
+    <span id="analytics-indicator" class="htmx-indicator tool-subject__busy">{% translate "Расчёт…" %}</span>
+  </header>
+
+  {# --- Меры неравенства ----------------------------------------------------------------- #}
+  <div class="grid grid--kpi">
+    {% for measure in snapshot.measures %}
+      {% with label=measure_labels|dict_value:measure.code %}
+        <div class="kpi">
+          <div class="kpi__label" title="{{ label.hint }}">{{ label.title }}</div>
+          {% if measure.is_available %}
+            <div class="kpi__value numeric">{{ measure.value|ru_number:label.digits }}</div>
+          {% else %}
+            <div class="kpi__value text-muted">—</div>
+          {% endif %}
+          <div class="kpi__footer">
+            {% if measure.note %}
+              <span class="text-attention">{{ measure.note }}</span>
+            {% else %}
+              {{ label.hint }}
+            {% endif %}
+          </div>
+        </div>
+      {% endwith %}
+    {% endfor %}
+  </div>
+
+  {# --- Границы при скрытых значениях ------------------------------------------------------ #}
+  {% if bounds %}
+    <div class="callout callout--info tool-bounds">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        <div class="callout__title">
+          {% blocktranslate trimmed with hidden=hidden_year %}Значения скрыты по субъектам: {{ hidden }}{% endblocktranslate %}
+        </div>
+        <p>
+          {% blocktranslate trimmed with year=year|year %}
+            В {{ year }} году источник не раскрыл часть значений. Меры выше посчитаны
+            по остальным субъектам. Если скрытое значение не выходит за наблюдаемые
+            минимум и максимум, меры лежат в таких границах:
+          {% endblocktranslate %}
+        </p>
+        <dl class="definition-list definition-list--compact tool-bounds__list">
+          {% for code, item in bounds.items %}
+            <dt>{{ item.title }}</dt>
+            <dd class="numeric">
+              {{ item.bounds.low|ru_number:item.digits }} – {{ item.bounds.high|ru_number:item.digits }}
+              <span class="text-muted">
+                {% blocktranslate trimmed with width=item.bounds.width|percent:0 %}ширина — {{ width }} от оценки{% endblocktranslate %}
+              </span>
+            </dd>
+          {% endfor %}
+        </dl>
+      </div>
+    </div>
+  {% elif hidden_year and weighting != "none" %}
+    <p class="tool-note">
+      {% blocktranslate trimmed with hidden=hidden_year %}
+        Значения скрыты по субъектам: {{ hidden }}. Границы мер при скрытых значениях считаются
+        для равнозначных территорий.
+      {% endblocktranslate %}
+    </p>
+  {% endif %}
+
+  {# --- Изменение за период ------------------------------------------------------------------ #}
+  {% if period_change %}
+    <div class="card tool-period">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Изменение за период" %}</h2>
+        <span class="card__meta numeric">{{ period_change.first_year|year }}–{{ period_change.last_year|year }}</span>
+      </div>
+      <dl class="definition-list definition-list--compact">
+        {% for item in period_change.measures %}
+          <dt>{{ item.title }}</dt>
+          <dd class="numeric">
+            {{ item.start|ru_number:item.digits }} → {{ item.end|ru_number:item.digits }}
+            <b>({{ item.change|percent_delta }})</b>
+          </dd>
+        {% endfor %}
+      </dl>
+      {% include "analytics/partials/_composition.html" %}
+      {% include "analytics/partials/_breaks_warning.html" %}
+    </div>
+  {% endif %}
+
+  {# --- Кривая Лоренца и динамика --------------------------------------------------------- #}
+  <div class="grid grid--halves" style="margin-top: var(--space-5)">
+    {% if lorenz_option %}
+      <div class="chart-frame">
+        <div class="chart-frame__header">
+          <div>
+            <div class="chart-frame__title">{% translate "Кривая Лоренца" %}</div>
+            <div class="chart-frame__subtitle">{{ year|year }}</div>
+          </div>
+        </div>
+        <rl-chart class="chart" data-options="lorenz-option"></rl-chart>
+        {{ lorenz_option|json_script:"lorenz-option" }}
+        <div class="chart-frame__footer">
+          {% blocktranslate trimmed %}
+            Диагональ отвечает равному распределению. Удвоенная площадь между ней и кривой — коэффициент Джини.
+          {% endblocktranslate %}
+        </div>
+      </div>
+    {% endif %}
+
+    {% if timeline_option %}
+      <div class="chart-frame">
+        <div class="chart-frame__header">
+          <div>
+            <div class="chart-frame__title">{% translate "Динамика мер неравенства" %}</div>
+            <div class="chart-frame__subtitle">
+              {% with last_row=timeline|last %}
+                {{ timeline.0.year|year }}–{{ last_row.year|year }}
+              {% endwith %} · {% translate "первый год = 100" %}
+              {% if constant_used %} · {% translate "постоянный состав" %}{% endif %}
+            </div>
+          </div>
+        </div>
+        <rl-chart class="chart" data-options="inequality-timeline-option"></rl-chart>
+        {{ timeline_option|json_script:"inequality-timeline-option" }}
+        <div class="chart-frame__footer">
+          {% blocktranslate trimmed %}
+            Меры измеряются в несопоставимых шкалах, поэтому каждая приведена к своему
+            первому году. График отвечает на вопрос о направлении изменения; сами
+            уровни приведены в таблице ниже.
+          {% endblocktranslate %}
+          {% if breaks %}
+            {% translate "Пунктир — год разрыва сопоставимости." %}
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  {# --- Разложение индекса Тейла ------------------------------------------------------------ #}
+  {% if decomposition %}
+    <div class="card" style="margin-top: var(--space-5)">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Откуда берутся различия" %}</h2>
+        <span class="card__meta numeric">{{ year|year }}</span>
+      </div>
+
+      <div class="grid grid--halves">
+        <div>
+          <dl class="definition-list definition-list--compact">
+            <dt>{% translate "Индекс Тейла, всего" %}</dt>
+            <dd class="numeric">{{ decomposition.total|ru_number:4 }}</dd>
+            <dt>{% translate "Различия между округами" %}</dt>
+            <dd class="numeric">
+              {{ decomposition.between|ru_number:4 }} ({{ decomposition.between_share|percent }})
+            </dd>
+            <dt>{% translate "Различия внутри округов" %}</dt>
+            <dd class="numeric">
+              {{ decomposition.within|ru_number:4 }} ({{ decomposition.within_share|percent }})
+            </dd>
+          </dl>
+          <p class="text-secondary" style="font-size: var(--text-sm); margin-top: var(--space-3)">
+            {% blocktranslate trimmed with between=decomposition.between_share|percent within=decomposition.within_share|percent %}
+              На различия между федеральными округами приходится {{ between }} общего
+              неравенства, на различия внутри округов — {{ within }}.
+            {% endblocktranslate %}
+          </p>
+        </div>
+
+        {% if decomposition_option %}
+          <div>
+            <rl-chart class="chart chart--short" data-options="decomposition-option"></rl-chart>
+            {{ decomposition_option|json_script:"decomposition-option" }}
+            <div class="chart-frame__footer">
+              {% translate "Вклад округа во внутригрупповую составляющую индекса" %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="data-table-wrapper" style="margin-top: var(--space-4)">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Федеральный округ" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Субъектов" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Среднее" %}</th>
+              <th scope="col" class="is-numeric">{% translate "К среднему по стране" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Индекс Тейла внутри" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Вклад" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for group in decomposition.groups %}
+              <tr>
+                <td>{{ group.name }}</td>
+                <td class="is-numeric">{{ group.size }}</td>
+                <td class="is-numeric">{{ group.mean|ru_number }}</td>
+                <td class="is-numeric text-secondary">×{{ group.ratio_to_mean|ru_number:2 }}</td>
+                <td class="is-numeric">{{ group.theil|ru_number:4 }}</td>
+                <td class="is-numeric">{{ group.contribution|ru_number:4 }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+  {# --- Крайние значения --------------------------------------------------------------------- #}
+  <div class="grid grid--halves" style="margin-top: var(--space-5)">
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Наибольшие значения" %}</h2>
+        <span class="card__meta numeric">{{ year|year }}</span>
+      </div>
+      <ol class="rank-list">
+        {% for item in extremes.top %}
+          <li class="rank-list__item">
+            <span class="rank-list__place numeric">{{ item.rank_desc|default:forloop.counter }}</span>
+            <span class="rank-list__name">
+              {% if item.slug %}
+                <a href="{% url 'catalog:territory-detail' slug=item.slug %}">{{ item.name }}</a>
+              {% else %}{{ item.name }}{% endif %}
+            </span>
+            <span class="rank-list__value numeric">{{ item.value|ru_number }}</span>
+          </li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Наименьшие значения" %}</h2>
+        <span class="card__meta numeric">{{ year|year }}</span>
+      </div>
+      <ol class="rank-list">
+        {% for item in extremes.bottom %}
+          <li class="rank-list__item">
+            <span class="rank-list__place numeric">{{ item.rank_desc }}</span>
+            <span class="rank-list__name">
+              {% if item.slug %}
+                <a href="{% url 'catalog:territory-detail' slug=item.slug %}">{{ item.name }}</a>
+              {% else %}{{ item.name }}{% endif %}
+            </span>
+            <span class="rank-list__value numeric">{{ item.value|ru_number }}</span>
+          </li>
+        {% endfor %}
+      </ol>
+    </div>
+  </div>
+
+  {# --- Таблица по годам ---------------------------------------------------------------------- #}
+  {% if timeline %}
+    <div class="card" style="margin-top: var(--space-5)">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Меры неравенства по годам" %}</h2>
+        <span class="card__meta">{% translate "лет" %}: {{ timeline|length }}</span>
+      </div>
+      <div class="data-table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col" class="is-numeric">{% translate "Год" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Субъектов" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Среднее" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Джини" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Тейл" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Вариация" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Децильный" %}</th>
+              {% if hidden_in_window %}
+                <th scope="col" class="is-numeric" title="{% translate 'Субъектов со скрытым источником значением' %}">{% translate "Скрыто" %}</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in timeline reversed %}
+              <tr>
+                <td class="is-numeric">{{ row.year|year }}</td>
+                <td class="is-numeric text-secondary">{{ row.count }}</td>
+                <td class="is-numeric">{{ row.mean|ru_number }}</td>
+                <td class="is-numeric">{{ row.measures.gini|ru_number:3 }}</td>
+                <td class="is-numeric">{{ row.measures.theil|ru_number:4 }}</td>
+                <td class="is-numeric">{{ row.measures.cv|ru_number:3 }}</td>
+                <td class="is-numeric">{{ row.measures.decile|ru_number:2 }}</td>
+                {% if hidden_in_window %}
+                  <td class="is-numeric text-secondary">{{ hidden|dict_value:row.year|default:"" }}</td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="card__footer">
+        {% if constant_used %}
+          {% blocktranslate trimmed with count=composition.constant %}
+            Меры по годам посчитаны по одним и тем же {{ count }} субъектам.
+          {% endblocktranslate %}
+        {% elif composition.changes %}
+          {% blocktranslate trimmed %}
+            Число субъектов по годам различается: скачок меры в год смены состава
+            объясняется им, а не изменением неравенства.
+          {% endblocktranslate %}
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="callout callout--methodology" style="margin-top: var(--space-5)">
+    <svg class="callout__icon" aria-hidden="true"><use href="#icon-book"></use></svg>
+    <div>
+      <div class="callout__title">{% translate "Как считаются меры" %}</div>
+      <p>
+        {% blocktranslate trimmed %}
+          Коэффициент Джини — удвоенная площадь между кривой Лоренца и линией равенства.
+          Индекс Тейла раскладывается на различия между округами и внутри округов. Индексы
+          Тейла и Аткинсона считаются только для положительных значений, коэффициент Джини —
+          для неотрицательных; если мера неприменима, вместо неё стоит прочерк с причиной.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  </div>
+
+{% endif %}
