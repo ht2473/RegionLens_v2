@@ -13,6 +13,8 @@ from typing import Any
 
 from django.conf import settings
 
+from .typography import fix_subsection
+
 # Файл справочника и ключ, под которым в нём лежат названия.
 SOURCES: dict[str, tuple[str, str]] = {
     "sections": ("section_names.json", "sections"),
@@ -36,6 +38,10 @@ def catalog_names() -> dict[str, dict[str, Any]]:
             result[kind] = {}
             continue
         result[kind] = json.loads(path.read_text(encoding="utf-8"))[key]
+    # Названия разрезов в складе — с исправленными переносами вёрстки.
+    result["subsections"] = {
+        fix_subsection(name): value for name, value in result["subsections"].items()
+    }
     return result
 
 

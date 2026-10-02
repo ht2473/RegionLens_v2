@@ -107,3 +107,22 @@ def test_build_records_and_reports_missing(
 
     page = admin_panel_client.get(reverse("dashboard:etl-run", kwargs={"pk": run.pk}))
     assert "Ссылки на ряды, которых нет в складе" in page.content.decode()
+
+
+def test_series_missing_from_warehouse_leave_the_catalog(
+    warehouse: Any, warehouse_file: Path
+) -> None:
+    """Ряд, которого нет в складе (сменился ключ), удаляется из каталога со своим избранным."""
+    from apps.catalog.models import Series
+    from tests.support.warehouse import sync_catalog
+
+    kept = Series.objects.first()
+    assert kept is not None
+    gone = Series.objects.create(
+        key=f"{kept.indicator.code}:deadbeef", indicator=kept.indicator, slug="ischeznuvshii"
+    )
+
+    sync_catalog(warehouse_file)
+
+    assert not Series.objects.filter(pk=gone.pk).exists()
+    assert Series.objects.filter(pk=kept.pk).exists()

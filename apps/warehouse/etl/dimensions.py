@@ -32,6 +32,7 @@ from .classify import (
     make_code,
     make_series_key,
 )
+from .typography import fix_subsection
 
 logger = logging.getLogger(__name__)
 
@@ -469,8 +470,13 @@ def _extract_publication_name(source_name: str) -> str:
 
 
 def _clean_subsection(value: str | None) -> str | None:
-    """Привести значение разреза к каноническому виду; заглушка ``CD`` — разреза нет."""
+    """
+    Привести значение разреза к каноническому виду; заглушка ``CD`` — разреза нет.
+
+    Переносы вёрстки исправляются до построения ключа: один разрез, напечатанный
+    в разных выпусках с разными переносами, — один ряд.
+    """
     normalized = normalize_text(value)
     if not normalized or normalized == "CD":
         return None
-    return normalized
+    return fix_subsection(normalized)

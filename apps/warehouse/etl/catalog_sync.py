@@ -327,6 +327,13 @@ def sync_series(connection: duckdb.DuckDBPyConnection) -> int:
             },
         )
 
+    # Ряды, которых нет в складе (сменился ключ), каталог показывал бы без данных. Избранное
+    # на них удаляется вместе с ними; о затронутом сохранённом сообщает сверка ссылок сборки.
+    stale = Series.objects.exclude(key__in=[row[0] for row in rows])
+    if stale.exists():
+        logger.info("Удалены ряды, которых нет в складе: %d", stale.count())
+        stale.delete()
+
     apply_featured_set()
     # Единицы, на которые не ссылается ни один ряд.
     Unit.objects.filter(series__isnull=True).delete()
