@@ -89,7 +89,7 @@
             </thead>
             <tbody>
               <tr>
-                <td><a href="{{ data_source.url }}" rel="noopener noreferrer" lang="ru">{{ data_source.title }}</a></td>
+                <td><a href="{{ data_source.url }}" rel="noopener noreferrer">{{ data_source.title_local }}{% if data_source.title_is_translated %} (<span lang="ru">{{ data_source.title }}</span>){% endif %}</a></td>
                 <td>{{ data_source.origin }}; {% translate "обработка" %} — «<span lang="ru">{{ data_source.processor }}</span>»</td>
                 <td>{{ data_source.license }}</td>
               </tr>

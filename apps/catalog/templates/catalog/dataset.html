@@ -14,7 +14,7 @@
     <div class="page-intro__text">
       <h1 class="page-intro__title">{% translate "О наборе данных" %}</h1>
       <p class="page-intro__lead">
-        {% blocktranslate trimmed with title=data_source.title processor=data_source.processor %}
+        {% blocktranslate trimmed with title=data_source.title_local processor=data_source.processor %}
           Сборник Росстата «{{ title }}» в обработке «{{ processor }}»: что в нём есть,
           насколько полны ряды, какие проверки прошли данные и как на них ссылаться.
         {% endblocktranslate %}
@@ -67,7 +67,7 @@
     <div class="dataset-source">
       <dl class="about-credits">
         <dt>{% translate "Наименование" %}</dt>
-        <dd lang="ru">{{ data_source.title }}</dd>
+        <dd>{{ data_source.title_local }}{% if data_source.title_is_translated %} (<span lang="ru">{{ data_source.title }}</span>){% endif %}</dd>
 
         <dt>{% translate "Правообладатель" %}</dt>
         <dd>{{ data_source.origin }}</dd>

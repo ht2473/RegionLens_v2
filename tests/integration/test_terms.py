@@ -73,9 +73,13 @@ class TestTermsPage:
         assert f'href="{reverse("core:consent")}"' in content
 
     def test_russian_names_are_marked_on_english_page(self, client: Client) -> None:
-        """Название набора и обработчика помечены русским языком; «Росстат» переведён."""
+        """Набор назван по-английски с русским названием рядом; «Росстат» переведён."""
         content = client.get("/en/terms/").content.decode("utf-8")
-        assert f'lang="ru">{settings.DATA_SOURCE_TITLE}</a>' in content
+        assert (
+            f'{settings.DATA_SOURCE_TITLE_EN} (<span lang="ru">{settings.DATA_SOURCE_TITLE}</span>)'
+            in content
+        )
+        assert settings.PROJECT_AUTHOR_EN in content
         assert f'<span lang="ru">{settings.DATA_SOURCE_PROCESSOR}</span>' in content
         assert settings.DATA_SOURCE_ORIGIN not in content
 

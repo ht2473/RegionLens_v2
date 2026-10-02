@@ -25,7 +25,7 @@
     <div class="app-footer__bottom">
       <p>
         {% translate "Разработал" %}:
-        <span class="app-footer__author" lang="ru">{{ project.author }}</span>,
+        <span class="app-footer__author" lang="{{ project.author_lang }}">{{ project.author }}</span>,
         {% translate "студенческий билет" %} <span lang="ru">{{ project.student_id }}</span> · {{ project.current_year }}
       </p>
       <p class="text-muted">

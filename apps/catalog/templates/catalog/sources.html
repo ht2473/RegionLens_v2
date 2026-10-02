@@ -14,7 +14,7 @@
     <div class="page-intro__text">
       <h1 class="page-intro__title">{% translate "Источники данных" %}</h1>
       <p class="page-intro__lead">
-        {% blocktranslate trimmed with title=data_source.title %}
+        {% blocktranslate trimmed with title=data_source.title_local %}
           Основа — набор «{{ title }}», собранный из сборников Росстата; сайт работает
           на его последней версии. Ряды, которые Росстат публикует и после последнего года
           набора, продолжаются по другим его изданиям: они собираются автоматически,
@@ -31,7 +31,7 @@
     </div>
     <div class="sources-grid">
       <article class="card sources-card">
-        <h3 class="sources-card__title" lang="ru">{{ data_source.title }}</h3>
+        <h3 class="sources-card__title">{{ data_source.title_local }}{% if data_source.title_is_translated %} (<span lang="ru">{{ data_source.title }}</span>){% endif %}</h3>
         <dl class="about-credits">
           <dt>{% translate "Издатель" %}</dt>
           <dd>{{ data_source.origin }}; {% translate "обработка" %} — «<span lang="ru">{{ data_source.processor }}</span>»</dd>

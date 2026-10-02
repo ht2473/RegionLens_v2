@@ -41,6 +41,7 @@ PROJECT_TAGLINE = "Анализ и визуализация социально-�
 PROJECT_VERSION = "0.1.0"
 PROJECT_AUTHOR = "Кузьмин Евгений Олегович"
 PROJECT_AUTHOR_SHORT = "Кузьмин Е. О."
+PROJECT_AUTHOR_EN = "Evgeny Kuzmin"
 PROJECT_AUTHOR_STUDENT_ID = "ГМФИТД0401/25-вос"
 PROJECT_AUTHOR_EMAIL = "lord10000297@gmail.com"
 PROJECT_THESIS_TITLE = (
@@ -50,6 +51,7 @@ PROJECT_REPOSITORY_URL = "https://github.com/ht2473/RegionLens_v2"
 
 # Атрибуция источника данных обязательна по условиям лицензии CC BY.
 DATA_SOURCE_TITLE = "Социально-экономические показатели регионов России"
+DATA_SOURCE_TITLE_EN = "Socio-economic indicators of Russian regions"
 DATA_SOURCE_ORIGIN = "Росстат"
 DATA_SOURCE_PROCESSOR = "Если быть точным"
 DATA_SOURCE_URL = "https://tochno.st/datasets/regions_collection"

@@ -135,7 +135,7 @@
         <h2 class="about__title" id="about-credits">{% translate "Реквизиты работы" %}</h2>
         <dl class="about-credits">
           <dt>{% translate "Автор" %}</dt>
-          <dd><strong lang="ru">{{ project.author }}</strong></dd>
+          <dd><strong lang="{{ project.author_lang }}">{{ project.author }}</strong></dd>
 
           <dt>{% translate "Студенческий билет" %}</dt>
           <dd lang="ru">{{ project.student_id }}</dd>

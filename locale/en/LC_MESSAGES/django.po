@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-02 15:29+0000\n"
+"POT-Creation-Date: 2026-10-02 18:49+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1182,7 +1182,7 @@ msgstr "TOPSIS (closeness to the ideal)"
 msgid "расстояние до эталона"
 msgstr "distance to the ideal"
 
-#: apps/analytics/core/convergence.py:149
+#: apps/analytics/core/convergence.py:159
 msgid "Логарифм исходного уровня"
 msgstr "Logarithm of the initial level"
 
@@ -5885,7 +5885,7 @@ msgstr "Version of %(date)s"
 
 #: apps/core/templates/core/consent.html:33
 msgid "Регистрируясь на сайте RegionLens (%(url)s) или отправляя обращение через форму на сайте и отмечая флажок «Даю согласие на обработку персональных данных», я свободно, своей волей и в своём интересе даю согласие <span lang=\"ru\">%(author)s</span> (далее — оператор) на обработку моих персональных данных на следующих условиях."
-msgstr "By registering on RegionLens (%(url)s) or sending an enquiry through the form on the site and ticking the box “I consent to the processing of personal data”, I freely, of my own will and in my own interest give <span lang=\"ru\">%(author)s</span> (the operator) my consent to the processing of my personal data on the following terms."
+msgstr "By registering on RegionLens (%(url)s) or sending an enquiry through the form on the site and ticking the box “I consent to the processing of personal data”, I freely, of my own will and in my own interest give %(author)s (the operator) my consent to the processing of my personal data on the following terms."
 
 #: apps/core/templates/core/consent.html:43
 msgid "Данные: при регистрации — адрес электронной почты, имя, выбранный регион, сохранённые регионы, показатели и виды экрана, сведения о входе; при обращении — имя, адрес электронной почты, текст обращения, адрес страницы, с которой оно отправлено, адрес IP и сведения о браузере."
@@ -6241,7 +6241,7 @@ msgstr "This policy sets out how and on what terms personal data are processed o
 
 #: apps/core/templates/core/privacy.html:53
 msgid "Оператор — <span lang=\"ru\">%(author)s</span>, физическое лицо, автор сайта. Он же отвечает за организацию обработки персональных данных. Связь с оператором — по адресу <a href=\"mailto:%(email)s\">%(email)s</a> или через <a href=\"%(url)s\">форму обращения</a>."
-msgstr "The operator is <span lang=\"ru\">%(author)s</span>, an individual and the author of the site, who is also responsible for organising the processing of personal data. The operator can be contacted at <a href=\"mailto:%(email)s\">%(email)s</a> or through the <a href=\"%(url)s\">enquiry form</a>."
+msgstr "The operator is %(author)s, an individual and the author of the site, who is also responsible for organising the processing of personal data. The operator can be contacted at <a href=\"mailto:%(email)s\">%(email)s</a> or through the <a href=\"%(url)s\">enquiry form</a>."
 
 #: apps/core/templates/core/privacy.html:72
 msgid "Специальные категории персональных данных и биометрические персональные данные не обрабатываются. Смотреть, считать и выгружать данные сайта можно без учётной записи и без сообщения о себе каких-либо сведений."
@@ -6409,7 +6409,7 @@ msgstr "RegionLens (%(url)s) is a student project carried out as part of a maste
 
 #: apps/core/templates/core/terms.html:44
 msgid "Сайт ведёт <span lang=\"ru\">%(author)s</span> (далее — автор). Он же — оператор персональных данных пользователей."
-msgstr "The site is run by <span lang=\"ru\">%(author)s</span> (the author), who is also the operator of users’ personal data."
+msgstr "The site is run by %(author)s (the author), who is also the operator of users’ personal data."
 
 #: apps/core/templates/core/terms.html:50
 msgid "Смотреть, считать и выгружать данные можно без регистрации; пользуясь сайтом, вы принимаете эти условия. Учётная запись создаётся после отдельного согласия с условиями и отдельного согласия на обработку персональных данных."
@@ -6489,7 +6489,7 @@ msgstr "A new version is published on this page with its date; by continuing to 
 
 #: apps/core/templates/core/terms.html:289
 msgid "Автор сайта — <span lang=\"ru\">%(author)s</span>. Вопросы об условиях и сообщения об ошибках — через <a href=\"%(url)s\">форму обращения</a> или по адресу <a href=\"mailto:%(email)s\">%(email)s</a>."
-msgstr "The author of the site is <span lang=\"ru\">%(author)s</span>. Questions about the terms and error reports go through the <a href=\"%(url)s\">enquiry form</a> or to <a href=\"mailto:%(email)s\">%(email)s</a>."
+msgstr "The author of the site is %(author)s. Questions about the terms and error reports go through the <a href=\"%(url)s\">enquiry form</a> or to <a href=\"mailto:%(email)s\">%(email)s</a>."
 
 #: apps/core/templatetags/formatting.py:136
 msgid "выше %(share)s субъектов"
