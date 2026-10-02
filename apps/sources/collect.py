@@ -26,6 +26,7 @@ from django.conf import settings
 from django.db import connection
 from django.utils import timezone
 
+from apps.core import alerts
 from apps.core.models import ServiceBeat
 
 from . import archive, cbr, fns_sme, network, parsed, rosstat_bulletin, rosstat_grp
@@ -146,6 +147,7 @@ def _collect_one(
 ) -> Outcome:
     module = SOURCES[source.code]
     outcome = Outcome(source=source.code)
+    failed_before = source.checked_at is not None and not source.check_ok
     source.running_since = timezone.now()
     source.save(update_fields=["running_since", "updated_at"])
     try:
@@ -171,6 +173,8 @@ def _collect_one(
         outcome.error = str(error)
         source.check_ok, source.check_error = False, str(error)
         report(f"{source.code}: {error}")
+        if failed_before:
+            _alert_unreachable(source, str(error))
 
     pending = (
         source.releases.all()
@@ -360,6 +364,7 @@ def parse_release(
         release.parsed_at = timezone.now()
         release.save(update_fields=["status", "error", "parsed_at", "updated_at"])
         say(f"{release.source.code}: выпуск {release.code} не разобран: {release.error}")
+        _alert_unparsed(release, module.parser_version)
         return False
 
     info = parsed.ReleaseInfo(
@@ -385,6 +390,35 @@ def parse_release(
     count = _number(release.row_count)
     say(f"{release.source.code}: выпуск {release.code} разобран, значений {count}")
     return True
+
+
+def _alert_unparsed(release: Release, parser_version: int) -> None:
+    """Письмо о выпуске, который не разобран: чаще всего источник сменил вид таблицы."""
+    alerts.notify(
+        f"release:{release.source.code}:{release.code}:{parser_version}:{release.error}",
+        f"выпуск {release.code} не разобран",
+        f"Источник: {release.source.title_ru}\n"
+        f"Выпуск: {release.code}\n"
+        f"Причина: {release.error}\n\n"
+        "Склад не тронут: сайт показывает прежние данные, без этого выпуска. Обычно это "
+        "значит, что источник изменил вид таблицы или ответа: разбор нужно поправить "
+        f"и разобрать выпуск заново (collect {release.source.code} --reparse).\n\n"
+        f"Выпуск в панели: {alerts.panel_address('dashboard:release', release.pk)}",
+    )
+
+
+def _alert_unreachable(source: Source, error: str) -> None:
+    """Письмо об источнике, который не отвечает вторую проверку подряд."""
+    alerts.notify(
+        f"source:{source.code}",
+        f"источник «{source.title_ru}» не отвечает",
+        f"Источник: {source.title_ru}\n"
+        f"Адрес: {source.page_url}\n"
+        f"Ошибка последней проверки: {error}\n\n"
+        "Проверка не удалась два раза подряд. Новые выпуски не собираются; сайт работает "
+        "на собранных ранее. Если адрес сменился, его нужно поправить в модуле источника.\n\n"
+        f"Источники в панели: {alerts.panel_address('dashboard:sources')}",
+    )
 
 
 def changes_since_previous(release: Release, frame: pd.DataFrame) -> dict[str, Any]:

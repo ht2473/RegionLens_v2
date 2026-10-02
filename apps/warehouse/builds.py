@@ -23,6 +23,8 @@ from django.core.files.uploadedfile import UploadedFile
 from django.db import connection
 from django.utils import timezone
 
+from apps.core import alerts
+
 from .duckdb_client import writable_connection
 from .etl import source
 from .etl.pipeline import EtlError, Pipeline, PipelineResult
@@ -243,15 +245,34 @@ def execute(
             result = pipeline.build()
         except EtlError as error:
             run.finish(status=EtlRun.Status.FAILED, error=str(error))
+            _alert_failed(run)
             raise
         except Exception as error:
             run.finish(status=EtlRun.Status.FAILED, error=repr(error))
+            _alert_failed(run)
             raise
 
         run.finish(status=EtlRun.Status.SUCCESS)
 
     after_build()
     return result
+
+
+def _alert_failed(run: EtlRun) -> None:
+    """
+    Письмо о неудачной сборке, начатой не из панели: по таймеру после сбора или командой.
+
+    Сборку из панели администратор видит сам.
+    """
+    if run.started_by_id is not None:
+        return
+    alerts.notify(
+        f"build:{run.mode}:{run.error_message[:300]}",
+        "склад не собран",
+        f"Сборка склада № {run.pk} завершилась с ошибкой:\n{run.error_message}\n\n"
+        "Действует прежний склад: сайт показывает данные последней удачной сборки.\n\n"
+        f"Запуск в панели: {alerts.panel_address('dashboard:etl-run', run.pk)}",
+    )
 
 
 def after_build() -> None:

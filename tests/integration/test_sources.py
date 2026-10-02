@@ -14,6 +14,7 @@ from typing import Any
 
 import duckdb
 import pytest
+from django.core import mail
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import Client, override_settings
@@ -36,6 +37,7 @@ pytestmark = pytest.mark.integration
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures" / "sources"
 RELEASE_URL = "https://rosstat.gov.ru/storage/mediabank/info-stat-07-2026.zip"
+ADMIN = "admin@example.org"
 
 
 def _bulletin_zip(*, skip: str = "") -> bytes:
@@ -145,6 +147,39 @@ class TestCollect:
         assert "нет таблицы 12-01" in release.error
         assert parsed.releases() == []
         assert not ServiceBeat.objects.get(service=ServiceBeat.Service.COLLECT).ok
+
+    @override_settings(ADMINS=[ADMIN])
+    def test_changed_layout_is_reported_once(
+        self, reference_seed: None, source_dirs: Path, fake_site: Any
+    ) -> None:
+        fake_site["content"] = _bulletin_zip(skip="12-01")
+        collect.run(["rosstat_bulletin"])
+        # Следующий сбор снова пробует разобрать выпуск — письмо не повторяется.
+        collect.run(["rosstat_bulletin"])
+        assert len(mail.outbox) == 1
+        letter = mail.outbox[0]
+        assert "07-2026" in letter.subject
+        assert "нет таблицы 12-01" in letter.body
+        assert f"/ru/manage/sources/releases/{Release.objects.get().pk}/" in letter.body
+
+    @override_settings(ADMINS=[ADMIN])
+    def test_unreachable_source_is_reported_on_second_failure(
+        self,
+        reference_seed: None,
+        source_dirs: Path,
+        fake_site: Any,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        def refuse() -> list[Candidate]:
+            raise network.FetchError("сайт не ответил")
+
+        monkeypatch.setattr(rosstat_bulletin, "discover", refuse)
+        collect.run(["rosstat_bulletin"])
+        assert mail.outbox == []
+        collect.run(["rosstat_bulletin"])
+        assert len(mail.outbox) == 1
+        assert "не отвечает" in mail.outbox[0].subject
+        assert "сайт не ответил" in mail.outbox[0].body
 
     def test_due_skips_recently_checked(
         self, reference_seed: None, source_dirs: Path, fake_site: Any
