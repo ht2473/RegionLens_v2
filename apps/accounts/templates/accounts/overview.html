@@ -203,6 +203,33 @@
     {% endif %}
   </section>
 
+  {# --- Свои данные: таблицы и занятое место ----------------------------------------------- #}
+  <section class="page-section" aria-labelledby="overview-own-data">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="overview-own-data">{% translate "Свои данные" %}</h2>
+      <a href="{% url 'userdata:index' %}">{% translate "Все мои таблицы" %}</a>
+    </div>
+    {% if own_tables %}
+      <ul class="own-overview">
+        {% for item in own_tables %}
+          <li><a href="{% url 'userdata:dataset' item.public_id %}">{{ item.title }}</a>
+            <span class="own-overview__meta">{% if item.current_version.state == "built" %}{% blocktranslate trimmed with count=item.current_version.series_count %}рядов: {{ count }}{% endblocktranslate %}{% else %}{% translate "не собрана" %}{% endif %} · {{ item.size_bytes|filesizeformat }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+      <p class="cabinet-block__footnote">
+        {% blocktranslate trimmed with count=own_tables_count used=own_tables_bytes|filesizeformat %}
+          Таблиц: {{ count }}, занято {{ used }}.
+        {% endblocktranslate %}
+      </p>
+    {% else %}
+      <p class="cabinet-empty__text">
+        {% translate "Своя таблица по регионам открывается на той же карте и в тех же видах, что и данные сайта." %}
+        <a href="{% url 'userdata:upload' %}">{% translate "Загрузить таблицу" %}</a>
+      </p>
+    {% endif %}
+  </section>
+
   {# --- Последние открытые виды --------------------------------------------------------- #}
   <section class="page-section" aria-labelledby="overview-views">
     <div class="page-section__head">

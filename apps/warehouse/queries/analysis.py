@@ -13,6 +13,7 @@ from django.utils.translation import gettext_lazy as _
 from apps.catalog.constants import ValueQuality
 
 from ..duckdb_client import fetch_dicts, fetch_one, placeholders
+from ..routing import by_key, by_keys
 from .common import LEVEL_REGION, MIN_YEAR_COVERAGE, by_generation
 
 # Субъекты без составных территорий, иначе входящие в них учитывались бы дважды.
@@ -33,6 +34,7 @@ REVISION_BUCKETS: tuple[tuple[float, float, Any], ...] = (
 # ---------------------------------------------------------------------------------------
 
 
+@by_key()
 @by_generation("region_panel")
 def region_panel(series_key: str) -> dict[int, dict[str, float]]:
     """Получить значения ряда по всем субъектам за все годы: «год → территория → значение»."""
@@ -52,6 +54,7 @@ def region_panel(series_key: str) -> dict[int, dict[str, float]]:
     return panel
 
 
+@by_key()
 @by_generation("hidden_counts")
 def hidden_counts(series_key: str) -> dict[int, int]:
     """Получить число субъектов со скрытым источником значением по годам ряда."""
@@ -67,6 +70,7 @@ def hidden_counts(series_key: str) -> dict[int, int]:
     return {int(row["year"]): int(row["hidden"]) for row in rows}
 
 
+@by_keys()
 @by_generation("region_matrix")
 def region_matrix(series_keys: list[str], year: int) -> dict[str, dict[str, Any]]:
     """
@@ -124,6 +128,7 @@ def region_matrix(series_keys: list[str], year: int) -> dict[str, dict[str, Any]
     return matrix
 
 
+@by_key()
 @by_generation("paired_years")
 def paired_years(series_key: str, first_year: int, last_year: int) -> list[dict[str, Any]]:
     """Получить значения ряда в двух годах для субъектов, у которых есть оба."""
@@ -182,6 +187,7 @@ def district_directory() -> list[dict[str, Any]]:
     )
 
 
+@by_keys()
 @by_generation("series_years")
 def series_years(series_keys: list[str]) -> dict[str, tuple[int, int]]:
     """Получить первый и последний год с данными для набора рядов."""
@@ -203,6 +209,7 @@ def series_years(series_keys: list[str]) -> dict[str, tuple[int, int]]:
     }
 
 
+@by_keys()
 @by_generation("series_covered_years")
 def series_covered_years(series_keys: list[str]) -> dict[str, tuple[int, int]]:
     """Получить первый и последний полный год (``MIN_YEAR_COVERAGE``) для набора рядов."""
@@ -446,6 +453,7 @@ def edition_activity() -> list[dict[str, Any]]:
     )
 
 
+@by_key()
 @by_generation("revision_trace")
 def revision_trace(series_key: str, territory_code: str, year: int) -> list[dict[str, Any]]:
     """Получить все опубликованные версии одного наблюдения."""
@@ -469,6 +477,7 @@ def revision_trace(series_key: str, territory_code: str, year: int) -> list[dict
     )
 
 
+@by_key()
 @by_generation("revision_triangle")
 def revision_triangle(series_key: str, territory_code: str) -> dict[str, Any]:
     """

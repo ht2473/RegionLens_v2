@@ -12,6 +12,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from ..reports.base import COLUMN_INTEGER, COLUMN_NUMBER, COLUMN_PERCENT, ReportDocument, Table
 from .palette import document_colours
+from .safety import safe_cell
 
 # Форматы чисел по видам столбцов.
 NUMBER_FORMATS = {
@@ -50,15 +51,15 @@ def _write_summary_sheet(workbook: Workbook, document: ReportDocument) -> None:
     """Записать лист с названием отчёта и его реквизитами."""
     palette = document_colours()
     sheet = workbook.create_sheet("Отчёт")
-    sheet["A1"] = document.title
+    sheet["A1"] = safe_cell(document.title)
     sheet["A1"].font = Font(bold=True, size=14, color=palette.text)
-    sheet["A2"] = document.subtitle
+    sheet["A2"] = safe_cell(document.subtitle)
     sheet["A2"].font = Font(color=palette.muted)
 
     row = 4
     for label, value in document.meta:
         sheet.cell(row=row, column=1, value=label).font = Font(bold=True, color=palette.text)
-        sheet.cell(row=row, column=2, value=value)
+        sheet.cell(row=row, column=2, value=safe_cell(value))
         row += 1
 
     if document.footer:
@@ -81,11 +82,11 @@ def _write_table_sheet(sheet: Worksheet, table: Table) -> None:
 
     header_row = 1
     if table.note:
-        sheet.cell(row=1, column=1, value=table.note)
+        sheet.cell(row=1, column=1, value=safe_cell(table.note))
         header_row = 3
 
     for index, column in enumerate(table.columns, start=1):
-        cell = sheet.cell(row=header_row, column=index, value=column.title)
+        cell = sheet.cell(row=header_row, column=index, value=safe_cell(column.title))
         cell.fill = header_fill
         cell.font = header_font
         cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
@@ -94,7 +95,7 @@ def _write_table_sheet(sheet: Worksheet, table: Table) -> None:
 
     for offset, row in enumerate(table.rows, start=header_row + 1):
         for index, column in enumerate(table.columns, start=1):
-            cell = sheet.cell(row=offset, column=index, value=row.get(column.key))
+            cell = sheet.cell(row=offset, column=index, value=safe_cell(row.get(column.key)))
             cell.border = border
             if column.is_numeric:
                 cell.number_format = NUMBER_FORMATS.get(column.kind, "General")

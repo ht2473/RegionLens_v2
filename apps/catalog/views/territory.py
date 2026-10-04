@@ -26,6 +26,7 @@ from apps.warehouse.queries import (
     series_timeline_multi,
     territory_coverage,
 )
+from apps.warehouse.routing import is_user_key
 
 # Сколько сильных и слабых сторон показывать сразу; остальные — под «ещё N».
 STRENGTH_LIMIT = 6
@@ -245,7 +246,9 @@ def _timeline_context(request: Any, territory: Territory) -> dict[str, Any]:
 
     Коридор — половина субъектов страны: по нему видно, обычен ли уровень региона.
     """
-    series = resolve_series(request.GET.get("series"))
+    # Паспорт показывает ряды склада: ключ ряда своей таблицы — непонятный параметр.
+    value = request.GET.get("series")
+    series = resolve_series(None if is_user_key(value) else value)
     if series is None:
         return {"timeline_series": None}
 

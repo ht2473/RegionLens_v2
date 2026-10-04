@@ -6,16 +6,18 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from django.core.cache import cache
 from django.db.models import QuerySet
+from django.http import Http404
 from django.utils.translation import get_language, gettext
 
 from apps.catalog.models import Indicator, Section, Series, Territory
 from apps.core.search import words_of
 from apps.warehouse.duckdb_client import warehouse_generation
 from apps.warehouse.queries import FeaturedSeries, covered_years, featured_series, featured_set
+from apps.warehouse.routing import is_user_key
 
 # Время жизни кэша перечня рядов для выпадающих списков.
 SERIES_OPTIONS_CACHE_TTL = 3600
@@ -56,6 +58,13 @@ def featured_choice(series: Series) -> dict[str, Any]:
 
     У ряда основного набора пометка берётся из набора, у остальных — по названию.
     """
+    if getattr(series, "is_user", False):
+        dataset = getattr(series, "dataset", None)
+        return {
+            "group": gettext("Мои таблицы: %(title)s") % {"title": getattr(dataset, "title", "")},
+            "title": series.full_title,
+            "unnormalised": series.is_unnormalised,
+        }
     item = featured_set().by_key().get(series.key)
     if item is not None:
         return {
@@ -167,7 +176,20 @@ def default_series_key() -> str | None:
 
 
 def resolve_series(value: str | None) -> Series | None:
-    """Найти ряд по ключу из параметра запроса; при отсутствии или ошибке — ряд по умолчанию."""
+    """
+    Найти ряд по ключу из параметра запроса; при отсутствии или ошибке — ряд по умолчанию.
+
+    Ряд набора пользователя — только доступный тому, кто спрашивает; чужой — 404.
+    """
+    if value and is_user_key(value):
+        from apps.userdata.series import user_series
+
+        found = user_series(value)
+        if found is None:
+            raise Http404
+        # Ряд набора ведёт себя для представлений как ``Series``.
+        return cast(Series, found)
+
     queryset = Series.objects.select_related("indicator", "indicator__section", "unit")
 
     if value:

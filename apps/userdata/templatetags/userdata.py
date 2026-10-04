@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from typing import Any
 
 from django import template
@@ -27,6 +28,23 @@ def is_number(text: Any) -> bool:
     from apps.userdata import cells
 
     return cells.parse(str(text or "")).status == cells.VALUE
+
+
+@register.filter
+def column_letters(table: Any) -> list[str]:
+    """Буквы столбцов образца, как в электронной таблице: A … Z, AA …"""
+    # Образец — у описания таблицы при приёме или в отчёте версии (словарь).
+    sample = table.get("sample") if isinstance(table, Mapping) else getattr(table, "sample", None)
+    width = max((len(row) for row in sample or []), default=0)
+    letters = []
+    for index in range(width):
+        name = ""
+        number = index + 1
+        while number:
+            number, rest = divmod(number - 1, 26)
+            name = chr(ord("A") + rest) + name
+        letters.append(name)
+    return letters
 
 
 @register.filter

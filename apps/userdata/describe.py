@@ -28,17 +28,25 @@ class Choice:
 
 def recognition_of(version: DatasetVersion, user: Any = None) -> recognize.Recognition:
     """Распознать таблицу версии с решениями человека и его запомненными подписями."""
+    return load_and_recognize(version, user)[1]
+
+
+def load_and_recognize(
+    version: DatasetVersion, user: Any = None
+) -> tuple[tables.Loaded, recognize.Recognition]:
+    """Прочитанная таблица версии и её распознавание."""
     table = jobs.table_of(version)
     path = version.directory / version.recipe["file"]
     profile = version.report.get("profile") if tables.is_large(path, table) else None
     loaded = tables.load(path, table, profile)
-    return recognize.recognize(
+    result = recognize.recognize(
         loaded,
         table,
         version.recipe,
         file_name=version.file_name,
         remembered=remembered_labels(user),
     )
+    return loaded, result
 
 
 def remembered_labels(user: Any) -> dict[str, str]:
@@ -144,10 +152,15 @@ def save_answers(
         if code in matching.NESTED_PARENTS or code in matching.NESTED_PARENTS.values()
     }
     recipe["nested"] = {**(recipe.get("nested") or {}), **nested}
+    # Описание сохранено заново: отказ прежнего извлечения не мешает попробовать снова;
+    # само извлечение устаревает, только если рецепт изменился (отпечаток).
+    report = {key: value for key, value in version.report.items() if not key.startswith("extract_")}
     with transaction.atomic():
         version.recipe = recipe
-        version.state = DatasetVersion.State.DESCRIBED
-        version.save(update_fields=["recipe", "state", "updated_at"])
+        version.report = report
+        if version.state != DatasetVersion.State.BUILT:
+            version.state = DatasetVersion.State.DESCRIBED
+        version.save(update_fields=["recipe", "report", "state", "updated_at"])
         if answers.get("remember") and user is not None and user.is_authenticated:
             sorter = matching.matcher()
             for label, code in choices.items():

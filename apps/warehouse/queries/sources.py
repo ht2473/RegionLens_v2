@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..duckdb_client import fetch_dicts, fetch_scalar, placeholders
+from ..duckdb_client import fetch_dicts, fetch_scalar, get_connection, placeholders
+from ..routing import by_key, by_keys
 from .common import COUNTRY_CODE, by_generation
 
 
@@ -27,6 +28,7 @@ def source_links() -> dict[str, dict[str, Any]]:
     return {row["series_key"]: row for row in rows}
 
 
+@by_key()
 @by_generation("year_origin")
 def year_origin(series_key: str, year: int) -> dict[str, Any] | None:
     """
@@ -55,6 +57,7 @@ def year_origin(series_key: str, year: int) -> dict[str, Any] | None:
     return rows[0] if rows else None
 
 
+@by_key()
 @by_generation("source_years")
 def source_years(series_key: str) -> list[dict[str, Any]]:
     """Годы ряда, значения субъектов в которых взяты из выпусков источников, с признаками."""
@@ -86,6 +89,20 @@ def population_last_year() -> int | None:
     return int(value) if value is not None else None
 
 
+@by_generation("population_table")
+def population_table() -> dict[str, dict[int, float]]:
+    """Среднегодовая численность по территориям и годам — знаменатель сумм своих данных."""
+    from apps.sources.registry import registry
+
+    from ..population import population_frame
+
+    frame = population_frame(get_connection(), registry())
+    table: dict[str, dict[int, float]] = {}
+    for code, year, population in frame.itertuples(index=False):
+        table.setdefault(str(code), {})[int(year)] = float(population)
+    return table
+
+
 @by_generation("release_editions")
 def release_editions() -> list[dict[str, Any]]:
     """Выпуски источников в складе: издание, дата, число версий значений и годы."""
@@ -100,6 +117,7 @@ def release_editions() -> list[dict[str, Any]]:
     )
 
 
+@by_keys()
 @by_generation("edition_contents")
 def edition_contents(edition_codes: list[str], series_keys: list[str]) -> list[dict[str, Any]]:
     """
@@ -129,6 +147,7 @@ def edition_contents(edition_codes: list[str], series_keys: list[str]) -> list[d
     )
 
 
+@by_keys()
 @by_generation("edition_territories")
 def edition_territories(
     edition_codes: list[str], series_keys: list[str], territory_codes: list[str]
@@ -158,6 +177,7 @@ def edition_territories(
     return {row["territory_code"]: int(row["series"]) for row in rows}
 
 
+@by_keys()
 @by_generation("dataset_last_years")
 def dataset_last_years(series_keys: list[str]) -> dict[str, int]:
     """Последний год значений набора (не внешних источников) по каждому ряду."""
@@ -177,6 +197,7 @@ def dataset_last_years(series_keys: list[str]) -> dict[str, int]:
     return {row["series_key"]: int(row["last_year"]) for row in rows}
 
 
+@by_keys()
 @by_generation("dataset_territories")
 def dataset_territories(series_keys: list[str], territory_codes: list[str]) -> dict[str, int]:
     """Число рядов ``series_keys`` со значением набора за последний год ряда, по территориям."""

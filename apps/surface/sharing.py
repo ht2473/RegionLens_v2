@@ -75,7 +75,8 @@ def api_request(
     context: dict[str, Any],
 ) -> ApiRequest | None:
     """Составить запрос к интерфейсу, отвечающий показанному на холсте; без ряда — ничего."""
-    if state.series is None or state.year is None:
+    # Интерфейс отдаёт только открытые данные: у рядов наборов пользователей запроса нет.
+    if state.series is None or state.year is None or getattr(state.series, "is_user", False):
         return None
 
     if panel.code == PANEL_RANKINGS:

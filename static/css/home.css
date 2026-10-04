@@ -276,6 +276,45 @@
   height: 15px;
 }
 
+/* Полоса «Свои данные» под живой картой: текст и две кнопки в строку. */
+.own-data-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-8);
+  margin-top: var(--space-8);
+  padding: var(--space-5) 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.own-data-strip__text {
+  flex: 1 1 28rem;
+  min-width: 0;
+}
+
+.own-data-strip__title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}
+
+.own-data-strip__lead {
+  margin: var(--space-1) 0 0;
+  color: var(--text-secondary);
+}
+
+.own-data-strip__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.own-data-strip__actions form {
+  margin: 0;
+}
+
 /* Три входа вглубь. */
 .entry-grid {
   display: grid;

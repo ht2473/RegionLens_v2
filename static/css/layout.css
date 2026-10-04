@@ -644,9 +644,10 @@ button.main-nav__link {
 
 /* --- Адаптация ---------------------------------------------------------------------------------------- */
 
-/* Адаптация шапки, уступки по очереди: до 1699 — меньше отступы пунктов, до 1439 — уже поиск
-   и имя вошедшего, до 1279 — мелкий кегль и ещё уже поиск, до 1179 — выдвижное меню. Подписи пунктов не сокращаются. Пороги рассчитаны
-   по вошедшему с самым длинным именем. Ниже 639 поиск уходит в выдвижное меню. */
+/* Адаптация шапки, уступки по очереди: до 1699 — меньше отступы пунктов, до 1599 — уже поиск
+   и имя вошедшего, до 1439 и до 1279 — ещё уже (до 1279 и мелкий кегль), до 1179 — выдвижное
+   меню. Подписи пунктов не сокращаются. Пороги рассчитаны по вошедшему с самым длинным именем
+   и шести пунктам меню. Ниже 639 поиск уходит в выдвижное меню. */
 
 @media (max-width: 1699px) {
   .main-nav__link {
@@ -659,7 +660,7 @@ button.main-nav__link {
 }
 
 /* Поле поиска отдаёт ширину переключателям, чтобы разделы меню не обрезались. */
-@media (max-width: 1439px) {
+@media (max-width: 1599px) {
   .app-header__actions .palette-trigger {
     min-width: 240px;
   }
@@ -674,6 +675,20 @@ button.main-nav__link {
   }
 }
 
+@media (max-width: 1439px) {
+  .app-header__actions .palette-trigger {
+    min-width: 176px;
+  }
+
+  .app-header__actions .user-menu__trigger {
+    max-width: 8rem;
+  }
+
+  .app-header__actions:has(.app-header__region) .palette-trigger {
+    min-width: 136px;
+  }
+}
+
 @media (max-width: 1279px) {
   .main-nav__link {
     padding-inline: var(--space-1);
@@ -682,11 +697,15 @@ button.main-nav__link {
 
   /* Поле поиска отдаёт ширину, чтобы шапка не выходила за край. */
   .app-header__actions .palette-trigger {
-    min-width: 200px;
+    min-width: 136px;
+  }
+
+  .app-header__actions .user-menu__trigger {
+    max-width: 7rem;
   }
 
   .app-header__actions:has(.app-header__region) .palette-trigger {
-    min-width: 152px;
+    min-width: 112px;
   }
 }
 

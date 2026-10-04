@@ -15,6 +15,7 @@ from django.utils.translation import gettext
 from apps.catalog.indicator import describe_series
 from apps.catalog.models import Section, Series, Territory
 from apps.warehouse.duckdb_client import WarehouseNotBuiltError
+from apps.warehouse.routing import is_user_key
 
 # Сколько названий перечисляется, прежде чем остальные сворачиваются в «ещё N».
 LISTED = 3
@@ -59,13 +60,26 @@ def _series_titles(keys: Iterable[str]) -> dict[str, str]:
     if not wanted:
         return {}
     found = Series.objects.filter(key__in=wanted).select_related("indicator")
-    titles = {}
+    titles = _user_titles(wanted)
     for series in found:
         try:
             titles[series.key] = describe_series(series).short_title
         except WarehouseNotBuiltError:
             # Без склада — формулировка сборника из справочника.
             titles[series.key] = series.full_title
+    return titles
+
+
+def _user_titles(keys: set[str]) -> dict[str, str]:
+    """Названия рядов своих таблиц, доступных тому, кто открыл страницу."""
+    from apps.userdata.series import user_series
+
+    titles = {}
+    for key in keys:
+        if is_user_key(key):
+            found = user_series(key)
+            if found is not None:
+                titles[key] = found.full_title
     return titles
 
 

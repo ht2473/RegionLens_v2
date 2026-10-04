@@ -153,12 +153,19 @@ class TestPublicPages:
         ]
         assert all(address.startswith("/") for address in addresses)
 
-    def test_header_holds_five_items(self, client: Client, seeded: None) -> None:
-        """В шапке пять пунктов верхнего уровня; новый пункт добавляется осознанно."""
+    def test_header_holds_six_items(self, client: Client, seeded: None) -> None:
+        """В шапке шесть пунктов верхнего уровня; новый пункт добавляется осознанно."""
         response = client.get(reverse("core:home"))
         titles = [str(item["title"]) for item in response.context["main_navigation"]]
         # Порядок публичный: сначала регион и показатель, затем рабочая поверхность.
-        assert titles == ["Регионы", "Показатели", "Исследовать", "Анализ", "Методика"]
+        assert titles == [
+            "Регионы",
+            "Показатели",
+            "Исследовать",
+            "Анализ",
+            "Свои данные",
+            "Методика",
+        ]
 
     @pytest.mark.parametrize(
         "route",

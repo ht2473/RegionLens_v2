@@ -142,6 +142,20 @@ MAIN_NAVIGATION: tuple[NavItem, ...] = (
         ),
     ),
     NavItem(
+        title=_("Свои данные"),
+        url_name="userdata:index",
+        icon="upload",
+        hint=_("Своя таблица по регионам — на той же карте и в тех же видах"),
+        # Быстрый переход находит загрузку и по словам «загрузить», «мой файл».
+        includes=(
+            NavItem(
+                title=_("Загрузить таблицу"),
+                url_name="userdata:upload",
+                hint=_("Мой файл: загрузить свои данные из Excel, CSV или архива"),
+            ),
+        ),
+    ),
+    NavItem(
         title=_("Методика"),
         url_name="content:methodology",
         icon="book",
@@ -209,6 +223,7 @@ FOOTER_NAVIGATION: tuple[tuple[Translatable, tuple[NavItem, ...]], ...] = (
             NavItem(title=_("Таблица значений"), url_name="surface:table"),
             NavItem(title=_("Интегральные индексы"), url_name="analytics:index-builder"),
             NavItem(title=_("Неравенство"), url_name="analytics:inequality"),
+            NavItem(title=_("Свои данные"), url_name="userdata:index"),
         ),
     ),
     (

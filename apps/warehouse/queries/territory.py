@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..duckdb_client import fetch_dicts, fetch_one, placeholders
+from ..routing import by_key, by_keys
 from .common import COUNTRY_CODE, by_generation
 
 # Наименьшее число ранжированных территорий, при котором место сопоставимо с другими.
@@ -51,6 +52,7 @@ def territory_coverage(territory_code: str) -> dict[str, Any]:
     }
 
 
+@by_keys()
 @by_generation("territory_positions")
 def territory_positions(territory_code: str, series_keys: list[str]) -> list[dict[str, Any]]:
     """
@@ -133,6 +135,7 @@ def territory_positions(territory_code: str, series_keys: list[str]) -> list[dic
     )
 
 
+@by_key()
 @by_generation("territory_values_for_series")
 def territory_values_for_series(
     series_key: str,
@@ -159,6 +162,7 @@ def territory_values_for_series(
     return {row["territory_code"]: row for row in rows}
 
 
+@by_key()
 @by_generation("district_summary")
 def district_summary(district_code: str, series_key: str, year: int) -> dict[str, Any] | None:
     """Получить сводку по субъектам одного федерального округа."""

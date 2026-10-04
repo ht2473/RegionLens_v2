@@ -3,6 +3,9 @@
 
     uv run python -X utf8 scripts/userdata_corpus.py labels   # дополнить эталон подписей
     uv run python -X utf8 scripts/userdata_corpus.py check    # сравнить с эталоном
+    uv run python -X utf8 scripts/userdata_corpus.py files    # приём файлов корпуса
+    uv run python -X utf8 scripts/userdata_corpus.py tables   # распознавание таблиц
+    uv run python -X utf8 scripts/userdata_corpus.py build    # путь до карты: сборка и холст
 
 Корпус и эталон лежат вне репозитория (``--corpus``, по умолчанию ``../for work/corpus``):
 архивы ЕБТ — ``ebt/``, «Регионы России» — ``rosstat/``; бюллетень и ВРП — из архива сбора.
@@ -17,6 +20,7 @@ import ast
 import contextlib
 import csv
 import io
+import itertools
 import os
 import shutil
 import sys
@@ -25,6 +29,7 @@ import zipfile
 from collections import Counter, defaultdict
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
+from http import HTTPStatus
 from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree
@@ -648,6 +653,230 @@ def _write_table_gold(path: Path, gold: dict[tuple[str, str], dict[str, str]]) -
     path.write_bytes(("﻿" + buffer.getvalue()).encode("utf-8"))
 
 
+BUILD_FIELDS = (
+    "source",
+    "table",
+    "bytes",
+    "outcome",
+    "series",
+    "values",
+    "regions",
+    "upload",
+    "describe",
+    "extract",
+    "build",
+    "map",
+    "total",
+    "note",
+)
+BUILD_STEPS = ("upload", "describe", "extract", "build", "map")
+# Файл до этого размера должен открываться на карте не дольше ``FIRST_MAP_SECONDS``.
+SMALL_FILE_BYTES = 5 * 1024 * 1024
+FIRST_MAP_SECONDS = 5
+MAPPED = "карта"
+
+
+def _always_inline(_version: Any, _stage: str) -> bool:
+    return True
+
+
+def _upload_start(path: Path, name: str) -> Callable[[Any], Any]:
+    """Начало пути: загрузка файла."""
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from django.urls import reverse
+
+    def start(client: Any) -> Any:
+        data = {"action": "upload", "file": SimpleUploadedFile(name, path.read_bytes())}
+        return client.post(reverse("userdata:upload"), data)
+
+    return start
+
+
+def _paste_start(text: str) -> Callable[[Any], Any]:
+    """Начало пути: вставка таблицы из буфера."""
+    from django.urls import reverse
+
+    def start(client: Any) -> Any:
+        data = {"action": "paste", "text": text, "markup": ""}
+        return client.post(reverse("userdata:upload"), data)
+
+    return start
+
+
+def _series_form(dataset: Any, version: Any) -> dict[str, Any]:
+    """Шаг «Показатели» без правок: описание по подсказкам."""
+    from apps.userdata import indicators
+
+    data: dict[str, Any] = {
+        "title": dataset.title,
+        "source_title": "",
+        "source_url": "",
+        "description": "",
+    }
+    for number, item in enumerate(indicators.indicators_of(version), start=1):
+        data.update(
+            {
+                f"indicator-{number}": item.name,
+                f"title-{number}": item.title,
+                f"unit-{number}": item.unit,
+                f"kind-{number}": item.kind,
+                f"polarity-{number}": item.polarity,
+                f"per-{number}": list(item.per),
+            }
+        )
+    return data
+
+
+def _walk_table(row: dict[str, Any], start: Callable[[Any], Any], key: str) -> list[float]:
+    """Пройти мастер до карты; записать исход в ``row``, вернуть отметки времени шагов."""
+    import time
+
+    from django.test import Client
+    from django.urls import reverse
+
+    from apps.userdata.models import Dataset, DatasetVersion
+    from apps.userdata.services import discard
+
+    client = Client(HTTP_HOST="127.0.0.1")
+    before = Dataset.objects.order_by("-pk").values_list("pk", flat=True).first() or 0
+    moments = [time.perf_counter()]
+    start(client)
+    dataset = Dataset.objects.filter(pk__gt=before).order_by("pk").first()
+    if dataset is None:
+        row.update(outcome="не принята", note="приём отказал: не таблица")
+        return moments
+    try:
+        version = DatasetVersion.objects.get(pk=dataset.current_version_id)
+        tables = version.report["inspection"]["tables"]
+        choice = key or next(table for table in tables if table["best"])["key"]
+        file_url = reverse("userdata:file", args=[dataset.public_id])
+        client.post(file_url, {"action": "choose", "table": choice, "encoding": ""})
+        moments.append(time.perf_counter())
+        client.post(reverse("userdata:table", args=[dataset.public_id]), {"action": "next"})
+        moments.append(time.perf_counter())
+        series_url = reverse("userdata:series", args=[dataset.public_id])
+        client.get(series_url)
+        version.refresh_from_db()
+        moments.append(time.perf_counter())
+        if not version.report.get("extract", {}).get("series"):
+            row.update(outcome="не разобрана", note=version.report.get("extract_error", "")[:160])
+            return moments
+        response = client.post(series_url, _series_form(dataset, version))
+        moments.append(time.perf_counter())
+        version.refresh_from_db()
+        if version.state != DatasetVersion.State.BUILT:
+            row.update(outcome="не собрана", note=version.report.get("build_error", "")[:160])
+            return moments
+        page = client.get(response["Location"])
+        moments.append(time.perf_counter())
+        row.update(
+            outcome=MAPPED if page.status_code == HTTPStatus.OK else f"ответ {page.status_code}",
+            series=version.series_count,
+            values=version.values_count,
+            regions=version.regions_count,
+        )
+        return moments
+    finally:
+        discard(dataset)
+
+
+def _build_targets(
+    corpus: Path, only: str, limit: int
+) -> Iterator[tuple[str, str, int, Callable[[Any], Any], str]]:
+    """Таблицы корпуса для пути до карты: источник, имя, размер, начало пути, ключ таблицы."""
+    from apps.userdata import ingest
+
+    if only in {"", "ebt"}:
+        for archive in sorted((corpus / "ebt").glob("*.zip")):
+            for table in ingest.inspect(archive).tables:
+                tag = f"{archive.name}/{table.key}"
+                size = archive.stat().st_size
+                yield "ebt", tag, size, _upload_start(archive, archive.name), table.key
+    for source in ("grp", "bulletin"):
+        if only not in {"", source}:
+            continue
+        with tempfile.TemporaryDirectory() as scratch:
+            for tag, path in _rosstat_files(source, Path(scratch)):
+                try:
+                    inspection = ingest.inspect(path, path.name)
+                except ingest.IngestError:
+                    continue
+                for table in inspection.tables:
+                    if table.regions:
+                        start = _upload_start(path, path.name)
+                        yield source, f"{tag}#{table.sheet}", path.stat().st_size, start, table.key
+    if only in {"", "regions"}:
+        for count, (tag, rows) in enumerate(docx_tables(corpus), start=1):
+            text = "\n".join("\t".join(row) for row in rows)
+            yield "regions", tag, len(text.encode()), _paste_start(text), ""
+            if limit and count >= limit:
+                break
+
+
+def command_build(corpus: Path, *, only: str = "", limit: int = 0) -> None:
+    """
+    Путь каждой таблицы корпуса до карты, как у человека: загрузка, «Что в таблице» без
+    правок, «Показатели» без правок, сборка, карта первого ряда. Всё — в запросе; итог —
+    ``corpus/build.csv`` и время до первой карты.
+    """
+    from apps.userdata import jobs
+
+    settings.USERDATA_DIR = Path(tempfile.mkdtemp(prefix="userdata_corpus_"))
+    settings.USERDATA_GUEST_MAX_DATASETS = 10**6
+    settings.USERDATA_GUEST_UPLOADS_PER_HOUR = 10**6
+    settings.USERDATA_GUEST_MAX_VALUES = settings.USERDATA_MAX_VALUES
+    settings.ALLOWED_HOSTS = ["*"]
+    jobs._inline = _always_inline  # type: ignore[assignment]
+    results: list[dict[str, Any]] = []
+    for source, tag, size, start, key in _build_targets(corpus, only, limit):
+        row: dict[str, Any] = {"source": source, "table": tag, "bytes": size, "note": ""}
+        try:
+            moments = _walk_table(row, start, key)
+        except Exception as error:
+            row.update(outcome="ошибка", note=f"{type(error).__name__}: {error}"[:200])
+            moments = []
+        for name, (before, after) in zip(BUILD_STEPS, itertools.pairwise(moments), strict=False):
+            row[name] = round(after - before, 2)
+        row["total"] = round(moments[-1] - moments[0], 2) if moments else 0.0
+        results.append(row)
+        print(
+            f"  {row['total']:6.2f} с  {row['outcome']:12} {tag[:70]:70} "
+            f"рядов {row.get('series', '')}, субъектов {row.get('regions', '')} {row['note'][:60]}"
+        )
+    target = corpus / "build.csv"
+    with target.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=BUILD_FIELDS)
+        writer.writeheader()
+        writer.writerows(results)
+    shutil.rmtree(settings.USERDATA_DIR, ignore_errors=True)
+    _build_summary(results)
+    print(f"итог — {target}")
+
+
+def _build_summary(results: list[dict[str, Any]]) -> None:
+    """Исходы по источникам и время до первой карты."""
+    by_outcome = Counter(row["outcome"] for row in results)
+    print("\nисходы: " + ", ".join(f"{name} — {value}" for name, value in by_outcome.most_common()))
+    for source in SOURCES[:-1]:
+        rows = [row for row in results if row["source"] == source]
+        if rows:
+            mapped = sum(row["outcome"] == MAPPED for row in rows)
+            print(f"  {SOURCE_TITLES[source]}: на карте {mapped} из {len(rows)}")
+    small = [
+        row for row in results if row["bytes"] <= SMALL_FILE_BYTES and row["outcome"] == MAPPED
+    ]
+    if small:
+        times = sorted(row["total"] for row in small)
+        slow = sum(value > FIRST_MAP_SECONDS for value in times)
+        print(
+            f"до первой карты, файлы до 5 МБ: {len(small)}, медиана "
+            f"{times[len(times) // 2]:.2f} с, наибольшее {times[-1]:.2f} с, "
+            f"дольше {FIRST_MAP_SECONDS} с — {slow}"
+        )
+    slowest = sorted(results, key=lambda row: -row["total"])[:5]
+    print("самые долгие: " + "; ".join(f"{row['table']} — {row['total']:.2f} с" for row in slowest))
+
+
 def handwritten(corpus: Path) -> list[tuple[str, str | None]]:
     """132 написания «от руки» из пробного сценария 03.10.2026; ``None`` — нет одного кода."""
     source = (corpus / "scripts" / "variants.py").read_text(encoding="utf-8")
@@ -659,7 +888,8 @@ def handwritten(corpus: Path) -> list[tuple[str, str | None]]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[1] if __doc__ else None)
-    parser.add_argument("command", choices=("labels", "check", "files", "tables"))
+    parser.add_argument("command", choices=("labels", "check", "files", "tables", "build"))
+    parser.add_argument("--limit", type=int, default=0, help="не больше стольких вставок")
     parser.add_argument(
         "--only", default="", help="только один источник: ebt, bulletin, grp, regions"
     )
@@ -672,6 +902,8 @@ def main() -> None:
         command_files(arguments.corpus)
     elif arguments.command == "tables":
         command_tables(arguments.corpus, only=arguments.only)
+    elif arguments.command == "build":
+        command_build(arguments.corpus, only=arguments.only, limit=arguments.limit)
     else:
         command_check(arguments.corpus, verbose=arguments.verbose)
 

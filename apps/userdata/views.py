@@ -9,6 +9,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.functional import Promise
+from django.utils.http import urlencode
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView, View
 
@@ -16,9 +17,20 @@ from apps.core.navigation import Crumb
 from apps.core.views import BreadcrumbMixin
 from apps.sources import periods
 
-from . import access, describe, ingest, jobs, matching, recognize, services
-from .forms import ChooseTableForm, PasteForm, UploadForm
-from .models import Dataset, DatasetVersion
+from . import (
+    access,
+    describe,
+    extract,
+    indicators,
+    ingest,
+    jobs,
+    matching,
+    recognize,
+    services,
+    tables,
+)
+from .forms import ChooseTableForm, DatasetMetaForm, PasteForm, UploadForm
+from .models import Dataset, DatasetSeries, DatasetVersion
 
 STEPS: tuple[tuple[str, Promise], ...] = (
     ("file", _("Файл")),
@@ -30,7 +42,11 @@ STEPS: tuple[tuple[str, Promise], ...] = (
 def steps(current: str, dataset: Dataset | None = None) -> list[dict[str, Any]]:
     """Шаги мастера: пройденные — ссылками, текущий отмечен."""
     version = dataset.current_version if dataset else None
-    reachable = {"file": dataset is not None, "table": bool(version and version.recipe)}
+    reachable = {
+        "file": dataset is not None,
+        "table": bool(version and version.recipe),
+        "series": bool(version and version.recipe.get("form")),
+    }
     result = []
     for number, (code, title) in enumerate(STEPS, start=1):
         url = ""
@@ -46,7 +62,10 @@ class UploadView(BreadcrumbMixin, TemplateView):
     template_name = "userdata/upload.html"
 
     def get_crumbs(self) -> tuple[Crumb, ...]:
-        return (Crumb(title=_("Свои данные")), Crumb(title=_("Загрузить таблицу")))
+        return (
+            Crumb(title=_("Свои данные"), url=reverse("userdata:index")),
+            Crumb(title=_("Загрузить таблицу")),
+        )
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -62,6 +81,7 @@ class UploadView(BreadcrumbMixin, TemplateView):
             paste_form = PasteForm(request.POST)
             if paste_form.is_valid():
                 try:
+                    services.check_limits(request)
                     dataset = services.create_from_paste(
                         request, paste_form.cleaned_data["text"], paste_form.cleaned_data["markup"]
                     )
@@ -73,6 +93,7 @@ class UploadView(BreadcrumbMixin, TemplateView):
         upload_form = UploadForm(request.POST, request.FILES)
         if upload_form.is_valid():
             try:
+                services.check_limits(request)
                 dataset = services.create_from_upload(request, upload_form.cleaned_data["file"])
             except ingest.IngestError as error:
                 upload_form.add_error("file", str(error))
@@ -97,7 +118,10 @@ class DatasetStepMixin(BreadcrumbMixin):
         return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
 
     def get_crumbs(self) -> tuple[Crumb, ...]:
-        return (Crumb(title=_("Свои данные")), Crumb(title=self.dataset.title))
+        return (
+            Crumb(title=_("Свои данные"), url=reverse("userdata:index")),
+            Crumb(title=self.dataset.title),
+        )
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -190,12 +214,16 @@ class TableStepView(DatasetStepMixin, TemplateView):
 
     def get_waiting_context(self, state: str) -> dict[str, Any]:
         context = DatasetStepMixin.get_context_data(self)
-        context.update(page_title=_("Что в таблице"), waiting=state)
+        context.update(
+            page_title=_("Что в таблице"),
+            waiting=state,
+            status_url=reverse("userdata:table-status", args=[self.dataset.public_id]),
+        )
         return context
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        result = describe.recognition_of(self.version, self.request.user)
+        loaded, result = describe.load_and_recognize(self.version, self.request.user)
         columns = [column for column in result.columns if column.distinct or column.header]
         # Столбцы с периодами широкой таблицы — под раскрытием: их бывает по сорок с одной ролью.
         periods = [
@@ -217,7 +245,7 @@ class TableStepView(DatasetStepMixin, TemplateView):
             territory_choices=describe.territory_choices(),
             nested=result.territories.nested if result.territories else [],
             resolved_regions=_resolved_regions(result),
-            table=jobs.table_of(self.version),
+            table=_with_sample(jobs.table_of(self.version), loaded),
             max_series=recognize.MAX_SERIES,
             repeated={number - 1 for item in result.same_headers for number in item["columns"]},
             form_text=FORM_TEXTS.get(result.form, ""),
@@ -237,6 +265,8 @@ class TableStepView(DatasetStepMixin, TemplateView):
             return redirect("userdata:file", public_id=self.dataset.public_id)
         result = describe.recognition_of(self.version, request.user)
         describe.save_answers(self.version, result, _answers(request, result), request.user)
+        if request.POST.get("action") == "next":
+            return redirect("userdata:series", public_id=self.dataset.public_id)
         messages.success(request, _("Описание таблицы сохранено."))
         return redirect("userdata:table", public_id=self.dataset.public_id)
 
@@ -253,8 +283,173 @@ class TableStatusView(DatasetStepMixin, View):
         return render(
             request,
             "userdata/_waiting.html",
-            {"dataset": self.dataset, "waiting": state},
+            {
+                "dataset": self.dataset,
+                "waiting": state,
+                "status_url": reverse("userdata:table-status", args=[self.dataset.public_id]),
+            },
         )
+
+
+class SeriesStepView(DatasetStepMixin, TemplateView):
+    """Шаг «Показатели»: название, единица, вид величины, направленность, пересчёт; сборка."""
+
+    template_name = "userdata/series_step.html"
+    step = "series"
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        if not self.version.recipe.get("form"):
+            messages.info(request, _("Сначала сохраните описание таблицы."))
+            return redirect("userdata:table", public_id=self.dataset.public_id)
+        stage, state = _progress(self.version)
+        if state != jobs.READY:
+            return self.render_to_response(self.get_waiting_context(stage, state))
+        return super().get(request, *args, **kwargs)
+
+    def get_waiting_context(self, stage: str, state: str) -> dict[str, Any]:
+        context = DatasetStepMixin.get_context_data(self)
+        context.update(
+            page_title=_("Показатели"),
+            waiting=state,
+            waiting_stage=stage,
+            waiting_error=jobs.stage_error(self.version, stage),
+            status_url=_status_url(self.dataset, stage),
+        )
+        return context
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        report = self.version.report.get("extract") or {}
+        items = indicators.indicators_of(self.version)
+        context.update(
+            page_title=_("Показатели"),
+            indicators=items,
+            report=report,
+            meta_form=kwargs.get("meta_form") or DatasetMetaForm(instance=self.dataset),
+            kinds=DatasetSeries.Kind.choices,
+            polarities=DatasetSeries.Polarity.choices,
+            per_choices=[
+                (value, label)
+                for value, label in DatasetSeries.Derived.choices
+                if value in indicators.PER_CHOICES
+            ],
+            build_error=jobs.stage_error(self.version, jobs.BUILD)
+            if jobs.stage_state(self.version, jobs.BUILD) == jobs.FAILED
+            else "",
+            built=self.version.state == DatasetVersion.State.BUILT,
+            few_regions=max((item.regions for item in items), default=0) < FEW_REGIONS,
+            alone_missing=self.version.report.get("build", {}).get("alone_missing", []),
+        )
+        return context
+
+    def post(self, request: HttpRequest, public_id: str) -> HttpResponse:  # noqa: ARG002
+        if not extract.is_current(self.version):
+            return redirect("userdata:series", public_id=self.dataset.public_id)
+        meta_form = DatasetMetaForm(request.POST, instance=self.dataset)
+        if not meta_form.is_valid():
+            return self.render_to_response(self.get_context_data(meta_form=meta_form))
+        meta_form.save()
+        indicators.save(self.version, _indicator_answers(request))
+        state = jobs.start(self.version, jobs.BUILD)
+        if state == jobs.READY:
+            return redirect(first_view_url(self.version))
+        return redirect("userdata:series", public_id=self.dataset.public_id)
+
+
+class SeriesStatusView(DatasetStepMixin, View):
+    """Ход извлечения или сборки: страница опрашивает его раз в секунду."""
+
+    def get(self, request: HttpRequest, public_id: str) -> HttpResponse:  # noqa: ARG002
+        waited = request.GET.get("stage", "")
+        stage, state = _progress(self.version)
+        if state in {jobs.READY, jobs.FAILED, ""}:
+            response = HttpResponse(status=204)
+            built = jobs.stage_state(self.version, jobs.BUILD) == jobs.READY
+            if waited == jobs.BUILD and built:
+                # Сборка закончилась, пока страница ждала: сразу на карту.
+                response["HX-Redirect"] = first_view_url(self.version)
+            else:
+                response["HX-Refresh"] = "true"
+            return response
+        return render(
+            request,
+            "userdata/_waiting.html",
+            {
+                "dataset": self.dataset,
+                "waiting": state,
+                "waiting_stage": stage,
+                "status_url": _status_url(self.dataset, stage),
+            },
+        )
+
+
+# Субъектов меньше этого: неравенство и пространственный анализ по набору не считаются.
+FEW_REGIONS = 20
+
+
+def _status_url(dataset: Dataset, stage: str) -> str:
+    """Адрес опроса хода с этапом, которого ждёт страница."""
+    url = reverse("userdata:series-status", args=[dataset.public_id])
+    return f"{url}?{urlencode({'stage': stage})}"
+
+
+def _progress(version: DatasetVersion) -> tuple[str, str]:
+    """
+    Этап и его состояние для шага «Показатели»: идёт сборка — она; иначе извлечение,
+    начатое при необходимости (в запросе или отдельным процессом).
+    """
+    build_state = jobs.stage_state(version, jobs.BUILD)
+    if build_state in {jobs.RUNNING, jobs.PENDING}:
+        return jobs.BUILD, jobs.resume(version, jobs.BUILD)
+    if extract.is_current(version):
+        return jobs.EXTRACT, jobs.READY
+    state = jobs.stage_state(version, jobs.EXTRACT)
+    if state in {jobs.RUNNING, jobs.PENDING}:
+        return jobs.EXTRACT, jobs.resume(version, jobs.EXTRACT)
+    if state == jobs.FAILED:
+        return jobs.EXTRACT, state
+    state = jobs.start(version, jobs.EXTRACT)
+    if state == jobs.READY and not extract.is_current(version):
+        return jobs.EXTRACT, jobs.FAILED
+    return jobs.EXTRACT, state
+
+
+def first_view_url(version: DatasetVersion) -> str:
+    """Карта первого ряда собранной таблицы; у суммы — её пересчёт на жителей."""
+    records = list(version.series.order_by("order"))
+    if not records:
+        return reverse("userdata:dataset", args=[version.dataset.public_id])
+    first = records[0]
+    preferred = next(
+        (
+            record
+            for record in records
+            if record.base_code == first.code
+            and record.derived == DatasetSeries.Derived.PER_100000
+            and record.values_count
+        ),
+        first,
+    )
+    key = f"u:{version.dataset.code}:{preferred.code}"
+    return f"{reverse('maps:choropleth')}?{urlencode({'series': key})}"
+
+
+def _indicator_answers(request: HttpRequest) -> dict[str, dict[str, Any]]:
+    """Описание показателей из формы: поля с номером показателя."""
+    data = request.POST
+    answers: dict[str, dict[str, Any]] = {}
+    for key in data:
+        if not key.startswith("indicator-"):
+            continue
+        number = key.removeprefix("indicator-")
+        answers[str(data.get(key, ""))] = {
+            "title": data.get(f"title-{number}", ""),
+            "unit": data.get(f"unit-{number}", ""),
+            "kind": data.get(f"kind-{number}", ""),
+            "polarity": data.get(f"polarity-{number}", ""),
+            "per": data.getlist(f"per-{number}"),
+        }
+    return answers
 
 
 PERIOD_COLUMNS_SHOWN = 6
@@ -291,6 +486,12 @@ FORM_TEXTS = {
 }
 
 
+def _with_sample(table: ingest.TableInfo, loaded: tables.Loaded) -> ingest.TableInfo:
+    """Таблица рецепта с образцом строк: в рецепте образец не хранится."""
+    table.sample = ingest.sample_of(loaded.rows)
+    return table
+
+
 def _resolved_regions(result: recognize.Recognition) -> int:
     from apps.sources.territories import region_codes
 
@@ -299,7 +500,9 @@ def _resolved_regions(result: recognize.Recognition) -> int:
     codes = {
         match.code
         for label, match in result.territories.matches.items()
-        if label in result.labels and match.is_resolved and match.code
+        if label in result.labels
+        and match.code
+        and (match.is_resolved or match.kind == matching.NESTED)
     }
     for code in list(codes):
         codes.add(matching.NESTED_PARENTS.get(code, code))

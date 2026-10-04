@@ -18,13 +18,13 @@ from django.utils.translation import gettext_lazy as _
 from apps.catalog.constants import BreakKind
 from apps.catalog.models import Series, SeriesBreak, Territory, TerritoryAdjacency
 from apps.catalog.selectors import analysis_ready_series, resolve_series
-from apps.warehouse.duckdb_client import warehouse_generation
 from apps.warehouse.queries import (
     MIN_YEAR_COVERAGE,
     featured_series,
     region_matrix,
     series_covered_years,
 )
+from apps.warehouse.routing import generation_of, is_user_key
 
 from .core.composition import Composition, Outsider
 
@@ -106,8 +106,12 @@ def resolve_many(
 
 
 def resolve_one(value: str | None) -> Series | None:
-    """Отобрать один ряд; при неизвестном ключе берётся ряд по умолчанию."""
-    return resolve_series(value)
+    """
+    Отобрать один ряд; при неизвестном ключе берётся ряд по умолчанию.
+
+    Инструменты анализа считают ряды склада: ключ ряда своей таблицы — непонятный параметр.
+    """
+    return resolve_series(None if is_user_key(value) else value)
 
 
 def population_series_key() -> str | None:
@@ -397,11 +401,11 @@ def cached_result(prefix: str, parameters: dict[str, Any], builder: Callable[[],
 
 def build_cache_key(prefix: str, parameters: dict[str, Any]) -> str:
     """
-    Построить ключ кэша: отпечаток параметров, склада и версии приложения.
+    Построить ключ кэша: отпечаток параметров, склада и наборов в них, версии приложения.
 
     Версия нужна, потому что состав сохранённого результата меняется вместе с кодом.
     """
-    built_at = warehouse_generation()
+    built_at = generation_of(parameters.values())
     payload = "|".join(f"{name}={parameters[name]}" for name in sorted(parameters))
     source = f"{settings.PROJECT_VERSION}|{built_at}|{payload}"
     digest = hashlib.sha256(source.encode()).hexdigest()[:20]

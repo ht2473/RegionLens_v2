@@ -5,12 +5,14 @@ from __future__ import annotations
 from typing import Any
 
 from ..duckdb_client import fetch_dicts, placeholders, validate_identifier
+from ..routing import by_key
 from .common import by_generation
 
 # Допустимые столбцы упорядочивания рейтинга.
 ORDER_COLUMNS = frozenset({"rank_desc", "rank_asc"})
 
 
+@by_key()
 @by_generation("ranking_table")
 def ranking_table(
     series_key: str,
@@ -56,6 +58,7 @@ def ranking_table(
     )
 
 
+@by_key()
 @by_generation("rank_history")
 def rank_history(
     series_key: str,
@@ -97,6 +100,7 @@ def rank_history(
     return grouped
 
 
+@by_key()
 @by_generation("rank_movers")
 def rank_movers(
     series_key: str,
@@ -143,6 +147,7 @@ def rank_movers(
     }
 
 
+@by_key()
 @by_generation("ranked_years")
 def ranked_years(series_key: str) -> list[int]:
     """Получить годы, за которые рассчитаны ранги ряда."""

@@ -37,7 +37,10 @@ def owned(request: HttpRequest) -> QuerySet[Dataset]:
     fingerprint = guest_fingerprint(request)
     if not fingerprint:
         return Dataset.objects.none()
-    return Dataset.objects.filter(owner__isnull=True, guest_key=fingerprint)
+    # Истёкший набор гостя удалит очистка; до неё его уже нет.
+    return Dataset.objects.filter(
+        owner__isnull=True, guest_key=fingerprint, expires_at__gt=timezone.now()
+    )
 
 
 def dataset_or_404(request: HttpRequest, public_id: UUID | str) -> Dataset:

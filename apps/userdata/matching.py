@@ -73,6 +73,11 @@ NESTED_PARENTS = {
     "RU-ARK-AGG": "RU-ARK",
     "RU-TYU-AGG": "RU-TYU",
 }
+# Автономные округа в составе итога: область без них — итог за вычетом округов.
+NESTED_MEMBERS = {
+    "RU-ARK-AGG": ("RU-NEN",),
+    "RU-TYU-AGG": ("RU-KHM", "RU-YAN"),
+}
 _NESTED_NAMES = {
     "RU-ARK-AGG": ("архангельская область", "arkhangelsk oblast", "arkhangelsk region"),
     "RU-TYU-AGG": ("тюменская область", "tyumen oblast", "tyumen region"),

@@ -5,9 +5,11 @@ from __future__ import annotations
 from typing import Any
 
 from ..duckdb_client import fetch_dicts, fetch_scalar, placeholders
+from ..routing import by_key, by_keys
 from .common import COUNTRY_CODE, LEVEL_REGION, by_generation, featured_series
 
 
+@by_key()
 @by_generation("series_metadata")
 def series_metadata(series_key: str) -> dict[str, Any] | None:
     """Получить описание ряда из измерений склада."""
@@ -45,6 +47,7 @@ def series_metadata(series_key: str) -> dict[str, Any] | None:
     return rows[0] if rows else None
 
 
+@by_key()
 @by_generation("series_timeline")
 def series_timeline(
     series_key: str,
@@ -75,6 +78,7 @@ def series_timeline(
     )
 
 
+@by_key()
 @by_generation("series_timeline_multi")
 def series_timeline_multi(
     series_key: str,
@@ -122,6 +126,7 @@ def series_timeline_multi(
 SPARKLINE_YEARS = 12
 
 
+@by_keys()
 @by_generation("featured_values")
 def _recent_values(territory_code: str, series_keys: list[str]) -> list[dict[str, Any]]:
     """
@@ -205,6 +210,7 @@ def featured_snapshot(
     return snapshot
 
 
+@by_key()
 @by_generation("series_values_by_territory")
 def series_values_by_territory(
     series_key: str,
@@ -242,6 +248,7 @@ def series_values_by_territory(
     )
 
 
+@by_key()
 @by_generation("series_leaders")
 def series_leaders(
     series_key: str,
@@ -266,6 +273,7 @@ def series_leaders(
     )
 
 
+@by_key()
 @by_generation("series_ranked_panel")
 def series_ranked_panel(series_key: str) -> list[dict[str, Any]]:
     """Получить места всех субъектов по ряду за все годы — для кадров живой карты."""
@@ -287,6 +295,7 @@ def series_ranked_panel(series_key: str) -> list[dict[str, Any]]:
     )
 
 
+@by_key()
 @by_generation("series_statistics")
 def series_statistics(series_key: str, year: int) -> dict[str, Any] | None:
     """Получить статистики распределения значений ряда по субъектам за год."""
@@ -297,6 +306,7 @@ def series_statistics(series_key: str, year: int) -> dict[str, Any] | None:
     return rows[0] if rows else None
 
 
+@by_key()
 @by_generation("series_statistics_timeline")
 def series_statistics_timeline(series_key: str) -> list[dict[str, Any]]:
     """Получить статистики распределения по всем годам ряда, с квартилями для коридора."""
@@ -313,6 +323,7 @@ def series_statistics_timeline(series_key: str) -> list[dict[str, Any]]:
     )
 
 
+@by_key()
 @by_generation("available_years")
 def available_years(series_key: str) -> list[int]:
     """Получить годы, за которые у ряда есть значения по субъектам."""
@@ -331,6 +342,7 @@ def available_years(series_key: str) -> list[int]:
     return [row["year"] for row in rows]
 
 
+@by_keys()
 @by_generation("series_values")
 def series_values(
     series_keys: list[str], territory_codes: list[str]
@@ -356,6 +368,7 @@ def series_values(
     return values
 
 
+@by_key()
 @by_generation("year_counts")
 def year_counts(series_key: str) -> dict[int, int]:
     """Получить число субъектов со значением по годам ряда."""
@@ -375,6 +388,7 @@ def year_counts(series_key: str) -> dict[int, int]:
     return {int(row["year"]): int(row["regions"]) for row in rows}
 
 
+@by_keys()
 @by_generation("series_summary_map")
 def series_summary_map(series_keys: list[str]) -> dict[str, dict[str, Any]]:
     """Получить характеристики покрытия для набора рядов одним запросом."""
@@ -393,6 +407,7 @@ def series_summary_map(series_keys: list[str]) -> dict[str, dict[str, Any]]:
     return {row["series_key"]: row for row in rows}
 
 
+@by_key()
 @by_generation("series_vintages")
 def series_vintages(series_key: str, territory_code: str) -> list[dict[str, Any]]:
     """Получить все версии значений ряда по выпускам изданий."""
@@ -411,6 +426,7 @@ def series_vintages(series_key: str, territory_code: str) -> list[dict[str, Any]
     )
 
 
+@by_key()
 @by_generation("series_revisions")
 def series_revisions(series_key: str, limit: int = 20) -> list[dict[str, Any]]:
     """Получить пересмотренные наблюдения одного ряда, начиная с наибольших расхождений."""
@@ -429,6 +445,7 @@ def series_revisions(series_key: str, limit: int = 20) -> list[dict[str, Any]]:
     )
 
 
+@by_key()
 @by_generation("series_editions")
 def series_editions(series_key: str) -> list[dict[str, Any]]:
     """Получить выпуски изданий, в которых встречаются наблюдения ряда."""
@@ -447,6 +464,7 @@ def series_editions(series_key: str) -> list[dict[str, Any]]:
     )
 
 
+@by_keys()
 @by_generation("latest_values_matrix")
 def latest_values_matrix(
     series_keys: list[str], territory_codes: list[str]
@@ -489,6 +507,7 @@ def latest_values_matrix(
     return {(row["series_key"], row["territory_code"]): row for row in rows}
 
 
+@by_key()
 def series_observations(
     series_key: str,
     *,

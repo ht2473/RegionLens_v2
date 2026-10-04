@@ -18,13 +18,17 @@ from django.utils import timezone
 from apps.core.documents import TICKET_CONTACT_DAYS, TICKET_TRACE_DAYS
 from apps.feedback.constants import TicketStatus
 from apps.feedback.models import Ticket
+from apps.userdata.services import prune as prune_tables
 
 # Имя отправителя обращения, у которого истёк срок хранения контактов.
 EXPIRED_CONTACT = "удалено по сроку хранения"
 
 
 class Command(BaseCommand):
-    """Удалить сеансы, попытки входа и сведения об отправителях обращений, чей срок истёк."""
+    """
+    Удалить сеансы, попытки входа, сведения об отправителях обращений и таблицы гостей,
+    чей срок истёк, и осиротевшие файлы таблиц.
+    """
 
     help = "Удаляет персональные данные, срок хранения которых истёк"
 
@@ -55,9 +59,12 @@ class Command(BaseCommand):
             .update(contact_name=EXPIRED_CONTACT, contact_email="")
         )
 
+        tables, orphans = prune_tables()
+
         self.stdout.write(
             self.style.SUCCESS(
                 f"Истёкшие сеансы удалены; попыток входа: {attempts}; обращений без адреса IP: "
-                f"{traces}; обращений без имени и адреса: {contacts}"
+                f"{traces}; обращений без имени и адреса: {contacts}; таблиц гостей: {tables}; "
+                f"осиротевших каталогов таблиц: {orphans}"
             )
         )

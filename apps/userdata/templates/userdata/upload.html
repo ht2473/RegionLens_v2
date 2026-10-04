@@ -3,6 +3,8 @@
 
 {# Начало мастера: файл или вставка из буфера; ошибки — сводкой над формами. #}
 
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
 {% block extra_css %}
   <link rel="stylesheet" href="{% static 'css/content.css' %}">
   <link rel="stylesheet" href="{% static 'css/userdata.css' %}">

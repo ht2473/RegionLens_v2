@@ -12,6 +12,7 @@ import io
 from typing import Any
 
 from ..reports.base import COLUMN_INTEGER, ReportDocument, Table
+from .safety import safe_text
 
 # Метка порядка байтов: без неё Excel читает файл в однобайтовой кодировке.
 BOM = "﻿"
@@ -36,7 +37,7 @@ def render(document: ReportDocument) -> bytes:
 
 def _write_table(writer: Any, table: Table) -> None:
     """Записать шапку таблицы и её строки."""
-    writer.writerow([column.title for column in table.columns])
+    writer.writerow([safe_text(column.title) for column in table.columns])
     for row in table.rows:
         writer.writerow([_cell(row.get(column.key), column.kind) for column in table.columns])
 
@@ -51,7 +52,7 @@ def _cell(value: Any, kind: str) -> str:
         return str(value)
     if isinstance(value, float):
         return _number(value, kind)
-    return str(value)
+    return safe_text(str(value))
 
 
 def _number(value: float, kind: str) -> str:

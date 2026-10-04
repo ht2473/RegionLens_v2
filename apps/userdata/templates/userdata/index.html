@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% load i18n static formatting userdata %}
+
+{# Раздел «Свои данные»: что это, загрузка и пример, мои таблицы, какие таблицы подходят, хранение. #}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+  <link rel="stylesheet" href="{% static 'css/userdata.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "Свои данные" %}</h1>
+      <p class="page-intro__lead">
+        {% blocktranslate trimmed %}
+          Своя таблица по регионам России открывается на той же карте и в тех же видах,
+          что и данные сайта. Регионы, годы и показатели узнаются по таблице; что не узнано,
+          можно выбрать. Таблицу видите только вы.
+        {% endblocktranslate %}
+      </p>
+      <div class="own-data-actions">
+        <a class="button button--primary" href="{% url 'userdata:upload' %}">
+          <svg aria-hidden="true"><use href="#icon-upload"></use></svg>
+          {% translate "Загрузить таблицу" %}
+        </a>
+        <form method="post" action="{% url 'userdata:example' %}">
+          {% csrf_token %}
+          <button class="button button--secondary" type="submit">{% translate "Попробовать на примере" %}</button>
+        </form>
+      </div>
+      <p class="own-data-actions__hint">
+        {% blocktranslate trimmed %}
+          Пример — набор «Если быть точным» о загрязнении воздуха в городах, архивом, как он
+          скачивается с сайта набора.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  </header>
+
+  <section class="page-section" aria-labelledby="own-tables">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="own-tables">{% translate "Мои таблицы" %}</h2>
+    </div>
+    {% if datasets %}
+      <ul class="own-tables">
+        {% for item in datasets %}
+          {% with version=item.current_version %}
+          <li class="own-tables__item">
+            <a class="own-tables__title" href="{% url 'userdata:dataset' item.public_id %}"{% with lang=item.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.title }}</a>
+            <p class="own-tables__facts">
+              {% if version.state == "built" %}
+                {% blocktranslate trimmed with series=version.series_count regions=version.regions_count %}
+                  рядов: {{ series }} · субъектов: {{ regions }}
+                {% endblocktranslate %}
+                {% if version.first_year %}· <span class="numeric">{{ version.first_year|year }}{% if version.last_year != version.first_year %}–{{ version.last_year|year }}{% endif %}</span>{% endif %}
+              {% else %}
+                {% translate "не собрана" %}
+              {% endif %}
+              · {{ item.size_bytes|filesizeformat }}
+              {% if item.expires_at %}· {% blocktranslate trimmed with moment=item.expires_at|date:"d.m.Y H:i" %}хранится до {{ moment }}{% endblocktranslate %}{% endif %}
+            </p>
+          </li>
+          {% endwith %}
+        {% endfor %}
+      </ul>
+      <p class="own-tables__quota">
+        {% if user.is_authenticated %}
+          {% blocktranslate trimmed with used=used|filesizeformat quota=quota|filesizeformat count=datasets|length limit=limit %}
+            Занято {{ used }} из {{ quota }}; таблиц {{ count }} из {{ limit }}.
+          {% endblocktranslate %}
+        {% else %}
+          {% blocktranslate trimmed with count=datasets|length limit=limit hours=guest_hours %}
+            Таблиц {{ count }} из {{ limit }}. Без входа таблицы хранятся {{ hours }} ч.
+          {% endblocktranslate %}
+          <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "Войдите, чтобы сохранить их" %}</a>
+        {% endif %}
+      </p>
+    {% else %}
+      <p class="page-section__lead">{% translate "Загруженных таблиц пока нет." %}</p>
+    {% endif %}
+  </section>
+
+  <section class="page-section" aria-labelledby="own-forms">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="own-forms">{% translate "Какие таблицы подходят" %}</h2>
+    </div>
+    <p class="page-section__lead">
+      {% blocktranslate trimmed %}
+        CSV, TXT, XLSX, XLS, ODS, Parquet и архив ZIP с ними. Таблицу из Word или PDF можно
+        скопировать и вставить в поле «Вставить таблицу». Нужен столбец или строка
+        с названиями субъектов РФ; значения по районам и городам на карту сайта не попадут.
+      {% endblocktranslate %}
+    </p>
+    <ul class="table-forms">
+      <li class="table-forms__item">
+        <h3 class="table-forms__title">{% translate "Длинная" %}</h3>
+        <table class="table-forms__scheme" aria-label="{% translate 'Схема таблицы' %}">
+          <tr><th>{% translate "регион" %}</th><th>{% translate "год" %}</th><th>{% translate "значение" %}</th></tr>
+          <tr><td>…</td><td>2023</td><td>12,5</td></tr>
+          <tr><td>…</td><td>2024</td><td>13,1</td></tr>
+        </table>
+        <p>{% translate "Регион, год, показатель, разрезы и значение — в своих столбцах. Так выгружают открытые наборы." %}</p>
+      </li>
+      <li class="table-forms__item">
+        <h3 class="table-forms__title">{% translate "Годы в столбцах" %}</h3>
+        <table class="table-forms__scheme" aria-label="{% translate 'Схема таблицы' %}">
+          <tr><th>{% translate "регион" %}</th><th>2023</th><th>2024</th></tr>
+          <tr><td>…</td><td>12,5</td><td>13,1</td></tr>
+          <tr><td>…</td><td>8,0</td><td>7,6</td></tr>
+        </table>
+        <p>{% translate "Как в статистических сборниках. Шапка может быть в несколько строк." %}</p>
+      </li>
+      <li class="table-forms__item">
+        <h3 class="table-forms__title">{% translate "Периоды в столбцах" %}</h3>
+        <table class="table-forms__scheme" aria-label="{% translate 'Схема таблицы' %}">
+          <tr><th rowspan="2">{% translate "регион" %}</th><th colspan="2">{% translate "январь–июль" %}</th></tr>
+          <tr><th>2025</th><th>2026</th></tr>
+          <tr><td>…</td><td>101,2</td><td>99,8</td></tr>
+        </table>
+        <p>{% translate "Месяцы, кварталы, «с начала года»: каждый период года — свой ряд по годам." %}</p>
+      </li>
+      <li class="table-forms__item">
+        <h3 class="table-forms__title">{% translate "Показатели в столбцах" %}</h3>
+        <table class="table-forms__scheme" aria-label="{% translate 'Схема таблицы' %}">
+          <tr><th>{% translate "регион" %}</th><th>{% translate "ДТП" %}</th><th>{% translate "погибло" %}</th></tr>
+          <tr><td>…</td><td>1 204</td><td>96</td></tr>
+          <tr><td>…</td><td>873</td><td>71</td></tr>
+        </table>
+        <p>{% translate "Несколько показателей за один год; год, если его нет в таблице, сайт спросит." %}</p>
+      </li>
+    </ul>
+  </section>
+
+  <section class="page-section" aria-labelledby="own-storage">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="own-storage">{% translate "Кто видит таблицу, где и сколько она хранится" %}</h2>
+    </div>
+    <ul class="compact-list own-storage">
+      <li>{% translate "Таблицу и её виды видите только вы. Поисковики их не индексируют; в панели управления видно только число таблиц и занятое место." %}</li>
+      <li>
+        {% blocktranslate trimmed with hours=guest_hours %}
+          Без входа таблица хранится {{ hours }} ч, затем удаляется. После входа таблицы
+          переходят в учётную запись и хранятся, пока вы их не удалите.
+        {% endblocktranslate %}
+      </li>
+      <li>
+        {% if retention_days %}
+          {% blocktranslate trimmed with days=retention_days %}
+            Удалённая таблица сразу исчезает с сайта, а из резервных копий — через {{ days }} сут.
+          {% endblocktranslate %}
+        {% else %}
+          {% translate "Удалённая таблица сразу исчезает с сайта." %}
+        {% endif %}
+      </li>
+      <li>{% translate "Не загружайте таблицы со сведениями о конкретных людях: сайт рассчитан на значения по регионам." %}</li>
+    </ul>
+    <p class="own-storage__links">
+      <a href="{% url 'core:terms' %}#own-data">{% translate "Условия использования" %}</a>
+      · <a href="{% url 'core:privacy' %}#own-data">{% translate "Политика обработки персональных данных" %}</a>
+      · <a href="{% url 'content:methodology' %}#m-own-data">{% translate "Как распознаются таблицы" %}</a>
+    </p>
+  </section>
+
+</div>
+{% endblock %}

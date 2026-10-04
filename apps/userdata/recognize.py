@@ -249,11 +249,10 @@ def recognize(
 
 def _territory_columns(loaded: Loaded, recipe: Mapping[str, Any]) -> list[int]:
     """Столбцы территорий: выбранные человеком или те, где узнаются субъекты."""
-    chosen = [
-        int(index) for index, role in (recipe.get("roles") or {}).items() if role == TERRITORY
-    ]
-    if chosen:
-        return sorted(chosen)
+    roles = recipe.get("roles") or {}
+    if roles:
+        # Роли уже описаны человеком: столбец регионов, снятый им, не угадывается снова.
+        return sorted(int(index) for index, role in roles.items() if role == TERRITORY)
     width = min(max((len(row) for row in loaded.rows), default=0), 200)
     scored = []
     for column in range(width):

@@ -106,6 +106,23 @@
                 <td>{% translate "до удаления учётной записи или отзыва согласия" %}</td>
               </tr>
               <tr>
+                <th scope="row">{% translate "Свои данные: загрузка и показ своих таблиц" %}</th>
+                <td>
+                  {% blocktranslate trimmed %}
+                    загруженная таблица — исходный файл и его разбор; название, источник
+                    и описание, указанные пользователем; без учётной записи — случайный ключ
+                    в сеансе, к которому привязана таблица
+                  {% endblocktranslate %}
+                </td>
+                <td>{% translate "согласие (п. 1 ч. 1 ст. 6 152-ФЗ); без учётной записи таблица с личностью не связана" %}</td>
+                <td>
+                  {% blocktranslate trimmed with hours=guest_hours %}
+                    без учётной записи — {{ hours }} ч; с учётной записью — до удаления таблицы
+                    или учётной записи
+                  {% endblocktranslate %}
+                </td>
+              </tr>
+              <tr>
                 <th scope="row">{% translate "Ответ на обращение" %}</th>
                 <td>
                   {% translate "имя, адрес для ответа, текст обращения, страница, с которой оно отправлено; ответ" %}
@@ -225,16 +242,42 @@
         <div class="prose">
           <p>
             {% blocktranslate trimmed %}
-              Сохранённое видит только владелец. Администратор видит учётную запись — почту,
-              имя, даты входа и число сохранённого, но не само сохранённое.
-              Обращения читают те, кто на них отвечает.
+              Сохранённое и загруженные таблицы видит только владелец. Администратор видит
+              учётную запись — почту, имя, даты входа, число сохранённого и таблиц, — но не само
+              сохранённое и не содержимое таблиц. Обращения читают те, кто на них отвечает.
             {% endblocktranslate %}
           </p>
         </div>
       </section>
 
+      <section class="about__section" id="own-data" aria-labelledby="privacy-own-data">
+        <h2 class="about__title" id="privacy-own-data"><span class="terms__number">9.</span> {% translate "Загружаемые таблицы" %}</h2>
+        <div class="prose">
+          <p>
+            {% blocktranslate trimmed %}
+              Таблицы раздела «Свои данные» предназначены для значений по территориям, а не для
+              сведений о людях. Загружать таблицы с персональными данными нельзя. Содержимое
+              таблиц сайт разбирает только для показа их владельцу: по нему не строятся выводы
+              о пользователе, и оно не передаётся третьим лицам.
+            {% endblocktranslate %}
+          </p>
+          <p>
+            {% blocktranslate trimmed with hours=guest_hours %}
+              Таблица без учётной записи удаляется через {{ hours }} ч; после входа она
+              переходит в учётную запись. Таблица удаляется на её странице, а все таблицы —
+              вместе с учётной записью; удаление затрагивает исходный файл и весь его разбор.
+            {% endblocktranslate %}
+            {% if backup_days %}
+              {% blocktranslate trimmed with days=backup_days %}
+                Таблицы учётных записей входят в резервные копии и исчезают из них через {{ days }} суток после удаления; таблицы без учётной записи в копии не входят.
+              {% endblocktranslate %}
+            {% endif %}
+          </p>
+        </div>
+      </section>
+
       <section class="about__section" id="rights" aria-labelledby="privacy-rights">
-        <h2 class="about__title" id="privacy-rights"><span class="terms__number">9.</span> {% translate "Права пользователя" %}</h2>
+        <h2 class="about__title" id="privacy-rights"><span class="terms__number">10.</span> {% translate "Права пользователя" %}</h2>
         <ul class="terms-list">
           <li>{% translate "Получить сведения об обработке своих персональных данных (ст. 14 152-ФЗ)." %}</li>
           <li>{% translate "Потребовать уточнения, блокирования или уничтожения неполных, устаревших, неточных или ненужных для цели данных." %}</li>
@@ -246,7 +289,7 @@
             {% url 'accounts:data' as data_url %}
             {% url 'accounts:profile' as profile_url %}
             {% blocktranslate trimmed %}
-              В личном кабинете, в разделе <a href="{{ data_url }}">«Мои данные»</a>, всё
+              В личном кабинете, в разделе <a href="{{ data_url }}">«Персональные данные»</a>, всё
               сохранённое о себе выгружается одним файлом JSON, а учётная запись удаляется
               после подтверждения паролем; имя и мой регион меняются
               в <a href="{{ profile_url }}">профиле</a>. Удаление учётной записи — отзыв
@@ -267,7 +310,7 @@
       </section>
 
       <section class="about__section" id="security" aria-labelledby="privacy-security">
-        <h2 class="about__title" id="privacy-security"><span class="terms__number">10.</span> {% translate "Меры защиты" %}</h2>
+        <h2 class="about__title" id="privacy-security"><span class="terms__number">11.</span> {% translate "Меры защиты" %}</h2>
         <ul class="terms-list">
           <li>{% translate "Передача данных — только по протоколу HTTPS (шифрование TLS)." %}</li>
           <li>{% translate "Пароли хранятся только в виде хэшей Argon2; резервные коды входа — тоже хэшами." %}</li>
@@ -279,7 +322,7 @@
       </section>
 
       <section class="about__section" id="changes" aria-labelledby="privacy-changes">
-        <h2 class="about__title" id="privacy-changes"><span class="terms__number">11.</span> {% translate "Изменение политики" %}</h2>
+        <h2 class="about__title" id="privacy-changes"><span class="terms__number">12.</span> {% translate "Изменение политики" %}</h2>
         <div class="prose">
           <p>
             {% blocktranslate trimmed %}
@@ -302,6 +345,7 @@
         <li><a href="#actions">{% translate "Действия с данными" %}</a></li>
         <li><a href="#transfer">{% translate "Передача и место хранения" %}</a></li>
         <li><a href="#access">{% translate "Кто видит данные" %}</a></li>
+        <li><a href="#own-data">{% translate "Загружаемые таблицы" %}</a></li>
         <li><a href="#rights">{% translate "Права пользователя" %}</a></li>
         <li><a href="#security">{% translate "Меры защиты" %}</a></li>
         <li><a href="#changes">{% translate "Изменение политики" %}</a></li>

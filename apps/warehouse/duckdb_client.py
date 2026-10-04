@@ -1,7 +1,9 @@
 """
 Доступ к складу DuckDB: соединения по потокам, ограничения ресурсов, безопасные запросы.
 
-Соединение помнит отпечаток файла и открывается заново после пересборки склада.
+Соединение помнит отпечаток файла и открывается заново после пересборки склада. Выборки
+идут в склад или в файл набора пользователя — источник задаёт переменная контекста
+(:mod:`apps.warehouse.routing`); вызывающим это незаметно.
 """
 
 from __future__ import annotations
@@ -9,8 +11,11 @@ from __future__ import annotations
 import logging
 import os
 import threading
+from collections import OrderedDict
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
+from contextvars import ContextVar
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +27,42 @@ logger = logging.getLogger(__name__)
 
 # Соединения, привязанные к потоку выполнения.
 _local = threading.local()
+
+# Открытых файлов наборов на поток не больше этого: давно не нужные закрываются.
+DATASET_CONNECTIONS = 8
+
+
+@dataclass(frozen=True, slots=True)
+class DataSource:
+    """Файл набора пользователя: путь и поколение для ключей кэша."""
+
+    path: Path
+    generation: str
+
+
+# Источник выборок текущего контекста; ``None`` — склад.
+_source: ContextVar[DataSource | None] = ContextVar("warehouse_source", default=None)
+
+
+def current_source() -> DataSource | None:
+    """Файл набора, в который идут выборки; ``None`` — склад."""
+    return _source.get()
+
+
+@contextmanager
+def using_source(source: DataSource | None) -> Iterator[None]:
+    """Направить выборки внутри блока в файл набора или (``None``) в склад."""
+    token = _source.set(source)
+    try:
+        yield
+    finally:
+        _source.reset(token)
+
+
+def source_generation() -> str:
+    """Отпечаток источника текущих выборок: склада или файла набора — для ключей кэша."""
+    source = _source.get()
+    return source.generation if source is not None else warehouse_generation()
 
 
 class WarehouseError(RuntimeError):
@@ -76,7 +117,13 @@ def warehouse_generation(path: Path | None = None) -> str:
 
 
 def get_connection(*, read_only: bool | None = None) -> duckdb.DuckDBPyConnection:
-    """Вернуть соединение со складом для текущего потока; по умолчанию — только на чтение."""
+    """
+    Вернуть соединение с источником текущих выборок для потока; по умолчанию — со складом
+    только на чтение.
+    """
+    source = _source.get()
+    if source is not None:
+        return _dataset_connection(source)
     path: Path = settings.DUCKDB_PATH
     if not path.exists():
         raise WarehouseNotBuiltError(path)
@@ -101,6 +148,59 @@ def get_connection(*, read_only: bool | None = None) -> duckdb.DuckDBPyConnectio
         setattr(_local, cache_key, connection)
         setattr(_local, f"{cache_key}_generation", generation)
     return connection
+
+
+def _dataset_connection(source: DataSource) -> duckdb.DuckDBPyConnection:
+    """
+    Соединение с файлом набора: только чтение, без доступа к другим файлам и сети,
+    с запертыми настройками; до ``DATASET_CONNECTIONS`` на поток.
+    """
+    pool: OrderedDict[str, tuple[str, duckdb.DuckDBPyConnection]] | None = getattr(
+        _local, "datasets", None
+    )
+    if pool is None:
+        pool = OrderedDict()
+        _local.datasets = pool
+    key = str(source.path)
+    held = pool.get(key)
+    if held is not None and held[0] == source.generation:
+        pool.move_to_end(key)
+        return held[1]
+    if held is not None:
+        held[1].close()
+        del pool[key]
+    connection = duckdb.connect(
+        key,
+        read_only=True,
+        config={
+            "enable_external_access": False,
+            "memory_limit": settings.USERDATA_QUERY_MEMORY,
+            "threads": 1,
+            "temp_directory": str(temp_directory(source.path)),
+            "autoinstall_known_extensions": False,
+            "autoload_known_extensions": False,
+            "lock_configuration": True,
+        },
+    )
+    pool[key] = (source.generation, connection)
+    while len(pool) > DATASET_CONNECTIONS:
+        _key, (_generation, oldest) = pool.popitem(last=False)
+        oldest.close()
+    return connection
+
+
+def dataset_connection(source: DataSource) -> duckdb.DuckDBPyConnection:
+    """Соединение потока с файлом набора — для чтения вне переменной контекста (выгрузка)."""
+    return _dataset_connection(source)
+
+
+def close_dataset(path: Path) -> None:
+    """Закрыть соединение потока с файлом набора — перед удалением файла."""
+    pool = getattr(_local, "datasets", None)
+    if pool:
+        held = pool.pop(str(path), None)
+        if held is not None:
+            held[1].close()
 
 
 @contextmanager
@@ -196,10 +296,14 @@ def table_exists(name: str) -> bool:
 
 
 def close_connections() -> None:
-    """Закрыть соединения текущего потока."""
+    """Закрыть соединения текущего потока со складом и с файлами наборов."""
     for key in ("connection_ro", "connection_rw"):
         connection = getattr(_local, key, None)
         if connection is not None:
             connection.close()
             setattr(_local, key, None)
             setattr(_local, f"{key}_generation", None)
+    pool = getattr(_local, "datasets", None)
+    while pool:
+        _key, (_generation, connection) = pool.popitem()
+        connection.close()

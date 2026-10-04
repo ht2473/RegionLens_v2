@@ -138,6 +138,13 @@
       "formula": "change over a year = x(t) / x(t − 12 months) − 1 for levels and year-to-date sums; x(t) − x(t − 12 months) for shares, rates and indices",
       "body": "The Bank of Russia publishes by region since 2019 lending and debt on mortgages and other loans to individuals and to small and medium-sized businesses; the Federal Tax Service SME register publishes the number of small and medium enterprises and their employees on the 10th of each month. From Rosstat’s bulletin, the average wage, the consumer price index, the industrial production index and the unemployment rate averaged over three months are shown by month.\n\nThe annual value of a RegionLens series is built from the months of one release: lending is the sum of twelve months, debt is taken on 1 January of the next year, term and rate are the mean of the months weighted by lending volume, the number of small and medium enterprises is taken from the register on 10 January of the next year. An incomplete year gets no annual value. Per-resident values are divided by the average annual population; after the last published year it stays unchanged.\n\nMonthly values are compared with the same period of the previous year. For suitability for comparison, five years of observations are enough for Bank of Russia and Federal Tax Service series.\n\nLimitations: the value for Russia in the SME register is the sum of the 85 regions of the reference list, while the Federal Tax Service total also includes entities that are not in the list.",
       "source": "7545699208e9c42e361e955a8f9737d0306f162b"
+    },
+    "own-data": {
+      "title": "Your own data: recognising a table and checks",
+      "summary": "A user’s table is brought to the form “territory × period × indicator × breakdowns”; territory labels are matched against the site’s reference list, nested oblasts and absolute values are marked.",
+      "formula": "per 100,000 inhabitants = value / population × 100,000;  oblast without okrugs = total with okrugs − autonomous okrugs",
+      "body": "The form of a table is determined from its contents: long (region, year, indicator and value each in its own column), years or periods in columns, indicators in columns (the year comes from the column name or a question), regions in columns. Column roles are taken from the names in Russian and English and from the values: the share of numbers, years and recognised territories, the number of distinct values. The header may span several rows with merged cells. The period of the year is part of a series: “January–July” for 2025 and 2026 is one series, July is another.\n\nThe number format is decided for a whole column: a decimal comma or point, digit groups separated by spaces. Missing-value marks (“…”, “-”, “x”, “n/a”) and footnote numbers do not become numbers; a gap with a confidentiality reason and the code −77777777 mean “value withheld”.\n\nA territory label is matched against the reference list by name: Latin letters inside Russian words, words run together and abbreviations (“obl.”, “resp.”, “AO”) are corrected; colloquial and English forms, ISO 3166-2 and OKATO codes are recognised. Fuzzy comparison accepts a spelling with a similarity of at least 0.9 and a clear lead over the second candidate; below that, candidates are offered to choose from. The OKTMO code does not change the decision: in open datasets the codes of the Arkhangelsk and Tyumen oblasts contradict each other. Rows outside the reference list — former and new federal subjects, several territories in one row, agencies — are kept in the table but do not appear on the map or in the ranking.\n\n“Arkhangelsk Oblast” without a qualifier is the total including the Nenets Autonomous Okrug (Rosstat’s rule), “Tyumen Oblast” — including the Khanty-Mansi and Yamalo-Nenets okrugs. If the table also has the same oblast without the okrugs, the total is recognised without a question; otherwise the site asks. For sums the oblast without okrugs is calculated by subtracting the okrugs and marked “RegionLens calculation”; for shares and averages it stays empty.\n\nA regional total — the number of people, cases, total roubles — shows above all the size of a region on the map. For sums, series per 1,000 and 100,000 inhabitants and per km² are offered. Population is the annual average, the same as for the site’s per-capita series: GRP divided by GRP per capita; after its last year the last known population is used with the note “population of an earlier year”. Area comes from the reference list.\n\nIf the same territory and year appear with different numbers in different rows, the first value is kept and the repetition is reported. The default year is the last complete one: values for at least 80 % of the largest number of federal subjects in the series. With fewer than twenty federal subjects, inequality and spatial analysis are not calculated for the table.",
+      "source": "8476941450f8cc076c3646689f33e4f4e35a41c1"
     }
   },
   "GlossaryTerm": {
@@ -462,6 +469,27 @@
       "definition": "The Bank of Russia publishes it together with all loan debt at the start of the month. The overdue share is its ratio to all debt: how much of the region’s borrowers’ debt is not serviced on time.",
       "synonyms": "arrears, overdue share",
       "source": "2e09d162f926013f7cb6adb52894a8fa82d112bf"
+    },
+    "territory-matching": {
+      "term": "Territory matching",
+      "short_definition": "Linking the labels of your own table to federal subjects in the site’s reference list.",
+      "definition": "A label is compared with the reference list after correcting Latin letters inside Russian words, words run together and abbreviations; colloquial and English forms, ISO 3166-2 and OKATO codes are recognised. A misspelling is accepted with a similarity of at least 0.9; an ambiguous label (“Altai”) becomes a question with candidates. A choice made in an account is remembered for the next tables.",
+      "synonyms": "region recognition, region matching",
+      "source": "91fbec11588ddd70889be1316446e5465b86dec3"
+    },
+    "nested-territory": {
+      "term": "Nested territory",
+      "short_definition": "A federal subject that includes another federal subject.",
+      "definition": "The Nenets Autonomous Okrug is part of the Arkhangelsk Oblast, and the Khanty-Mansi and Yamalo-Nenets okrugs are part of the Tyumen Oblast. Rosstat publishes the oblast both as a total including the okrugs and without them; the site’s map shows the oblast without the okrugs. A sum for the oblast without the okrugs is calculated by subtraction; shares and averages cannot be treated this way.",
+      "synonyms": "Arkhangelsk Oblast with the okrug, Tyumen Oblast with the okrugs",
+      "source": "f37d285f808cdb9f2232d3746d2dc727ac84d27c"
+    },
+    "absolute-value": {
+      "term": "Absolute value",
+      "short_definition": "A regional total: the number of people, cases, total roubles.",
+      "definition": "Such a value adds up across regions, and a place by it speaks above all of the size of the region. To compare regions it is divided by population or area, which gives a per-capita indicator. For your own tables, series per 1,000 and 100,000 inhabitants and per km² are built at the “Indicators” step.",
+      "synonyms": "regional total, unnormalised value",
+      "source": "0ed2af97de5212a2fa3f6599611f54c9928632e1"
     }
   }
 }

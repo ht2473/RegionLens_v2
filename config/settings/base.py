@@ -137,6 +137,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # После аутентификации: слой рядов узнаёт, чьи наборы доступны в запросе.
+    "apps.userdata.scope.UserDataScopeMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.gzip.GZipMiddleware",
@@ -444,6 +446,21 @@ USERDATA_MAX_ROWS = env.int("USERDATA_MAX_ROWS", default=3_000_000)
 USERDATA_PARSE_MEMORY = env.str("USERDATA_PARSE_MEMORY", default="768MB")
 # Набор без входа хранится сутки.
 USERDATA_GUEST_HOURS = env.int("USERDATA_GUEST_HOURS", default=24)
+# Значений в наборе после отбора разрезов («Преступность» ЕБТ — 127 тыс.); у гостя меньше.
+USERDATA_MAX_VALUES = env.int("USERDATA_MAX_VALUES", default=1_000_000)
+USERDATA_GUEST_MAX_VALUES = env.int("USERDATA_GUEST_MAX_VALUES", default=200_000)
+# Наборов на учётную запись и у гостя; место на учётную запись (исходник и файл DuckDB).
+USERDATA_MAX_DATASETS = env.int("USERDATA_MAX_DATASETS", default=20)
+USERDATA_GUEST_MAX_DATASETS = env.int("USERDATA_GUEST_MAX_DATASETS", default=3)
+USERDATA_QUOTA_BYTES = env.int("USERDATA_QUOTA_BYTES", default=200 * 1024 * 1024)
+# Загрузок в час: с учётной записи и с адреса без входа.
+USERDATA_UPLOADS_PER_HOUR = env.int("USERDATA_UPLOADS_PER_HOUR", default=20)
+USERDATA_GUEST_UPLOADS_PER_HOUR = env.int("USERDATA_GUEST_UPLOADS_PER_HOUR", default=10)
+# Разборов отдельным процессом одновременно на сервер и предел времени одного разбора.
+USERDATA_PARALLEL_JOBS = env.int("USERDATA_PARALLEL_JOBS", default=2)
+USERDATA_JOB_SECONDS = env.int("USERDATA_JOB_SECONDS", default=120)
+# Показ ряда набора: память соединения с файлом набора (поток — один).
+USERDATA_QUERY_MEMORY = env.str("USERDATA_QUERY_MEMORY", default="128MB")
 
 # ---------------------------------------------------------------------------------------
 # Программный интерфейс REST: только чтение, без ключей, предел по адресу клиента

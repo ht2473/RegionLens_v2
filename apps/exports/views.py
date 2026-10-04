@@ -7,6 +7,7 @@ from django.views.generic import View
 
 from apps.core.throttle import allow
 from apps.warehouse.duckdb_client import WarehouseNotBuiltError
+from apps.warehouse.routing import is_user_key, source_of
 
 from .constants import REPORT_KINDS_BY_CODE, ExportFormat
 from .reports import ReportParameterError
@@ -34,6 +35,11 @@ class DocumentView(View):
         export_format = self.fixed_format or request.GET.get("format", ExportFormat.CSV)
         if export_format not in ExportFormat.values:
             raise Http404("Неизвестный формат выгрузки")
+
+        # Ряд чужой таблицы — как несуществующий: 404, а не отказ с объяснением.
+        series = request.GET.get("series", "")
+        if is_user_key(series) and source_of(series) is None:
+            raise Http404("Ряд не найден")
 
         if not allow(request, "documents", limit=DOCUMENT_LIMIT, window=DOCUMENT_WINDOW):
             return _refusal("Слишком много выгрузок подряд. Повторите через несколько минут.", 429)

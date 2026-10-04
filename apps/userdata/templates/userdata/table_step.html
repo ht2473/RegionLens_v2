@@ -3,6 +3,8 @@
 
 {# Шаг «Что в таблице»: что понято словами, вопросы, роли столбцов, разрезы, образец. #}
 
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
 {% block extra_css %}
   <link rel="stylesheet" href="{% static 'css/content.css' %}">
   <link rel="stylesheet" href="{% static 'css/userdata.css' %}">
@@ -60,13 +62,23 @@
 
     {% for question in nested %}
       <fieldset class="question-card">
-        <legend class="question-card__title">
-          {% blocktranslate trimmed with label=question.label %}
-            «{{ label }}» в таблице — вместе с автономным округом (так считает Росстат) или без него?
-          {% endblocktranslate %}
-        </legend>
-        <label class="radio"><input type="radio" name="nested-{{ forloop.counter }}" value="{{ question.total_code }}" checked> {% translate "вместе с округом" %}</label>
-        <label class="radio"><input type="radio" name="nested-{{ forloop.counter }}" value="{{ question.alone_code }}"> {% translate "без округа" %}</label>
+        {% if question.total_code == "RU-TYU-AGG" %}
+          <legend class="question-card__title">
+            {% blocktranslate trimmed with label=question.label %}
+              «{{ label }}» в таблице — вместе с автономными округами (так считает Росстат) или без них?
+            {% endblocktranslate %}
+          </legend>
+          <label class="radio"><input type="radio" name="nested-{{ forloop.counter }}" value="{{ question.total_code }}" checked> {% translate "вместе с округами" %}</label>
+          <label class="radio"><input type="radio" name="nested-{{ forloop.counter }}" value="{{ question.alone_code }}"> {% translate "без округов" %}</label>
+        {% else %}
+          <legend class="question-card__title">
+            {% blocktranslate trimmed with label=question.label %}
+              «{{ label }}» в таблице — вместе с автономным округом (так считает Росстат) или без него?
+            {% endblocktranslate %}
+          </legend>
+          <label class="radio"><input type="radio" name="nested-{{ forloop.counter }}" value="{{ question.total_code }}" checked> {% translate "вместе с округом" %}</label>
+          <label class="radio"><input type="radio" name="nested-{{ forloop.counter }}" value="{{ question.alone_code }}"> {% translate "без округа" %}</label>
+        {% endif %}
         <input type="hidden" name="nested-label-{{ forloop.counter }}" value="{{ question.label }}">
       </fieldset>
     {% endfor %}
@@ -209,7 +221,8 @@
     </section>
 
     <div class="form-sheet__actions">
-      <button class="button button--primary" type="submit">{% translate "Сохранить описание" %}</button>
+      <button class="button button--primary" type="submit" name="action" value="next">{% translate "Дальше: показатели" %}</button>
+      <button class="button button--secondary" type="submit" name="action" value="save">{% translate "Сохранить описание" %}</button>
       <a class="button button--ghost" href="{% url 'userdata:file' dataset.public_id %}">{% translate "Назад к файлу" %}</a>
     </div>
   </form>

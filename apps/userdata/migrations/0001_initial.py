@@ -61,12 +61,41 @@ class Migration(migrations.Migration):
                 ('regions_count', models.PositiveSmallIntegerField(default=0, verbose_name='субъектов')),
                 ('first_year', models.SmallIntegerField(blank=True, null=True, verbose_name='первый год')),
                 ('last_year', models.SmallIntegerField(blank=True, null=True, verbose_name='последний год')),
+                ('data_file', models.CharField(blank=True, max_length=64, verbose_name='файл сборки')),
                 ('dataset', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='versions', to='userdata.dataset', verbose_name='набор')),
             ],
             options={
                 'verbose_name': 'версия набора',
                 'verbose_name_plural': 'версии наборов',
                 'ordering': ['dataset', '-number'],
+            },
+        ),
+        migrations.CreateModel(
+            name='DatasetSeries',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('code', models.CharField(max_length=24, verbose_name='код ряда')),
+                ('indicator', models.CharField(max_length=300, verbose_name='показатель в таблице')),
+                ('title', models.CharField(max_length=300, verbose_name='название')),
+                ('unit', models.CharField(blank=True, max_length=120, verbose_name='единица')),
+                ('kind', models.CharField(blank=True, choices=[('sum', 'сумма'), ('relative', 'относительная величина')], max_length=10, verbose_name='вид величины')),
+                ('polarity', models.CharField(choices=[('positive', 'рост — к лучшему'), ('negative', 'рост — к худшему'), ('neutral', 'без оценки')], default='neutral', max_length=10, verbose_name='направленность')),
+                ('precision', models.PositiveSmallIntegerField(default=1, verbose_name='знаков после запятой')),
+                ('slices', models.JSONField(blank=True, default=list, verbose_name='значения разрезов')),
+                ('period', models.CharField(default='year:12', max_length=16, verbose_name='период года')),
+                ('derived', models.CharField(blank=True, choices=[('', 'из таблицы'), ('per1000', 'на 1 000 жителей'), ('per100000', 'на 100 000 жителей'), ('perkm2', 'на км²')], default='', max_length=10, verbose_name='пересчёт')),
+                ('base_code', models.CharField(blank=True, max_length=24, verbose_name='код исходного ряда')),
+                ('order', models.PositiveIntegerField(default=0, verbose_name='порядок')),
+                ('values_count', models.PositiveIntegerField(default=0, verbose_name='значений')),
+                ('regions_count', models.PositiveSmallIntegerField(default=0, verbose_name='субъектов')),
+                ('first_year', models.SmallIntegerField(blank=True, null=True, verbose_name='первый год')),
+                ('last_year', models.SmallIntegerField(blank=True, null=True, verbose_name='последний год')),
+                ('version', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='series', to='userdata.datasetversion', verbose_name='версия')),
+            ],
+            options={
+                'verbose_name': 'ряд набора',
+                'verbose_name_plural': 'ряды наборов',
+                'ordering': ['version', 'order'],
             },
         ),
         migrations.AddField(
@@ -92,6 +121,10 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='datasetversion',
             constraint=models.UniqueConstraint(fields=('dataset', 'number'), name='userdata_version_number'),
+        ),
+        migrations.AddConstraint(
+            model_name='datasetseries',
+            constraint=models.UniqueConstraint(fields=('version', 'code'), name='userdata_series_code'),
         ),
         migrations.AddConstraint(
             model_name='dataset',

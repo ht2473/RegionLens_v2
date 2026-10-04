@@ -24,6 +24,7 @@ PUBLIC_PAGES = [
     "analytics:index-builder",
     "analytics:revisions",
     "api:docs",
+    "userdata:index",
     "accounts:login",
     "accounts:register",
     "accounts:password-reset",

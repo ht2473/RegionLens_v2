@@ -38,6 +38,14 @@ def _series_source(series_key: str, year: int | str) -> tuple[str, str]:
     from apps.catalog.provenance import origin_of_year, source_title
     from apps.sources.collect import SOURCES
     from apps.sources.registry import registry
+    from apps.warehouse.routing import is_user_key
+
+    if is_user_key(series_key):
+        from apps.userdata.series import user_series
+
+        found = user_series(series_key)
+        if found is not None:
+            return found.publisher(), found.source_line()
 
     item = registry().by_key.get(series_key)
     if item is not None:

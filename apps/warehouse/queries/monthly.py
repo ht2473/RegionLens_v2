@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..duckdb_client import fetch_dicts, placeholders
+from ..routing import by_key, by_keys
 from .common import LEVEL_REGION, MIN_YEAR_COVERAGE, by_generation
 
 # Столбцы месячного значения вместе с выпуском, из которого оно взято.
@@ -25,6 +26,7 @@ def month_series() -> dict[str, list[str]]:
     return {row["series_key"]: list(row["kinds"]) for row in rows}
 
 
+@by_key()
 @by_generation("month_timeline")
 def month_timeline(series_key: str, territory_code: str, kind: str) -> list[dict[str, Any]]:
     """Значения ряда по месяцам для территории, от ранних к поздним."""
@@ -40,6 +42,7 @@ def month_timeline(series_key: str, territory_code: str, kind: str) -> list[dict
     )
 
 
+@by_key()
 @by_generation("month_latest")
 def month_latest(series_key: str, kind: str) -> dict[str, Any] | None:
     """
@@ -81,6 +84,7 @@ def month_latest(series_key: str, kind: str) -> dict[str, Any] | None:
     return {"year": last["year"], "month": last["month"], "rows": rows}
 
 
+@by_keys()
 @by_generation("month_points")
 def month_points(territory_code: str, series_keys: list[str]) -> list[dict[str, Any]]:
     """Все месячные значения перечисленных рядов по территории — для блока «Что сейчас»."""
@@ -98,6 +102,7 @@ def month_points(territory_code: str, series_keys: list[str]) -> list[dict[str, 
     )
 
 
+@by_key()
 @by_generation("month_observations")
 def month_observations(
     series_key: str,

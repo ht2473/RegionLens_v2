@@ -90,7 +90,7 @@
 
             {% if series %}
               <p class="break-list__source">
-                <a href="{% url 'catalog:series-detail' slug=series.indicator.slug %}?series={{ series.key }}">
+                <a href="{{ series.detail_url }}">
                   {% translate "Пояснения источника и полный перечень разрывов — в карточке показателя" %}
                 </a>
               </p>

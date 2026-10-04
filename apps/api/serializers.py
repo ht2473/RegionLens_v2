@@ -9,11 +9,13 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from apps.catalog.constants import ValueFlag, ValueQuality
 from apps.catalog.models import Indicator, Series, Territory
 from apps.sources.models import Release, Source
+from apps.warehouse.routing import is_user_key
 
 # Признак качества наблюдения словом.
 QUALITY_NAMES: dict[int, str] = {
@@ -219,10 +221,21 @@ class RankingRowSerializer(serializers.Serializer):
         raise NotImplementedError
 
 
+def open_series_key(value: str) -> str:
+    """Ключ ряда открытых данных: ряды таблиц пользователей интерфейс не отдаёт."""
+    if is_user_key(value):
+        raise serializers.ValidationError(
+            _("Интерфейс отдаёт только открытые данные сайта; ряды своих таблиц в нём недоступны.")
+        )
+    return value
+
+
 class ObservationQuerySerializer(serializers.Serializer):
     """Параметры запроса наблюдений."""
 
-    series = serializers.CharField(help_text="Ключ ряда наблюдений, например Y477110378:00")
+    series = serializers.CharField(
+        help_text="Ключ ряда наблюдений, например Y477110378:00", validators=[open_series_key]
+    )
     territory = serializers.CharField(
         required=False,
         help_text="Код территории; если не задан, возвращаются все субъекты",
@@ -243,7 +256,7 @@ class ObservationQuerySerializer(serializers.Serializer):
 class RankingQuerySerializer(serializers.Serializer):
     """Параметры запроса рейтинга."""
 
-    series = serializers.CharField(help_text="Ключ ряда наблюдений")
+    series = serializers.CharField(help_text="Ключ ряда наблюдений", validators=[open_series_key])
     year = serializers.IntegerField(
         required=False,
         min_value=1990,

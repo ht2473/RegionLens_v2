@@ -72,6 +72,26 @@
     <h1 class="home__title">{% translate "Социально-экономические показатели регионов России" %}</h1>
   {% endif %}
 
+  {# --- Свои данные ---------------------------------------------------------------------- #}
+  <section class="own-data-strip" aria-labelledby="home-own-data">
+    <div class="own-data-strip__text">
+      <h2 class="own-data-strip__title" id="home-own-data">{% translate "Своя таблица по регионам — на той же карте" %}</h2>
+      <p class="own-data-strip__lead">
+        {% translate "Таблица из Excel, CSV, архива или вставка из Word: регионы и годы узнаются сами, таблицу видите только вы." %}
+      </p>
+    </div>
+    <div class="own-data-strip__actions">
+      <a class="button button--primary" href="{% url 'userdata:upload' %}">
+        <svg aria-hidden="true"><use href="#icon-upload"></use></svg>
+        {% translate "Загрузить таблицу" %}
+      </a>
+      <form method="post" action="{% url 'userdata:example' %}">
+        {% csrf_token %}
+        <button class="button button--secondary" type="submit">{% translate "Попробовать на примере" %}</button>
+      </form>
+    </div>
+  </section>
+
   {# --- Вопросы с готовым ответом ------------------------------------------------------ #}
   {% if questions %}
     <section class="page-section" aria-labelledby="home-questions">

@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% load i18n static formatting userdata %}
+
+{# Шаг «Показатели»: таблица и её источник, описание каждого показателя, сборка. #}
+
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+  <link rel="stylesheet" href="{% static 'css/userdata.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "Показатели" %}</h1>
+      <p class="page-intro__lead">
+        {% blocktranslate trimmed %}
+          Как называются показатели и что означают их значения. Описание действует на все
+          ряды показателя — по разрезам и периодам года.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  </header>
+
+  {% include "userdata/_steps.html" %}
+
+  {% if waiting %}
+    {% include "userdata/_waiting.html" %}
+    {% if waiting == "failed" %}
+      <p><a class="button button--secondary" href="{% url 'userdata:table' dataset.public_id %}">{% translate "Вернуться к описанию таблицы" %}</a></p>
+    {% endif %}
+  {% else %}
+
+  <section class="recognition-facts" aria-label="{% translate 'Что получилось' %}">
+    <dl class="definition-list definition-list--compact">
+      <dt>{% translate "Значений" %}</dt>
+      <dd>{{ report.values|ru_number:0 }}</dd>
+      <dt>{% translate "Показателей" %}</dt>
+      <dd>{{ indicators|length }}</dd>
+      <dt>{% translate "Рядов" %}</dt>
+      <dd>{{ report.series|length }}</dd>
+    </dl>
+  </section>
+
+  {% if build_error %}
+    <div class="callout callout--danger" role="alert">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Таблица не собрана" %}</div>
+        <p>{{ build_error }}</p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if few_regions %}
+    <div class="callout callout--info">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>{% translate "Субъектов меньше 20: неравенство и пространственный анализ по таблице не считаются. Карта, таблица и динамика работают." %}</div>
+    </div>
+  {% endif %}
+
+  {% if report.conflicts %}
+    <div class="callout callout--warning">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        {% blocktranslate trimmed with count=report.conflicts %}
+          Одна территория и год встречаются дважды с разными числами: {{ count }}. Оставлено первое значение.
+        {% endblocktranslate %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if report.text_cells %}
+    <div class="callout callout--info">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        {% blocktranslate trimmed with count=report.text_cells %}
+          Ячеек не с числами: {{ count }}. Они сохранены как пропуски.
+        {% endblocktranslate %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if alone_missing %}
+    <div class="callout callout--info">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        {% translate "В таблице есть область вместе с автономными округами. Для сумм область без округов вычислена (пометка «расчёт RegionLens»); для долей и средних её не вычислить — на карте она остаётся пустой:" %}
+        {% for code in alone_missing %}{{ code|territory_name }}{% if not forloop.last %}, {% endif %}{% endfor %}.
+      </div>
+    </div>
+  {% endif %}
+
+  <form method="post" class="stack series-form" novalidate>
+    {% csrf_token %}
+
+    {% if meta_form.errors %}
+      <div class="callout callout--danger form-errors" role="alert" tabindex="-1" data-error-summary>
+        <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+        <div>
+          <div class="callout__title">{% translate "Проверьте поля" %}</div>
+          <ul class="form-errors__list">
+            {% for field in meta_form %}{% for error in field.errors %}<li><a href="#{{ field.id_for_label }}">{{ field.label }}: {{ error }}</a></li>{% endfor %}{% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endif %}
+
+    <fieldset class="question-card">
+      <legend class="question-card__title">{% translate "Таблица" %}</legend>
+      <div class="series-form__meta">
+        {% for field in meta_form %}
+          {% include "partials/_field.html" with field=field %}
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    <section class="question-card" aria-labelledby="indicators-title">
+      <h2 class="question-card__title" id="indicators-title">
+        {% blocktranslate trimmed with count=indicators|length %}Показатели: {{ count }}{% endblocktranslate %}
+      </h2>
+      <p class="series-form__hint">
+        {% translate "Сумма складывается по регионам: число людей, преступлений, рублей всего. Относительная величина не складывается: доля, среднее, значение на жителя." %}
+      </p>
+      <ol class="indicator-list">
+        {% for item in indicators %}
+          {% with number=forloop.counter %}
+          <li class="indicator-card" id="indicator-{{ number }}">
+            <input type="hidden" name="indicator-{{ number }}" value="{{ item.name }}">
+            <details class="indicator-card__fold"{% if forloop.first %} open{% endif %}>
+              <summary class="indicator-card__summary">
+                <span class="indicator-card__name"{% with lang=item.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.title }}</span>
+                <span class="indicator-card__facts">
+                  {% if item.unit %}<span{% with lang=item.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.unit }}</span> · {% endif %}
+                  {% if item.is_sum %}{% translate "сумма" %}{% else %}{% translate "относительная величина" %}{% endif %}
+                  · {% blocktranslate trimmed with count=item.series %}рядов: {{ count }}{% endblocktranslate %}
+                  · {% blocktranslate trimmed with count=item.regions %}субъектов: {{ count }}{% endblocktranslate %}
+                  {% if item.first_year %}· <span class="numeric">{{ item.first_year|year }}{% if item.last_year != item.first_year %}–{{ item.last_year|year }}{% endif %}</span>{% endif %}
+                </span>
+              </summary>
+              <div class="indicator-card__body">
+                <div class="field">
+                  <label class="field__label" for="title-{{ number }}">{% translate "Название" %}</label>
+                  <input class="input" id="title-{{ number }}" name="title-{{ number }}" value="{{ item.title }}" maxlength="300">
+                </div>
+                <div class="field">
+                  <label class="field__label" for="unit-{{ number }}">{% translate "Единица" %}</label>
+                  <input class="input" id="unit-{{ number }}" name="unit-{{ number }}" value="{{ item.unit }}" maxlength="120"{% if item.units|length > 1 %} list="units-{{ number }}"{% endif %}>
+                  {% if item.units|length > 1 %}
+                    <datalist id="units-{{ number }}">{% for unit in item.units %}<option value="{{ unit }}">{% endfor %}</datalist>
+                  {% endif %}
+                </div>
+                <fieldset class="field">
+                  <legend class="field__label">{% translate "Вид величины" %}</legend>
+                  {% for value, label in kinds %}
+                    <label class="radio"><input type="radio" name="kind-{{ number }}" value="{{ value }}"{% if item.kind == value %} checked{% endif %} data-kind-of="{{ number }}"> {{ label }}</label>
+                  {% endfor %}
+                </fieldset>
+                <fieldset class="field" data-per-of="{{ number }}">
+                  <legend class="field__label">{% translate "Пересчёт суммы" %}</legend>
+                  {% for value, label in per_choices %}
+                    <label class="checkbox"><input type="checkbox" name="per-{{ number }}" value="{{ value }}"{% if value in item.per %} checked{% endif %}> <span>{{ label }}</span></label>
+                  {% endfor %}
+                  <span class="field__hint">{% translate "Численность — среднегодовая по данным Росстата (как у рядов на жителя на сайте), площадь — из справочника. Только для сумм." %}</span>
+                </fieldset>
+                <div class="field">
+                  <label class="field__label" for="polarity-{{ number }}">{% translate "Направленность" %}</label>
+                  <select class="select" id="polarity-{{ number }}" name="polarity-{{ number }}">
+                    {% for value, label in polarities %}
+                      <option value="{{ value }}"{% if item.polarity == value %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                {% if item.note %}
+                  <p class="indicator-card__note"{% with lang=item.note|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.note|truncatechars:400 }}</p>
+                {% endif %}
+              </div>
+            </details>
+          </li>
+          {% endwith %}
+        {% endfor %}
+      </ol>
+    </section>
+
+    <div class="form-sheet__actions">
+      <button class="button button--primary" type="submit">
+        {% if built %}{% translate "Собрать заново и открыть на карте" %}{% else %}{% translate "Собрать и открыть на карте" %}{% endif %}
+      </button>
+      {% if built %}
+        <a class="button button--secondary" href="{% url 'userdata:dataset' dataset.public_id %}">{% translate "Страница таблицы" %}</a>
+      {% endif %}
+      <a class="button button--ghost" href="{% url 'userdata:table' dataset.public_id %}">{% translate "Назад к описанию таблицы" %}</a>
+    </div>
+  </form>
+
+  {% endif %}
+</div>
+{% endblock %}

@@ -211,6 +211,14 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Буквы столбцов — служебная разметка, тише подписей самой таблицы. */
+.sample-table .data-table thead th.sample-table__letter {
+  padding: var(--space-1) var(--space-2);
+  font-weight: var(--weight-regular);
+  color: var(--text-muted);
+  text-align: center;
+}
+
 .sample-table__territory {
   background-color: var(--surface-accent-soft);
 }
@@ -363,4 +371,283 @@ legend.question-card__title ~ * {
   .column-roles__item {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* --- Показатели --------------------------------------------------------------------------- */
+
+.series-form {
+  max-width: 64rem;
+}
+
+.series-form__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+  gap: var(--space-4) var(--space-6);
+  align-items: start;
+}
+
+/* В сетке отступ задаёт она сама. */
+.series-form__meta > .field + .field,
+.indicator-card__body > .field + .field {
+  margin-top: 0;
+}
+
+.series-form__hint {
+  margin: 0 0 var(--space-4);
+  color: var(--text-secondary);
+}
+
+.indicator-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.indicator-card {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.indicator-card:last-child {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.indicator-card__summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-height: 24px;
+  padding: var(--space-3) 0;
+  cursor: pointer;
+}
+
+.indicator-card__name {
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.indicator-card__facts {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.indicator-card__body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+  gap: var(--space-4) var(--space-6);
+  padding: 0 0 var(--space-5);
+}
+
+.indicator-card__body fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.indicator-card__body .radio,
+.indicator-card__body .checkbox {
+  display: flex;
+  margin-top: var(--space-2);
+}
+
+.indicator-card__note {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* --- Раздел и страница таблицы ------------------------------------------------------------ */
+
+.own-data-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.own-data-actions form {
+  margin: 0;
+}
+
+.own-data-actions__hint {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.own-tables {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.own-tables__item {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.own-tables__title {
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.own-tables__facts,
+.own-tables__quota {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.own-tables__quota {
+  margin-top: var(--space-4);
+}
+
+.table-forms {
+  margin-top: var(--space-5);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.table-forms__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+}
+
+.table-forms__item p {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* Схема формы таблицы: три-четыре строки, как в настоящей таблице. */
+.table-forms__scheme {
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.table-forms__scheme th,
+.table-forms__scheme td {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-subtle);
+  text-align: right;
+}
+
+.table-forms__scheme th {
+  background-color: var(--surface-sunken);
+  font-weight: var(--weight-medium);
+}
+
+.table-forms__scheme tr > :first-child {
+  text-align: left;
+}
+
+.own-storage__links {
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.own-private,
+.surface-head__private {
+  color: var(--text-secondary);
+}
+
+.own-source {
+  margin: var(--space-2) 0 0;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.own-marks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+}
+
+.own-indicator + .own-indicator {
+  margin-top: var(--space-8);
+}
+
+.own-indicator__title {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.own-indicator__meta {
+  margin: var(--space-1) 0 var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.own-series {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.own-series__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-6);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border-subtle);
+  scroll-margin-top: var(--space-16);
+}
+
+.own-series__item:target {
+  background-color: var(--surface-accent-soft);
+}
+
+.own-series__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.own-series__name {
+  overflow-wrap: anywhere;
+}
+
+.own-series__facts {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.own-series__views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+}
+
+.own-series__view {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 24px;
+  font-size: var(--text-sm);
+}
+
+.own-series__view svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.own-delete {
+  max-width: 32rem;
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
 }

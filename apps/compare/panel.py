@@ -219,7 +219,8 @@ def _breaks(series: Series, codes: list[str], years: list[int]) -> list[dict[str
     """
     Собрать разрывы, относящиеся к графику: всего ряда и показанных территорий, в его годах.
     """
-    if not years:
+    # У рядов наборов пользователей разрывов пока нет.
+    if not years or getattr(series, "is_user", False):
         return []
 
     found = (

@@ -13,7 +13,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils.translation import get_language
 
-from ..duckdb_client import warehouse_generation
+from ..duckdb_client import source_generation
 
 # Время жизни кэша сводных величин: данные меняются только при пересборке склада.
 SUMMARY_CACHE_TTL = 3600
@@ -176,7 +176,8 @@ def by_generation[**P, R](prefix: str) -> Callable[[Callable[P, R]], Callable[P,
     """
     Кэшировать выборку из склада до его пересборки.
 
-    Ключ — отпечаток склада, язык запроса и аргументы вызова (строки, числа, перечни строк).
+    Ключ — отпечаток источника (склада или файла набора), язык запроса и аргументы вызова
+    (строки, числа, перечни строк).
     """
 
     def decorator(function: Callable[P, R]) -> Callable[P, R]:
@@ -184,7 +185,7 @@ def by_generation[**P, R](prefix: str) -> Callable[[Callable[P, R]], Callable[P,
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             call = repr((args, sorted(kwargs.items())))
             digest = hashlib.sha256(call.encode()).hexdigest()[:20]
-            key = f"warehouse:{prefix}:{warehouse_generation()}:{get_language()}:{digest}"
+            key = f"warehouse:{prefix}:{source_generation()}:{get_language()}:{digest}"
             # В кортеже: пустой ответ выборки нельзя путать с отсутствием ключа.
             stored = cache.get(key)
             if stored is not None:

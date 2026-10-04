@@ -395,7 +395,39 @@ def system_health() -> dict[str, Any]:
         "collect": _check_collect(beats.get(ServiceBeat.Service.COLLECT)),
         "visits": _check_visits(beats.get(ServiceBeat.Service.VISITS)),
         "dataset": _check_dataset(beats.get(ServiceBeat.Service.DATASET)),
+        "userdata": _check_userdata(),
         "disk": _check_disk(),
+    }
+
+
+def _check_userdata() -> dict[str, Any]:
+    """
+    Свои данные: число таблиц, место на диске, разборы и отказы за сутки. Содержимого
+    таблиц панель не показывает.
+    """
+    from django.db.models import Q, Sum
+
+    from apps.userdata.models import Dataset, DatasetVersion
+
+    title = _("Свои данные")
+    since = timezone.now() - timedelta(days=1)
+    tables = Dataset.objects.count()
+    guests = Dataset.objects.filter(owner__isnull=True).count()
+    size = Dataset.objects.aggregate(total=Sum("size_bytes"))["total"] or 0
+    recent = DatasetVersion.objects.filter(updated_at__gte=since)
+    built = recent.filter(state=DatasetVersion.State.BUILT).count()
+    failed = recent.filter(
+        Q(state=DatasetVersion.State.FAILED)
+        | Q(report__extract_state="failed")
+        | Q(report__build_state="failed")
+    ).count()
+    return {
+        "ok": True,
+        "title": title,
+        "detail": _("таблиц: %(tables)s, из них без входа: %(guests)s; %(size).1f МБ")
+        % {"tables": tables, "guests": guests, "size": size / 1024**2},
+        "extra": _("за сутки собрано: %(built)s, не разобрано: %(failed)s")
+        % {"built": built, "failed": failed},
     }
 
 

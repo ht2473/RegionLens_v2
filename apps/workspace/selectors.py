@@ -5,11 +5,13 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from django.db.models import QuerySet
+from django.utils.translation import gettext
 
 from apps.accounts.models import User
 from apps.catalog.models import Series
 from apps.warehouse.duckdb_client import WarehouseNotBuiltError
 from apps.warehouse.queries import series_summary_map
+from apps.warehouse.routing import is_user_key
 
 from .models import Favorite, SavedQuery
 
@@ -27,6 +29,11 @@ def favorites(user: User) -> QuerySet[Favorite]:
         "series__indicator",
         "territory",
     )
+
+
+def _missing_title(key: str) -> str:
+    """Название исчезнувшего ряда, которого нет в справочнике: ключ или «ряд своей таблицы»."""
+    return gettext("ряд удалённой таблицы") if is_user_key(key) else key
 
 
 def vanished_series(queries: Iterable[SavedQuery]) -> dict[int, list[str]]:
@@ -51,7 +58,7 @@ def vanished_series(queries: Iterable[SavedQuery]) -> dict[int, list[str]]:
         for series in Series.objects.filter(key__in=missing).select_related("indicator")
     }
     return {
-        pk: [titles.get(key) or key for key in keys if key in missing]
+        pk: [titles.get(key) or _missing_title(key) for key in keys if key in missing]
         for pk, keys in by_query.items()
         if any(key in missing for key in keys)
     }

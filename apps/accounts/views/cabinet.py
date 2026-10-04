@@ -62,6 +62,11 @@ class CabinetOverviewView(CabinetViewMixin, TemplateView):
             "tickets_open": Ticket.objects.filter(author=user).open().count(),
             "tickets_answered": Ticket.objects.filter(author=user).answered().count(),
         }
+        context["own_tables"] = list(
+            user.datasets.select_related("current_version").order_by("-updated_at")[:RECENT_VIEWS]
+        )
+        context["own_tables_count"] = user.datasets.count()
+        context["own_tables_bytes"] = sum(item.size_bytes for item in user.datasets.all())
         context["panel_needs_code"] = user.has_panel_access and not user.two_factor_enabled
         return context
 

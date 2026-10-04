@@ -1,13 +1,22 @@
 {% load i18n %}
-{# Сводка большой таблицы идёт отдельным процессом; страница опрашивает её ход раз в секунду. #}
-<div class="callout callout--info waiting"
+{# Разбор большой таблицы идёт отдельным процессом; страница опрашивает его ход раз в секунду. #}
+<div class="callout {% if waiting == 'failed' %}callout--danger{% else %}callout--info{% endif %} waiting"
      role="status"
-     {% if waiting == "running" %}hx-get="{% url 'userdata:table-status' dataset.public_id %}" hx-trigger="every 1s" hx-swap="outerHTML"{% endif %}>
-  <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+     {% if waiting == "running" or waiting == "pending" %}hx-get="{{ status_url }}" hx-trigger="every 1s" hx-swap="outerHTML"{% endif %}>
+  <svg class="callout__icon" aria-hidden="true"><use href="#icon-{% if waiting == 'failed' %}alert{% else %}info{% endif %}"></use></svg>
   <div>
     {% if waiting == "failed" %}
       <div class="callout__title">{% translate "Разобрать таблицу не удалось" %}</div>
-      <p>{% translate "Проверьте, что выбран верный файл, и загрузите его снова." %}</p>
+      <p>{% if waiting_error %}{{ waiting_error }}{% else %}{% translate "Проверьте, что выбран верный файл, и загрузите его снова." %}{% endif %}</p>
+    {% elif waiting == "pending" %}
+      <div class="callout__title">{% translate "Ждём очереди…" %}</div>
+      <p>{% translate "Сейчас разбираются другие таблицы. Разбор начнётся через несколько секунд; страницу можно закрыть и вернуться позже." %}</p>
+    {% elif waiting_stage == "build" %}
+      <div class="callout__title">{% translate "Собираем таблицу…" %}</div>
+      <p>{% translate "Считаются ряды, ранги и сводки по регионам. Страницу можно закрыть и вернуться позже." %}</p>
+    {% elif waiting_stage == "extract" %}
+      <div class="callout__title">{% translate "Разбираем таблицу…" %}</div>
+      <p>{% translate "Строки таблицы раскладываются по регионам, годам и показателям. Страницу можно закрыть и вернуться позже." %}</p>
     {% else %}
       <div class="callout__title">{% translate "Разбираем таблицу…" %}</div>
       <p>{% translate "Большая таблица читается целиком. Страницу можно закрыть и вернуться позже." %}</p>

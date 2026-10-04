@@ -20,6 +20,7 @@ from apps.sources import parsed
 from apps.sources.registry import POPULATION, DatasetMonthly, Registry, SourceSeries, registry
 from apps.sources.territories import region_codes
 
+from ..population import population_frame
 from ..queries.common import COUNTRY_CODE, featured_set
 
 logger = logging.getLogger(__name__)
@@ -593,40 +594,8 @@ def _territories(connection: duckdb.DuckDBPyConnection) -> set[str]:
 
 
 def _population(connection: duckdb.DuckDBPyConnection, book: Registry) -> pd.DataFrame:
-    """
-    Среднегодовая численность населения: ВРП, делённый на ВРП на душу, из поздних версий.
-
-    Это знаменатель Росстата для ВРП на душу; единицы сводит множитель справочника.
-    """
-    frame = connection.execute(
-        """
-        WITH ranked AS (
-            SELECT v.series_key, v.territory_code, v.year, v.value,
-                   row_number() OVER (
-                       PARTITION BY v.series_key, v.territory_code, v.year
-                       ORDER BY (v.value IS NULL) ASC, e.edition_rank DESC
-                   ) AS priority
-            FROM fact_vintage AS v
-            JOIN dim_edition  AS e ON e.edition_code = v.edition_code
-            WHERE v.series_key IN (?, ?)
-        )
-        SELECT territory_code, CAST(year AS INTEGER) AS year,
-               max(value) FILTER (WHERE series_key = ?) AS total,
-               max(value) FILTER (WHERE series_key = ?) AS per_capita
-        FROM ranked
-        WHERE priority = 1
-        GROUP BY 1, 2
-        """,
-        [
-            book.population_total,
-            book.population_per_capita,
-            book.population_total,
-            book.population_per_capita,
-        ],
-    ).df()
-    frame = frame.dropna(subset=["total", "per_capita"])
-    frame = frame[frame["per_capita"] != 0]
-    frame["population"] = frame["total"] / frame["per_capita"] * book.population_scale
+    """Среднегодовая численность населения (:mod:`apps.warehouse.population`) с проверкой единиц."""
+    frame = population_frame(connection, book)
     country = frame[frame["territory_code"] == COUNTRY_CODE].sort_values("year")
     if country.empty:
         raise SourceSeriesError("нет численности России для рядов на жителя")
@@ -637,4 +606,4 @@ def _population(connection: duckdb.DuckDBPyConnection, book: Registry) -> pd.Dat
             f"численность России {latest:,.0f} вне пределов: сменилась единица рядов "
             f"{book.population_total} или {book.population_per_capita}"
         )
-    return frame[["territory_code", "year", "population"]].reset_index(drop=True)
+    return frame

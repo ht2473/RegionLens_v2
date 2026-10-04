@@ -43,8 +43,9 @@ def _moment(value: Any) -> str | None:
 
 
 def export_account(user: User) -> dict[str, Any]:
-    """Всё, что хранится о пользователе: профиль, сохранённое и обращения."""
+    """Всё, что хранится о пользователе: профиль, сохранённое, таблицы и обращения."""
     from apps.feedback.models import Ticket
+    from apps.userdata.services import export_datasets
     from apps.workspace.selectors import favorites, saved_queries
 
     region = user.region
@@ -86,6 +87,7 @@ def export_account(user: User) -> dict[str, Any]:
             }
             for query in saved_queries(user)
         ],
+        "own_data": export_datasets(user),
         "tickets": [
             {
                 "number": ticket.pk,
@@ -105,15 +107,19 @@ def export_account(user: User) -> dict[str, Any]:
 
 def delete_account(user: User) -> None:
     """
-    Удалить учётную запись: сохранённое уходит вместе с ней, обращения обезличиваются.
+    Удалить учётную запись: сохранённое и таблицы уходят вместе с ней, обращения обезличиваются.
 
     Письмо-подтверждение уходит на адрес удалённой записи после удаления.
     """
     from apps.feedback.models import Ticket
+    from apps.userdata.services import discard
 
     if is_last_administrator(user):
         raise LastAdministratorError
     email, name = user.email, user.full_name
+    # Таблицы — с файлами на диске; записи о них ушли бы и каскадом, а файлы — нет.
+    for dataset in user.datasets.all():
+        discard(dataset)
     with transaction.atomic():
         Ticket.objects.filter(author=user).update(
             author=None,

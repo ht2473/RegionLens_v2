@@ -115,6 +115,9 @@ class DatasetVersion(TimeStampedModel):
     regions_count = models.PositiveSmallIntegerField("субъектов", default=0)
     first_year = models.SmallIntegerField("первый год", null=True, blank=True)
     last_year = models.SmallIntegerField("последний год", null=True, blank=True)
+    # Файл DuckDB сборки в каталоге версии; новая сборка пишет новый файл: открытый
+    # другим процессом файл в Windows не подменить.
+    data_file = models.CharField("файл сборки", max_length=64, blank=True)
 
     class Meta:
         verbose_name = "версия набора"
@@ -131,6 +134,73 @@ class DatasetVersion(TimeStampedModel):
     def directory(self) -> Path:
         """Каталог файлов версии."""
         return self.dataset.directory / str(self.number)
+
+    @property
+    def data_path(self) -> Path | None:
+        """Файл DuckDB сборки; ``None`` — версия не собрана."""
+        return self.directory / self.data_file if self.data_file else None
+
+
+class DatasetSeries(models.Model):
+    """Ряд набора: показатель, значения разрезов и период года; ключ — «u:<набор>:<ряд>»."""
+
+    class Kind(models.TextChoices):
+        SUM = "sum", _("сумма")
+        RELATIVE = "relative", _("относительная величина")
+
+    class Polarity(models.TextChoices):
+        POSITIVE = "positive", _("рост — к лучшему")
+        NEGATIVE = "negative", _("рост — к худшему")
+        NEUTRAL = "neutral", _("без оценки")
+
+    class Derived(models.TextChoices):
+        NONE = "", _("из таблицы")
+        PER_1000 = "per1000", _("на 1 000 жителей")
+        PER_100000 = "per100000", _("на 100 000 жителей")
+        PER_KM2 = "perkm2", _("на км²")
+
+    version = models.ForeignKey(
+        DatasetVersion, verbose_name="версия", on_delete=models.CASCADE, related_name="series"
+    )
+    # Отпечаток «показатель + значения разрезов + период года»: новая версия файла даёт
+    # те же коды тем же рядам.
+    code = models.CharField("код ряда", max_length=24)
+    indicator = models.CharField("показатель в таблице", max_length=300)
+    title = models.CharField("название", max_length=300)
+    unit = models.CharField("единица", max_length=120, blank=True)
+    kind = models.CharField("вид величины", max_length=10, choices=Kind.choices, blank=True)
+    polarity = models.CharField(
+        "направленность", max_length=10, choices=Polarity.choices, default=Polarity.NEUTRAL
+    )
+    precision = models.PositiveSmallIntegerField("знаков после запятой", default=1)
+    # Значения разрезов: [[название разреза, значение], …].
+    slices = models.JSONField("значения разрезов", default=list, blank=True)
+    period = models.CharField("период года", max_length=16, default="year:12")
+    derived = models.CharField(
+        "пересчёт", max_length=10, choices=Derived.choices, blank=True, default=Derived.NONE
+    )
+    base_code = models.CharField("код исходного ряда", max_length=24, blank=True)
+    order = models.PositiveIntegerField("порядок", default=0)
+    values_count = models.PositiveIntegerField("значений", default=0)
+    regions_count = models.PositiveSmallIntegerField("субъектов", default=0)
+    first_year = models.SmallIntegerField("первый год", null=True, blank=True)
+    last_year = models.SmallIntegerField("последний год", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "ряд набора"
+        verbose_name_plural = "ряды наборов"
+        ordering = ["version", "order"]
+        constraints = [
+            models.UniqueConstraint(fields=["version", "code"], name="userdata_series_code")
+        ]
+
+    def __str__(self) -> str:
+        return self.title
+
+    @property
+    def key(self) -> str:
+        """Ключ ряда для слоя рядов и адресов холста."""
+        return f"u:{self.version.dataset.code}:{self.code}"
 
 
 class TerritoryLabel(TimeStampedModel):

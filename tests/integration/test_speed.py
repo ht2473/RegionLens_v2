@@ -106,7 +106,7 @@ def test_queries_are_cached_until_rebuild(
     assert len(warehouse_calls) == 1
 
     # Другой отпечаток склада — другой ключ: выборка выполняется заново.
-    monkeypatch.setattr(common, "warehouse_generation", lambda path=None: "rebuilt")
+    monkeypatch.setattr(common, "source_generation", lambda: "rebuilt")
     series_values_by_territory(key, 2020)
     assert len(warehouse_calls) == 2
 

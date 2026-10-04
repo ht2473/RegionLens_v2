@@ -10,17 +10,28 @@ import logging
 import shutil
 from dataclasses import asdict
 from pathlib import Path, PurePosixPath
+from typing import Any
 
 from django.conf import settings
+from django.core.files import File
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
+from django.db.models import Sum
 from django.http import HttpRequest
 from django.utils.translation import gettext as _
+
+from apps.core.throttle import allow, allow_key
+from apps.warehouse.duckdb_client import close_dataset
 
 from . import access, ingest, paste, tables
 from .models import Dataset, DatasetVersion
 
 logger = logging.getLogger(__name__)
+
+# Пример: набор «Если быть точным» «Состояние окружающей среды в регионах России с 2014 года».
+EXAMPLE_PATH = Path(settings.REFERENCE_DIR) / "userdata_example.zip"
+EXAMPLE_NAME = "data_environment_113_v20230123_csv.zip"
+EXAMPLE_URL = "https://tochno.st/datasets/environment"
 
 SOURCE_STEM = "source"
 TABLE_STEM = "table"
@@ -84,7 +95,7 @@ def append_paste(version: DatasetVersion, text: str, markup: str = "") -> int:
     version.report = {**version.report, "inspection": inspection.as_dict()}
     version.recipe = {}
     version.save(update_fields=["file_size", "sha256", "report", "recipe", "updated_at"])
-    _update_size(version.dataset)
+    update_size(version.dataset)
     return added
 
 
@@ -120,7 +131,7 @@ def choose_table(version: DatasetVersion, key: str, *, encoding: str = "") -> in
         key: value for key, value in version.report.items() if not key.startswith("profile")
     }
     version.save(update_fields=["recipe", "report", "updated_at"])
-    _update_size(version.dataset)
+    update_size(version.dataset)
     return table
 
 
@@ -140,9 +151,98 @@ def source_path(version: DatasetVersion) -> Path:
 
 
 def discard(dataset: Dataset) -> None:
-    """Удалить набор вместе с файлами."""
+    """
+    Удалить набор вместе с файлами. Файл сборки, открытый другим процессом (Windows),
+    удалит очистка ``prune_personal_data``: каталог без набора — осиротевший.
+    """
+    for path in dataset.directory.rglob("data-*.duckdb"):
+        close_dataset(path)
     shutil.rmtree(dataset.directory, ignore_errors=True)
     dataset.delete()
+
+
+def check_limits(request: HttpRequest) -> None:
+    """Пределы до приёма таблицы: частота загрузок, число таблиц и место."""
+    user = request.user
+    if user.is_authenticated:
+        if not allow_key(
+            "userdata-upload",
+            f"user:{user.pk}",
+            limit=settings.USERDATA_UPLOADS_PER_HOUR,
+            window=3600,
+        ):
+            raise ingest.IngestError(_rate_text(), "rate")
+        mine = Dataset.objects.filter(owner=user)
+        if mine.count() >= settings.USERDATA_MAX_DATASETS:
+            raise ingest.IngestError(
+                _("Таблиц уже %(count)s — это предел. Удалите ненужные таблицы.")
+                % {"count": settings.USERDATA_MAX_DATASETS},
+                "quota",
+            )
+        if used_bytes(user) >= settings.USERDATA_QUOTA_BYTES:
+            raise ingest.IngestError(
+                _("Место для таблиц закончилось: %(limit)s МБ. Удалите ненужные таблицы.")
+                % {"limit": settings.USERDATA_QUOTA_BYTES // (1024 * 1024)},
+                "space",
+            )
+        return
+    if not allow(
+        request, "userdata-upload", limit=settings.USERDATA_GUEST_UPLOADS_PER_HOUR, window=3600
+    ):
+        raise ingest.IngestError(_rate_text(), "rate")
+    if access.owned(request).count() >= settings.USERDATA_GUEST_MAX_DATASETS:
+        raise ingest.IngestError(
+            _(
+                "Без входа можно держать не больше %(count)s таблиц одни сутки. Войдите, "
+                "чтобы сохранить их и загрузить новые."
+            )
+            % {"count": settings.USERDATA_GUEST_MAX_DATASETS},
+            "guest",
+        )
+
+
+def used_bytes(user: Any) -> int:
+    """Место, занятое таблицами учётной записи."""
+    total = Dataset.objects.filter(owner=user).aggregate(total=Sum("size_bytes"))["total"]
+    return int(total or 0)
+
+
+def create_example(request: HttpRequest) -> Dataset:
+    """
+    Таблица-пример: набор «Если быть точным» об окружающей среде (CC BY 4.0) как скачан —
+    архивом; разбор и сборка — без вопросов, по распознаванию.
+    """
+    from . import describe, jobs
+
+    with EXAMPLE_PATH.open("rb") as handle:
+        uploaded = File(handle, name=EXAMPLE_NAME)
+        uploaded.size = EXAMPLE_PATH.stat().st_size
+        dataset = create_from_upload(request, uploaded)  # type: ignore[arg-type]
+    dataset.title = _("Состояние окружающей среды в регионах России")
+    dataset.source_title = _("«Если быть точным», обработка данных Росгидромета и Росстата")
+    dataset.source_url = EXAMPLE_URL
+    dataset.description = _(
+        "Пример таблицы: набор «Если быть точным» в архиве, как он скачивается с сайта "
+        "набора. Условия использования — Creative Commons BY 4.0."
+    )
+    dataset.save(update_fields=["title", "source_title", "source_url", "description"])
+    version = dataset.current_version
+    assert version is not None
+    best = next(table for table in inspection_of(version).tables if table.best)
+    choose_table(version, best.key)
+    if jobs.ensure_summary(version) not in {"", jobs.READY}:
+        raise ingest.IngestError(_("Пример не разобран. Повторите позже."), "example")
+    result = describe.recognition_of(version, request.user)
+    describe.save_answers(version, result, {}, request.user)
+    for stage in (jobs.EXTRACT, jobs.BUILD):
+        version.refresh_from_db()
+        if jobs.start(version, stage, inline=True) != jobs.READY:
+            raise ingest.IngestError(_("Пример не разобран. Повторите позже."), "example")
+    return dataset
+
+
+def _rate_text() -> str:
+    return _("Слишком много загрузок подряд — повторите через несколько минут.")
 
 
 def upload_size_text() -> str:
@@ -182,7 +282,7 @@ def _accept(
     version.save()
     dataset.current_version = version
     dataset.save(update_fields=["current_version", "updated_at"])
-    _update_size(dataset)
+    update_size(dataset)
     logger.info(
         "userdata: принят набор %s, вид %s, %s байт, таблиц %s",
         dataset.public_id,
@@ -210,7 +310,7 @@ def _store(uploaded: UploadedFile, target: Path, limit: int) -> str:
     return digest.hexdigest()
 
 
-def _update_size(dataset: Dataset) -> None:
+def update_size(dataset: Dataset) -> None:
     """Занятое место — все файлы набора на диске."""
     total = sum(path.stat().st_size for path in dataset.directory.rglob("*") if path.is_file())
     Dataset.objects.filter(pk=dataset.pk).update(size_bytes=total)
@@ -221,3 +321,71 @@ def _title(file_name: str) -> str:
     """Название набора по имени файла: без расширения и подчёркиваний."""
     stem = PurePosixPath(file_name).stem.replace("_", " ").strip()
     return stem or _("Таблица")
+
+
+def export_datasets(user: Any) -> list[dict[str, Any]]:
+    """Таблицы учётной записи для выгрузки «Персональных данных»: описание и ряды без значений."""
+    found = []
+    for dataset in Dataset.objects.filter(owner=user).select_related("current_version"):
+        version = dataset.current_version
+        found.append(
+            {
+                "title": dataset.title,
+                "description": dataset.description,
+                "source": dataset.source_title,
+                "source_url": dataset.source_url,
+                "uploaded_at": dataset.created_at.isoformat(),
+                "file_name": version.file_name if version else "",
+                "file_size": version.file_size if version else 0,
+                "size_on_disk": dataset.size_bytes,
+                "state": dataset.state,
+                "series": [
+                    {
+                        "title": record.title,
+                        "unit": record.unit,
+                        "kind": record.kind,
+                        "period": record.period,
+                        "slices": record.slices,
+                        "derived": record.derived,
+                    }
+                    for record in (version.series.order_by("order") if version else [])
+                ],
+            }
+        )
+    return found
+
+
+def prune() -> tuple[int, int]:
+    """
+    Удалить истёкшие таблицы гостей и осиротевшие файлы: каталоги без набора, прежние
+    файлы сборки. Занятый другим процессом файл (Windows) удалится при следующей очистке.
+    Возвращает число удалённых таблиц и каталогов.
+    """
+    from django.utils import timezone
+
+    expired = list(Dataset.objects.filter(owner__isnull=True, expires_at__lt=timezone.now()))
+    for dataset in expired:
+        discard(dataset)
+    root = Path(settings.USERDATA_DIR)
+    if not root.exists():
+        return len(expired), 0
+    known = {str(value) for value in Dataset.objects.values_list("public_id", flat=True)}
+    orphans = [path for path in root.iterdir() if path.is_dir() and path.name not in known]
+    for path in orphans:
+        shutil.rmtree(path, ignore_errors=True)
+    current = {
+        version.data_path
+        for version in DatasetVersion.objects.exclude(data_file="")
+        if version.data_path is not None
+    }
+    for path in root.glob("*/*/data-*.duckdb"):
+        if path not in current:
+            close_dataset(path)
+            try:
+                path.unlink()
+            except OSError:
+                logger.info("userdata: файл %s занят, удалится при следующей очистке", path.name)
+    for path in root.glob("*/*/data-*.duckdb.tmp"):
+        if path.with_suffix("") not in current:
+            shutil.rmtree(path, ignore_errors=True)
+    return len(expired), len(orphans)

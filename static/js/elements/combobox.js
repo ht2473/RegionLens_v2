@@ -263,7 +263,10 @@ class Combobox extends HTMLElement {
         .then((markup) => {
           const select = this.select;
           const current = select.options[select.selectedIndex] || null;
+          // Группы своих таблиц приходят в разметке страницы и остаются первыми.
+          const own = [...select.querySelectorAll("optgroup[data-own]")];
           select.innerHTML = markup;
+          select.prepend(...own);
           if (current) {
             select.value = current.value;
             // Выбранный ряд вне перечня остаётся в списке, чтобы не подменился первым.

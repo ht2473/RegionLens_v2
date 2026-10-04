@@ -35,6 +35,7 @@ from apps.warehouse.queries import (
     series_statistics_timeline,
     series_timeline,
 )
+from apps.warehouse.routing import is_user_key
 
 # Направленность рядов вне основного набора: оценки нет (см. описание модуля).
 UNASSESSED = "neutral"
@@ -80,7 +81,10 @@ def describe_series(series: Series) -> FeaturedSeries:
     Описание ряда для выводов словами: из основного набора или из источника.
 
     Единица — из склада: справочник сводит восстановленные единицы в одну запись «ND».
+    Ряд набора пользователя описывает сам набор.
     """
+    if getattr(series, "is_user", False):
+        return series.describe()  # type: ignore[attr-defined]
     featured = featured_set().by_key().get(series.key)
     if featured is not None:
         return featured
@@ -136,6 +140,11 @@ def series_descriptor(key: str | None) -> FeaturedSeries | None:
     featured = featured_set().by_key().get(key)
     if featured is not None:
         return featured
+    if is_user_key(key):
+        from apps.userdata.series import user_series
+
+        found = user_series(key)
+        return found.describe() if found is not None else None
     series = Series.objects.filter(key=key).select_related("indicator", "unit").first()
     return describe_series(series) if series is not None else None
 

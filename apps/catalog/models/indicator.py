@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from django.db import models
+from django.urls import reverse
 
 from apps.core.models import TimeStampedModel
 
@@ -215,6 +216,12 @@ class Series(BilingualNameModel, TimeStampedModel):
         if self.has_subsection and self.name:
             return f"{self.indicator.name} — {self.name}"
         return self.indicator.name
+
+    @property
+    def detail_url(self) -> str:
+        """Страница показателя с этим рядом."""
+        url = reverse("catalog:series-detail", kwargs={"slug": self.indicator.slug})
+        return f"{url}?series={self.key}"
 
     @property
     def is_unnormalised(self) -> bool:

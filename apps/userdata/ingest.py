@@ -15,9 +15,10 @@ import io
 import re
 import zipfile
 from collections import Counter
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
+from itertools import islice
 from pathlib import Path, PurePosixPath
 from typing import IO, Any
 
@@ -552,7 +553,7 @@ def _parquet_table(source: Path | IO[bytes], key: str) -> TableInfo:
 def _describe(table: TableInfo, rows: list[list[str]]) -> None:
     """Образец строк и столбец, где узнаётся больше всего субъектов."""
     rows = [row for row in rows if any(cell.strip() for cell in row)]
-    table.sample = [row[:SCAN_COLUMNS] for row in rows[:SAMPLE_ROWS]]
+    table.sample = sample_of(rows)
     scanned = rows[:SCAN_ROWS]
     width = min(max((len(row) for row in scanned), default=0), SCAN_COLUMNS)
     best = (0, -1)
@@ -563,6 +564,12 @@ def _describe(table: TableInfo, rows: list[list[str]]) -> None:
     if best[0]:
         table.territory_column = -best[1]
         table.regions = best[0]
+
+
+def sample_of(rows: Iterable[Sequence[Any]]) -> list[list[str]]:
+    """Образец таблицы: первые непустые строки, клетки — текстом."""
+    texts = ([cell_text(cell) for cell in row[:SCAN_COLUMNS]] for row in rows)
+    return list(islice((row for row in texts if any(cell.strip() for cell in row)), SAMPLE_ROWS))
 
 
 def _column(rows: list[list[Any]], column: int) -> Iterator[str]:

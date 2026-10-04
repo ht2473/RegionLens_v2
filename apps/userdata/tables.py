@@ -92,27 +92,9 @@ def load(path: Path, table: ingest.TableInfo, profile: dict[str, Any] | None = N
 def summarize(path: Path, table: ingest.TableInfo) -> dict[str, Any]:
     """Сводка большой таблицы: число строк, разных значений и сами значения по столбцам."""
     started = time.perf_counter()
-    connection = duckdb.connect()
+    connection = parse_connection(path)
     try:
-        connection.execute(f"SET memory_limit = '{settings.USERDATA_PARSE_MEMORY}'")
-        connection.execute("SET threads = 2")
-        connection.execute("SET enable_progress_bar = false")
-        connection.execute("SET preserve_insertion_order = false")
-        connection.execute("SET temp_directory = ?", [str(_temp_directory(path))])
-        if table.kind == ingest.PARQUET:
-            connection.execute("CREATE TABLE t AS SELECT * FROM read_parquet(?)", [str(path)])
-        else:
-            reader = (
-                "CREATE TABLE t AS SELECT * FROM read_csv(?, header = false, all_varchar = true, "
-                "delim = ?, quote = '\"', escape = '\"', null_padding = true, strict_mode = false"
-            )
-            arguments = [str(path), table.delimiter or ";"]
-            try:
-                connection.execute(reader + ")", arguments)
-            except duckdb.Error:
-                # Перевод строки внутри кавычек параллельный разбор не принимает.
-                connection.execute(reader + ", parallel = false)", arguments)
-        columns = [row[0] for row in connection.execute("DESCRIBE t").fetchall()]
+        columns = read_into(connection, path, table)
         quoted = [f'"{name}"' for name in columns]
         approximate = ", ".join(f"approx_count_distinct({name})" for name in quoted)
         counts = connection.execute(f"SELECT count(*), {approximate} FROM t").fetchone()  # noqa: S608
@@ -139,6 +121,40 @@ def summarize(path: Path, table: ingest.TableInfo) -> dict[str, Any]:
         "distinct": distinct,
         "seconds": round(time.perf_counter() - started, 2),
     }
+
+
+def parse_connection(path: Path) -> duckdb.DuckDBPyConnection:
+    """Соединение DuckDB в памяти для разбора таблицы: пределы памяти и свой каталог выгрузки."""
+    connection = duckdb.connect()
+    connection.execute(f"SET memory_limit = '{settings.USERDATA_PARSE_MEMORY}'")
+    connection.execute("SET threads = 2")
+    connection.execute("SET enable_progress_bar = false")
+    connection.execute("SET preserve_insertion_order = false")
+    connection.execute("SET temp_directory = ?", [str(_temp_directory(path))])
+    return connection
+
+
+def read_into(
+    connection: duckdb.DuckDBPyConnection, path: Path, table: ingest.TableInfo
+) -> list[str]:
+    """
+    Прочитать таблицу в таблицу ``t`` соединения: CSV — текстом без шапки, Parquet — как есть.
+    Возвращает имена столбцов ``t``.
+    """
+    if table.kind == ingest.PARQUET:
+        connection.execute("CREATE TABLE t AS SELECT * FROM read_parquet(?)", [str(path)])
+    else:
+        reader = (
+            "CREATE TABLE t AS SELECT * FROM read_csv(?, header = false, all_varchar = true, "
+            "delim = ?, quote = '\"', escape = '\"', null_padding = true, strict_mode = false"
+        )
+        arguments = [str(path), table.delimiter or ";"]
+        try:
+            connection.execute(reader + ")", arguments)
+        except duckdb.Error:
+            # Перевод строки внутри кавычек параллельный разбор не принимает.
+            connection.execute(reader + ", parallel = false)", arguments)
+    return [row[0] for row in connection.execute("DESCRIBE t").fetchall()]
 
 
 def transcode(source: Path, encoding: str, target: Path) -> Path:

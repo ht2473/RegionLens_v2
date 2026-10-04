@@ -185,7 +185,7 @@
           <li>
             {% url 'accounts:data' as data_url %}
             {% blocktranslate trimmed with url=data_url %}
-              Учётная запись удаляется в разделе <a href="{{ url }}">«Мои данные»</a> после
+              Учётная запись удаляется в разделе <a href="{{ url }}">«Персональные данные»</a> после
               подтверждения паролем. Удаление учётной записи — отзыв согласия на обработку
               персональных данных.
             {% endblocktranslate %}
@@ -193,8 +193,57 @@
         </ul>
       </section>
 
+      <section class="about__section" id="own-data" aria-labelledby="terms-own-data">
+        <h2 class="about__title" id="terms-own-data"><span class="terms__number">6.</span> {% translate "Свои данные" %}</h2>
+        <ul class="terms-list">
+          <li>
+            {% blocktranslate trimmed %}
+              В разделе «Свои данные» можно загрузить таблицу со значениями по территориям
+              России и смотреть её в тех же видах, что и данные сайта. Таблицу видит только
+              загрузивший её; сайт её не публикует и никому не передаёт.
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% blocktranslate trimmed %}
+              Загружая таблицу, пользователь подтверждает, что вправе использовать её данные,
+              и соблюдает условия их источника. Источник, названный при загрузке, указывается
+              в документах и ссылках на расчёт вместе с пометкой «загружены пользователем».
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% blocktranslate trimmed %}
+              В таблицах не должно быть персональных данных — сведений о конкретных людях,
+              а также сведений, доступ к которым ограничен законом.
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% blocktranslate trimmed with hours=guest_hours %}
+              Без входа таблица хранится {{ hours }} ч. С учётной записью — пока пользователь
+              не удалит её на странице таблицы или вместе с учётной записью.
+            {% endblocktranslate %}
+            {% if backup_days %}
+              {% blocktranslate trimmed with days=backup_days %}
+                Из резервных копий удалённая таблица исчезает через {{ days }} суток.
+              {% endblocktranslate %}
+            {% endif %}
+          </li>
+          <li>
+            {% blocktranslate trimmed with size=upload_mb tables=table_limit space=quota_mb %}
+              Пределы: файл — до {{ size }} МБ (архив ZIP допускается), таблиц — до {{ tables }},
+              место — до {{ space }} МБ на учётную запись.
+            {% endblocktranslate %}
+          </li>
+          <li>
+            {% blocktranslate trimmed %}
+              Пересчёты по таблице — на жителей, на площадь, область без автономных округов —
+              расчёты RegionLens и помечены как расчёт.
+            {% endblocktranslate %}
+          </li>
+        </ul>
+      </section>
+
       <section class="about__section" id="prohibited" aria-labelledby="terms-prohibited">
-        <h2 class="about__title" id="terms-prohibited"><span class="terms__number">6.</span> {% translate "Недопустимые действия" %}</h2>
+        <h2 class="about__title" id="terms-prohibited"><span class="terms__number">7.</span> {% translate "Недопустимые действия" %}</h2>
         <ul class="terms-list">
           <li>{% translate "Обходить предел обращений к интерфейсу, в том числе сменой адресов." %}</li>
           <li>
@@ -214,7 +263,7 @@
       </section>
 
       <section class="about__section" id="warranty" aria-labelledby="terms-warranty">
-        <h2 class="about__title" id="terms-warranty"><span class="terms__number">7.</span> {% translate "Ограничение ответственности" %}</h2>
+        <h2 class="about__title" id="terms-warranty"><span class="terms__number">8.</span> {% translate "Ограничение ответственности" %}</h2>
         <ul class="terms-list">
           <li>
             {% blocktranslate trimmed %}
@@ -250,7 +299,7 @@
       </section>
 
       <section class="about__section" id="code" aria-labelledby="terms-code">
-        <h2 class="about__title" id="terms-code"><span class="terms__number">8.</span> {% translate "Исходный код и тексты" %}</h2>
+        <h2 class="about__title" id="terms-code"><span class="terms__number">9.</span> {% translate "Исходный код и тексты" %}</h2>
         <div class="prose">
           <p>
             {% blocktranslate trimmed with url=project.repository_url %}
@@ -262,7 +311,7 @@
       </section>
 
       <section class="about__section" id="changes" aria-labelledby="terms-changes">
-        <h2 class="about__title" id="terms-changes"><span class="terms__number">9.</span> {% translate "Изменение условий" %}</h2>
+        <h2 class="about__title" id="terms-changes"><span class="terms__number">10.</span> {% translate "Изменение условий" %}</h2>
         <div class="prose">
           <p>
             {% blocktranslate trimmed %}
@@ -275,14 +324,14 @@
       </section>
 
       <section class="about__section" id="law" aria-labelledby="terms-law">
-        <h2 class="about__title" id="terms-law"><span class="terms__number">10.</span> {% translate "Применимое право" %}</h2>
+        <h2 class="about__title" id="terms-law"><span class="terms__number">11.</span> {% translate "Применимое право" %}</h2>
         <div class="prose">
           <p>{% translate "К условиям и отношениям, связанным с сайтом, применяется законодательство Российской Федерации." %}</p>
         </div>
       </section>
 
       <section class="about__section" id="contacts" aria-labelledby="terms-contacts">
-        <h2 class="about__title" id="terms-contacts"><span class="terms__number">11.</span> {% translate "Контакты" %}</h2>
+        <h2 class="about__title" id="terms-contacts"><span class="terms__number">12.</span> {% translate "Контакты" %}</h2>
         <div class="prose">
           <p>
             {% url 'feedback:create' as feedback_url %}
@@ -304,6 +353,7 @@
         <li><a href="#calculations">{% translate "Расчёты RegionLens" %}</a></li>
         <li><a href="#api">{% translate "Программный интерфейс" %}</a></li>
         <li><a href="#account">{% translate "Учётная запись" %}</a></li>
+        <li><a href="#own-data">{% translate "Свои данные" %}</a></li>
         <li><a href="#prohibited">{% translate "Недопустимые действия" %}</a></li>
         <li><a href="#warranty">{% translate "Ограничение ответственности" %}</a></li>
         <li><a href="#code">{% translate "Исходный код и тексты" %}</a></li>

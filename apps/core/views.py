@@ -172,6 +172,10 @@ class DocumentView(BreadcrumbMixin, TemplateView):
         context["ticket_contact_days"] = documents.TICKET_CONTACT_DAYS
         context["destruction_days"] = documents.DESTRUCTION_DAYS
         context["lockout_hours"] = settings.AXES_COOLOFF_TIME
+        context["guest_hours"] = settings.USERDATA_GUEST_HOURS
+        context["upload_mb"] = settings.USERDATA_UPLOAD_MAX_BYTES // (1024 * 1024)
+        context["table_limit"] = settings.USERDATA_MAX_DATASETS
+        context["quota_mb"] = settings.USERDATA_QUOTA_BYTES // (1024 * 1024)
         context["error_tracking"] = bool(getattr(settings, "SENTRY_DSN", ""))
         return context
 

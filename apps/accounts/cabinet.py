@@ -65,7 +65,7 @@ CABINET_SECTIONS: tuple[CabinetSection, ...] = (
     ),
     CabinetSection(
         code="data",
-        title=_("Мои данные"),
+        title=_("Персональные данные"),
         url_name="accounts:data",
         hint=_("Выгрузка всего, что хранится о вас, и удаление учётной записи"),
     ),

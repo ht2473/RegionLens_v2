@@ -32,6 +32,7 @@ from apps.warehouse.queries import (
     territory_profile,
 )
 from apps.warehouse.queries.sources import source_years
+from apps.warehouse.routing import is_user_key
 
 from ..constants import ReportKind
 from .base import (
@@ -430,14 +431,18 @@ def _meta_block(
     *,
     dataset: bool = True,
     external: list[str] | tuple[str, ...] = (),
+    own: str = "",
 ) -> list[tuple[str, str]]:
     """
     Собрать блок реквизитов: источники значений с условиями использования и дату отчёта.
 
     ``dataset`` — в отчёте есть значения набора (его обработка и лицензия CC BY указываются
-    всегда, когда он источник); ``external`` — коды внешних источников.
+    всегда, когда он источник); ``external`` — коды внешних источников; ``own`` — реквизит
+    таблицы, загруженной пользователем.
     """
     rows = list(extra)
+    if own:
+        rows.append(("Источник данных", own))
     if dataset:
         rows += [
             ("Источник данных", f"{settings.DATA_SOURCE_ORIGIN}, {settings.DATA_SOURCE_TITLE}"),
@@ -456,7 +461,14 @@ def _meta_block(
 
 
 def _sources_of(series_key: str) -> dict[str, Any]:
-    """Источники значений ряда для реквизитов: набор и внешние источники."""
+    """Источники значений ряда для реквизитов: набор, внешние источники или таблица пользователя."""
+    if is_user_key(series_key):
+        from apps.userdata.series import user_series
+
+        found = user_series(series_key)
+        with translation.override("ru"):
+            line = found.source_line() if found is not None else ""
+        return {"dataset": False, "external": [], "own": line}
     external = sorted({row["source_code"] for row in source_years(series_key)})
     return {"dataset": series_key not in registry().by_key, "external": external}
 

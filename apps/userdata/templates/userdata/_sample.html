@@ -1,10 +1,18 @@
 {% load i18n userdata %}
-{# Первые строки таблицы как есть; подписи пользователя — на их языке. #}
+{# Первые строки таблицы как есть; подписи пользователя — на их языке. Шапка — буквы
+   столбцов: какая строка файла шапка, решает распознавание, а не образец. #}
 <div class="data-table-wrapper sample-table">
   <table class="data-table data-table--compact">
     <caption class="visually-hidden">
       {% blocktranslate trimmed with name=table.name %}Первые строки таблицы «{{ name }}»{% endblocktranslate %}
     </caption>
+    <thead>
+      <tr>
+        {% for letter in table|column_letters %}
+          <th scope="col" class="sample-table__letter">{{ letter }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
     <tbody>
       {% for row in table.sample %}
         <tr>

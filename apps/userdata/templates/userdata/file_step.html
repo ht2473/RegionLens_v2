@@ -3,6 +3,8 @@
 
 {# Шаг «Файл»: таблицы в файле с первыми строками; лучшая выбрана заранее. #}
 
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
 {% block extra_css %}
   <link rel="stylesheet" href="{% static 'css/content.css' %}">
   <link rel="stylesheet" href="{% static 'css/userdata.css' %}">

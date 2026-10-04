@@ -110,9 +110,9 @@ $COMPOSE exec -T postgres pg_restore \
     --clean --if-exists --no-owner --no-privileges \
     < "$DB_FILE"
 
-# --- Загруженные наборы и архив выпусков -------------------------------------------------
+# --- Загруженные наборы, архив выпусков, таблицы пользователей ---------------------------
 if [ -n "$FILES_ARCHIVE" ] && [ -f "$FILES_ARCHIVE" ]; then
-    step "Восстановление наборов, архива выпусков и статистики посещений"
+    step "Восстановление наборов, архива выпусков, статистики посещений и таблиц пользователей"
     $COMPOSE run --rm --no-deps -T \
         --volume "${HOST_ROOT}/backups:/backup:ro" \
         web tar xzf "/backup/$(basename "$FILES_ARCHIVE")" -C /app
@@ -133,6 +133,10 @@ until $COMPOSE exec -T web curl --fail --silent http://127.0.0.1:8000/healthz >/
     fi
     sleep 2
 done
+
+# Таблицы гостей в копию не входят: их записи в базе и каталоги без записей убирает очистка.
+step "Очистка таблиц без файлов"
+$COMPOSE exec -T web python manage.py prune_personal_data
 
 step "Разбор архива выпусков источников"
 # Разобранное в копию не входит: оно воспроизводится из архива.

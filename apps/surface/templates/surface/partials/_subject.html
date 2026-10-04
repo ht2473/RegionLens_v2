@@ -1,4 +1,4 @@
-{% load i18n formatting %}
+{% load i18n formatting userdata %}
 {# Предмет экрана: показатель и год, тема, единица; справа — Россия и середина регионов. #}
 {# Предмет экрана объявляется при пересчёте холста. #}
 <header class="surface-head{% if not subject.country and not subject.median %} surface-head--single{% endif %}"
@@ -6,10 +6,10 @@
   <div class="surface-head__text">
     {% if subject %}
       <p class="surface-head__kicker">
-        {{ subject.kicker }}{% if not subject.item.absolute %}{% if subject.item.polarity == "positive" %} · {% translate "рост — к лучшему" %}{% elif subject.item.polarity == "negative" %} · {% translate "рост — к худшему" %}{% endif %}{% endif %}
+        <span{% if series.is_user %}{% with lang=subject.kicker|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}{% endif %}>{{ subject.kicker }}</span>{% if series.is_user %} · <span class="surface-head__private">{% translate "видно только вам" %}</span>{% endif %}{% if not subject.item.absolute %}{% if subject.item.polarity == "positive" %} · {% translate "рост — к лучшему" %}{% elif subject.item.polarity == "negative" %} · {% translate "рост — к худшему" %}{% endif %}{% endif %}
       </p>
       <h1 class="surface-head__title">
-        {{ subject.title }}{% if panel.code == "compare" and timeline_years %}, <span class="numeric">{{ timeline_years.0|year }}–{{ timeline_years|last|year }}</span>{% elif year %}, <span class="numeric">{{ year|year }}</span>{% endif %}
+        {% if series.is_user %}<span{% with lang=subject.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ subject.title }}</span>{% else %}{{ subject.title }}{% endif %}{% if panel.code == "compare" and timeline_years %}, <span class="numeric">{{ timeline_years.0|year }}–{{ timeline_years|last|year }}</span>{% elif year %}, <span class="numeric">{{ year|year }}</span>{% endif %}
       </h1>
       <p class="surface-head__meta">
         {% if subject.unit %}<span>{{ subject.unit }}</span>{% endif %}
@@ -34,8 +34,8 @@
         <p class="surface-head__origin">{{ subject.origin.text }}</p>
       {% endif %}
       <p class="surface-head__about">
-        <a href="{% url 'catalog:series-detail' slug=series.indicator.slug %}?series={{ series.key }}">
-          {% translate "О показателе: источник, разрывы, пересмотры" %}
+        <a href="{{ series.detail_url }}">
+          {% if series.is_user %}{% translate "О таблице: источник, показатели, территории" %}{% else %}{% translate "О показателе: источник, разрывы, пересмотры" %}{% endif %}
           <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
         </a>
       </p>

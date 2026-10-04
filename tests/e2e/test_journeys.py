@@ -37,7 +37,7 @@ class TestPublicPages:
 
         links = page.locator(".main-nav__link")
         nested = page.locator(".main-nav__dropdown-item")
-        assert links.count() == 5
+        assert links.count() == 6
         assert links.count() + nested.count() >= 10
 
         # Раздел со вложенными пунктами — кнопка: нажатие раскрывает панель,

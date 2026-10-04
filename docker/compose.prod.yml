@@ -88,11 +88,14 @@ services:
       # Журнал Caddy — только на чтение; статистика посещений, накопленная GoAccess.
       - caddy_logs:/app/logs/caddy:ro
       - visits:/app/data/visits
+      # Таблицы пользователей («Свои данные»): исходные файлы и их разбор.
+      - userdata:/app/data/userdata
     environment:
       <<: *app-environment
       # Предел памяти самой сборки склада: она идёт в этом контейнере.
       DUCKDB_BUILD_MEMORY_LIMIT: ${DUCKDB_BUILD_MEMORY_LIMIT:-1GB}
-    # Рабочие процессы сервера — около 0,6 ГБ, сборка склада — ещё до 1,5 ГБ.
+    # Рабочие процессы сервера — около 0,6 ГБ, сборка склада — ещё до 1,5 ГБ; разбор таблиц
+    # пользователей — до двух процессов по 768 МБ памяти DuckDB, в другое время.
     mem_limit: 2560m
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8000/healthz"]
@@ -179,4 +182,5 @@ volumes:
   archive:
   sources:
   visits:
+  userdata:
   static:

@@ -11,9 +11,9 @@ from django.utils.safestring import SafeString
 from django.utils.translation import gettext
 
 # Даты редакций: меняются вместе с содержанием документа.
-TERMS_REVISION = date(2026, 9, 26)
-PRIVACY_REVISION = date(2026, 9, 26)
-CONSENT_REVISION = date(2026, 9, 26)
+TERMS_REVISION = date(2026, 10, 4)
+PRIVACY_REVISION = date(2026, 10, 4)
+CONSENT_REVISION = date(2026, 10, 4)
 
 # Сроки хранения из политики; очистку выполняет команда prune_personal_data.
 # Журнал веб-сервера — как roll_keep_for в docker/Caddyfile.

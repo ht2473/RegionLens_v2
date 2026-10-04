@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% load i18n static formatting userdata %}
+
+{# Страница таблицы: показатели и виды, пометки, территории, файл, выгрузка, хранение и удаление. #}
+
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+  <link rel="stylesheet" href="{% static 'css/userdata.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <p class="page-intro__kicker">{% translate "Моя таблица" %} · <span class="own-private">{% translate "видно только вам" %}</span></p>
+      <h1 class="page-intro__title"{% with lang=dataset.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.title }}</h1>
+      {% if dataset.description %}
+        <p class="page-intro__lead"{% with lang=dataset.description|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.description }}</p>
+      {% endif %}
+      <p class="own-source">
+        {% translate "Источник" %}:
+        {% if dataset.source_url %}<a href="{{ dataset.source_url }}" rel="noopener noreferrer nofollow" target="_blank"{% with lang=dataset.source_title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.source_title|default:dataset.source_url }}</a>{% elif dataset.source_title %}<span{% with lang=dataset.source_title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.source_title }}</span>{% else %}{% translate "не указан" %}{% endif %}
+      </p>
+    </div>
+  </header>
+
+  {% if not version or version.state != "built" %}
+    <div class="callout callout--info">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Таблица ещё не собрана" %}</div>
+        <p>{% translate "Описание таблицы сохранено; осталось пройти шаги загрузки." %}</p>
+        <p><a class="button button--primary button--sm" href="{{ continue_url }}">{% translate "Продолжить" %}</a></p>
+      </div>
+    </div>
+  {% else %}
+
+  <section class="page-section" aria-labelledby="own-scope">
+    <h2 class="visually-hidden" id="own-scope">{% translate "Охват" %}</h2>
+    <dl class="figure-list figure-list--row">
+      <div><dt>{% translate "показателей" %}</dt><dd class="numeric">{{ groups|length }}</dd></div>
+      <div><dt>{% translate "рядов" %}</dt><dd class="numeric">{{ version.series_count|ru_number:0 }}</dd></div>
+      <div><dt>{% translate "значений" %}</dt><dd class="numeric">{{ version.values_count|ru_number:0 }}</dd></div>
+      <div><dt>{% translate "субъектов" %}</dt><dd class="numeric">{{ version.regions_count }} {% translate "из 85" %}</dd></div>
+      {% if version.first_year %}
+        <div><dt>{% translate "годы" %}</dt><dd class="numeric">{{ version.first_year|year }}{% if version.last_year != version.first_year %}–{{ version.last_year|year }}{% endif %}</dd></div>
+      {% endif %}
+    </dl>
+  </section>
+
+  <div class="own-marks">
+  {% if sums %}
+    <div class="callout callout--warning">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Абсолютные величины" %}</div>
+        <p>
+          {% translate "На карте сумм крупные регионы выделяются размером: больше людей — больше преступлений, рублей и случаев." %}
+          {% if per_capita %}
+            {% translate "Для сравнения регионов — ряды на жителей или на км² ниже." %}
+          {% else %}
+            <a href="{% url 'userdata:series' dataset.public_id %}">{% translate "Добавить пересчёт на 100 000 жителей" %}</a>
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if few_regions %}
+    <div class="callout callout--info">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>{% translate "Субъектов меньше 20: неравенство и пространственный анализ по таблице не считаются. Карта, таблица и динамика работают." %}</div>
+    </div>
+  {% endif %}
+
+  {% if incomplete %}
+    <div class="callout callout--info">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Неполный последний год" %}</div>
+        <p>{% translate "Значения последнего года есть не у всех регионов; карта и рейтинг по умолчанию открываются за последний полный год." %}</p>
+        <ul class="compact-list">
+          {% for item in incomplete|slice:":5" %}
+            <li><span{% with lang=item.series.full_title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.series.full_title }}</span>: <span class="numeric">{{ item.last|year }}</span> → <span class="numeric">{{ item.full|year }}</span></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if alone_missing %}
+    <div class="callout callout--info">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        {% translate "Область в таблице — вместе с автономными округами. Для долей и средних область без округов не вычислить, и на карте она пустая:" %}
+        {% for code in alone_missing %}{{ code|territory_name }}{% if not forloop.last %}, {% endif %}{% endfor %}.
+      </div>
+    </div>
+  {% endif %}
+  </div>
+
+  <section class="page-section" aria-labelledby="own-series">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="own-series">{% translate "Показатели" %}</h2>
+      <a class="button button--sm button--ghost" href="{% url 'userdata:series' dataset.public_id %}">
+        <svg aria-hidden="true"><use href="#icon-edit"></use></svg>
+        {% translate "Изменить описание" %}
+      </a>
+    </div>
+    {% for group in groups %}
+      <div class="own-indicator">
+        <h3 class="own-indicator__title"{% with lang=group.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ group.title }}</h3>
+        <p class="own-indicator__meta">
+          {% if group.unit %}<span{% with lang=group.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ group.unit }}</span> · {% endif %}
+          {% if group.kind == "sum" %}{% translate "сумма" %}{% else %}{% translate "относительная величина" %}{% endif %}
+        </p>
+        <ul class="own-series">
+          {% for item in group.items %}
+            <li class="own-series__item" id="series-{{ item.record.code }}">
+              <div class="own-series__text">
+                <span class="own-series__name"{% with lang=item.detail|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{% if item.detail %}{{ item.detail }}{% else %}{% translate "как в таблице" %}{% endif %}</span>
+                <span class="own-series__facts">
+                  {% blocktranslate trimmed with count=item.record.regions_count %}субъектов: {{ count }}{% endblocktranslate %}
+                  {% if item.record.first_year %}· <span class="numeric">{{ item.record.first_year|year }}{% if item.record.last_year != item.record.first_year %}–{{ item.record.last_year|year }}{% endif %}</span>{% endif %}
+                </span>
+              </div>
+              <nav class="own-series__views" aria-label="{% translate 'Открыть ряд' %}">
+                {% for view in item.views %}
+                  <a class="own-series__view" href="{{ view.url }}"><svg aria-hidden="true"><use href="#icon-{% if view.code == 'compare' %}dynamics{% elif view.code == 'rankings' %}ranking{% else %}{{ view.code }}{% endif %}"></use></svg>{{ view.title }}</a>
+                {% endfor %}
+              </nav>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endfor %}
+  </section>
+
+  <section class="page-section" aria-labelledby="own-territories">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="own-territories">{% translate "Территории" %}</h2>
+    </div>
+    <p class="page-section__lead">
+      {% blocktranslate trimmed with count=version.regions_count %}Узнано субъектов: {{ count }} из 85.{% endblocktranslate %}
+      {% if nested %}
+        {% translate "Область с автономными округами в таблице — итогом вместе с ними; для сумм область без округов вычислена (пометка «расчёт RegionLens»):" %}
+        {% for code in nested %}{{ code|territory_name }}{% if not forloop.last %}, {% endif %}{% endfor %}.
+      {% endif %}
+      {% if conflicts %}
+        {% blocktranslate trimmed with count=conflicts %}Повторов территории и года с разными числами: {{ count }}; оставлено первое значение.{% endblocktranslate %}
+      {% endif %}
+    </p>
+    {% if outside %}
+      <details class="question-card question-card--quiet">
+        <summary>{% blocktranslate trimmed with count=outside|length %}Строк вне справочника: {{ count }}{% endblocktranslate %}</summary>
+        <p>{% translate "Эти строки сохранены в таблице и в выгрузке, но на карту и в рейтинг не попадают: таких территорий нет в справочнике сайта." %}</p>
+        <ul class="compact-list">
+          {% for label, reason in outside %}<li><span{% with lang=label|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ label }}</span>{% if reason %} — {{ reason }}{% endif %}</li>{% endfor %}
+        </ul>
+      </details>
+    {% endif %}
+  </section>
+
+  <section class="page-section" aria-labelledby="own-download">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="own-download">{% translate "Скачать" %}</h2>
+    </div>
+    <p class="page-section__lead">
+      {% translate "Очищенная таблица: территория с названием и кодами справочника, год, период, показатель, разрезы, значение, единица и пометка." %}
+    </p>
+    <div class="own-data-actions">
+      <a class="button button--secondary" href="{% url 'userdata:download' dataset.public_id 'csv' %}" download>
+        <svg aria-hidden="true"><use href="#icon-download"></use></svg>CSV
+      </a>
+      {% if xlsx_allowed %}
+        <a class="button button--secondary" href="{% url 'userdata:download' dataset.public_id 'xlsx' %}" download>
+          <svg aria-hidden="true"><use href="#icon-download"></use></svg>XLSX
+        </a>
+      {% endif %}
+      <a class="button button--ghost" href="{% url 'userdata:download' dataset.public_id 'source' %}" download>
+        {% translate "Исходный файл" %}
+      </a>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="page-section" aria-labelledby="own-file">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="own-file">{% translate "Файл и хранение" %}</h2>
+    </div>
+    {% if version %}
+      <dl class="about-credits">
+        <dt>{% translate "Файл" %}</dt>
+        <dd{% with lang=version.file_name|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ version.file_name }} · {{ version.file_size|filesizeformat }}</dd>
+        <dt>{% translate "Загружен" %}</dt>
+        <dd>{{ version.created_at|date:"d.m.Y H:i" }}</dd>
+        <dt>{% translate "Место на диске" %}</dt>
+        <dd>{{ dataset.size_bytes|filesizeformat }}</dd>
+        <dt>{% translate "Кто видит" %}</dt>
+        <dd>{% translate "только вы" %}</dd>
+        <dt>{% translate "Хранится" %}</dt>
+        <dd>
+          {% if guest %}
+            {% blocktranslate trimmed with moment=dataset.expires_at|date:"d.m.Y H:i" %}до {{ moment }}{% endblocktranslate %}
+            · <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "войдите, чтобы сохранить" %}</a>
+          {% else %}
+            {% translate "пока вы её не удалите" %}{% if retention_days %}; {% blocktranslate trimmed with days=retention_days %}из резервных копий удалённая исчезает через {{ days }} сут.{% endblocktranslate %}{% endif %}
+          {% endif %}
+        </dd>
+      </dl>
+    {% endif %}
+
+    <form method="post" action="{% url 'userdata:delete' dataset.public_id %}" class="stack own-delete">
+      {% csrf_token %}
+      <label class="checkbox"><input type="checkbox" name="confirm" value="1" required> <span>{% translate "Удалить таблицу вместе с файлами" %}</span></label>
+      <div><button class="button button--danger" type="submit">{% translate "Удалить таблицу" %}</button></div>
+    </form>
+  </section>
+
+</div>
+{% endblock %}

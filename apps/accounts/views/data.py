@@ -1,4 +1,4 @@
-"""Раздел «Мои данные»: выгрузка всего своего одним файлом и удаление учётной записи."""
+"""Раздел «Персональные данные»: выгрузка всего своего одним файлом и удаление учётной записи."""
 
 from __future__ import annotations
 
@@ -44,6 +44,7 @@ class DataView(CabinetViewMixin, FormView):
             "marks": user.favorites.count(),
             "views": user.saved_queries.count(),
             "tickets": Ticket.objects.filter(author=user).count(),
+            "tables": user.datasets.count(),
         }
         context["last_administrator"] = is_last_administrator(user)
         context["account"] = user
@@ -70,7 +71,7 @@ class ConsentView(CabinetViewMixin, View):
     """Согласие на обработку на действующую редакцию: у записей, заведённых без него."""
 
     def post(self, request: HttpRequest) -> HttpResponse:
-        """Записать согласие, если отмечен флажок, и вернуться в «Мои данные»."""
+        """Записать согласие, если отмечен флажок, и вернуться в «Персональные данные»."""
         if request.POST.get("consent"):
             self.current_user.record_consent()
             messages.success(request, _("Согласие на обработку персональных данных записано"))

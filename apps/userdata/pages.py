@@ -1,0 +1,266 @@
+"""
+Раздел «Свои данные»: что это, загрузка и пример, «Мои таблицы»; страница таблицы
+с показателями, территориями, файлом, выгрузкой и удалением.
+"""
+
+from __future__ import annotations
+
+from collections import OrderedDict
+from typing import Any
+from urllib.parse import urlencode
+
+from django.conf import settings
+from django.contrib import messages
+from django.http import FileResponse, Http404, HttpRequest, HttpResponse, StreamingHttpResponse
+from django.http.response import HttpResponseBase
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.utils.translation import gettext
+from django.utils.translation import gettext_lazy as _
+from django.views.generic import TemplateView, View
+
+from apps.core.documents import backup_retention_days
+from apps.core.navigation import Crumb
+from apps.core.views import BreadcrumbMixin
+from apps.warehouse import queries
+
+from . import access, export, ingest, scope, services
+from .models import Dataset, DatasetSeries, DatasetVersion
+from .series import UserSeries
+
+# Субъектов меньше этого: неравенство и пространственный анализ не считаются.
+FEW_REGIONS = 20
+# Представления холста для ряда набора: код, маршрут, подпись.
+VIEWS = (
+    ("map", "maps:choropleth", _("Карта")),
+    ("compare", "compare:index", _("Динамика")),
+    ("rankings", "rankings:index", _("Рейтинг")),
+    ("distribution", "surface:distribution", _("Распределение")),
+    ("table", "surface:table", _("Таблица")),
+)
+# Причины «вне справочника» словами.
+OUTSIDE_REASONS = {
+    "merged": _("прежний субъект, объединённый с другим"),
+    "new": _("субъект, которого нет в справочнике сайта"),
+    "district": _("федеральный округ, которого нет в справочнике сайта"),
+    "baikonur": _("Байконур"),
+    "composite": _("несколько территорий в одной строке"),
+    "organization": _("ведомство или организация"),
+}
+
+
+class SectionView(BreadcrumbMixin, TemplateView):
+    """Раздел: что это, загрузка, «Мои таблицы», какие таблицы подходят, кто их видит."""
+
+    template_name = "userdata/index.html"
+
+    def get_crumbs(self) -> tuple[Crumb, ...]:
+        return (Crumb(title=_("Свои данные")),)
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        mine = list(access.owned(self.request).select_related("current_version"))
+        user = self.request.user
+        context.update(
+            page_title=_("Свои данные"),
+            datasets=mine,
+            used=services.used_bytes(user)
+            if user.is_authenticated
+            else sum(item.size_bytes for item in mine),
+            quota=settings.USERDATA_QUOTA_BYTES,
+            limit=settings.USERDATA_MAX_DATASETS
+            if user.is_authenticated
+            else settings.USERDATA_GUEST_MAX_DATASETS,
+            guest_hours=settings.USERDATA_GUEST_HOURS,
+            retention_days=backup_retention_days(),
+        )
+        return context
+
+
+class ExampleView(View):
+    """«Попробовать на примере»: таблица-пример собирается сразу и открывается на карте."""
+
+    def post(self, request: HttpRequest) -> HttpResponse:
+        from .views import first_view_url
+
+        try:
+            services.check_limits(request)
+            dataset = services.create_example(request)
+        except ingest.IngestError as error:
+            messages.error(request, str(error))
+            return redirect("userdata:index")
+        version = dataset.current_version
+        assert version is not None
+        return redirect(first_view_url(version))
+
+
+class DatasetMixin:
+    """Свой набор по опознавателю; чужой и несуществующий — 404."""
+
+    request: HttpRequest
+    dataset: Dataset
+
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        self.dataset = access.dataset_or_404(request, kwargs["public_id"])
+        return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
+
+
+class DatasetView(DatasetMixin, BreadcrumbMixin, TemplateView):
+    """Страница таблицы: показатели и виды, пометки, территории, файл, выгрузка, удаление."""
+
+    template_name = "userdata/dataset.html"
+
+    def get_crumbs(self) -> tuple[Crumb, ...]:
+        return (
+            Crumb(title=_("Свои данные"), url=reverse("userdata:index")),
+            Crumb(title=self.dataset.title),
+        )
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        dataset = self.dataset
+        version = dataset.current_version
+        context.update(
+            page_title=dataset.title,
+            dataset=dataset,
+            version=version,
+            continue_url=_continue_url(dataset, version),
+            guest=dataset.owner_id is None,
+            retention_days=backup_retention_days(),
+        )
+        if version is None or version.state != DatasetVersion.State.BUILT:
+            return context
+        records = list(version.series.order_by("order"))
+        series = [UserSeries(record, dataset) for record in records]
+        # Слой рядов сам ведёт ключи набора в его файл: набор свой.
+        covered = queries.series_covered_years([item.key for item in series])
+        report = version.report.get("extract") or {}
+        context.update(
+            groups=_groups(series, covered),
+            sums=[item for item in series if item.is_sum],
+            per_capita=[item for item in series if item.record.derived],
+            few_regions=version.regions_count < FEW_REGIONS,
+            incomplete=_incomplete(series, covered),
+            outside=[
+                (label, OUTSIDE_REASONS.get(reason, ""))
+                for label, reason in report.get("outside", [])
+            ],
+            nested=report.get("nested", []),
+            alone_missing=version.report.get("build", {}).get("alone_missing", []),
+            conflicts=report.get("conflicts", 0),
+            xlsx_allowed=(version.values_count or 0) <= export.XLSX_ROWS,
+        )
+        return context
+
+
+def _continue_url(dataset: Dataset, version: DatasetVersion | None) -> str:
+    """Шаг мастера, на котором остановилась несобранная таблица."""
+    if version is None or not version.recipe.get("table"):
+        return reverse("userdata:file", args=[dataset.public_id])
+    if not version.recipe.get("form"):
+        return reverse("userdata:table", args=[dataset.public_id])
+    return reverse("userdata:series", args=[dataset.public_id])
+
+
+def _groups(series: list[UserSeries], covered: dict[str, tuple[int, int]]) -> list[dict[str, Any]]:
+    """Ряды по показателям: название, единица, вид величины и ссылки на виды холста."""
+    groups: OrderedDict[str, dict[str, Any]] = OrderedDict()
+    for item in series:
+        record = item.record
+        # Пересчёт на жителей и на км² — ряд того же показателя.
+        group = groups.setdefault(
+            record.indicator,
+            {"title": record.title, "unit": record.unit, "kind": record.kind, "items": []},
+        )
+        year = covered.get(item.key, (None, record.last_year))[1]
+        derived = str(DatasetSeries.Derived(record.derived).label) if record.derived else ""
+        group["items"].append(
+            {
+                "series": item,
+                "record": record,
+                "detail": ", ".join(part for part in (item.name, derived) if part),
+                "views": [
+                    {
+                        "code": code,
+                        "title": title,
+                        "url": f"{reverse(name)}?{urlencode({'series': item.key})}",
+                    }
+                    for code, name, title in VIEWS
+                ],
+                "last_full_year": year,
+            }
+        )
+    return list(groups.values())
+
+
+def _incomplete(
+    series: list[UserSeries], covered: dict[str, tuple[int, int]]
+) -> list[dict[str, Any]]:
+    """Ряды с неполным последним годом: по умолчанию показывается последний полный."""
+    found = []
+    for item in series:
+        full = covered.get(item.key)
+        if full and item.record.last_year and full[1] < item.record.last_year:
+            found.append({"series": item, "last": item.record.last_year, "full": full[1]})
+    return found
+
+
+class DeleteView(DatasetMixin, View):
+    """Удалить таблицу вместе с файлами."""
+
+    def post(self, request: HttpRequest, public_id: str) -> HttpResponse:  # noqa: ARG002
+        if not request.POST.get("confirm"):
+            messages.error(request, gettext("Отметьте, что таблицу нужно удалить."))
+            return redirect("userdata:dataset", public_id=self.dataset.public_id)
+        title = self.dataset.title
+        services.discard(self.dataset)
+        messages.success(request, gettext("Таблица «%(title)s» удалена.") % {"title": title})
+        return redirect("userdata:index")
+
+
+class DownloadView(DatasetMixin, View):
+    """Выгрузка таблицы: длинная таблица CSV или XLSX, исходный файл как загружен."""
+
+    def get(
+        self,
+        request: HttpRequest,  # noqa: ARG002
+        public_id: str,  # noqa: ARG002
+        kind: str,
+    ) -> HttpResponseBase:
+        version = self.dataset.current_version
+        if version is None:
+            raise Http404
+        if kind == "source":
+            return _source_file(version)
+        source = scope.source_of_version(version)
+        if source is None or kind not in {"csv", "xlsx"}:
+            raise Http404
+        plan = export.layout(version)
+        name = f"regionlens-table-{self.dataset.code}.{kind}"
+        if kind == "csv":
+            response: HttpResponseBase = StreamingHttpResponse(
+                export.csv_stream(source, plan), content_type="text/csv; charset=utf-8"
+            )
+        else:
+            if export.count_rows(source) > export.XLSX_ROWS:
+                raise Http404
+            response = HttpResponse(
+                export.xlsx_bytes(source, plan),
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        response["Content-Disposition"] = f'attachment; filename="{name}"'
+        response["Cache-Control"] = "private, no-store"
+        return response
+
+
+def _source_file(version: DatasetVersion) -> HttpResponseBase:
+    """Исходный файл как загружен — только вложением."""
+    try:
+        path = services.source_path(version)
+    except ingest.IngestError as error:
+        raise Http404 from error
+    name = version.file_name if version.file_kind != ingest.PASTE else "table.tsv"
+    response = FileResponse(path.open("rb"), as_attachment=True, filename=name)
+    response["Cache-Control"] = "private, no-store"
+    response["X-Content-Type-Options"] = "nosniff"
+    return response

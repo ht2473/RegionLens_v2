@@ -7,6 +7,7 @@
   <meta name="author" content="{{ project.author }}">
   <meta name="description" content="{% block meta_description %}{{ project.tagline }}{% endblock %}">
   <meta name="color-scheme" content="light dark">
+  {% block robots %}{% endblock %}
 
   <title>{% block title %}{% if page_title %}{{ page_title }} — {% endif %}{{ project.name }}{% endblock %}</title>
 
