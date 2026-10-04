@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% load i18n static formatting userdata %}
+
+{# Шаг «Что в таблице»: что понято словами, вопросы, роли столбцов, разрезы, образец. #}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+  <link rel="stylesheet" href="{% static 'css/userdata.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "Что в таблице" %}</h1>
+      {% if result %}<p class="page-intro__lead">{{ form_text }}</p>{% endif %}
+    </div>
+  </header>
+
+  {% include "userdata/_steps.html" %}
+
+  {% if waiting %}
+    {% include "userdata/_waiting.html" %}
+  {% else %}
+
+  <section class="recognition-facts" aria-label="{% translate 'Что найдено' %}">
+    <dl class="definition-list definition-list--compact">
+      <dt>{% translate "Строк" %}</dt>
+      <dd>{{ table|rows_text }}</dd>
+      <dt>{% translate "Субъектов узнано" %}</dt>
+      <dd>{% blocktranslate trimmed with count=resolved_regions %}{{ count }} из 85{% endblocktranslate %}</dd>
+      {% if result.periods %}
+        <dt>{% translate "Годы" %}</dt>
+        <dd>{{ result.periods.first }}{% if result.periods.last != result.periods.first %}–{{ result.periods.last }}{% endif %}</dd>
+        <dt>{% translate "Периоды" %}</dt>
+        <dd>{{ period_kinds|join:", " }}</dd>
+      {% endif %}
+      <dt>{% translate "Рядов получится" %}</dt>
+      <dd>{{ result.series|ru_number:0 }}</dd>
+    </dl>
+  </section>
+
+  <form method="post" class="stack recognition-form" novalidate>
+    {% csrf_token %}
+
+    {% if result.form == "unknown" %}
+      <div class="callout callout--warning" role="alert">
+        <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+        <div>{% translate "Столбец с регионами не найден. Отметьте его в перечне столбцов ниже." %}</div>
+      </div>
+    {% endif %}
+
+    {% if result.municipal %}
+      <div class="callout callout--warning">
+        <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+        <div>{% translate "Похоже, в таблице районы или города. На карте сайта — только субъекты РФ." %}</div>
+      </div>
+    {% endif %}
+
+    {% for question in nested %}
+      <fieldset class="question-card">
+        <legend class="question-card__title">
+          {% blocktranslate trimmed with label=question.label %}
+            «{{ label }}» в таблице — вместе с автономным округом (так считает Росстат) или без него?
+          {% endblocktranslate %}
+        </legend>
+        <label class="radio"><input type="radio" name="nested-{{ forloop.counter }}" value="{{ question.total_code }}" checked> {% translate "вместе с округом" %}</label>
+        <label class="radio"><input type="radio" name="nested-{{ forloop.counter }}" value="{{ question.alone_code }}"> {% translate "без округа" %}</label>
+        <input type="hidden" name="nested-label-{{ forloop.counter }}" value="{{ question.label }}">
+      </fieldset>
+    {% endfor %}
+
+    {% if result.needs_year %}
+      <div class="question-card">
+        <label class="question-card__title" for="year-input">{% translate "Годы в таблице не найдены. Укажите год значений:" %}</label>
+        <input class="input input--year" id="year-input" type="number" name="year" min="1900" max="2100" inputmode="numeric" value="{{ result.year_hint|default_if_none:'' }}">
+      </div>
+    {% elif result.form == "indicators" %}
+      <input type="hidden" name="year" value="{{ result.year }}">
+    {% endif %}
+
+    {% if unresolved %}
+      <section class="question-card" aria-labelledby="unresolved-title">
+        <h2 class="question-card__title" id="unresolved-title">
+          {% blocktranslate trimmed with count=unresolved|length %}Подписи без территории: {{ count }}. Выберите территорию для каждой.{% endblocktranslate %}
+        </h2>
+        <ul class="unresolved-list">
+          {% for label, match, count in unresolved %}
+            <li class="unresolved-list__item">
+              <input type="hidden" name="label-{{ forloop.counter }}" value="{{ label }}">
+              <label class="unresolved-list__label" for="territory-{{ forloop.counter }}"{% with lang=label|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ label|truncatechars:120 }}</label>
+              <select class="select" id="territory-{{ forloop.counter }}" name="territory-{{ forloop.counter }}">
+                <option value="none">{% translate "не территория — пропустить строку" %}</option>
+                <option value="outside">{% translate "территории нет в справочнике" %}</option>
+                {% if match.candidates %}
+                  <optgroup label="{% translate 'Похоже на' %}">
+                    {% for code in match.candidates %}<option value="{{ code }}"{% if forloop.first %} selected{% endif %}>{{ code|territory_name }}</option>{% endfor %}
+                  </optgroup>
+                {% endif %}
+                {% for group, items in territory_choices %}
+                  {% if group %}<optgroup label="{{ group }}">{% endif %}
+                  {% for item in items %}<option value="{{ item.code }}">{{ item.name }}</option>{% endfor %}
+                  {% if group %}</optgroup>{% endif %}
+                {% endfor %}
+              </select>
+            </li>
+          {% endfor %}
+        </ul>
+        {% if is_authenticated %}
+          <label class="checkbox"><input type="checkbox" name="remember" checked> <span>{% translate "Запомнить выбор для следующих таблиц" %}</span></label>
+        {% endif %}
+      </section>
+    {% endif %}
+
+    {% if result.duplicates %}
+      <div class="callout callout--warning">
+        <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+        <div>
+          <div class="callout__title">{% translate "Одна территория дважды с разными числами" %}</div>
+          <ul class="compact-list">
+            {% for item in result.duplicates|slice:":5" %}
+              <li>{% blocktranslate trimmed with name=item.code|territory_name column=item.column first=item.rows.0 second=item.rows.1 %}{{ name }}, «{{ column }}»: строки {{ first }} и {{ second }}.{% endblocktranslate %}</li>
+            {% endfor %}
+          </ul>
+          <p>{% translate "При сборке остаётся первое значение." %}</p>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if result.same_headers %}
+      <div class="callout callout--warning">
+        <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+        <div>
+          <div class="callout__title">{% translate "Одинаковые подписи у разных столбцов" %}</div>
+          <ul class="compact-list">
+            {% for item in result.same_headers|slice:":5" %}
+              <li>{% blocktranslate trimmed with header=item.header columns=item.columns|join:", " %}«{{ header }}»: столбцы {{ columns }}.{% endblocktranslate %}</li>
+            {% endfor %}
+          </ul>
+          <p>{% translate "Числа из них попадут в один период. Проверьте подписи в файле или выберите «пропустить» у лишнего столбца в списке ниже." %}</p>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if result.text_cell_count %}
+      <div class="callout callout--info">
+        <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+        <div>
+          {% blocktranslate trimmed with count=result.text_cell_count %}
+            Ячеек не с числами: {{ count }}. Они сохранятся как пропуски:
+          {% endblocktranslate %}
+          {% for value, count in result.text_cells|slice:":5" %}«{{ value|truncatechars:30 }}»{% if not forloop.last %}, {% endif %}{% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    {% if outside %}
+      <details class="question-card question-card--quiet">
+        <summary>{% blocktranslate trimmed with count=outside|length %}Строк вне справочника: {{ count }}{% endblocktranslate %}</summary>
+        <p>{% translate "Эти строки сохранены в наборе, но на карту и в рейтинг не попадут: таких территорий нет в справочнике сайта." %}</p>
+        <ul class="compact-list">
+          {% for label, match in outside %}<li{% with lang=label|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ label }}</li>{% endfor %}
+        </ul>
+      </details>
+    {% endif %}
+
+    {% if result.slices %}
+      <section class="question-card" aria-labelledby="slices-title">
+        <h2 class="question-card__title" id="slices-title">{% translate "Разрезы" %}</h2>
+        {% if result.series > max_series %}
+          <p class="field__error">{% blocktranslate trimmed with count=result.series|ru_number:0 limit=max_series %}Получается {{ count }} рядов — больше {{ limit }}. Выберите значения разрезов.{% endblocktranslate %}</p>
+        {% endif %}
+        <input type="hidden" name="slices-present" value="1">
+        {% for index, info in result.slices.items %}
+          <fieldset class="slice-choice">
+            <legend class="slice-choice__title"{% with lang=info.header|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ info.header|default:index }}</legend>
+            <div class="slice-choice__values">
+              {% for value, count in info.values.items %}
+                <label class="checkbox"><input type="checkbox" name="slice-{{ index }}" value="{{ value }}"{% if value in info.selected %} checked{% endif %}> <span{% with lang=value|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ value|truncatechars:60 }}</span></label>
+              {% endfor %}
+            </div>
+          </fieldset>
+        {% endfor %}
+      </section>
+    {% endif %}
+
+    <section class="question-card" aria-labelledby="columns-title">
+      <h2 class="question-card__title" id="columns-title">{% translate "Столбцы" %}</h2>
+      <ul class="column-roles">
+        {% for column in columns %}
+          {% include "userdata/_column_role.html" %}
+        {% endfor %}
+      </ul>
+      {% if period_columns %}
+        <details class="column-roles__more">
+          <summary>
+            {% blocktranslate trimmed with count=period_columns|length first=period_columns.0.header last=last_period_column.header %}
+              Столбцы с периодами: {{ count }} (от «{{ first }}» до «{{ last }}»)
+            {% endblocktranslate %}
+          </summary>
+          <ul class="column-roles">
+            {% for column in period_columns %}
+              {% include "userdata/_column_role.html" %}
+            {% endfor %}
+          </ul>
+        </details>
+      {% endif %}
+    </section>
+
+    <div class="form-sheet__actions">
+      <button class="button button--primary" type="submit">{% translate "Сохранить описание" %}</button>
+      <a class="button button--ghost" href="{% url 'userdata:file' dataset.public_id %}">{% translate "Назад к файлу" %}</a>
+    </div>
+  </form>
+
+  <details class="table-option__sample recognition-sample">
+    <summary>{% translate "Первые строки" %}</summary>
+    {% include "userdata/_sample.html" with table=table %}
+  </details>
+
+  {% endif %}
+</div>
+{% endblock %}

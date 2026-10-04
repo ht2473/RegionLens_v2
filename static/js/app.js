@@ -14,6 +14,7 @@ import * as popovers from "./ui/popovers.js";
 import * as scroll from "./ui/scroll.js";
 import * as sheet from "./ui/sheet.js";
 import * as toc from "./ui/toc.js";
+import * as upload from "./ui/upload.js";
 
 /* --- Пользовательские элементы: адреса строками — так их переписывает хранилище статики -- */
 
@@ -48,6 +49,7 @@ forms.init();
 fold.init();
 more.init();
 scroll.init();
+upload.init();
 defineElements();
 
 // Пересчитываемая область — aria-busy.

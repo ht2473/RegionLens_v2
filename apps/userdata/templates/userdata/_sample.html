@@ -1,0 +1,20 @@
+{% load i18n userdata %}
+{# Первые строки таблицы как есть; подписи пользователя — на их языке. #}
+<div class="data-table-wrapper sample-table">
+  <table class="data-table data-table--compact">
+    <caption class="visually-hidden">
+      {% blocktranslate trimmed with name=table.name %}Первые строки таблицы «{{ name }}»{% endblocktranslate %}
+    </caption>
+    <tbody>
+      {% for row in table.sample %}
+        <tr>
+          {% for cell in row %}
+            {% with lang=cell|source_lang %}
+              <td{% if lang %} lang="{{ lang }}"{% endif %}{% if forloop.counter0 == table.territory_column %} class="sample-table__territory"{% elif cell|is_number %} class="is-numeric"{% endif %}>{{ cell|truncatechars:60 }}</td>
+            {% endwith %}
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

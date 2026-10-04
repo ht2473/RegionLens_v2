@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-02 18:49+0000\n"
+"POT-Creation-Date: 2026-10-04 01:44+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -3783,6 +3783,7 @@ msgid "выпусков изданий"
 msgstr "editions of publications"
 
 #: apps/catalog/templates/catalog/dataset.html:56
+#: apps/userdata/views.py:264
 msgid "период"
 msgstr "period"
 
@@ -4573,6 +4574,7 @@ msgid "Измените условия поиска или снимите час
 msgstr "Change the search or clear some of the filters."
 
 #: apps/catalog/templates/catalog/partials/_series_results.html:60
+#: apps/userdata/templates/userdata/table_step.html:32
 msgid "%(count)s из 85"
 msgstr "%(count)s of 85"
 
@@ -5578,6 +5580,9 @@ msgstr "The spread of values across the regions: a histogram, quartiles, positio
 
 #: apps/core/navigation.py:73
 #: apps/surface/panels.py:131
+#: apps/userdata/ingest.py:423
+#: apps/userdata/services.py:221
+#: apps/userdata/templates/userdata/file_step.html:75
 msgid "Таблица"
 msgstr "Table"
 
@@ -7087,6 +7092,7 @@ msgstr "Check findings"
 
 #: apps/dashboard/templates/dashboard/data.html:26
 #: apps/dashboard/templates/dashboard/index.html:83
+#: apps/userdata/models.py:30
 msgid "готов"
 msgstr "ready"
 
@@ -7128,6 +7134,7 @@ msgstr "The warehouse is unavailable"
 #: apps/dashboard/templates/dashboard/etl_run.html:123
 #: apps/dashboard/templates/dashboard/release.html:24
 #: apps/dashboard/views/data.py:152
+#: apps/userdata/templates/userdata/upload.html:45
 msgid "Файл"
 msgstr "File"
 
@@ -9140,6 +9147,584 @@ msgstr "Stop playback"
 #: apps/surface/templates/surface/partials/_year.html:39
 msgid "У ряда нет годов со значениями"
 msgstr "The series has no years with values"
+
+#: apps/userdata/forms.py:20
+msgid "Файл таблицы"
+msgstr "Table file"
+
+#: apps/userdata/forms.py:37
+msgid "Вставить таблицу"
+msgstr "Paste a table"
+
+#: apps/userdata/forms.py:38
+msgid "Скопируйте таблицу целиком вместе с шапкой. Из PDF столбцы при вставке теряются — такую таблицу лучше взять в виде файла."
+msgstr "Copy the whole table together with its header. Columns are lost when pasting from a PDF — take such a table as a file."
+
+#: apps/userdata/forms.py:67
+msgid "Кодировка текста"
+msgstr "Text encoding"
+
+#: apps/userdata/forms.py:21
+msgid "CSV, TXT, XLSX, XLS, ODS, Parquet или архив ZIP с ними, до %(limit)s МБ"
+msgstr "CSV, TXT, XLSX, XLS, ODS, Parquet or a ZIP archive with them, up to %(limit)s MB"
+
+#: apps/userdata/forms.py:56
+msgid "Вставка больше %(limit)s МБ. Загрузите таблицу файлом."
+msgstr "The pasted text is larger than %(limit)s MB. Upload the table as a file."
+
+#: apps/userdata/forms.py:69
+msgid "определить по тексту"
+msgstr "detect from the text"
+
+#: apps/userdata/ingest.py:689
+msgid "Файл защищён паролем. Снимите защиту в Excel и загрузите снова."
+msgstr "The file is password-protected. Remove the protection in Excel and upload it again."
+
+#: apps/userdata/ingest.py:700
+msgid "Подходят CSV, TXT, XLSX, XLS, ODS, Parquet и ZIP с ними."
+msgstr "CSV, TXT, XLSX, XLS, ODS, Parquet and ZIP archives with them are accepted."
+
+#: apps/userdata/ingest.py:693
+msgid "Таблица «%(name)s» в распакованном виде больше %(limit)s МБ. Оставьте в ней только нужные показатели или годы."
+msgstr "Unpacked, the table “%(name)s” is larger than %(limit)s MB. Keep only the indicators or years you need."
+
+#: apps/userdata/ingest.py:707
+msgid "Это документ, а не таблица. Скопируйте таблицу из документа и вставьте её в поле «Вставить таблицу»."
+msgstr "This is a document, not a table. Copy the table from the document and paste it into the “Paste a table” field."
+
+#: apps/userdata/ingest.py:712
+msgid "Архивы RAR и 7z не принимаются. Распакуйте архив и загрузите таблицу или ZIP."
+msgstr "RAR and 7z archives are not accepted. Unpack the archive and upload the table or a ZIP."
+
+#: apps/userdata/ingest.py:713
+msgid "Сжатые файлы GZIP не принимаются. Распакуйте файл или загрузите архив ZIP."
+msgstr "GZIP files are not accepted. Unpack the file or upload a ZIP archive."
+
+#: apps/userdata/ingest.py:301
+msgid "В файле нет таблиц."
+msgstr "The file contains no tables."
+
+#: apps/userdata/ingest.py:335
+msgid "В архиве нет таблиц, только описание в PDF."
+msgstr "The archive contains no tables, only a description in PDF."
+
+#: apps/userdata/ingest.py:706
+msgid "Таблицу из Word или PDF можно скопировать и вставить в поле «Вставить таблицу»."
+msgstr "A table from Word or PDF can be copied and pasted into the “Paste a table” field."
+
+#: apps/userdata/ingest.py:351
+msgid "В архиве есть файлы с путями вне архива. Такой архив не принимается."
+msgstr "The archive contains files with paths outside the archive. Such an archive is not accepted."
+
+#: apps/userdata/ingest.py:358
+msgid "В архиве больше %(count)s файлов. Загрузите архив только с нужными таблицами."
+msgstr "The archive has more than %(count)s files. Upload an archive with only the tables you need."
+
+#: apps/userdata/ingest.py:513
+msgid "Листы книги «%(name)s» сжаты слишком сильно. Такой файл не принимается."
+msgstr "The sheets of the workbook “%(name)s” are compressed too strongly. Such a file is not accepted."
+
+#: apps/userdata/ingest.py:525
+msgid "Файл Parquet повреждён."
+msgstr "The Parquet file is damaged."
+
+#: apps/userdata/ingest.py:711
+msgid "Это изображение, а не таблица."
+msgstr "This is an image, not a table."
+
+#: apps/userdata/ingest.py:702
+#: apps/userdata/ingest.py:714
+msgid "Это не таблица."
+msgstr "This is not a table."
+
+#: apps/userdata/ingest.py:715
+msgid "В архиве нет таблиц."
+msgstr "The archive contains no tables."
+
+#: apps/userdata/ingest.py:289
+msgid "Архив повреждён."
+msgstr "The archive is damaged."
+
+#: apps/userdata/ingest.py:368
+msgid "Файл «%(name)s» в архиве сжат слишком сильно. Такой архив не принимается."
+msgstr "The file “%(name)s” in the archive is compressed too strongly. Such an archive is not accepted."
+
+#: apps/userdata/ingest.py:381
+msgid "В архиве нет файла «%(name)s»."
+msgstr "The archive has no file “%(name)s”."
+
+#: apps/userdata/ingest.py:466
+msgid "Файл «%(name)s» не читается как таблица Excel."
+msgstr "The file “%(name)s” cannot be read as an Excel table."
+
+#: apps/userdata/ingest.py:502
+msgid "Файл «%(name)s» повреждён."
+msgstr "The file “%(name)s” is damaged."
+
+#: apps/userdata/models.py:29
+msgid "черновик"
+msgstr "draft"
+
+#: apps/userdata/models.py:31
+msgid "не собран"
+msgstr "not built"
+
+#: apps/userdata/models.py:89
+msgid "файл принят"
+msgstr "file accepted"
+
+#: apps/userdata/models.py:90
+msgid "таблица описана"
+msgstr "table described"
+
+#: apps/userdata/models.py:91
+msgid "собирается"
+msgstr "building"
+
+#: apps/userdata/models.py:92
+msgid "собран"
+msgstr "built"
+
+#: apps/userdata/models.py:93
+msgid "не разобран"
+msgstr "not read"
+
+#: apps/userdata/services.py:148
+msgid "Файл больше %(limit)s МБ. Загрузите архив ZIP или оставьте в таблице только нужные показатели."
+msgstr "The file is larger than %(limit)s MB. Upload a ZIP archive or keep only the indicators you need."
+
+#: apps/userdata/services.py:56
+msgid "Таблица не распознана. Скопируйте её целиком вместе с шапкой."
+msgstr "The table was not recognised. Copy the whole table together with its header."
+
+#: apps/userdata/services.py:59
+#: apps/userdata/templates/userdata/file_step.html:81
+msgid "Вставленная таблица"
+msgstr "Pasted table"
+
+#: apps/userdata/services.py:59
+#: apps/userdata/templates/userdata/upload.html:62
+msgid "Вставка из буфера"
+msgstr "Paste from the clipboard"
+
+#: apps/userdata/services.py:103
+msgid "Такой таблицы в файле нет."
+msgstr "The file has no such table."
+
+#: apps/userdata/services.py:136
+msgid "Файл таблицы не найден. Загрузите его снова."
+msgstr "The table file was not found. Upload it again."
+
+#: apps/userdata/templates/userdata/_column_role.html:5
+msgid "столбец %(number)s"
+msgstr "column %(number)s"
+
+#: apps/userdata/templates/userdata/_sample.html:6
+msgid "Первые строки таблицы «%(name)s»"
+msgstr "First rows of the table “%(name)s”"
+
+#: apps/userdata/templates/userdata/_steps.html:3
+msgid "Шаги загрузки таблицы"
+msgstr "Table upload steps"
+
+#: apps/userdata/templates/userdata/_waiting.html:9
+msgid "Разобрать таблицу не удалось"
+msgstr "The table could not be read"
+
+#: apps/userdata/templates/userdata/_waiting.html:10
+msgid "Проверьте, что выбран верный файл, и загрузите его снова."
+msgstr "Check that the right file is selected and upload it again."
+
+#: apps/userdata/templates/userdata/_waiting.html:12
+msgid "Разбираем таблицу…"
+msgstr "Reading the table…"
+
+#: apps/userdata/templates/userdata/_waiting.html:13
+msgid "Большая таблица читается целиком. Страницу можно закрыть и вернуться позже."
+msgstr "A large table is read in full. You can close the page and come back later."
+
+#: apps/userdata/templates/userdata/file_step.html:16
+msgid "Что в файле"
+msgstr "What is in the file"
+
+#: apps/userdata/templates/userdata/file_step.html:20
+msgid "Вставленная таблица."
+msgstr "Pasted table."
+
+#: apps/userdata/templates/userdata/file_step.html:22
+msgid "В файле одна таблица."
+msgstr "The file has one table."
+
+#: apps/userdata/templates/userdata/file_step.html:28
+msgid "Не таблицы:"
+msgstr "Not tables:"
+
+#: apps/userdata/templates/userdata/file_step.html:51
+msgid "Текст читается с ошибками"
+msgstr "The text reads with errors"
+
+#: apps/userdata/templates/userdata/file_step.html:52
+msgid "Выберите кодировку, в которой первые строки читаются правильно."
+msgstr "Choose the encoding in which the first rows read correctly."
+
+#: apps/userdata/templates/userdata/file_step.html:63
+msgid "Прочитать заново"
+msgstr "Read again"
+
+#: apps/userdata/templates/userdata/file_step.html:85
+msgid "подходит лучше"
+msgstr "best fit"
+
+#: apps/userdata/templates/userdata/file_step.html:92
+msgid "Регионы в этой таблице не узнаны."
+msgstr "No regions were recognised in this table."
+
+#: apps/userdata/templates/userdata/file_step.html:96
+#: apps/userdata/templates/userdata/table_step.html:218
+msgid "Первые строки"
+msgstr "First rows"
+
+#: apps/userdata/templates/userdata/file_step.html:104
+msgid "Дальше: что в таблице"
+msgstr "Next: what is in the table"
+
+#: apps/userdata/templates/userdata/file_step.html:105
+msgid "Загрузить другой файл"
+msgstr "Upload another file"
+
+#: apps/userdata/templates/userdata/file_step.html:111
+#: apps/userdata/templates/userdata/file_step.html:128
+msgid "Добавить строки"
+msgstr "Add rows"
+
+#: apps/userdata/templates/userdata/file_step.html:122
+msgid "Следующая часть таблицы"
+msgstr "Next part of the table"
+
+#: apps/userdata/templates/userdata/file_step.html:24
+msgid "Таблиц в файле: %(count)s. Выберите нужную."
+msgstr "Tables in the file: %(count)s. Choose the one you need."
+
+#: apps/userdata/templates/userdata/file_step.html:88
+msgid "Строк: %(rows)s."
+msgstr "Rows: %(rows)s."
+
+#: apps/userdata/templates/userdata/file_step.html:90
+msgid "Узнано субъектов: %(count)s из 85."
+msgstr "Regions recognised: %(count)s of 85."
+
+#: apps/userdata/templates/userdata/file_step.html:113
+msgid "Таблица в документе разбита на части? Вставьте следующую часть — строки добавятся в конец, повторённая шапка отбросится."
+msgstr "Is the table split into parts in the document? Paste the next part — the rows are added at the end, a repeated header is dropped."
+
+#: apps/userdata/templates/userdata/table_step.html:16
+#: apps/userdata/views.py:193
+#: apps/userdata/views.py:209
+#: apps/userdata/views.py:25
+msgid "Что в таблице"
+msgstr "What is in the table"
+
+#: apps/userdata/templates/userdata/table_step.html:27
+msgid "Что найдено"
+msgstr "What was found"
+
+#: apps/userdata/templates/userdata/table_step.html:29
+msgid "Строк"
+msgstr "Rows"
+
+#: apps/userdata/templates/userdata/table_step.html:31
+msgid "Субъектов узнано"
+msgstr "Regions recognised"
+
+#: apps/userdata/templates/userdata/table_step.html:36
+msgid "Периоды"
+msgstr "Periods"
+
+#: apps/userdata/templates/userdata/table_step.html:39
+msgid "Рядов получится"
+msgstr "Series to be built"
+
+#: apps/userdata/templates/userdata/table_step.html:50
+msgid "Столбец с регионами не найден. Отметьте его в перечне столбцов ниже."
+msgstr "No column with regions was found. Mark it in the list of columns below."
+
+#: apps/userdata/templates/userdata/table_step.html:57
+msgid "Похоже, в таблице районы или города. На карте сайта — только субъекты РФ."
+msgstr "The table seems to contain districts or cities. The site map shows only the regions of Russia."
+
+#: apps/userdata/templates/userdata/table_step.html:68
+msgid "вместе с округом"
+msgstr "with the okrug"
+
+#: apps/userdata/templates/userdata/table_step.html:69
+msgid "без округа"
+msgstr "without the okrug"
+
+#: apps/userdata/templates/userdata/table_step.html:76
+msgid "Годы в таблице не найдены. Укажите год значений:"
+msgstr "No years were found in the table. Enter the year of the values:"
+
+#: apps/userdata/templates/userdata/table_step.html:94
+msgid "не территория — пропустить строку"
+msgstr "not a territory — skip the row"
+
+#: apps/userdata/templates/userdata/table_step.html:95
+msgid "территории нет в справочнике"
+msgstr "the territory is not in the reference list"
+
+#: apps/userdata/templates/userdata/table_step.html:97
+msgid "Похоже на"
+msgstr "Looks like"
+
+#: apps/userdata/templates/userdata/table_step.html:111
+msgid "Запомнить выбор для следующих таблиц"
+msgstr "Remember the choice for the next tables"
+
+#: apps/userdata/templates/userdata/table_step.html:120
+msgid "Одна территория дважды с разными числами"
+msgstr "One territory twice with different numbers"
+
+#: apps/userdata/templates/userdata/table_step.html:126
+msgid "При сборке остаётся первое значение."
+msgstr "The first value is kept when building."
+
+#: apps/userdata/templates/userdata/table_step.html:135
+msgid "Одинаковые подписи у разных столбцов"
+msgstr "Identical headings on different columns"
+
+#: apps/userdata/templates/userdata/table_step.html:141
+msgid "Числа из них попадут в один период. Проверьте подписи в файле или выберите «пропустить» у лишнего столбца в списке ниже."
+msgstr "Their numbers will fall into one period. Check the headings in the file or choose “skip” for the extra column in the list below."
+
+#: apps/userdata/templates/userdata/table_step.html:161
+msgid "Эти строки сохранены в наборе, но на карту и в рейтинг не попадут: таких территорий нет в справочнике сайта."
+msgstr "These rows are kept in the dataset but will not appear on the map or in the ranking: the site reference list has no such territories."
+
+#: apps/userdata/templates/userdata/table_step.html:170
+msgid "Разрезы"
+msgstr "Breakdowns"
+
+#: apps/userdata/templates/userdata/table_step.html:189
+msgid "Столбцы"
+msgstr "Columns"
+
+#: apps/userdata/templates/userdata/table_step.html:212
+msgid "Сохранить описание"
+msgstr "Save the description"
+
+#: apps/userdata/templates/userdata/table_step.html:213
+msgid "Назад к файлу"
+msgstr "Back to the file"
+
+#: apps/userdata/templates/userdata/table_step.html:64
+msgid "«%(label)s» в таблице — вместе с автономным округом (так считает Росстат) или без него?"
+msgstr "Is “%(label)s” in the table with its autonomous okrug (as Rosstat counts it) or without it?"
+
+#: apps/userdata/templates/userdata/table_step.html:86
+msgid "Подписи без территории: %(count)s. Выберите территорию для каждой."
+msgstr "Labels without a territory: %(count)s. Choose a territory for each."
+
+#: apps/userdata/templates/userdata/table_step.html:123
+msgid "%(name)s, «%(column)s»: строки %(first)s и %(second)s."
+msgstr "%(name)s, “%(column)s”: rows %(first)s and %(second)s."
+
+#: apps/userdata/templates/userdata/table_step.html:138
+msgid "«%(header)s»: столбцы %(columns)s."
+msgstr "“%(header)s”: columns %(columns)s."
+
+#: apps/userdata/templates/userdata/table_step.html:150
+msgid "Ячеек не с числами: %(count)s. Они сохранятся как пропуски:"
+msgstr "Cells without numbers: %(count)s. They will be kept as missing values:"
+
+#: apps/userdata/templates/userdata/table_step.html:160
+msgid "Строк вне справочника: %(count)s"
+msgstr "Rows outside the reference list: %(count)s"
+
+#: apps/userdata/templates/userdata/table_step.html:172
+msgid "Получается %(count)s рядов — больше %(limit)s. Выберите значения разрезов."
+msgstr "This gives %(count)s series — more than %(limit)s. Choose the breakdown values."
+
+#: apps/userdata/templates/userdata/table_step.html:198
+msgid "Столбцы с периодами: %(count)s (от «%(first)s» до «%(last)s»)"
+msgstr "Columns with periods: %(count)s (from “%(first)s” to “%(last)s”)"
+
+#: apps/userdata/templates/userdata/upload.html:16
+msgid "Своя таблица по регионам"
+msgstr "Your own table by region"
+
+#: apps/userdata/templates/userdata/upload.html:33
+msgid "Таблица не принята"
+msgstr "The table was not accepted"
+
+#: apps/userdata/templates/userdata/upload.html:56
+msgid "Загрузить"
+msgstr "Upload"
+
+#: apps/userdata/templates/userdata/upload.html:73
+msgid "Продолжить"
+msgstr "Continue"
+
+#: apps/userdata/templates/userdata/upload.html:80
+msgid "Какие таблицы подходят"
+msgstr "Which tables fit"
+
+#: apps/userdata/templates/userdata/upload.html:83
+msgid "Длинная"
+msgstr "Long"
+
+#: apps/userdata/templates/userdata/upload.html:84
+msgid "— регион, год, показатель и значение в своих столбцах; могут быть разрезы: пол, возраст."
+msgstr "— region, year, indicator and value in their own columns; breakdowns such as sex or age are possible."
+
+#: apps/userdata/templates/userdata/upload.html:87
+msgid "Годы в столбцах"
+msgstr "Years in columns"
+
+#: apps/userdata/templates/userdata/upload.html:88
+msgid "— регионы в строках, по столбцу на год."
+msgstr "— regions in rows, one column per year."
+
+#: apps/userdata/templates/userdata/upload.html:91
+msgid "Периоды в столбцах"
+msgstr "Periods in columns"
+
+#: apps/userdata/templates/userdata/upload.html:92
+msgid "— месяцы, кварталы или «с начала года» под общей шапкой с годами."
+msgstr "— months, quarters or “year to date” under a common header with years."
+
+#: apps/userdata/templates/userdata/upload.html:95
+msgid "Показатели в столбцах"
+msgstr "Indicators in columns"
+
+#: apps/userdata/templates/userdata/upload.html:96
+msgid "— по столбцу на показатель за один год."
+msgstr "— one column per indicator for a single year."
+
+#: apps/userdata/templates/userdata/upload.html:18
+msgid "Таблица со значениями по субъектам России — файлом, архивом ZIP или вставкой из буфера. Регионы, годы и показатели узнаются по таблице; что не узнано, можно выбрать на следующем шаге."
+msgstr "A table with values for the regions of Russia — as a file, a ZIP archive or pasted from the clipboard. Regions, years and indicators are recognised from the table; whatever is not recognised can be chosen at the next step."
+
+#: apps/userdata/templates/userdata/upload.html:100
+msgid "Регионы — субъекты Российской Федерации. Районы и города на карту сайта не попадут. Таблицу видите только вы."
+msgstr "Regions are the constituent entities of the Russian Federation. Districts and cities will not appear on the site map. Only you can see the table."
+
+#: apps/userdata/views.py:275
+msgid "годы"
+msgstr "years"
+
+#: apps/userdata/views.py:276
+msgid "месяцы"
+msgstr "months"
+
+#: apps/userdata/views.py:277
+msgid "кварталы"
+msgstr "quarters"
+
+#: apps/userdata/views.py:278
+msgid "полугодия"
+msgstr "half-years"
+
+#: apps/userdata/views.py:279
+msgid "с начала года"
+msgstr "year to date"
+
+#: apps/userdata/views.py:280
+msgid "скользящие месяцы"
+msgstr "rolling months"
+
+#: apps/userdata/views.py:281
+msgid "на начало месяца"
+msgstr "at the start of the month"
+
+#: apps/userdata/views.py:284
+msgid "Длинная таблица: регион, период и значение — в своих столбцах."
+msgstr "A long table: region, period and value in their own columns."
+
+#: apps/userdata/views.py:285
+msgid "Годы или периоды — в столбцах, регионы — в строках."
+msgstr "Years or periods in columns, regions in rows."
+
+#: apps/userdata/views.py:286
+msgid "Показатели — в столбцах, регионы — в строках; года в таблице нет."
+msgstr "Indicators in columns, regions in rows; the table has no year."
+
+#: apps/userdata/views.py:287
+msgid "Регионы — в столбцах, годы — в строках."
+msgstr "Regions in columns, years in rows."
+
+#: apps/userdata/views.py:288
+msgid "Регионы в таблице не найдены."
+msgstr "No regions were found in the table."
+
+#: apps/userdata/views.py:49
+#: apps/userdata/views.py:55
+msgid "Загрузить таблицу"
+msgstr "Upload a table"
+
+#: apps/userdata/views.py:261
+msgid "регион"
+msgstr "region"
+
+#: apps/userdata/views.py:262
+msgid "код региона"
+msgstr "region code"
+
+#: apps/userdata/views.py:263
+msgid "уровень территории"
+msgstr "territory level"
+
+#: apps/userdata/views.py:265
+msgid "показатель"
+msgstr "indicator"
+
+#: apps/userdata/views.py:266
+msgid "код показателя"
+msgstr "indicator code"
+
+#: apps/userdata/views.py:267
+msgid "единица"
+msgstr "unit"
+
+#: apps/userdata/views.py:268
+msgid "разрез"
+msgstr "breakdown"
+
+#: apps/userdata/views.py:269
+msgid "значение"
+msgstr "value"
+
+#: apps/userdata/views.py:270
+msgid "причина пропуска"
+msgstr "reason for a missing value"
+
+#: apps/userdata/views.py:271
+msgid "примечание"
+msgstr "note"
+
+#: apps/userdata/views.py:272
+msgid "пропустить"
+msgstr "skip"
+
+#: apps/userdata/views.py:238
+msgid "Описание таблицы сохранено."
+msgstr "The table description has been saved."
+
+#: apps/userdata/views.py:100
+#: apps/userdata/views.py:49
+msgid "Свои данные"
+msgstr "Your own data"
+
+#: apps/userdata/views.py:129
+msgid "Файл: %(name)s"
+msgstr "File: %(name)s"
+
+#: apps/userdata/views.py:172
+msgid "Новых строк во вставке нет."
+msgstr "The pasted text has no new rows."
+
+#: apps/userdata/views.py:170
+msgid "Строк добавлено: %(count)s."
+msgstr "Rows added: %(count)s."
 
 #: apps/warehouse/etl/integrity.py:23
 msgid "Основной набор"

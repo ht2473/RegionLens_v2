@@ -1,0 +1,18 @@
+{% load i18n %}
+{# Шаги мастера: пройденные — ссылками, текущий — словом «шаг» для программ чтения. #}
+<nav class="wizard-steps" aria-label="{% translate 'Шаги загрузки таблицы' %}">
+  <ol class="wizard-steps__list">
+    {% for step in steps %}
+      <li class="wizard-steps__item{% if step.current %} wizard-steps__item--current{% endif %}">
+        <span class="wizard-steps__number" aria-hidden="true">{{ step.number }}</span>
+        {% if step.url %}
+          <a class="wizard-steps__title" href="{{ step.url }}">{{ step.title }}</a>
+        {% elif step.current %}
+          <span class="wizard-steps__title" aria-current="step">{{ step.title }}</span>
+        {% else %}
+          <span class="wizard-steps__title">{{ step.title }}</span>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+</nav>

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% load i18n static userdata %}
+
+{# Шаг «Файл»: таблицы в файле с первыми строками; лучшая выбрана заранее. #}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+  <link rel="stylesheet" href="{% static 'css/userdata.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "Что в файле" %}</h1>
+      <p class="page-intro__lead">
+        {% with count=inspection.tables|length %}
+          {% if is_paste %}
+            {% translate "Вставленная таблица." %}
+          {% elif count == 1 %}
+            {% translate "В файле одна таблица." %}
+          {% else %}
+            {% blocktranslate trimmed %}Таблиц в файле: {{ count }}. Выберите нужную.{% endblocktranslate %}
+          {% endif %}
+        {% endwith %}
+        {% if inspection.skipped %}
+          {% translate "Не таблицы:" %}
+          {% for name, reason in inspection.skipped %}{% with lang=name|source_lang %}<span{% if lang %} lang="{{ lang }}"{% endif %}>{{ name }}</span>{% endwith %}{% if not forloop.last %}, {% endif %}{% endfor %}.
+        {% endif %}
+      </p>
+    </div>
+  </header>
+
+  {% include "userdata/_steps.html" %}
+
+  {% if error or choose_form.non_field_errors %}
+    <div class="callout callout--danger" role="alert" tabindex="-1" data-error-summary>
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        {% if error %}<p>{{ error }}</p>{% endif %}
+        {% for message in choose_form.non_field_errors %}<p>{{ message }}</p>{% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if garbled %}
+    <div class="callout callout--warning">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Текст читается с ошибками" %}</div>
+        <p>{% translate "Выберите кодировку, в которой первые строки читаются правильно." %}</p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if is_text %}
+    <form method="get" class="encoding-form">
+      <div class="field">
+        <label class="field__label" for="{{ choose_form.encoding.id_for_label }}">{{ choose_form.encoding.label }}</label>
+        <div class="row">
+          {{ choose_form.encoding }}
+          <button class="button button--secondary button--sm" type="submit">{% translate "Прочитать заново" %}</button>
+        </div>
+      </div>
+    </form>
+  {% endif %}
+
+  <form method="post" class="stack" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="action" value="choose">
+    <input type="hidden" name="encoding" value="{{ choose_form.encoding.value|default:'' }}">
+
+    <fieldset class="table-choice">
+      <legend class="visually-hidden">{% translate "Таблица" %}</legend>
+      {% for table in inspection.tables %}
+        <div class="table-option{% if table.key == selected %} table-option--selected{% endif %}">
+          <label class="table-option__head">
+            <input type="radio" name="table" value="{{ table.key }}"{% if table.key == selected %} checked{% endif %}{% if inspection.tables|length == 1 %} hidden{% endif %}>
+            {% if is_paste %}
+              <span class="table-option__name">{% translate "Вставленная таблица" %}</span>
+            {% else %}
+              <span class="table-option__name"{% with lang=table.name|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ table.name }}</span>
+            {% endif %}
+            {% if table.best and inspection.tables|length > 1 %}<span class="badge badge--accent">{% translate "подходит лучше" %}</span>{% endif %}
+          </label>
+          <p class="table-option__meta">
+            {% if table.rows is not None %}{% blocktranslate trimmed with rows=table|rows_text %}Строк: {{ rows }}.{% endblocktranslate %}{% endif %}
+            {% if table.regions %}
+              {% blocktranslate trimmed with count=table.regions %}Узнано субъектов: {{ count }} из 85.{% endblocktranslate %}
+            {% else %}
+              {% translate "Регионы в этой таблице не узнаны." %}
+            {% endif %}
+          </p>
+          <details class="table-option__sample"{% if table.key == selected %} open{% endif %}>
+            <summary>{% translate "Первые строки" %}</summary>
+            {% include "userdata/_sample.html" with table=table %}
+          </details>
+        </div>
+      {% endfor %}
+    </fieldset>
+
+    <div class="form-sheet__actions">
+      <button class="button button--primary" type="submit">{% translate "Дальше: что в таблице" %}</button>
+      <a class="button button--ghost" href="{% url 'userdata:upload' %}">{% translate "Загрузить другой файл" %}</a>
+    </div>
+  </form>
+
+  {% if is_paste %}
+    <section class="form-sheet paste-append" aria-labelledby="paste-append-title">
+      <h2 class="upload-layout__title" id="paste-append-title">{% translate "Добавить строки" %}</h2>
+      <p class="field__hint">
+        {% blocktranslate trimmed %}
+          Таблица в документе разбита на части? Вставьте следующую часть — строки добавятся
+          в конец, повторённая шапка отбросится.
+        {% endblocktranslate %}
+      </p>
+      <form method="post" class="stack" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="append">
+        <div class="field">
+          <label class="field__label" for="{{ append_form.text.id_for_label }}">{% translate "Следующая часть таблицы" %}</label>
+          {{ append_form.text }}
+          {% for error in append_form.text.errors %}<span class="field__error">{{ error }}</span>{% endfor %}
+        </div>
+        {{ append_form.markup }}
+        <div class="form-sheet__actions">
+          <button class="button button--secondary" type="submit">{% translate "Добавить строки" %}</button>
+        </div>
+      </form>
+    </section>
+  {% endif %}
+
+</div>
+{% endblock %}

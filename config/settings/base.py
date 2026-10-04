@@ -113,6 +113,7 @@ LOCAL_APPS = [
     "apps.feedback",  # обращения посетителей
     "apps.dashboard",  # панель управления системой
     "apps.sources",  # сбор выпусков внешних источников: архив, разбор, журнал
+    "apps.userdata",  # свои данные: таблицы пользователей, разбор, ряды
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -422,6 +423,27 @@ SOURCE_USER_AGENT = env.str(
 VISITS_LOG_DIR = BASE_DIR / env.str("VISITS_LOG_DIR", default="logs/caddy")
 VISITS_DIR = BASE_DIR / env.str("VISITS_DIR", default="data/visits")
 GOACCESS_BIN = env.str("GOACCESS_BIN", default="goaccess")
+
+# ---------------------------------------------------------------------------------------
+# Свои данные: таблицы пользователей (apps/userdata)
+# ---------------------------------------------------------------------------------------
+
+# Каталог таблиц: <набор>/<версия>/ — исходный файл как загружен и его разбор.
+USERDATA_DIR = BASE_DIR / env.str("USERDATA_DIR", default="data/userdata")
+# Загрузка: файл или архив ZIP; Caddy обрезает запросы больше 25 МБ.
+USERDATA_UPLOAD_MAX_BYTES = env.int("USERDATA_UPLOAD_MAX_BYTES", default=25 * 1024 * 1024)
+# Таблица в распакованном виде: самая большая таблица корпуса ЕБТ — 264 МБ.
+USERDATA_TABLE_MAX_BYTES = env.int("USERDATA_TABLE_MAX_BYTES", default=300 * 1024 * 1024)
+# Архив: сжатие таблицы не сильнее 100 : 1 (у ЕБТ — до 60 : 1), файлов не больше 50.
+USERDATA_ZIP_MAX_RATIO = env.int("USERDATA_ZIP_MAX_RATIO", default=100)
+USERDATA_ZIP_MAX_FILES = env.int("USERDATA_ZIP_MAX_FILES", default=50)
+# Вставка из буфера: текст таблицы, разметка таблицы из Word и Excel — больше текста.
+USERDATA_PASTE_MAX_BYTES = env.int("USERDATA_PASTE_MAX_BYTES", default=5 * 1024 * 1024)
+USERDATA_MAX_ROWS = env.int("USERDATA_MAX_ROWS", default=3_000_000)
+# Разбор большой таблицы: память DuckDB одного разбора (замер: 264 МБ CSV — +348 МБ).
+USERDATA_PARSE_MEMORY = env.str("USERDATA_PARSE_MEMORY", default="768MB")
+# Набор без входа хранится сутки.
+USERDATA_GUEST_HOURS = env.int("USERDATA_GUEST_HOURS", default=24)
 
 # ---------------------------------------------------------------------------------------
 # Программный интерфейс REST: только чтение, без ключей, предел по адресу клиента

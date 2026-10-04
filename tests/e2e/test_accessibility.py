@@ -14,7 +14,13 @@ pytestmark = [pytest.mark.e2e, pytest.mark.django_db(transaction=True)]
 
 # Все публичные страницы — именами маршрутов, а не адресами: адрес, записанный строкой,
 # устаревает при переезде страницы, и аудит молча проверяет страницу «не найдено».
-PAGES = (*PUBLIC_PAGES, "content:methodology", "content:glossary", "feedback:create")
+PAGES = (
+    *PUBLIC_PAGES,
+    "content:methodology",
+    "content:glossary",
+    "feedback:create",
+    "userdata:upload",
+)
 
 # Проверки выполняются в браузере: часть требований зависит от вычисленного
 # состояния разметки, а не от её текста (например, связь поля с подписью).

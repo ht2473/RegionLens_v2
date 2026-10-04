@@ -1,0 +1,366 @@
+/* Свои данные: мастер загрузки таблицы — шаги, формы файла и вставки, выбор таблицы,
+   образец строк. */
+
+/* --- Шаги мастера ------------------------------------------------------------------------- */
+
+.wizard-steps {
+  margin-bottom: var(--space-8);
+}
+
+.wizard-steps__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.wizard-steps__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.wizard-steps__number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-numeric);
+  font-size: var(--text-xs);
+}
+
+.wizard-steps__item--current {
+  color: var(--text-primary);
+  font-weight: var(--weight-semibold);
+}
+
+.wizard-steps__item--current .wizard-steps__number {
+  border-color: var(--accent);
+  background-color: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.wizard-steps__title {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* --- Загрузка ----------------------------------------------------------------------------- */
+
+.upload-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
+  gap: var(--space-6);
+  align-items: start;
+  margin-bottom: var(--space-10);
+}
+
+.upload-layout__title {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}
+
+.file-input {
+  width: 100%;
+  min-height: var(--control-height);
+  padding: var(--space-2);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-base);
+  font-size: var(--text-sm);
+}
+
+.file-input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--shadow-focus);
+}
+
+.textarea--table {
+  min-height: 180px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+.form-errors {
+  margin-bottom: var(--space-6);
+}
+
+.form-errors__list {
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-5);
+}
+
+.form-errors__list a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.upload-forms {
+  max-width: 60rem;
+}
+
+.upload-forms__list {
+  margin: 0 0 var(--space-4);
+  padding-left: var(--space-5);
+  line-height: var(--leading-relaxed);
+}
+
+.upload-forms__note {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* --- Выбор таблицы ------------------------------------------------------------------------ */
+
+.encoding-form {
+  max-width: 28rem;
+  margin-bottom: var(--space-6);
+}
+
+.encoding-form .select {
+  width: auto;
+  min-width: 12rem;
+}
+
+.table-choice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.table-option {
+  min-width: 0;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-raised);
+}
+
+.table-option--selected,
+.table-option:has(input:checked) {
+  border-color: var(--border-accent);
+}
+
+.table-option__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  min-height: 24px;
+  cursor: pointer;
+}
+
+.table-option__head input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.table-option__name {
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.table-option__meta {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.table-option__sample {
+  margin-top: var(--space-3);
+}
+
+.table-option__sample > summary {
+  min-height: 24px;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.table-option__sample[open] > summary {
+  margin-bottom: var(--space-2);
+}
+
+/* Образец строк: плотно, без переносов внутри ячеек; область прокручивается. */
+.sample-table {
+  max-height: 24rem;
+}
+
+.sample-table .data-table td {
+  padding: var(--space-1) var(--space-2);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.sample-table__territory {
+  background-color: var(--surface-accent-soft);
+}
+
+.paste-append {
+  margin-top: var(--space-10);
+  max-width: 48rem;
+}
+
+.paste-append > .field__hint {
+  margin-bottom: var(--space-4);
+}
+
+/* --- Что в таблице ------------------------------------------------------------------------ */
+
+.recognition-facts {
+  max-width: 48rem;
+  margin-bottom: var(--space-6);
+}
+
+.recognition-form {
+  max-width: 64rem;
+}
+
+.question-card {
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-raised);
+}
+
+.question-card--quiet > summary {
+  min-height: 24px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.question-card__title {
+  display: block;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+/* Подпись группы внутри рамки: без обтекания legend встаёт на верхнюю границу. */
+legend.question-card__title {
+  float: left;
+  width: 100%;
+}
+
+legend.question-card__title ~ * {
+  clear: both;
+}
+
+.question-card .radio + .radio {
+  margin-top: var(--space-2);
+}
+
+.input--year {
+  width: 8rem;
+}
+
+.unresolved-list,
+.column-roles,
+.compact-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.unresolved-list__item,
+.column-roles__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 20rem);
+  gap: var(--space-2) var(--space-4);
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.column-roles__item {
+  grid-template-columns: minmax(0, 1fr) minmax(10rem, 14rem) minmax(0, 1fr);
+}
+
+.unresolved-list__label,
+.column-roles__name {
+  overflow-wrap: anywhere;
+}
+
+.column-roles__more {
+  margin-top: var(--space-4);
+}
+
+.column-roles__more > summary {
+  min-height: 24px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.column-roles__number {
+  margin-inline-start: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.column-roles__sample {
+  overflow: hidden;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.compact-list li + li {
+  margin-top: var(--space-1);
+}
+
+.slice-choice {
+  min-width: 0;
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  border: 0;
+}
+
+.slice-choice__title {
+  margin-bottom: var(--space-2);
+  padding: 0;
+  font-weight: var(--weight-medium);
+}
+
+.slice-choice__values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.recognition-sample {
+  margin-top: var(--space-8);
+}
+
+@media (max-width: 720px) {
+  .unresolved-list__item,
+  .column-roles__item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

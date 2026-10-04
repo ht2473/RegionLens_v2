@@ -32,6 +32,8 @@ data/uploads/
 data/archive/
 data/sources/
 data/visits/
+# Таблицы пользователей («Свои данные»).
+data/userdata/
 
 # --- Пользовательские файлы и выгрузки ----------------------------------------------------
 staticfiles/

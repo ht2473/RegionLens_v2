@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{# Начало мастера: файл или вставка из буфера; ошибки — сводкой над формами. #}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+  <link rel="stylesheet" href="{% static 'css/userdata.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <h1 class="page-intro__title">{% translate "Своя таблица по регионам" %}</h1>
+      <p class="page-intro__lead">
+        {% blocktranslate trimmed %}
+          Таблица со значениями по субъектам России — файлом, архивом ZIP или вставкой
+          из буфера. Регионы, годы и показатели узнаются по таблице; что не узнано,
+          можно выбрать на следующем шаге.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  </header>
+
+  {% include "userdata/_steps.html" %}
+
+  {% if upload_form.errors or paste_form.errors %}
+    <div class="callout callout--danger form-errors" role="alert" tabindex="-1" data-error-summary>
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Таблица не принята" %}</div>
+        <ul class="form-errors__list">
+          {% for error in upload_form.file.errors %}<li><a href="#{{ upload_form.file.id_for_label }}">{{ error }}</a></li>{% endfor %}
+          {% for error in paste_form.text.errors %}<li><a href="#{{ paste_form.text.id_for_label }}">{{ error }}</a></li>{% endfor %}
+          {% for error in paste_form.non_field_errors %}<li><a href="#{{ paste_form.text.id_for_label }}">{{ error }}</a></li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="upload-layout">
+    <section class="form-sheet" aria-labelledby="upload-file-title">
+      <h2 class="upload-layout__title" id="upload-file-title">{% translate "Файл" %}</h2>
+      <form method="post" enctype="multipart/form-data" class="stack" novalidate data-upload-form>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="upload">
+        <div class="field">
+          <label class="field__label" for="{{ upload_form.file.id_for_label }}">{{ upload_form.file.label }}</label>
+          {{ upload_form.file }}
+          <span class="field__hint">{{ upload_form.file.help_text }}</span>
+          <span class="field__error" data-size-error hidden>{{ upload_limit }}</span>
+        </div>
+        <div class="form-sheet__actions">
+          <button class="button button--primary" type="submit">{% translate "Загрузить" %}</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="form-sheet" aria-labelledby="upload-paste-title">
+      <h2 class="upload-layout__title" id="upload-paste-title">{% translate "Вставка из буфера" %}</h2>
+      <form method="post" class="stack" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="paste">
+        <div class="field">
+          <label class="field__label" for="{{ paste_form.text.id_for_label }}">{{ paste_form.text.label }}</label>
+          {{ paste_form.text }}
+          <span class="field__hint">{{ paste_form.text.help_text }}</span>
+        </div>
+        {{ paste_form.markup }}
+        <div class="form-sheet__actions">
+          <button class="button button--secondary" type="submit">{% translate "Продолжить" %}</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <section class="upload-forms" aria-labelledby="upload-forms-title">
+    <h2 class="upload-layout__title" id="upload-forms-title">{% translate "Какие таблицы подходят" %}</h2>
+    <ul class="upload-forms__list">
+      <li>
+        <strong>{% translate "Длинная" %}</strong>
+        {% translate "— регион, год, показатель и значение в своих столбцах; могут быть разрезы: пол, возраст." %}
+      </li>
+      <li>
+        <strong>{% translate "Годы в столбцах" %}</strong>
+        {% translate "— регионы в строках, по столбцу на год." %}
+      </li>
+      <li>
+        <strong>{% translate "Периоды в столбцах" %}</strong>
+        {% translate "— месяцы, кварталы или «с начала года» под общей шапкой с годами." %}
+      </li>
+      <li>
+        <strong>{% translate "Показатели в столбцах" %}</strong>
+        {% translate "— по столбцу на показатель за один год." %}
+      </li>
+    </ul>
+    <p class="upload-forms__note">
+      {% blocktranslate trimmed %}
+        Регионы — субъекты Российской Федерации. Районы и города на карту сайта не попадут.
+        Таблицу видите только вы.
+      {% endblocktranslate %}
+    </p>
+  </section>
+
+</div>
+{% endblock %}

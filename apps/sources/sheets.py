@@ -15,6 +15,7 @@ from typing import Any
 
 from python_calamine import CalamineWorkbook
 
+from . import periods
 from .territories import normalize, region_codes, territory_code
 
 MONTHS = {
@@ -31,7 +32,6 @@ MONTHS = {
     "ноябрь": 11,
     "декабрь": 12,
 }
-QUARTERS = {"i": 1, "ii": 2, "iii": 3, "iv": 4}
 
 # Знаки на месте числа: многоточие, прочерк и крест — значение не публикуется или не имеет смысла.
 HIDDEN_MARKS = frozenset({"…", "...", "-", "–", "—", "х", "x", "Х", "X"})
@@ -326,22 +326,20 @@ def _columns(header_rows: list[list[Any]], width: int) -> list[Column]:
 
 
 def _period(label: str) -> Period | None:
-    """Период по подписи столбца."""
-    text = re.sub(r"\s+", " ", label).strip().lower()
-    text = _TRAILING_MARKS.sub("", text)
-    text = re.sub(r"\s*-\s*", "-", text)
-    if text in MONTHS:
-        return Period("month", MONTHS[text])
-    if text in {"год", "январь-декабрь"}:
+    """
+    Период по подписи столбца — общими правилами (``periods``).
+
+    Сбор берёт месяцы, кварталы и итоги с начала года; «год» и «январь-декабрь» — итог
+    за 12 месяцев. Прочие периоды (окна, «на 1 января») сбор разбирает в своих модулях.
+    """
+    text = _TRAILING_MARKS.sub("", re.sub(r"\s+", " ", label).strip())
+    found = periods.period_of(text)
+    if found is None:
+        return None
+    if found == periods.ANNUAL:
         return YEAR_TO_DATE_FULL
-    if text == "i полугодие":
-        return Period("ytd", 6)
-    ytd = re.fullmatch(r"январь-(\w+)", text)
-    if ytd is not None and ytd.group(1) in MONTHS:
-        return Period("ytd", MONTHS[ytd.group(1)])
-    quarter = re.fullmatch(r"(i|ii|iii|iv) квартал", text)
-    if quarter is not None:
-        return Period("quarter", QUARTERS[quarter.group(1)])
+    if found.kind in {periods.MONTH, periods.QUARTER, periods.YTD}:
+        return Period(found.kind, found.number)
     return None
 
 

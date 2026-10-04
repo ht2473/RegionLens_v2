@@ -40,6 +40,7 @@ dependencies = [
     "python-calamine>=0.4",          # чтение таблиц Росстата в xls и xlsx
     # --- Служебные ---------------------------------------------------------------------------
     "python-slugify>=8.0",           # транслитерация кириллицы в ЧПУ-адреса
+    "charset-normalizer>=3.4",      # кодировка таблиц, загруженных пользователями
 ]
 
 [project.optional-dependencies]
@@ -140,7 +141,7 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 disallow_untyped_defs = true
 check_untyped_defs = true
-exclude = ["migrations/", "\\.venv/", "data/"]
+exclude = ["migrations/", "^\\.venv/", "^data/"]
 
 # Библиотеки без сведений о типах.
 [[tool.mypy.overrides]]
@@ -171,7 +172,7 @@ django_settings_module = "config.settings.test"
 # к внутренним функциям намеренны.
 # --------------------------------------------------------------------------------------
 [tool.bandit]
-exclude_dirs = [".venv", "tests", "data"]
+exclude_dirs = ["./.venv", "./tests", "./data"]
 skips = [
     # B101 — assert: проверки внутренних инвариантов.
     "B101",

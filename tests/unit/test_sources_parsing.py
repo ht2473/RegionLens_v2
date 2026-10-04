@@ -54,10 +54,21 @@ class TestTerritories:
                 "RU-TYU",
             ),
             ("Тюменская область кроме Ханты-Мансийского автономного округа-Югры", "RU-TYU"),
+            # Латиница в русских словах, слипшиеся слова и «АО» — безопасные исправления.
+            ("Калинингpадская область", "RU-KGD"),
+            ("г. Cанкт-Петербург", "RU-SPE"),
+            ("Северо-Кавказскийфедеральный округ", "FD-SKFO"),
+            ("Архангельская областьбез автономного округа", "RU-ARK"),
+            ("Ямало-Ненецкий АО", "RU-YAN"),
+            ("в т.ч. Ханты-Мансийский АО-Югра", "RU-KHM"),
         ],
     )
     def test_known_labels(self, label: str, code: str) -> None:
         assert territory_code(label) == code
+
+    @pytest.mark.parametrize("label", ["Татарстан", "Алтай", "Пермская область", "Moscow"])
+    def test_collection_stays_strict(self, label: str) -> None:
+        assert territory_code(label) is None
 
     def test_notes_and_headings_are_not_territories(self) -> None:
         assert territory_code("в том числе:") is None

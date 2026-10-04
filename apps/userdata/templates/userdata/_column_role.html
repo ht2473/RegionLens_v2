@@ -1,0 +1,13 @@
+{% load i18n userdata %}
+<li class="column-roles__item">
+  <label class="column-roles__name" for="role-{{ column.index }}">
+    <span{% with lang=column.header|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ column.header|default:_("без названия")|truncatechars:60 }}</span>
+    {% if column.index in repeated %}<span class="column-roles__number">{% blocktranslate trimmed with number=column.index|add:1 %}столбец {{ number }}{% endblocktranslate %}</span>{% endif %}
+  </label>
+  <select class="select" id="role-{{ column.index }}" name="role-{{ column.index }}">
+    {% for value, title in role_choices %}<option value="{{ value }}"{% if value == column.role %} selected{% endif %}>{{ title }}</option>{% endfor %}
+  </select>
+  {% if column.values %}
+    <span class="column-roles__sample"{% with lang=column.values.0.0|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ column.values.0.0|truncatechars:40 }}</span>
+  {% endif %}
+</li>

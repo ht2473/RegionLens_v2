@@ -45,6 +45,7 @@ SOURCE_ARCHIVE_DIR = BASE_DIR / "data" / "tmp" / "test_archive"
 SOURCE_PARSED_DIR = BASE_DIR / "data" / "tmp" / "test_sources"
 VISITS_DIR = BASE_DIR / "data" / "tmp" / "test_visits"
 VISITS_LOG_DIR = BASE_DIR / "data" / "tmp" / "test_visit_logs"
+USERDATA_DIR = BASE_DIR / "data" / "tmp" / "test_userdata"
 
 # Учёт неудачных входов связывал бы проверки между собой; его тест включает учёт сам.
 AXES_ENABLED = False
