@@ -12,6 +12,7 @@ from typing import Any
 from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
 
+from apps.catalog.constants import BreakKind
 from apps.catalog.indicator import describe_series
 from apps.catalog.models import Series, SeriesBreak, Territory
 from apps.catalog.selectors import default_territories
@@ -219,9 +220,16 @@ def _breaks(series: Series, codes: list[str], years: list[int]) -> list[dict[str
     """
     Собрать разрывы, относящиеся к графику: всего ряда и показанных территорий, в его годах.
     """
-    # У рядов наборов пользователей разрывов пока нет.
-    if not years or getattr(series, "is_user", False):
+    if not years:
         return []
+    if getattr(series, "is_user", False):
+        # Смена методики, отмеченная в описании показателя таблицы: для всех территорий.
+        label = str(BreakKind.METHODOLOGY.label)
+        return [
+            {"year": item["year"], "kind": label, "description": item["note"], "territory": ""}
+            for item in getattr(series, "breaks", [])
+            if years[0] <= item["year"] <= years[-1]
+        ]
 
     found = (
         SeriesBreak.objects.filter(series=series, year__gte=years[0], year__lte=years[-1])

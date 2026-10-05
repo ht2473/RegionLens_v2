@@ -29,6 +29,7 @@ from ..selectors import (
     resolve_one,
     resolve_span,
     series_breaks,
+    too_few_regions,
 )
 from .base import AnalyticsView
 
@@ -61,6 +62,9 @@ class ConvergenceView(AnalyticsView):
             "compositions": COMPOSITIONS,
         }
         if series is None:
+            return context
+        if too_few_regions(series):
+            context["too_few"] = True
             return context
 
         panel = region_panel(series.key)

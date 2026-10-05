@@ -8,6 +8,7 @@ import * as clipboard from "./ui/clipboard.js";
 import * as dialogs from "./ui/dialogs.js";
 import * as fold from "./ui/fold.js";
 import * as forms from "./ui/forms.js";
+import * as formula from "./ui/formula.js";
 import * as more from "./ui/more.js";
 import * as palette from "./ui/palette.js";
 import * as popovers from "./ui/popovers.js";
@@ -50,6 +51,7 @@ fold.init();
 more.init();
 scroll.init();
 upload.init();
+formula.init();
 defineElements();
 
 // Пересчитываемая область — aria-busy.

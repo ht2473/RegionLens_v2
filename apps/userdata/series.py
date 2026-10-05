@@ -7,10 +7,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
 
 from django.db.models import F
+from django.http import HttpRequest
 from django.urls import reverse
 from django.utils import translation
 from django.utils.translation import gettext
@@ -18,11 +20,18 @@ from django.utils.translation import gettext
 from apps.warehouse import routing
 from apps.warehouse.queries import FeaturedSeries
 
-from . import naming
+from . import indicators, naming
 from .models import Dataset, DatasetSeries, DatasetVersion
 
 ABSOLUTE_KIND = "absolute"
 RELATIVE_KIND = "rate"
+# Субъектов меньше этого: неравенство и пространственный анализ по набору не считаются.
+FEW_REGIONS = 20
+# Пересчёты на жителей — в порядке предпочтения для замены суммы.
+PER_CAPITA = (
+    DatasetSeries.Derived.PER_100000.value,
+    DatasetSeries.Derived.PER_1000.value,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -109,6 +118,28 @@ class UserSeries:
         return self.is_sum
 
     @property
+    def breaks(self) -> list[dict[str, Any]]:
+        """Смена методики, отмеченная в описании показателя: год и пояснение."""
+        return indicators.breaks_of(self.record.version.recipe, self.record.indicator)
+
+    def per_capita(self) -> UserSeries | None:
+        """Пересчёт суммы на жителей из того же набора — для сравнения регионов."""
+        if not self.is_sum:
+            return None
+        found = {
+            record.derived: record
+            for record in DatasetSeries.objects.filter(
+                version_id=self.record.version_id,
+                base_code=self.record.code,
+                derived__in=PER_CAPITA,
+            )
+        }
+        for derived in PER_CAPITA:
+            if derived in found and found[derived].values_count:
+                return UserSeries(found[derived], self.dataset)
+        return None
+
+    @property
     def detail_url(self) -> str:
         """Страница набора с этим рядом."""
         url = reverse("userdata:dataset", kwargs={"public_id": self.dataset.public_id})
@@ -159,10 +190,53 @@ def user_series(key: str) -> UserSeries | None:
     return UserSeries(record, record.version.dataset)
 
 
+def user_series_many(keys: Iterable[str]) -> dict[str, UserSeries]:
+    """Ряды наборов по ключам — только доступные тому, кто спрашивает."""
+    wanted: dict[str, set[str]] = {}
+    for key in keys:
+        if routing.is_user_key(key) and routing.source_of(key) is not None:
+            wanted.setdefault(routing.dataset_code(key), set()).add(key.rsplit(":", 1)[-1])
+    if not wanted:
+        return {}
+    records = (
+        DatasetSeries.objects.select_related("version__dataset")
+        .filter(version__dataset__code__in=list(wanted))
+        .filter(version__dataset__current_version=F("version"))
+    )
+    found: dict[str, UserSeries] = {}
+    for record in records:
+        dataset = record.version.dataset
+        if record.code in wanted.get(dataset.code, set()):
+            item = UserSeries(record, dataset)
+            found[item.key] = item
+    return found
+
+
 def series_of(version: DatasetVersion) -> list[UserSeries]:
     """Ряды собранной версии в порядке набора."""
     dataset = version.dataset
     return [UserSeries(record, dataset) for record in version.series.order_by("order")]
+
+
+def group_title(dataset: Dataset) -> str:
+    """Название группы перечня выбора для рядов набора."""
+    return gettext("Мои таблицы: %(title)s") % {"title": dataset.title}
+
+
+def option_item(item: UserSeries) -> dict[str, Any]:
+    """Запись перечня выбора для ряда набора — как у рядов склада."""
+    from .templatetags.userdata import source_lang
+
+    return {
+        "key": item.key,
+        "title": item.full_title,
+        "subsection": "",
+        "unnormalised": item.is_unnormalised,
+        "search": item.dataset.title,
+        "group_title": group_title(item.dataset),
+        # Подписи таблицы — как есть: на английской странице кириллица помечается.
+        "lang": source_lang(item.full_title),
+    }
 
 
 def option_groups(datasets: list[Dataset]) -> list[dict[str, Any]]:
@@ -172,24 +246,27 @@ def option_groups(datasets: list[Dataset]) -> list[dict[str, Any]]:
         version = dataset.current_version
         if version is None or version.state != DatasetVersion.State.BUILT:
             continue
-        items = [
-            {
-                "key": item.key,
-                "title": item.full_title,
-                "subsection": "",
-                "unnormalised": item.is_unnormalised,
-                "search": dataset.title,
-            }
-            for item in series_of(version)
-        ]
+        items = [option_item(item) for item in series_of(version)]
         if items:
-            groups.append(
-                {
-                    "title": gettext("Мои таблицы: %(title)s") % {"title": dataset.title},
-                    "items": items,
-                }
-            )
+            groups.append({"title": group_title(dataset), "items": items})
     return groups
+
+
+def own_option_groups(request: HttpRequest | None) -> list[dict[str, Any]]:
+    """Группы рядов своих таблиц того, кто открыл страницу."""
+    if request is None:
+        return []
+    from .access import owned
+
+    datasets = owned(request).filter(state=Dataset.State.READY).select_related("current_version")
+    return option_groups(list(datasets))
+
+
+def selected_options(keys: Iterable[str]) -> list[dict[str, Any]]:
+    """Записи перечня для отмеченных рядов таблиц — в порядке ключей."""
+    ordered = [key for key in keys if routing.is_user_key(key)]
+    found = user_series_many(ordered)
+    return [option_item(found[key]) for key in dict.fromkeys(ordered) if key in found]
 
 
 def source_line(dataset: Dataset) -> str:

@@ -159,13 +159,44 @@
                     <label class="radio"><input type="radio" name="kind-{{ number }}" value="{{ value }}"{% if item.kind == value %} checked{% endif %} data-kind-of="{{ number }}"> {{ label }}</label>
                   {% endfor %}
                 </fieldset>
-                <fieldset class="field" data-per-of="{{ number }}">
+                <fieldset class="field" data-sum-only>
                   <legend class="field__label">{% translate "Пересчёт суммы" %}</legend>
                   {% for value, label in per_choices %}
                     <label class="checkbox"><input type="checkbox" name="per-{{ number }}" value="{{ value }}"{% if value in item.per %} checked{% endif %}> <span>{{ label }}</span></label>
                   {% endfor %}
                   <span class="field__hint">{% translate "Численность — среднегодовая по данным Росстата (как у рядов на жителя на сайте), площадь — из справочника. Только для сумм." %}</span>
                 </fieldset>
+                <fieldset class="field">
+                  <legend class="field__label">{% translate "Другие пересчёты" %}</legend>
+                  {% if item.is_money and item.has_years %}
+                    <label class="checkbox"><input type="checkbox" name="recalc-{{ number }}" value="real"{% if "real" in item.recalc %} checked{% endif %}> <span>{% translate "в ценах последнего года — по индексу потребительских цен региона" %}</span></label>
+                  {% endif %}
+                  <label class="checkbox"><input type="checkbox" name="recalc-{{ number }}" value="russia"{% if "russia" in item.recalc %} checked{% endif %}> <span>{% translate "Россия = 100" %}</span></label>
+                  <label class="checkbox"><input type="checkbox" name="recalc-{{ number }}" value="growth"{% if "growth" in item.recalc %} checked{% endif %}> <span>{% translate "в % к предыдущему году" %}</span></label>
+                  <label class="checkbox" data-sum-only><input type="checkbox" name="recalc-{{ number }}" value="share"{% if "share" in item.recalc %} checked{% endif %}> <span>{% translate "доля в сумме по субъектам, %" %}</span></label>
+                  <span class="field__hint">{% translate "Каждый пересчёт — отдельный ряд рядом с исходным; при новой сборке пересчитывается сам. Значение России — из таблицы, у сумм без строки России — сумма субъектов." %}</span>
+                </fieldset>
+                {% if item.slice_headers %}
+                  <fieldset class="field" data-sum-only>
+                    <legend class="field__label">{% translate "Сложить значения разреза" %}</legend>
+                    {% for header in item.slice_headers %}
+                      <label class="checkbox"><input type="checkbox" name="fold-{{ number }}" value="{{ header }}"{% if header in item.fold_slices %} checked{% endif %}> <span{% with lang=header|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ header }}</span></label>
+                    {% endfor %}
+                    <span class="field__hint">{% translate "Сумма по всем отобранным значениям разреза — например, по всем возрастам, если итога в таблице нет. Итог («Всего», «Оба пола») в сумму не входит. Только для сумм." %}</span>
+                  </fieldset>
+                {% endif %}
+                {% if item.month_options %}
+                  <div class="field">
+                    <label class="field__label" for="months-{{ number }}">{% translate "Месяцы — в год" %}</label>
+                    <select class="select" id="months-{{ number }}" name="months-{{ number }}" aria-describedby="months-hint-{{ number }}">
+                      <option value="">{% translate "не сворачивать" %}</option>
+                      {% for method in item.month_options %}
+                        <option value="{{ method }}"{% if item.months == method %} selected{% endif %}{% if method == "sum" %} data-sum-only{% endif %}>{% if method == "sum" %}{% translate "сумма за 12 месяцев" %}{% elif method == "mean" %}{% translate "среднее за месяц" %}{% elif method == "december" %}{% translate "значение за декабрь" %}{% else %}{% translate "январь–декабрь из итогов с начала года" %}{% endif %}</option>
+                      {% endfor %}
+                    </select>
+                    <span class="field__hint" id="months-hint-{{ number }}">{% translate "Годовой ряд из месяцев: складываются только суммы, у долей и средних — среднее за месяц. Год без всех месяцев остаётся пустым." %}</span>
+                  </div>
+                {% endif %}
                 <div class="field">
                   <label class="field__label" for="polarity-{{ number }}">{% translate "Направленность" %}</label>
                   <select class="select" id="polarity-{{ number }}" name="polarity-{{ number }}">
@@ -174,6 +205,14 @@
                     {% endfor %}
                   </select>
                 </div>
+                <fieldset class="field indicator-card__breaks">
+                  <legend class="field__label">{% translate "Смена методики" %}</legend>
+                  <label class="indicator-card__sublabel" for="breaks-{{ number }}">{% translate "С какого года значения считаются по-другому" %}</label>
+                  <input class="input input--years numeric" id="breaks-{{ number }}" name="breaks-{{ number }}" value="{{ item.breaks|join:', ' }}" inputmode="numeric" placeholder="2019" aria-describedby="breaks-hint-{{ number }}">
+                  <label class="indicator-card__sublabel" for="break-note-{{ number }}">{% translate "Что изменилось" %}</label>
+                  <input class="input" id="break-note-{{ number }}" name="break-note-{{ number }}" value="{{ item.break_note }}" maxlength="300">
+                  <span class="field__hint" id="breaks-hint-{{ number }}">{% translate "Несколько лет — через запятую. Динамика и инструменты анализа покажут разрыв и предложат сравнивать годы по одной методике." %}</span>
+                </fieldset>
                 {% if item.note %}
                   <p class="indicator-card__note"{% with lang=item.note|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.note|truncatechars:400 }}</p>
                 {% endif %}

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load i18n static formatting userdata %}
+
+{# Вид «По месяцам» своей таблицы: ход по месяцам за последние годы и карта последнего периода. #}
+
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+  <link rel="stylesheet" href="{% static 'css/live-map.css' %}">
+  <link rel="stylesheet" href="{% static 'css/indicator.css' %}">
+  <link rel="stylesheet" href="{% static 'css/userdata.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'vendor/echarts.min.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <p class="page-intro__kicker"><span{% with lang=dataset.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.title }}</span> · <span class="own-private">{% translate "видно только вам" %}</span></p>
+      <h1 class="page-intro__title">{% translate "По месяцам" %}</h1>
+      <p class="page-intro__lead"{% with lang=group.label|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ group.label }}{% if group.unit %}, {{ group.unit }}{% endif %}</p>
+    </div>
+  </header>
+
+  <form method="get" class="months-form">
+    {% if groups|length > 1 %}
+      <div class="field">
+        <label class="field__label" for="months-group">{% translate "Показатель" %}</label>
+        <select class="select" id="months-group" name="group">
+          {% for item in groups %}
+            <option value="{{ item.code }}"{% if item.code == group.code %} selected{% endif %}{% with lang=item.label|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    {% else %}
+      <input type="hidden" name="group" value="{{ group.code }}">
+    {% endif %}
+    <div class="field">
+      <label class="field__label" for="months-territory">{% translate "Территория" %}</label>
+      <select class="select" id="months-territory" name="territory">
+        {% for code, name in territories.items %}
+          <option value="{{ code }}"{% if code == territory %} selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="months-form__action">
+      <button class="button button--secondary" type="submit">{% translate "Показать" %}</button>
+    </div>
+  </form>
+
+  <section class="page-section" aria-labelledby="months-title">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="months-title">{{ territory_name|default:_("Территория не выбрана") }}</h2>
+      {% if current %}
+        <p class="page-section__note">
+          {{ current.period }} — <b class="numeric">{{ current.value|ru_number:group.precision }}</b>
+          {% if group.unit %}<span{% with lang=group.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ group.unit }}</span>{% endif %}{% if current.change %} · {{ current.change }}{% endif %}
+        </p>
+      {% endif %}
+    </div>
+
+    <div class="month-block">
+      <figure class="indicator-chart month-block__chart">
+        {% if chart %}
+          <p class="month-block__title">
+            {% blocktranslate trimmed with name=territory_name first=chart.years|first last=chart.years|last %}
+              {{ name }} по месяцам, {{ first }}–{{ last }}
+            {% endblocktranslate %}
+          </p>
+          <rl-chart class="chart chart--tall" data-options="months-option"></rl-chart>
+          {{ chart.option|json_script:"months-option" }}
+        {% else %}
+          <p class="empty-state__hint">{% translate "По этой территории значений нет. Выберите другую." %}</p>
+        {% endif %}
+      </figure>
+
+      {% if map %}
+        <figure class="indicator-chart month-block__map">
+          <p class="month-block__title">
+            {% blocktranslate trimmed with period=map.period %}Регионы, {{ period }}{% endblocktranslate %}
+          </p>
+          {% include "maps/partials/_geo_map.html" with geo_map=map.geo_map geo_caption=group.label plain=True %}
+          {% if map.legend %}
+            <ol class="live-legend month-block__legend">
+              {% for item in map.legend %}
+                <li class="live-legend__item" title="{{ item.range }}">
+                  <span class="live-legend__swatch" style="background-color: var({{ item.colour }})"></span>
+                </li>
+              {% endfor %}
+            </ol>
+            <ol class="live-legend__bounds numeric">
+              {% with count=map.legend|length %}
+                {% for item in map.legend %}
+                  {% if forloop.first %}<li style="--at: 0%">{{ item.lower }}</li>{% endif %}
+                  <li style="--at: {% widthratio forloop.counter count 100 %}%">{{ item.upper }}</li>
+                {% endfor %}
+              {% endwith %}
+            </ol>
+          {% endif %}
+          <figcaption class="indicator-chart__caption">
+            {% if map.highest %}
+              <span class="indicator-chart__hint">
+                {% blocktranslate trimmed with high=map.highest.name high_value=map.highest.value low=map.lowest.name low_value=map.lowest.value unit=group.unit %}
+                  Больше всего — {{ high }}: {{ high_value }} {{ unit }}; меньше всего — {{ low }}: {{ low_value }} {{ unit }}
+                {% endblocktranslate %}
+              </span>
+            {% endif %}
+            {% if map.missing %}
+              <span class="indicator-chart__hint">
+                {% blocktranslate trimmed with count=map.missing %}Нет данных по {{ count }} регионам.{% endblocktranslate %}
+              </span>
+            {% endif %}
+          </figcaption>
+        </figure>
+      {% endif %}
+    </div>
+
+    <p class="page-section__footnote"{% with lang=source|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ source }}</p>
+  </section>
+
+  <p><a class="button button--ghost" href="{% url 'userdata:dataset' dataset.public_id %}">{% translate "К таблице" %}</a></p>
+</div>
+{% endblock %}

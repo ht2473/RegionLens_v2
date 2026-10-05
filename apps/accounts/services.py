@@ -119,7 +119,7 @@ def delete_account(user: User) -> None:
     email, name = user.email, user.full_name
     # Таблицы — с файлами на диске; записи о них ушли бы и каскадом, а файлы — нет.
     for dataset in user.datasets.all():
-        discard(dataset)
+        discard(dataset, rebuild=False)
     with transaction.atomic():
         Ticket.objects.filter(author=user).update(
             author=None,

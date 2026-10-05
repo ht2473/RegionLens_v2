@@ -5,6 +5,6 @@
 {% endcomment %}
 <label class="checkbox" data-filter-item data-filter-text="{{ item.group_title }} {{ item.title }} {{ item.subsection }} {{ item.search }}">
   <input type="checkbox" name="series" value="{{ item.key }}"{% if item.key in selected_keys %} checked{% endif %}>
-  <span class="text-truncate" title="{{ item.title }}{% if item.subsection %} — {{ item.subsection }}{% endif %}">{{ item.title }}{% if item.subsection %} — {{ item.subsection }}{% endif %}</span>
+  <span class="text-truncate" title="{{ item.title }}{% if item.subsection %} — {{ item.subsection }}{% endif %}"{% if item.lang %} lang="{{ item.lang }}"{% endif %}>{{ item.title }}{% if item.subsection %} — {{ item.subsection }}{% endif %}</span>
   {% if item.unnormalised %}<span class="series-mark" title="{% translate 'Величина не приведена к численности населения или иной основе' %}">{% translate "абс." %}</span>{% endif %}
 </label>

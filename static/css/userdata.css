@@ -450,6 +450,23 @@ legend.question-card__title ~ * {
   margin-top: var(--space-2);
 }
 
+/* Поля только для сумм скрываются, когда отмечена относительная величина. */
+.indicator-card__body:has(input[name^="kind-"][value="relative"]:checked) [data-sum-only] {
+  display: none;
+}
+
+.indicator-card__sublabel {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.input--years {
+  width: 12rem;
+  max-width: 100%;
+}
+
 .indicator-card__note {
   grid-column: 1 / -1;
   margin: 0;
@@ -643,6 +660,186 @@ legend.question-card__title ~ * {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
+}
+
+.own-section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* --- Первый взгляд -------------------------------------------------------------------------- */
+
+.own-open-as {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+  margin-bottom: var(--space-5);
+}
+
+.own-open-as__label {
+  color: var(--text-secondary);
+}
+
+.glance-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(22rem, 100%), 1fr));
+  gap: var(--space-4);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.glance-card {
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.glance-card[hidden] {
+  display: none;
+}
+
+.glance-card__title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.glance-card__facts {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.glance-card__facts > div {
+  display: grid;
+  grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.glance-card__facts dt {
+  color: var(--text-secondary);
+}
+
+.glance-card__facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.glance-card__text,
+.glance-card__note {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.glance-card__note {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  color: var(--text-primary);
+}
+
+.glance-card__note svg {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.15em;
+  color: var(--attention);
+}
+
+/* --- По месяцам ---------------------------------------------------------------------------- */
+
+.months-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+  align-items: flex-end;
+  margin-bottom: var(--space-6);
+}
+
+.months-form .field {
+  flex: 1 1 18rem;
+  margin: 0;
+}
+
+.months-form__action {
+  flex: none;
+}
+
+/* --- Формулы ------------------------------------------------------------------------------- */
+
+.formula-form__expression {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.formula-form__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  gap: var(--space-4) var(--space-6);
+  align-items: start;
+}
+
+.formula-form__meta > .field + .field,
+.formula-form__fields > .field + .field {
+  margin-top: 0;
+}
+
+.formula-form__fields {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.formula-form__fields fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.formula-form__functions summary {
+  min-height: 24px;
+  cursor: pointer;
+  font-weight: var(--weight-semibold);
+}
+
+.formula-form__functions code,
+.own-formula {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.formula-check__sources {
+  margin-top: var(--space-3);
+}
+
+.own-formula {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--text-secondary);
+}
+
+.own-formula__note {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.own-formula__note svg {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.15em;
 }
 
 .own-delete {

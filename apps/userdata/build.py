@@ -23,13 +23,26 @@ import pyarrow as pa
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone, translation
+from django.utils.translation import gettext as _
 
 from apps.core.templatetags.formatting import LARGE_VALUE_THRESHOLD, SMALL_VALUE_THRESHOLD
+from apps.warehouse import routing
 from apps.warehouse.duckdb_client import close_dataset
 from apps.warehouse.etl import marts
 from apps.warehouse.etl.dimensions import load_territories
+from apps.warehouse.queries import COUNTRY_CODE
 
-from . import extract, indicators, jobs, matching, naming
+from . import (
+    extract,
+    formula_store,
+    formulas,
+    indicators,
+    jobs,
+    matching,
+    monthly,
+    naming,
+    recognize,
+)
 from .models import Dataset, DatasetSeries, DatasetVersion
 
 logger = logging.getLogger(__name__)
@@ -46,6 +59,40 @@ PER_SUFFIXES = {
     DatasetSeries.Derived.PER_100000.value: "-p100k",
     DatasetSeries.Derived.PER_KM2.value: "-km2",
 }
+# Пересчёты (этап Б): суффикс кода, приписка к названию и единица; пустая единица — как
+# у исходного ряда. Названия хранятся как в таблице — по-русски.
+RECALC_SUFFIXES = {
+    indicators.RECALC_REAL: "-real",
+    indicators.RECALC_RUSSIA: "-ru100",
+    indicators.RECALC_GROWTH: "-yoy",
+    indicators.RECALC_SHARE: "-share",
+}
+RECALC_TITLES = {
+    indicators.RECALC_REAL: "{title} в ценах последнего года",
+    indicators.RECALC_RUSSIA: "{title}, Россия = 100",
+    indicators.RECALC_GROWTH: "{title}, % к предыдущему году",
+    indicators.RECALC_SHARE: "{title}: доля в сумме по субъектам",
+}
+RECALC_UNITS = {
+    indicators.RECALC_RUSSIA: "Россия = 100",
+    indicators.RECALC_GROWTH: "% к предыдущему году",
+    indicators.RECALC_SHARE: "%",
+}
+# Свёртка месяцев в год: способ сложения, приписка к названию.
+MONTHS_TITLES = {
+    indicators.MONTHS_SUM: "{title} за год (сумма месяцев)",
+    indicators.MONTHS_MEAN: "{title} за год (среднее за месяц)",
+    indicators.MONTHS_DECEMBER: "{title} на конец года (декабрь)",
+    indicators.MONTHS_YTD: "{title} за год (январь–декабрь)",
+}
+SLICE_SUM_VALUE = "сумма по разрезу «{header}»"
+# Ряд индекса потребительских цен (% к предыдущему году) — у рядов склада в ценах года.
+CPI_METHOD = "prices"
+# Больше производных рядов не собирается: пересчёты умножают ряды таблицы.
+MAX_DERIVED = 1500
+# Сумма по разрезу — у двух значений и больше.
+MIN_FOLD_MEMBERS = 2
+REAL_YEARS_SQL = "SELECT derived_key, base_year FROM real_target ORDER BY 1"
 # Признаки значения в запросах сборки — как ValueFlag и fact_observation.flags склада:
 # 2 — рассчитано (область без округов, пересчёт), 4 — знаменатель заморожен.
 
@@ -59,7 +106,7 @@ FACTS_SQL = """
     JOIN plan AS p ON p.source = r.series AND p.derived = ''
     WHERE r.territory_code IS NOT NULL;
 
-    INSERT INTO facts
+    CREATE TEMP TABLE alone AS
     WITH totals AS (
         SELECT f.series_key, n.total, n.alone, n.members, f.year, f.value
         FROM facts AS f
@@ -69,12 +116,16 @@ FACTS_SQL = """
         WHERE p.kind = 'sum' AND p.derived = '' AND f.value IS NOT NULL
     ),
     parts AS (
-        SELECT f.series_key, n.total, f.year, sum(f.value) AS value, count(f.value) AS filled
+        SELECT f.series_key, n.total, f.year, sum(f.value) AS value,
+               count(f.value) AS filled, min(f.value) AS lowest
         FROM facts AS f
         JOIN nested AS n ON f.territory_code = n.member
         GROUP BY 1, 2, 3
     )
-    SELECT t.series_key, t.alone, t.year, t.value - p.value, 0, 2
+    SELECT t.series_key, t.alone, t.year, t.value - p.value AS value,
+           -- Итог меньше суммы округов при неотрицательных значениях: в таблице область
+           -- уже без округов, вычитать нечего.
+           t.value >= 0 AND p.lowest >= 0 AND t.value < p.value AS impossible
     FROM totals AS t
     JOIN parts  AS p USING (series_key, total, year)
     WHERE p.filled = t.members
@@ -82,7 +133,15 @@ FACTS_SQL = """
           SELECT 1 FROM facts AS x
           WHERE x.series_key = t.series_key AND x.territory_code = t.alone
       )
+    ORDER BY 1, 2, 3;
+
+    INSERT INTO facts
+    SELECT series_key, alone, year, value, 0, 2 FROM alone WHERE NOT impossible
 """
+
+# Области, у которых итог с округами меньше суммы округов: «итог» в таблице — область
+# без округов, ответ о вложенных по умолчанию не подошёл.
+ALONE_CONFLICT_SQL = "SELECT DISTINCT alone FROM alone WHERE impossible ORDER BY 1"
 
 # У доли или среднего область без округов не вычислить: она остаётся пустой.
 ALONE_MISSING_SQL = """
@@ -127,6 +186,128 @@ PER_AREA_SQL = """
     JOIN facts AS f ON f.series_key = d.base_key
     JOIN areas AS a USING (territory_code)
     WHERE d.derived = 'perkm2' AND f.value IS NOT NULL AND a.area > 0
+"""
+
+# Свёртки: сумма по разрезу и месяцы в год — по всем рядам-слагаемым, только когда есть
+# значения всех; одно слагаемое (декабрь, январь–декабрь) — значение как есть.
+FOLD_SQL = """
+    INSERT INTO facts
+    SELECT m.series_key, f.territory_code, f.year,
+           CASE WHEN any_value(m.method) = 'mean' THEN avg(f.value) ELSE sum(f.value) END,
+           0,
+           CASE WHEN any_value(m.members) > 1 THEN 2 ELSE 0 END
+    FROM folds AS m
+    JOIN facts AS f ON f.series_key = m.member_key
+    WHERE f.value IS NOT NULL
+    GROUP BY m.series_key, f.territory_code, f.year
+    HAVING count(*) = any_value(m.members)
+"""
+
+# В ценах последнего года: значение года t, умноженное на индексы цен региона за годы
+# t+1 … T (T — последний год ряда, не позже последнего года индексов). Цепочка индексов
+# без пропусков: разность номеров лет в цепочке равна разности самих лет.
+REAL_TARGET_SQL = """
+    CREATE TEMP TABLE real_target AS
+    SELECT d.series_key AS derived_key, d.base_key,
+           least(max(f.year), (SELECT max(year) FROM cpi)) AS base_year
+    FROM plan AS d
+    JOIN facts AS f ON f.series_key = d.base_key
+    WHERE d.derived = 'real' AND f.value IS NOT NULL
+    GROUP BY 1, 2
+    ORDER BY 1
+"""
+
+REAL_SQL = """
+    INSERT INTO facts
+    WITH chain AS (
+        SELECT territory_code, year,
+               sum(ln(cpi / 100)) OVER w AS log_chain,
+               count(*) OVER w AS position
+        FROM cpi
+        WHERE cpi > 0
+        WINDOW w AS (PARTITION BY territory_code ORDER BY year)
+    )
+    SELECT t.derived_key, f.territory_code, f.year,
+           f.value * exp(b.log_chain - c.log_chain), 0, f.flags | 2
+    FROM real_target AS t
+    JOIN facts AS f ON f.series_key = t.base_key
+    JOIN chain AS c ON c.territory_code = f.territory_code AND c.year = f.year
+    JOIN chain AS b ON b.territory_code = f.territory_code AND b.year = t.base_year
+    WHERE f.value IS NOT NULL AND b.position - c.position = t.base_year - f.year
+"""
+
+# Сумма по субъектам за год и наибольшее число субъектов ряда — для «России = 100» у сумм
+# без строки страны и для доли в сумме.
+SUBJECTS_SQL = """
+    CREATE TEMP TABLE subjects AS
+    SELECT f.series_key, f.year, sum(f.value) AS value, count(f.value) AS filled
+    FROM facts AS f
+    JOIN dim_territory AS t USING (territory_code)
+    WHERE t.level = 'region' AND NOT t.is_aggregate AND f.value IS NOT NULL
+    GROUP BY 1, 2
+    ORDER BY 1, 2
+"""
+
+# Россия = 100: значение страны из таблицы; у суммы без строки страны — сумма субъектов
+# за год, в котором есть все субъекты ряда.
+RUSSIA_SQL = """
+    INSERT INTO facts
+    WITH fullest AS (
+        SELECT series_key, max(filled) AS most FROM subjects GROUP BY 1
+    ),
+    totals AS (
+        SELECT d.series_key AS derived_key, d.base_key, s.year,
+               coalesce(
+                   c.value,
+                   CASE WHEN d.base_kind = 'sum' AND s.filled = u.most THEN s.value END
+               ) AS total
+        FROM plan AS d
+        JOIN subjects AS s ON s.series_key = d.base_key
+        JOIN fullest AS u ON u.series_key = d.base_key
+        LEFT JOIN facts AS c
+          ON c.series_key = d.base_key AND c.year = s.year
+         AND c.territory_code = $country AND c.value IS NOT NULL
+        WHERE d.derived = 'russia'
+    )
+    SELECT t.derived_key, f.territory_code, f.year, f.value / t.total * 100, 0, f.flags | 2
+    FROM totals AS t
+    JOIN facts AS f ON f.series_key = t.base_key AND f.year = t.year
+    WHERE f.value IS NOT NULL AND t.total IS NOT NULL AND t.total <> 0
+"""
+
+# Темп к прошлому году (к тому же периоду прошлого года у рядов «январь–июль»): только
+# у положительных значений.
+GROWTH_SQL = """
+    INSERT INTO facts
+    SELECT d.series_key, f.territory_code, f.year, f.value / p.value * 100, 0, f.flags | 2
+    FROM plan AS d
+    JOIN facts AS f ON f.series_key = d.base_key
+    JOIN facts AS p
+      ON p.series_key = d.base_key AND p.territory_code = f.territory_code
+     AND p.year = f.year - 1
+    WHERE d.derived = 'growth' AND f.value >= 0 AND p.value > 0
+"""
+
+# Доля в сумме по субъектам за тот же год.
+SHARE_SQL = """
+    INSERT INTO facts
+    SELECT d.series_key, f.territory_code, f.year, f.value / s.value * 100, 0, f.flags | 2
+    FROM plan AS d
+    JOIN facts AS f ON f.series_key = d.base_key
+    JOIN subjects AS s ON s.series_key = d.base_key AND s.year = f.year
+    WHERE d.derived = 'share' AND f.value IS NOT NULL AND s.value <> 0
+"""
+
+# Значения рядов с периодом внутри года — в слой месяцев под ключом группы показателя.
+MONTHS_SQL = """
+    INSERT INTO fact_month
+    SELECT p.month_key, f.territory_code, CAST(f.year AS SMALLINT), CAST(p.month AS TINYINT),
+           p.month_kind, f.value, CAST(f.quality AS TINYINT), CAST(f.flags AS TINYINT), 'user'
+    FROM facts AS f
+    JOIN plan AS p USING (series_key)
+    JOIN dim_territory AS t USING (territory_code)
+    WHERE p.month_key <> ''
+    ORDER BY 1, 2, 3, 4
 """
 
 OBSERVATIONS_SQL = """
@@ -209,45 +390,172 @@ def build(version: DatasetVersion) -> None:
 
 
 def _plan(version: DatasetVersion, report: dict[str, Any]) -> list[dict[str, Any]]:
-    """Ряды набора: из таблицы и пересчёты сумм, с описанием показателя."""
+    """
+    Ряды набора с описанием показателя: из таблицы, свёртки (сумма по разрезу, месяцы
+    в год) и пересчёты каждого из них (на жителей и км², в ценах года, Россия = 100, темп,
+    доля). Ряды показателя идут подряд, пересчёт — сразу за своим рядом.
+    """
     described = {item.name: item for item in indicators.indicators_of(version)}
-    plan: list[dict[str, Any]] = []
+    grouped: dict[str, list[dict[str, Any]]] = {}
     for index, item in enumerate(report["series"]):
         indicator = described[item["indicator"]]
-        base = {
-            "source": index,
-            "code": item["code"],
-            "indicator": item["indicator"],
-            "title": indicator.title,
-            "unit": indicator.unit or item["unit"],
-            "kind": indicator.kind,
-            "polarity": indicator.polarity,
-            "slices": [tuple(pair) for pair in item["slices"]],
-            "period": item["period"],
-            "derived": "",
-            "base_code": "",
-        }
-        plan.append(base)
-        if indicator.kind != indicators.SUM:
-            continue
-        for per in indicator.per:
-            plan.append(
-                {
-                    **base,
-                    "source": -1,
-                    "code": base["code"] + PER_SUFFIXES[per],
-                    "title": f"{indicator.title} {_per_title(per)}",
-                    "kind": indicators.RELATIVE,
-                    "derived": per,
-                    "base_code": base["code"],
-                }
+        grouped.setdefault(indicator.name, []).append(
+            {
+                "source": index,
+                "code": item["code"],
+                "indicator": item["indicator"],
+                "title": indicator.title,
+                "unit": indicator.unit or item["unit"],
+                "kind": indicator.kind,
+                "base_kind": indicator.kind,
+                "polarity": indicator.polarity,
+                "slices": [tuple(pair) for pair in item["slices"]],
+                "period": item["period"],
+                "derived": "",
+                "base_code": "",
+                "members": [],
+                "method": "",
+            }
+        )
+    plan: list[dict[str, Any]] = []
+    for name, bases in grouped.items():
+        indicator = described[name]
+        for primary in [*bases, *_folds(indicator, bases)]:
+            plan.append(primary)
+            plan.extend(_recalculations(indicator, primary))
+    # Показатели по формулам — последними: они ссылаются на ряды выше.
+    plan.extend(formula_store.plan_items(version))
+    derived = sum(1 for item in plan if item["derived"])
+    if derived > MAX_DERIVED:
+        raise extract.ExtractError(
+            _(
+                "Пересчётов и свёрток получается %(count)s — больше %(limit)s. Отметьте их "
+                "только у нужных показателей."
             )
+            % {"count": derived, "limit": MAX_DERIVED}
+        )
     prefix = f"u:{version.dataset.code}:"
     for order, item in enumerate(plan):
+        item.update(monthly.plan_fields(item))
         item["order"] = order
         item["key"] = prefix + item["code"]
         item["base_key"] = prefix + item["base_code"] if item["base_code"] else ""
+        item["member_keys"] = [prefix + code for code in item["members"]]
+        item["month_key"] = prefix + item["month_code"] if item["month_code"] else ""
     return plan
+
+
+def _folds(indicator: indicators.Indicator, bases: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Свёртки показателя: сумма по отмеченным разрезам и месяцы в год."""
+    folds: list[dict[str, Any]] = []
+    for header in indicator.fold_slices:
+        siblings = {dict(item["slices"]).get(header, "") for item in bases}
+        groups: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
+        for item in bases:
+            values = dict(item["slices"])
+            # Итог разреза («Всего», «Оба пола») к сумме не добавляется: он её повторил бы.
+            if header not in values or recognize.is_total(values[header], siblings):
+                continue
+            others = tuple(pair for pair in item["slices"] if pair[0] != header)
+            groups.setdefault((others, item["period"]), []).append(item)
+        for (others, period), members in groups.items():
+            if len(members) < MIN_FOLD_MEMBERS:
+                continue
+            folds.append(
+                {
+                    **members[0],
+                    "source": -1,
+                    "code": naming.series_code(indicator.name, others, period) + "-sum",
+                    "slices": [*others, (header, SLICE_SUM_VALUE.format(header=header))],
+                    "derived": DatasetSeries.Derived.SLICE_SUM.value,
+                    "members": [member["code"] for member in members],
+                    "method": indicators.MONTHS_SUM,
+                }
+            )
+    if indicator.months:
+        folds.extend(_month_folds(indicator, bases))
+    return folds
+
+
+def _month_folds(
+    indicator: indicators.Indicator, bases: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Месяцы в год: по ряду на набор значений разрезов; слагаемые — ряды месяцев."""
+    method = indicator.months
+    months = [f"month:{number}" for number in range(1, 13)]
+    wanted = {
+        indicators.MONTHS_SUM: months,
+        indicators.MONTHS_MEAN: months,
+        indicators.MONTHS_DECEMBER: ["month:12"],
+        indicators.MONTHS_YTD: ["ytd:12"],
+    }[method]
+    groups: dict[tuple[Any, ...], dict[str, dict[str, Any]]] = {}
+    for item in bases:
+        if item["period"] in wanted:
+            groups.setdefault(tuple(item["slices"]), {})[item["period"]] = item
+    folds = []
+    for slices, by_period in groups.items():
+        if any(period not in by_period for period in wanted):
+            continue
+        folds.append(
+            {
+                **by_period[wanted[0]],
+                "source": -1,
+                "code": naming.series_code(indicator.name, slices, indicators.YEAR_PERIOD) + "-y",
+                "title": MONTHS_TITLES[method].format(title=indicator.title),
+                "period": indicators.YEAR_PERIOD,
+                "derived": DatasetSeries.Derived.MONTHS.value,
+                "members": [by_period[period]["code"] for period in wanted],
+                "method": indicators.MONTHS_MEAN
+                if method == indicators.MONTHS_MEAN
+                else indicators.MONTHS_SUM,
+            }
+        )
+    return folds
+
+
+def _recalculations(
+    indicator: indicators.Indicator, primary: dict[str, Any]
+) -> list[dict[str, Any]]:
+    """Пересчёты ряда таблицы или свёртки: на жителей и км² (суммы) и отмеченные в описании."""
+    common = {
+        "source": -1,
+        "members": [],
+        "method": "",
+        "base_code": primary["code"],
+        "base_kind": primary["kind"],
+    }
+    found = []
+    if indicator.kind == indicators.SUM:
+        for per in indicator.per:
+            found.append(
+                {
+                    **primary,
+                    **common,
+                    "code": primary["code"] + PER_SUFFIXES[per],
+                    "title": f"{primary['title']} {_per_title(per)}",
+                    "kind": indicators.RELATIVE,
+                    "derived": per,
+                }
+            )
+    for recalc in indicator.recalc:
+        # Индексы цен годовые: в цены года переводятся только годовые значения.
+        if recalc == indicators.RECALC_REAL and primary["period"] != indicators.YEAR_PERIOD:
+            continue
+        found.append(
+            {
+                **primary,
+                **common,
+                "code": primary["code"] + RECALC_SUFFIXES[recalc],
+                "title": RECALC_TITLES[recalc].format(title=primary["title"]),
+                "unit": RECALC_UNITS.get(recalc, primary["unit"]),
+                "kind": primary["kind"]
+                if recalc == indicators.RECALC_REAL
+                else indicators.RELATIVE,
+                "derived": recalc,
+            }
+        )
+    return found
 
 
 def _per_title(per: str) -> str:
@@ -270,26 +578,25 @@ def _write_file(
         connection.execute("SET preserve_insertion_order = true")
         connection.execute(SCHEMA.read_text(encoding="utf-8"))
         load_territories(connection)
-        _dimensions(connection, version, plan)
         connection.register("raw", raw)
         connection.register("plan", _plan_frame(plan))
         connection.register("nested", _nested_frame())
         connection.execute(FACTS_SQL)
         alone_missing = [row[0] for row in connection.execute(ALONE_MISSING_SQL).fetchall()]
-        derived = {item["derived"] for item in plan if item["derived"]}
-        if derived & set(PER_FACTORS):
-            connection.register("population", _population_frame())
-            connection.execute(PER_CAPITA_SQL)
-        if DatasetSeries.Derived.PER_KM2.value in derived:
-            connection.register("areas", _areas_frame())
-            connection.execute(PER_AREA_SQL)
+        alone_conflict = [row[0] for row in connection.execute(ALONE_CONFLICT_SQL).fetchall()]
+        _derive(connection, plan)
+        formula_errors = _formulas(connection, version, plan)
+        _dimensions(connection, version, plan)
         connection.execute(OBSERVATIONS_SQL)
+        _months(connection, version)
         connection.execute(OUTSIDE_SQL)
         marts.build_coverage(connection)
         marts.build_stats(connection)
         marts.build_ranks(connection)
         summary = _summary(connection)
         summary["alone_missing"] = alone_missing
+        summary["alone_conflict"] = alone_conflict
+        summary["formula_errors"] = formula_errors
         connection.execute("DROP TABLE facts")
         connection.executemany(
             "INSERT INTO meta_build VALUES (?, ?)",
@@ -306,6 +613,147 @@ def _write_file(
     return summary
 
 
+def _derive(connection: duckdb.DuckDBPyConnection, plan: list[dict[str, Any]]) -> None:
+    """
+    Свёртки, затем пересчёты рядов таблицы и свёрток. Название ряда «в ценах года»
+    получает свой год — последний год ряда, за который есть индексы цен.
+    """
+    derived = {item["derived"] for item in plan if item["derived"]}
+    folds = _folds_frame(plan)
+    if not folds.empty:
+        connection.register("folds", folds)
+        connection.execute(FOLD_SQL)
+    if derived & set(PER_FACTORS):
+        connection.register("population", _population_frame())
+        connection.execute(PER_CAPITA_SQL)
+    if DatasetSeries.Derived.PER_KM2.value in derived:
+        connection.register("areas", _areas_frame())
+        connection.execute(PER_AREA_SQL)
+    if indicators.RECALC_REAL in derived:
+        connection.register("cpi", _cpi_frame(connection))
+        connection.execute(REAL_TARGET_SQL)
+        years = dict(connection.execute(REAL_YEARS_SQL).fetchall())
+        for item in plan:
+            if item["derived"] == indicators.RECALC_REAL and years.get(item["key"]):
+                base = item["title"].removesuffix(" в ценах последнего года")
+                item["title"] = f"{base} в ценах {int(years[item['key']])} года"
+        connection.execute(REAL_SQL)
+    if derived & {indicators.RECALC_RUSSIA, indicators.RECALC_SHARE}:
+        connection.execute(SUBJECTS_SQL)
+        if indicators.RECALC_RUSSIA in derived:
+            connection.execute(RUSSIA_SQL, {"country": COUNTRY_CODE})
+        if indicators.RECALC_SHARE in derived:
+            connection.execute(SHARE_SQL)
+    if indicators.RECALC_GROWTH in derived:
+        connection.execute(GROWTH_SQL)
+
+
+def _formulas(
+    connection: duckdb.DuckDBPyConnection, version: DatasetVersion, plan: list[dict[str, Any]]
+) -> dict[str, str]:
+    """
+    Показатели по формулам — по порядку: формула видит ряды таблицы, их пересчёты и формулы
+    выше. Ряды других таблиц — только того же владельца; формула, которую не посчитать,
+    остаётся без значений, причина — в отчёте сборки.
+    """
+    items = [item for item in plan if item["derived"] == DatasetSeries.Derived.FORMULA]
+    if not items:
+        return {}
+    own_keys = {item["key"] for item in plan}
+    territories = {
+        str(code): bool(subject)
+        for code, subject in connection.execute(
+            "SELECT territory_code, level = 'region' AND NOT is_aggregate FROM dim_territory "
+            "ORDER BY 1"
+        ).fetchall()
+    }
+    errors: dict[str, str] = {}
+    for item in items:
+        try:
+            tree = formulas.parse(item["expression"])
+            keys = formulas.keys_of(item["expression"])
+            inputs = _formula_inputs(connection, version, keys, own_keys)
+            missing = [key for key in keys if key not in inputs]
+            if missing:
+                names = ", ".join(f"«{item['labels'].get(key, key)}»" for key in missing)
+                raise formulas.FormulaError(
+                    _("Нет значений показателей: %(names)s.") % {"names": names}
+                )
+            outcome = formulas.evaluate(tree, inputs, territories)
+        except formulas.FormulaError as error:
+            errors[item["code"]] = str(error)
+            continue
+        connection.register(
+            "formula_rows",
+            pd.DataFrame(outcome.rows, columns=["territory_code", "year", "value"]),
+        )
+        connection.execute(
+            "INSERT INTO facts SELECT ?, territory_code, CAST(year AS INTEGER), value, 0, 2 "
+            "FROM formula_rows ORDER BY territory_code, year",
+            [item["key"]],
+        )
+        connection.unregister("formula_rows")
+        if outcome.warnings:
+            errors[item["code"]] = " ".join(outcome.warnings)
+    return errors
+
+
+def _formula_inputs(
+    connection: duckdb.DuckDBPyConnection,
+    version: DatasetVersion,
+    keys: list[str],
+    own_keys: set[str],
+) -> dict[str, formula_store.Rows]:
+    """Значения рядов формулы: этой сборки, файлов других своих таблиц и склада."""
+    inputs: dict[str, formula_store.Rows] = {}
+    own = [key for key in keys if key in own_keys]
+    if own:
+        for key, code, year, value in connection.execute(
+            "SELECT series_key, territory_code, year, value FROM facts "
+            "WHERE series_key IN (SELECT unnest(?)) ORDER BY 1, 2, 3",
+            [own],
+        ).fetchall():
+            inputs.setdefault(str(key), []).append((str(code), int(year), value))
+    others: dict[str, list[str]] = {}
+    for key in keys:
+        if key not in own_keys and routing.is_user_key(key):
+            others.setdefault(routing.dataset_code(key), []).append(key)
+    if others:
+        dataset = version.dataset
+        for table in (
+            formula_store.siblings(dataset)
+            .filter(code__in=list(others))
+            .select_related("current_version")
+        ):
+            inputs.update(formula_store.table_rows(table.current_version, others[table.code]))
+    official = [key for key in keys if key not in own_keys and not routing.is_user_key(key)]
+    inputs.update(formula_store.official_rows(official))
+    return inputs
+
+
+def _months(connection: duckdb.DuckDBPyConnection, version: DatasetVersion) -> None:
+    """Слой месяцев для вида «По месяцам»: значения рядов периодов внутри года."""
+    connection.execute(MONTHS_SQL)
+    count, first, last = connection.execute(
+        "SELECT count(*), min(year), max(year) FROM fact_month"
+    ).fetchone() or (0, None, None)
+    if not count:
+        return
+    connection.execute(
+        "INSERT INTO dim_edition VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, NULL, NULL, 0)",
+        [
+            monthly.EDITION,
+            version.dataset.title,
+            version.dataset.title,
+            int(last),
+            int(count),
+            int(first),
+            int(last),
+            version.file_name[:100],
+        ],
+    )
+
+
 def _plan_frame(plan: list[dict[str, Any]]) -> pd.DataFrame:
     """Ряды для запросов сборки: номер ряда таблицы, ключ, вид, пересчёт и его основа."""
     return pd.DataFrame(
@@ -313,11 +761,56 @@ def _plan_frame(plan: list[dict[str, Any]]) -> pd.DataFrame:
             "source": [int(item["source"]) for item in plan],
             "series_key": [item["key"] for item in plan],
             "kind": [item["kind"] for item in plan],
+            "base_kind": [item.get("base_kind", item["kind"]) for item in plan],
             "derived": [item["derived"] for item in plan],
             "base_key": [item["base_key"] for item in plan],
             "factor": [float(PER_FACTORS.get(item["derived"], 0)) for item in plan],
+            "month_key": [item.get("month_key", "") for item in plan],
+            "month": [int(item.get("month", 0)) for item in plan],
+            "month_kind": [item.get("month_kind", "") for item in plan],
         }
     )
+
+
+def _folds_frame(plan: list[dict[str, Any]]) -> pd.DataFrame:
+    """Слагаемые свёрток: ряд свёртки, ряд-слагаемое, число слагаемых и способ."""
+    rows = [
+        (item["key"], member, len(item["member_keys"]), item["method"])
+        for item in plan
+        for member in item["member_keys"]
+    ]
+    return pd.DataFrame(rows, columns=["series_key", "member_key", "members", "method"])
+
+
+def _cpi_frame(connection: duckdb.DuckDBPyConnection) -> pd.DataFrame:
+    """
+    Индекс потребительских цен (% к прошлому году) по территориям таблицы — тот же ряд,
+    по которому сайт переводит в цены года денежные показатели основного набора.
+    """
+    from apps.warehouse.queries import featured_series, series_values
+
+    key = next(
+        (
+            item.real.index
+            for item in featured_series()
+            if item.real is not None and item.real.method == CPI_METHOD
+        ),
+        None,
+    )
+    codes = [
+        row[0]
+        for row in connection.execute(
+            "SELECT DISTINCT territory_code FROM facts ORDER BY 1"
+        ).fetchall()
+    ]
+    values = series_values([key], codes).get(key, {}) if key else {}
+    rows = [
+        (code, int(year), float(value))
+        for code, years in values.items()
+        for year, value in years.items()
+        if value is not None
+    ]
+    return pd.DataFrame(rows, columns=["territory_code", "year", "cpi"])
 
 
 def _nested_frame() -> pd.DataFrame:
@@ -489,7 +982,11 @@ def _save(
         version.refresh_from_db(fields=["report"])
         version.report = {
             **version.report,
-            "build": {"alone_missing": summary["alone_missing"]},
+            "build": {
+                "alone_missing": summary["alone_missing"],
+                "alone_conflict": summary["alone_conflict"],
+                "formula_errors": summary["formula_errors"],
+            },
         }
         version.data_file = file_name
         version.state = DatasetVersion.State.BUILT
@@ -506,6 +1003,8 @@ def _save(
     from .services import update_size
 
     update_size(version.dataset)
+    # Таблицы, формулы которых ссылаются на эту, считаются по её новым значениям.
+    formula_store.rebuild_dependents(version.dataset)
 
 
 def _remove(path: Path) -> None:

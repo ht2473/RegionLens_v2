@@ -61,7 +61,7 @@
     {% endif %}
 
     {% for question in nested %}
-      <fieldset class="question-card">
+      <fieldset class="question-card"{% if forloop.first %} id="nested"{% endif %}>
         {% if question.total_code == "RU-TYU-AGG" %}
           <legend class="question-card__title">
             {% blocktranslate trimmed with label=question.label %}

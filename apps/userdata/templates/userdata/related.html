@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load i18n static formatting userdata %}
+
+{# «С чем связан показатель»: связи ряда таблицы с рядами основного набора за общий год. #}
+
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+  <link rel="stylesheet" href="{% static 'css/userdata.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <p class="page-intro__kicker"><span{% with lang=dataset.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.title }}</span> · <span class="own-private">{% translate "видно только вам" %}</span></p>
+      <h1 class="page-intro__title">{% translate "С чем связан показатель" %}</h1>
+      <p class="page-intro__lead">
+        {% blocktranslate trimmed %}
+          Связь показателя таблицы с основными показателями сайта по регионам за один год:
+          коэффициент Спирмена, значимость — с поправкой на число сравнений. Связь не
+          означает, что один показатель влияет на другой.
+        {% endblocktranslate %}
+      </p>
+    </div>
+  </header>
+
+  <form method="get" class="months-form">
+    <div class="field">
+      <label class="field__label" for="related-series">{% translate "Показатель таблицы" %}</label>
+      <select class="select" id="related-series" name="series">
+        {% for item in choices %}
+          <option value="{{ item.key }}"{% if item.key == series.key %} selected{% endif %}{% with lang=item.full_title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.full_title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="months-form__action">
+      <button class="button button--secondary" type="submit">{% translate "Показать" %}</button>
+    </div>
+  </form>
+
+  {% if series.is_sum %}
+    <div class="callout callout--warning">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Сумма по региону" %}</div>
+        <p>
+          {% translate "Сумма связана со всем, что растёт вместе с численностью населения: связи повторяют размер регионов." %}
+          {% if per_capita %}<a href="{% url 'userdata:related' dataset.public_id %}?series={{ per_capita.key|urlencode }}">{% translate "Смотреть ряд на жителя" %}</a>{% endif %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if too_few %}
+    <div class="empty-state">
+      <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+      <p class="empty-state__title">{% translate "В таблице меньше 20 субъектов" %}</p>
+      <p class="empty-state__hint">{% translate "По нескольким регионам связь не оценить." %}</p>
+    </div>
+  {% elif links.year %}
+    <section class="page-section" aria-labelledby="related-significant">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="related-significant">
+          {% blocktranslate trimmed with year=links.year|year count=links.pairs %}Значимые связи, {{ year }} год, субъектов: {{ count }}{% endblocktranslate %}
+        </h2>
+      </div>
+      {% if links.significant %}
+        {% include "userdata/_related_table.html" with rows=links.significant caption=_("Значимые связи") %}
+      {% else %}
+        <p class="page-section__lead">{% translate "Ни одна связь не значима после поправки на число сравнений." %}</p>
+      {% endif %}
+    </section>
+
+    {% if links.other %}
+      <details class="question-card question-card--quiet">
+        <summary>{% blocktranslate trimmed with count=links.other|length %}Незначимые после поправки: {{ count }}{% endblocktranslate %}</summary>
+        {% include "userdata/_related_table.html" with rows=links.other caption=_("Незначимые связи") %}
+      </details>
+    {% endif %}
+  {% else %}
+    <p class="page-section__lead">{% translate "Нет года, за который есть значения большинства субъектов." %}</p>
+  {% endif %}
+
+  <p><a class="button button--ghost" href="{% url 'userdata:dataset' dataset.public_id %}">{% translate "К таблице" %}</a></p>
+</div>
+{% endblock %}

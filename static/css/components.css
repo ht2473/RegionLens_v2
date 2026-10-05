@@ -717,6 +717,11 @@ a.leader-list__name:hover {
   margin-bottom: var(--space-1);
 }
 
+/* Ссылка в тексте пояснения подчёркнута: на цветной подложке одного цвета мало (WCAG 1.4.1). */
+.callout a:not(.button) {
+  text-decoration: underline;
+}
+
 .callout--info {
   border-left-color: var(--accent);
 }

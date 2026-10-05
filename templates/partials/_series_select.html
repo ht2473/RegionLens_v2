@@ -20,7 +20,7 @@
                data-unnormalised-hint="{% translate 'Величина не приведена к численности населения или иной основе' %}">
     <select class="select" id="series-select" name="series">
       {# Свои таблицы — в разметке страницы: общий перечень один на всех и хранится браузером. #}
-      {% for group in own_groups %}<optgroup label="{{ group.title }}" data-own>{% for item in group.items %}<option value="{{ item.key }}"{% if item.unnormalised %} data-unnormalised="1"{% endif %} data-search="{{ item.search }}"{% if item.key == series.key %} selected{% endif %}>{{ item.title }}</option>{% endfor %}</optgroup>{% endfor %}
+      {% for group in own_groups %}<optgroup label="{{ group.title }}" data-own>{% for item in group.items %}<option value="{{ item.key }}"{% if item.unnormalised %} data-unnormalised="1"{% endif %} data-search="{{ item.search }}"{% if item.lang %} lang="{{ item.lang }}"{% endif %}{% if item.key == series.key %} selected{% endif %}>{{ item.title }}</option>{% endfor %}</optgroup>{% endfor %}
       {% if request.GET.series_list %}
         {% include "partials/_series_options.html" with selected_key=series.key %}
       {% elif series and not series.is_user %}

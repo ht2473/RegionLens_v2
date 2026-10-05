@@ -31,6 +31,7 @@ from . import (
 )
 from .forms import ChooseTableForm, DatasetMetaForm, PasteForm, UploadForm
 from .models import Dataset, DatasetSeries, DatasetVersion
+from .series import FEW_REGIONS
 
 STEPS: tuple[tuple[str, Promise], ...] = (
     ("file", _("Файл")),
@@ -383,10 +384,6 @@ class SeriesStatusView(DatasetStepMixin, View):
         )
 
 
-# Субъектов меньше этого: неравенство и пространственный анализ по набору не считаются.
-FEW_REGIONS = 20
-
-
 def _status_url(dataset: Dataset, stage: str) -> str:
     """Адрес опроса хода с этапом, которого ждёт страница."""
     url = reverse("userdata:series-status", args=[dataset.public_id])
@@ -448,6 +445,11 @@ def _indicator_answers(request: HttpRequest) -> dict[str, dict[str, Any]]:
             "kind": data.get(f"kind-{number}", ""),
             "polarity": data.get(f"polarity-{number}", ""),
             "per": data.getlist(f"per-{number}"),
+            "breaks": data.get(f"breaks-{number}", ""),
+            "break_note": data.get(f"break-note-{number}", ""),
+            "recalc": data.getlist(f"recalc-{number}"),
+            "fold_slices": data.getlist(f"fold-{number}"),
+            "months": data.get(f"months-{number}", ""),
         }
     return answers
 

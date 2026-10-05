@@ -91,6 +91,20 @@
     </div>
   {% endif %}
 
+  {% if alone_conflict %}
+    <div class="callout callout--warning">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Область, похоже, уже без автономных округов" %}</div>
+        <p>
+          {% translate "Значение области в таблице меньше суммы её автономных округов, поэтому это не итог вместе с ними, и вычитать округа нельзя. Область без округов не вычислена:" %}
+          {% for code in alone_conflict %}{{ code|territory_name }}{% if not forloop.last %}, {% endif %}{% endfor %}.
+          <a href="{% url 'userdata:table' dataset.public_id %}#nested">{% translate "Ответить на вопрос о вложенных областях" %}</a>
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
   {% if alone_missing %}
     <div class="callout callout--info">
       <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
@@ -102,13 +116,86 @@
   {% endif %}
   </div>
 
+  {% if glance.looks %}
+  <section class="page-section" aria-labelledby="own-glance">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="own-glance">{% translate "Первый взгляд" %}</h2>
+    </div>
+    {% if glance.open_as %}
+      <nav class="own-open-as" aria-label="{% translate 'Открыть как' %}">
+        <span class="own-open-as__label">{% translate "Открыть как" %}:</span>
+        {% for view in glance.open_as %}
+          <a class="button button--sm button--secondary" href="{{ view.url }}"><svg aria-hidden="true"><use href="#icon-{{ view.icon }}"></use></svg>{{ view.title }}</a>
+        {% endfor %}
+      </nav>
+    {% endif %}
+    <ol class="glance-list" id="glance-list" data-more-list>
+      {% for look in glance.looks %}
+        {% with precision=look.series.record.precision %}
+        <li class="glance-card"{% if forloop.counter > 4 %} data-more-item{% endif %}>
+          <h3 class="glance-card__title"{% with lang=look.series.full_title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ look.series.full_title }}</h3>
+          {% if look.full_year %}
+            <dl class="glance-card__facts">
+              <div><dt>{% translate "годы" %}</dt><dd><span class="numeric">{{ look.first_year|year }}{% if look.last_year != look.first_year %}–{{ look.last_year|year }}{% endif %}</span>{% if look.full_year != look.last_year %}; {% blocktranslate trimmed with year=look.full_year|year %}полный — {{ year }}{% endblocktranslate %}{% endif %}</dd></div>
+              <div><dt>{% blocktranslate trimmed with year=look.full_year|year %}субъектов в {{ year }}{% endblocktranslate %}</dt><dd class="numeric">{{ look.regions }}</dd></div>
+              {% if look.highest %}
+                <div><dt>{% translate "больше всего" %}</dt><dd>{{ look.highest.0 }}: <span class="numeric">{{ look.highest.1|ru_number:precision }}</span></dd></div>
+                <div><dt>{% translate "меньше всего" %}</dt><dd>{{ look.lowest.0 }}: <span class="numeric">{{ look.lowest.1|ru_number:precision }}</span></dd></div>
+              {% endif %}
+              {% if look.gini is not None %}
+                <div><dt>{% translate "коэффициент Джини" %}</dt><dd class="numeric">{{ look.gini|ru_number:3 }}</dd></div>
+              {% endif %}
+              {% if look.moran is not None %}
+                <div><dt>{% translate "индекс Морана" %}</dt><dd><span class="numeric">{{ look.moran|ru_number:2 }}</span> — {% if look.moran_direction == "clustered" %}{% translate "соседние регионы похожи" %}{% elif look.moran_direction == "dispersed" %}{% translate "соседние регионы различаются" %}{% else %}{% translate "размещение неотличимо от случайного" %}{% endif %}</dd></div>
+              {% endif %}
+              {% if look.population is not None %}
+                <div><dt>{% translate "связь с численностью населения" %}</dt><dd><span class="numeric">{{ look.population|ru_number:2 }}</span>{% if not look.population_significant %} — {% translate "незначима" %}{% endif %}</dd></div>
+              {% endif %}
+              {% if look.country is not None %}
+                <div><dt>{% translate "Россия и сумма регионов" %}</dt><dd class="numeric">{{ look.country|ru_number:precision }} · {{ look.subjects_sum|ru_number:precision }}</dd></div>
+              {% endif %}
+            </dl>
+            {% if look.kind_note %}
+              <p class="glance-card__note"><svg aria-hidden="true"><use href="#icon-alert"></use></svg>{{ look.kind_note }}</p>
+            {% endif %}
+            {% if look.composition_text %}
+              <p class="glance-card__text">{{ look.composition_text }}</p>
+            {% endif %}
+            {% if look.missing_count %}
+              <p class="glance-card__text">
+                {% blocktranslate trimmed with year=look.last_year|year count=look.missing_count %}Субъектов без значений в {{ year }} году: {{ count }}{% endblocktranslate %}: {{ look.missing_last|join:", " }}{% if look.missing_count > look.missing_last|length %}…{% endif %}
+              </p>
+            {% endif %}
+          {% else %}
+            <p class="glance-card__text">{% translate "Значений по субъектам нет." %}</p>
+          {% endif %}
+        </li>
+        {% endwith %}
+      {% endfor %}
+    </ol>
+    {% if glance.hidden_count %}
+      <button type="button" class="button button--ghost button--sm" data-more-toggle aria-controls="glance-list" aria-expanded="true" hidden
+              data-more-label="{% blocktranslate trimmed with count=glance.hidden_count %}Ещё {{ count }}{% endblocktranslate %}" data-less-label="{% translate "Свернуть" %}">{% translate "Свернуть" %}</button>
+    {% endif %}
+    {% if glance.more %}
+      <p class="page-section__lead">{% blocktranslate trimmed with count=glance.more %}Ещё показателей: {{ count }} — их ряды ниже.{% endblocktranslate %}</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
   <section class="page-section" aria-labelledby="own-series">
     <div class="page-section__head">
       <h2 class="page-section__title" id="own-series">{% translate "Показатели" %}</h2>
-      <a class="button button--sm button--ghost" href="{% url 'userdata:series' dataset.public_id %}">
-        <svg aria-hidden="true"><use href="#icon-edit"></use></svg>
-        {% translate "Изменить описание" %}
-      </a>
+      <div class="own-section-actions">
+        <a class="button button--sm button--ghost" href="{% url 'userdata:table' dataset.public_id %}">
+          <svg aria-hidden="true"><use href="#icon-filter"></use></svg>
+          {% translate "Столбцы и отбор разрезов" %}
+        </a>
+        <a class="button button--sm button--ghost" href="{% url 'userdata:series' dataset.public_id %}">
+          <svg aria-hidden="true"><use href="#icon-edit"></use></svg>
+          {% translate "Изменить описание" %}
+        </a>
+      </div>
     </div>
     {% for group in groups %}
       <div class="own-indicator">
@@ -117,6 +204,15 @@
           {% if group.unit %}<span{% with lang=group.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ group.unit }}</span> · {% endif %}
           {% if group.kind == "sum" %}{% translate "сумма" %}{% else %}{% translate "относительная величина" %}{% endif %}
         </p>
+        {% if group.months_url %}
+          <p class="own-indicator__months"><a href="{{ group.months_url }}"><svg aria-hidden="true"><use href="#icon-dynamics"></use></svg>{% translate "По месяцам" %}</a></p>
+        {% endif %}
+        {% if group.breaks %}
+          <p class="own-indicator__breaks">
+            {% translate "Смена методики" %}:
+            {% for item in group.breaks %}<span class="numeric">{{ item.year|year }}</span>{% if not forloop.last %}, {% endif %}{% endfor %}{% with note=group.breaks.0.note %}{% if note %} — <span{% with lang=note|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ note }}</span>{% endif %}{% endwith %}
+          </p>
+        {% endif %}
         <ul class="own-series">
           {% for item in group.items %}
             <li class="own-series__item" id="series-{{ item.record.code }}">
@@ -131,12 +227,60 @@
                 {% for view in item.views %}
                   <a class="own-series__view" href="{{ view.url }}"><svg aria-hidden="true"><use href="#icon-{% if view.code == 'compare' %}dynamics{% elif view.code == 'rankings' %}ranking{% else %}{{ view.code }}{% endif %}"></use></svg>{{ view.title }}</a>
                 {% endfor %}
+                {% if item.related_url %}
+                  <a class="own-series__view" href="{{ item.related_url }}"><svg aria-hidden="true"><use href="#icon-correlation"></use></svg>{% translate "С чем связан" %}</a>
+                {% endif %}
               </nav>
             </li>
           {% endfor %}
         </ul>
       </div>
     {% endfor %}
+  </section>
+
+  <section class="page-section" aria-labelledby="own-formulas">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="own-formulas">{% translate "Показатели по формулам" %}</h2>
+      <a class="button button--sm button--secondary" href="{% url 'userdata:formula-new' dataset.public_id %}">
+        <svg aria-hidden="true"><use href="#icon-plus"></use></svg>
+        {% translate "Добавить по формуле" %}
+      </a>
+    </div>
+    {% if formulas %}
+      <ul class="own-series own-series--formulas">
+        {% for item in formulas %}
+          <li class="own-series__item" id="series-{{ item.definition.code }}">
+            <div class="own-series__text">
+              <span class="own-series__name"{% with lang=item.definition.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.definition.title }}</span>
+              <code class="own-formula"{% with lang=item.expression|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.expression }}</code>
+              {% if item.series and item.series.record.values_count %}
+                <span class="own-series__facts">
+                  {% blocktranslate trimmed with count=item.series.record.regions_count %}субъектов: {{ count }}{% endblocktranslate %}
+                  {% if item.series.record.first_year %}· <span class="numeric">{{ item.series.record.first_year|year }}{% if item.series.record.last_year != item.series.record.first_year %}–{{ item.series.record.last_year|year }}{% endif %}</span>{% endif %}
+                  {% if item.definition.unit %}· <span{% with lang=item.definition.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.definition.unit }}</span>{% endif %}
+                </span>
+              {% endif %}
+              {% if item.error %}
+                <span class="own-formula__note"><svg aria-hidden="true"><use href="#icon-alert"></use></svg>{{ item.error }}</span>
+              {% endif %}
+            </div>
+            <nav class="own-series__views" aria-label="{% translate 'Открыть ряд' %}">
+              {% for view in item.views %}
+                <a class="own-series__view" href="{{ view.url }}"><svg aria-hidden="true"><use href="#icon-{% if view.code == 'compare' %}dynamics{% elif view.code == 'rankings' %}ranking{% else %}{{ view.code }}{% endif %}"></use></svg>{{ view.title }}</a>
+              {% endfor %}
+              {% if item.related_url %}
+                <a class="own-series__view" href="{{ item.related_url }}"><svg aria-hidden="true"><use href="#icon-correlation"></use></svg>{% translate "С чем связан" %}</a>
+              {% endif %}
+              <a class="own-series__view" href="{{ item.edit_url }}"><svg aria-hidden="true"><use href="#icon-edit"></use></svg>{% translate "Изменить" %}</a>
+            </nav>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="page-section__lead">
+        {% translate "Новый показатель из рядов этой и других ваших таблиц и официальных рядов сайта — например, ДТП на 1 000 автомобилей." %}
+      </p>
+    {% endif %}
   </section>
 
   <section class="page-section" aria-labelledby="own-territories">

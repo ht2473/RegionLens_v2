@@ -160,6 +160,8 @@ def _directions(request: Any, chosen: list[Series]) -> dict[str, dict[str, Any]]
             origin = "user"
         elif series.key in featured:
             origin = "featured"
+        elif getattr(series, "is_user", False):
+            origin = "described"
         else:
             origin = "guess"
         directions[series.key] = {

@@ -258,16 +258,21 @@ def series_picker(request: HttpRequest) -> HttpResponse:
     Развёрнутый перечень — около 400 КБ разметки. Без сценариев страница открывается
     с параметром ``picker``; отмеченные ряды приходят параметром ``series``.
     """
+    from apps.userdata.series import own_option_groups
+
     # Ряд, названный дважды, отмечается один раз.
     keys = list(dict.fromkeys(request.GET.getlist("series")))
+    own_groups = own_option_groups(request)
     return render(
         request,
         "partials/_series_picker.html",
         {
             "series_options": series_options,
+            "own_groups": own_groups,
             "selected_options": selected_series_options(keys),
             "selected_keys": keys,
-            "series_total": series_options_total(),
+            "series_total": series_options_total()
+            + sum(len(group["items"]) for group in own_groups),
             "picker_open": bool(request.GET.get("picker")),
         },
     )

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-04 12:10+0000\n"
+"POT-Creation-Date: 2026-10-05 12:47+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -648,7 +648,7 @@ msgstr "Your own table by region opens on the same map and in the same views as 
 #: apps/core/navigation.py:152
 #: apps/core/templates/core/home.html:86
 #: apps/userdata/templates/userdata/index.html:27
-#: apps/userdata/views.py:67
+#: apps/userdata/views.py:68
 msgid "Загрузить таблицу"
 msgstr "Upload a table"
 
@@ -1148,7 +1148,7 @@ msgid "накопленная доля величины, %"
 msgstr "cumulative share of the quantity, %"
 
 #: apps/analytics/charts.py:101
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:138
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:158
 msgid "первый год = 100"
 msgstr "first year = 100"
 
@@ -1181,10 +1181,12 @@ msgid "вклад в индекс"
 msgstr "contribution to the index"
 
 #: apps/analytics/charts.py:186
+#: apps/userdata/templates/userdata/_related_table.html:20
 msgid "прямая"
 msgstr "direct"
 
 #: apps/analytics/charts.py:186
+#: apps/userdata/templates/userdata/_related_table.html:20
 msgid "обратная"
 msgstr "inverse"
 
@@ -1286,7 +1288,7 @@ msgid "логарифмическая"
 msgstr "logarithmic"
 
 #: apps/analytics/core/regression.py:140
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:160
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:161
 msgid "Свободный член"
 msgstr "Intercept"
 
@@ -1342,11 +1344,11 @@ msgstr "CRITIC"
 msgid "по нагрузкам главных компонент"
 msgstr "by principal component loadings"
 
-#: apps/analytics/selectors.py:47
+#: apps/analytics/selectors.py:48
 msgid "постоянный: только субъекты со значениями во всех годах"
 msgstr "constant: only constituent entities with values in every year"
 
-#: apps/analytics/selectors.py:48
+#: apps/analytics/selectors.py:49
 msgid "все субъекты, по которым есть значения в каждом году"
 msgstr "all constituent entities with a value in each year"
 
@@ -1409,7 +1411,7 @@ msgid "Для региональных данных с тяжёлыми хвос
 msgstr "For regional data with heavy tails, the Spearman rank coefficient is the more robust choice."
 
 #: apps/analytics/templates/analytics/index.html:15
-#: apps/analytics/views/base.py:37
+#: apps/analytics/views/base.py:39
 #: apps/analytics/views/overview.py:25
 #: apps/analytics/views/overview.py:30
 #: apps/core/navigation.py:103
@@ -1459,9 +1461,9 @@ msgstr "Every result states the number of observations, the significance level a
 
 #: apps/analytics/templates/analytics/index_builder.html:12
 #: apps/analytics/templates/analytics/inequality.html:13
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:260
-#: apps/analytics/templates/analytics/partials/_index_results.html:246
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:283
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:263
+#: apps/analytics/templates/analytics/partials/_index_results.html:249
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:305
 msgid "Год"
 msgstr "Year"
 
@@ -1474,7 +1476,7 @@ msgid "Веса показателей"
 msgstr "Indicator weights"
 
 #: apps/analytics/templates/analytics/index_builder.html:39
-#: apps/analytics/templates/analytics/partials/_index_results.html:81
+#: apps/analytics/templates/analytics/partials/_index_results.html:82
 msgid "Свёртка"
 msgstr "Aggregation"
 
@@ -1562,203 +1564,205 @@ msgstr "%(name)s — years missing: %(count)s"
 msgid "Не вошли годы %(years)s: значения в них меньше чем у %(share)s субъектов."
 msgstr "Years %(years)s are not included: they have values for fewer than %(share)s of the constituent entities."
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:7
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:9
 msgid "Сближение по этому ряду не проверяется"
 msgstr "Convergence is not tested on this series"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:28
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:30
 #: apps/analytics/templates/analytics/partials/_correlation_results.html:26
 #: apps/analytics/templates/analytics/partials/_index_results.html:56
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:26
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:26
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:28
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:28
 msgid "Расчёт…"
 msgstr "Calculating…"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:35
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:37
 msgid "Сигма-конвергенция"
 msgstr "Sigma convergence"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:36
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:38
 msgid "сокращается ли разброс"
 msgstr "whether the spread is shrinking"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:41
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:43
 msgid "Разброс значений между регионами устойчиво сокращается."
 msgstr "The spread of values between regions is steadily shrinking."
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:43
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:45
 msgid "Разброс значений между регионами устойчиво растёт."
 msgstr "The spread of values between regions is steadily growing."
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:45
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:47
 msgid "Устойчивого изменения разброса не обнаружено."
 msgstr "No steady change in the spread was found."
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:53
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:195
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:55
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:198
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:502
 #: apps/rankings/templates/rankings/partials/_ranking_results.html:150
 msgid "Изменение"
 msgstr "Change"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:59
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:61
 msgid "Наклон тренда разброса"
 msgstr "Slope of the spread trend"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:67
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:69
 msgid "Недостаточно лет для оценки тенденции."
 msgstr "Not enough years to estimate the tendency."
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:73
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:75
 msgid "Бета-конвергенция"
 msgstr "Beta convergence"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:74
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:76
 msgid "догоняют ли отстающие"
 msgstr "whether the laggards are catching up"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:79
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:81
 msgid "Отстающие регионы росли быстрее передовых: сближение подтверждается."
 msgstr "Lagging regions grew faster than leading ones: convergence is confirmed."
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:81
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:83
 msgid "Передовые регионы росли быстрее отстающих: разрыв увеличивался."
 msgstr "Leading regions grew faster than lagging ones: the gap widened."
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:83
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:85
 msgid "Связь темпа роста с исходным уровнем статистически не подтверждена."
 msgstr "The relation between the growth rate and the initial level is not statistically confirmed."
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:87
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:89
 msgid "Коэффициент при логарифме значения в начальном году"
 msgstr "Coefficient on the logarithm of the value in the first year"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:88
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:90
 msgid "Коэффициент β"
 msgstr "Coefficient β"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:94
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:96
 msgid "Скорость сближения λ"
 msgstr "Speed of convergence λ"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:96
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:98
 msgid "в год"
 msgstr "per year"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:98
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:100
 msgid "За сколько лет исчезнет половина отставания при сохранении темпа"
 msgstr "How many years it takes for half the gap to disappear if the rate is maintained"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:99
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:101
 msgid "Период полусокращения разрыва"
 msgstr "Half-life of the gap"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:103
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:105
 msgid "года"
 msgstr "years"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:105
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:107
 msgid "не определён"
 msgstr "not determined"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:108
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:162
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:110
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:163
 msgid "Доля объяснённого разброса"
 msgstr "Share of explained spread"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:110
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:164
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:112
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:165
 msgid "Субъектов в расчёте"
 msgstr "Regions in the calculation"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:115
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:117
 msgid "Данных для оценивания недостаточно: нужны положительные значения по большинству субъектов в обоих годах."
 msgstr "There are not enough data for estimation: positive values are needed for most regions in both years."
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:132
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:134
 msgid "Разброс значений между регионами"
 msgstr "Spread of values between regions"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:133
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:139
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:135
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:159
 msgid "постоянный состав"
 msgstr "constant composition"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:145
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:152
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:147
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:172
 msgid "Пунктир — год разрыва сопоставимости."
 msgstr "A dashed line marks the year of a comparability break."
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:155
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:157
 msgid "Темп роста и исходный уровень"
 msgstr "Growth rate and initial level"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:157
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:159
 msgid "каждая точка — субъект"
 msgstr "each point is a region"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:177
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:179
 msgid "Росли быстрее всех"
 msgstr "Grew fastest of all"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:192
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:212
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:194
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:214
 msgid "Среднегодовой темп по логарифмам"
 msgstr "Average annual rate on logarithms"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:197
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:199
 msgid "Росли медленнее всех"
 msgstr "Grew slowest of all"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:221
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:223
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:230
 msgid "Оценённая модель"
 msgstr "Estimated model"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:223
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:151
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:225
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:152
 msgid "робастные стандартные ошибки (HC3)"
 msgstr "robust standard errors (HC3)"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:230
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:233
 msgid "Переменная"
 msgstr "Variable"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:231
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:75
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:234
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:76
+#: apps/userdata/templates/userdata/_related_table.html:9
 msgid "Коэффициент"
 msgstr "Coefficient"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:232
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:235
 msgid "Стандартная ошибка"
 msgstr "Standard error"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:233
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:236
 msgid "t"
 msgstr "t"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:234
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:78
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:169
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:237
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:79
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:172
 msgid "p"
 msgstr "p"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:262
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:265
 msgid "Почему две меры и почему они расходятся"
 msgstr "Why there are two measures and why they diverge"
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:9
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:11
 msgid "Нужен ряд с положительными значениями не менее чем по двадцати субъектам и отрезок длиной не менее пяти лет."
 msgstr "A series with positive values for at least twenty regions and an interval of at least five years is required."
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:139
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:141
 msgid "Стандартное отклонение логарифмов безразмерно и сопоставимо между показателями, в отличие от разброса самих значений, который растёт вместе со средним уровнем."
 msgstr "The standard deviation of logarithms is dimensionless and comparable across indicators, unlike the spread of the values themselves, which grows together with the average level."
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:164
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:166
 msgid "Наклон вниз означает, что регионы с низким исходным уровнем росли быстрее. Линия проводится только при статистически подтверждённой связи."
 msgstr "A downward slope means that regions with a low initial level grew faster. The line is drawn only when the relation is statistically confirmed."
 
-#: apps/analytics/templates/analytics/partials/_convergence_results.html:264
+#: apps/analytics/templates/analytics/partials/_convergence_results.html:267
 msgid "Сигма-конвергенция — сокращение разброса значений между регионами, бета-конвергенция — более быстрый рост регионов с низким исходным уровнем. Из второй не следует первая: регионы могут догонять лидеров и при этом меняться местами, так что разброс не сокращается. Период полусокращения продолжает наблюдавшийся темп и прогнозом не является."
 msgstr "Sigma convergence is a narrowing of the spread of values between regions; beta convergence is faster growth of regions with a low initial level. The first does not follow from the second: regions may catch up with the leaders and swap places so that the spread does not shrink. The half-life extends the observed pace and is not a forecast."
 
@@ -1791,6 +1795,7 @@ msgid "показаны только коэффициенты, значимые 
 msgstr "only coefficients significant after the multiple comparisons correction are shown"
 
 #: apps/analytics/templates/analytics/partials/_correlation_results.html:66
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:71
 msgid "Наиболее выраженные связи"
 msgstr "The most pronounced relations"
 
@@ -1798,86 +1803,89 @@ msgstr "The most pronounced relations"
 msgid "только значимые с поправкой"
 msgstr "significant after correction only"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:258
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:73
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:261
 #: apps/analytics/templates/analytics/partials/_correlation_results.html:74
-#: apps/analytics/templates/analytics/partials/_index_results.html:243
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:75
+#: apps/analytics/templates/analytics/partials/_index_results.html:246
 #: apps/catalog/templates/catalog/sources.html:170
 msgid "Показатель"
 msgstr "Indicator"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:76
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:77
 msgid "Теснота"
 msgstr "Strength"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:77
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:78
 msgid "Пар"
 msgstr "Pairs"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:79
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:80
 msgid "p с поправкой"
 msgstr "adjusted p"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:118
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:119
 msgid "и"
 msgstr "and"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:124
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:125
 msgid "пар"
 msgstr "pairs"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:126
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:127
 msgid "с поправкой"
 msgstr "adjusted"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:128
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:129
 msgid "связь не подтверждена"
 msgstr "the relation is not confirmed"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:131
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:132
 msgid "коэффициент не рассчитан: слишком мало пар наблюдений"
 msgstr "the coefficient was not calculated: too few pairs of observations"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:149
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:150
 msgid "Линейная зависимость"
 msgstr "Linear dependence"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:155
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:156
 msgid "Наклон"
 msgstr "Slope"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:183
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:184
 msgid "Связь при сдвиге во времени"
 msgstr "Relation under a time lag"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:207
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:208
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:216
 msgid "Частная корреляция"
 msgstr "Partial correlation"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:209
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:22
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:210
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:24
 #: apps/surface/builders.py:97
 #: apps/userdata/templates/userdata/dataset.html:47
+#: apps/userdata/templates/userdata/formula.html:120
 msgid "субъектов"
 msgstr "regions"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:210
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:211
 msgid "исключено влияние остальных показателей"
 msgstr "the influence of the other indicators is removed"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:251
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:253
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:257
 msgid "Показатели в расчёте"
 msgstr "Indicators in the calculation"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:259
-#: apps/analytics/templates/analytics/partials/_index_results.html:244
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:262
+#: apps/analytics/templates/analytics/partials/_index_results.html:247
 #: apps/catalog/templates/catalog/partials/_series_results.html:35
 #: apps/userdata/export.py:59
-#: apps/userdata/templates/userdata/series_step.html:150
+#: apps/userdata/templates/userdata/formula.html:95
 msgid "Единица"
 msgstr "Unit"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:261
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:264
 msgid "Субъектов с данными"
 msgstr "Regions with data"
 
@@ -1889,31 +1897,31 @@ msgstr "At least %(least)s series are required: the relation is computed between
 msgid "Пустая ячейка означает, что коэффициент не удалось отличить от нуля на уровне значимости 5 %% с поправкой Бенджамини — Хохберга: при многих парах часть из них выходит «значимой» случайно, и поправка сдерживает долю таких ложных находок. Значения вместе с уровнями значимости приведены в перечне ниже."
 msgstr "An empty cell means the coefficient could not be distinguished from zero at the 5%% significance level with the Benjamini–Hochberg correction: with many pairs some come out “significant” by chance, and the correction keeps the share of such false findings in check. Values with their significance levels are listed below."
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:102
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:103
 msgid "«p с поправкой» — уровень значимости с поправкой Бенджамини — Хохберга по всем парам матрицы; по нему и отбираются связи. Связь не означает причины. Два показателя могут двигаться вместе, потому что оба следуют за третьим — чаще всего за размером и уровнем развития региона."
 msgstr "“Adjusted p” is the significance level with the Benjamini–Hochberg correction across all pairs of the matrix; relations are selected by it. A relation does not mean a cause. Two indicators may move together because both follow a third — most often the size and level of development of the region."
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:139
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:140
 msgid "На диаграмме видно, держится ли связь на всех регионах или её создают несколько выделяющихся."
 msgstr "The chart shows whether the relation holds across all regions or is created by a few outliers."
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:168
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:169
 msgid "Наклон читается так: при увеличении показателя «%(x)s» на единицу показатель «%(y)s» в среднем меняется на величину коэффициента. Это описание совместного движения, а не утверждение о воздействии."
 msgstr "The slope reads as follows: when the indicator “%(x)s” increases by one unit, the indicator “%(y)s” changes on average by the value of the coefficient. This is a description of joint movement, not a statement about influence."
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:185
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:186
 msgid "«%(x)s» за более ранние годы и «%(y)s» за %(target)s год"
 msgstr "“%(x)s” for earlier years and “%(y)s” for %(target)s"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:194
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:195
 msgid "Если связь заметно сильнее при сдвиге в несколько лет, чем при нулевом, это довод в пользу того, что первый показатель предшествует второму, но не доказательство: одновременное движение обоих вслед за третьим даёт ту же картину."
 msgstr "If the relation is noticeably stronger at a lag of several years than at zero lag, that is an argument for the first indicator preceding the second, but not a proof: simultaneous movement of both following a third gives the same picture."
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:238
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:240
 msgid "Частная корреляция показывает связь двух показателей при исключённом влиянии остальных выбранных. Заметное падение коэффициента по сравнению с парным означает, что связь во многом объяснялась третьими показателями. В расчёт входят только субъекты, по которым есть данные по всем выбранным рядам."
 msgstr "Partial correlation shows the relation of two indicators with the influence of the other selected ones removed. A noticeable drop in the coefficient compared with the pairwise one means the relation was largely explained by third indicators. Only regions with data on all the selected series enter the calculation."
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:284
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:287
 msgid "Год, отличающийся от выбранного (%(target)s), выделен цветом: у показателя нет данных за этот год, и взят ближайший доступный."
 msgstr "A year differing from the selected one (%(target)s) is marked with colour: the indicator has no data for that year and the nearest available one was taken."
 
@@ -1926,12 +1934,12 @@ msgid "— задайте —"
 msgstr "— choose —"
 
 #: apps/analytics/templates/analytics/partials/_index_results.html:21
-#: apps/analytics/templates/analytics/partials/_index_results.html:264
+#: apps/analytics/templates/analytics/partials/_index_results.html:267
 msgid "больше — лучше"
 msgstr "more is better"
 
 #: apps/analytics/templates/analytics/partials/_index_results.html:22
-#: apps/analytics/templates/analytics/partials/_index_results.html:265
+#: apps/analytics/templates/analytics/partials/_index_results.html:268
 msgid "меньше — лучше"
 msgstr "less is better"
 
@@ -1940,6 +1948,7 @@ msgid "Индекс не построен"
 msgstr "The index has not been built"
 
 #: apps/analytics/templates/analytics/partials/_index_results.html:46
+#: apps/userdata/glance.py:355
 msgid "Интегральный индекс"
 msgstr "Composite index"
 
@@ -1952,6 +1961,7 @@ msgid "О весах"
 msgstr "About the weights"
 
 #: apps/analytics/templates/analytics/partials/_index_results.html:73
+#: apps/analytics/templates/analytics/partials/_index_results.html:78
 msgid "Насколько результат зависит от способа расчёта"
 msgstr "How far the result depends on the method of calculation"
 
@@ -1959,116 +1969,126 @@ msgstr "How far the result depends on the method of calculation"
 msgid "проверка устойчивости"
 msgstr "robustness check"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:80
+#: apps/analytics/templates/analytics/partials/_index_results.html:81
 msgid "Шкала"
 msgstr "Scale"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:82
+#: apps/analytics/templates/analytics/partials/_index_results.html:83
 msgid "Первое место"
 msgstr "First place"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:83
+#: apps/analytics/templates/analytics/partials/_index_results.html:84
 msgid "Среднее смещение"
 msgstr "Average shift"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:84
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:124
+#: apps/analytics/templates/analytics/partials/_index_results.html:85
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:125
 msgid "Наибольшее"
 msgstr "Largest"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:85
+#: apps/analytics/templates/analytics/partials/_index_results.html:86
 msgid "Без изменений"
 msgstr "Unchanged"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:86
+#: apps/analytics/templates/analytics/partials/_index_results.html:87
 msgid "Действие"
 msgstr "Action"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:105
+#: apps/analytics/templates/analytics/partials/_index_results.html:106
 msgid "убрать"
 msgstr "remove"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:111
+#: apps/analytics/templates/analytics/partials/_index_results.html:112
 msgid "показать рядом"
 msgstr "show side by side"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:135
+#: apps/analytics/templates/analytics/partials/_index_results.html:136
 msgid "Из чего складывается оценка"
 msgstr "What the score is made of"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:137
+#: apps/analytics/templates/analytics/partials/_index_results.html:138
 msgid "верхняя часть рейтинга; высота столбца — итоговая оценка"
 msgstr "the top of the ranking; the height of the bar is the final score"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:155
+#: apps/analytics/templates/analytics/partials/_index_results.html:156
 msgid "Рейтинг по интегральному индексу"
 msgstr "Ranking by the composite index"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:164
+#: apps/analytics/templates/analytics/partials/_index_results.html:165
 msgid "Показаны два расчёта"
 msgstr "Two calculations shown"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:180
+#: apps/analytics/templates/analytics/partials/_index_results.html:179
+msgid "Рейтинг регионов по индексу"
+msgstr "Regional ranking by the index"
+
+#: apps/analytics/templates/analytics/partials/_index_results.html:182
 #: apps/rankings/templates/rankings/partials/_ranking_results.html:132
 #: apps/surface/templates/surface/panels/_table.html:39
 msgid "Место"
 msgstr "Place"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:181
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:191
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:163
+#: apps/analytics/templates/analytics/partials/_index_results.html:183
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:194
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:166
 #: apps/rankings/templates/rankings/partials/_ranking_results.html:133
 #: apps/surface/templates/surface/panels/_table.html:35
 msgid "Субъект"
 msgstr "Region"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:182
+#: apps/analytics/templates/analytics/partials/_index_results.html:184
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:386
 msgid "Оценка"
 msgstr "Score"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:184
+#: apps/analytics/templates/analytics/partials/_index_results.html:186
 msgid "Место при сравнении"
 msgstr "Rank in the comparison"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:185
+#: apps/analytics/templates/analytics/partials/_index_results.html:187
 msgid "Смещение"
 msgstr "Shift"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:187
+#: apps/analytics/templates/analytics/partials/_index_results.html:189
 msgid "Показателей с данными"
 msgstr "Indicators with data"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:236
+#: apps/analytics/templates/analytics/partials/_index_results.html:238
+#: apps/analytics/templates/analytics/partials/_index_results.html:243
 msgid "Состав индекса"
 msgstr "Composition of the index"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:245
-#: apps/userdata/templates/userdata/series_step.html:170
+#: apps/analytics/templates/analytics/partials/_index_results.html:248
+#: apps/userdata/templates/userdata/formula.html:105
+#: apps/userdata/templates/userdata/series_step.html:201
 msgid "Направленность"
 msgstr "Polarity"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:247
+#: apps/analytics/templates/analytics/partials/_index_results.html:250
 msgid "Вес"
 msgstr "Weight"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:269
+#: apps/analytics/templates/analytics/partials/_index_results.html:272
 msgid "задано вами"
 msgstr "set by you"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:271
+#: apps/analytics/templates/analytics/partials/_index_results.html:274
 msgid "основной набор"
 msgstr "core set"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:273
+#: apps/analytics/templates/analytics/partials/_index_results.html:276
+msgid "из описания таблицы"
+msgstr "from the table description"
+
+#: apps/analytics/templates/analytics/partials/_index_results.html:278
 msgid "предложено по формулировке"
 msgstr "suggested from the wording"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:307
+#: apps/analytics/templates/analytics/partials/_index_results.html:312
 msgid "Веса задаются в произвольном масштабе; их сумма приводится к единице."
 msgstr "The weights are given on an arbitrary scale; their sum is normalised to one."
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:315
+#: apps/analytics/templates/analytics/partials/_index_results.html:320
 msgid "Порядок расчёта"
 msgstr "Order of calculation"
 
@@ -2080,188 +2100,211 @@ msgstr "The wording does not tell whether a larger value is better. Until the po
 msgid "Нужно не менее %(least)s показателей с заданной направленностью: без ответа на вопрос «лучше ли большее значение» вклад показателя в оценку не определён."
 msgstr "At least %(least)s indicators with a set polarity are needed: without knowing whether a larger value is better, an indicator's contribution to the score is undefined."
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:120
+#: apps/analytics/templates/analytics/partials/_index_results.html:121
 msgid "Столбец «среднее смещение» показывает, на сколько позиций в среднем переехали бы субъекты, будь выбрано другое сочетание. Смещение в две-три позиции обычно; смещение в двадцать означает, что места зависят от способа расчёта сильнее, чем от данных."
 msgstr "The “average shift” column shows how many places regions would move on average had another combination been chosen. A shift of two or three places is usual; a shift of twenty means that the places depend on the calculation method more than on the data."
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:144
+#: apps/analytics/templates/analytics/partials/_index_results.html:145
 msgid "Два субъекта с одинаковой оценкой могут иметь разный профиль: состав столбца показывает, за счёт чего получено место."
 msgstr "Two regions with the same score may have different profiles: the composition of the bar shows what the place was obtained from."
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:166
+#: apps/analytics/templates/analytics/partials/_index_results.html:167
 msgid "Основной: %(base_scale)s, %(base_fold)s. Сравниваемый: %(other_scale)s, %(other_fold)s. Веса в обоих одинаковы — сравниваются только шкала и свёртка."
 msgstr "Main: %(base_scale)s, %(base_fold)s. Compared: %(other_scale)s, %(other_fold)s. Weights are the same in both — only the scale and the aggregation differ."
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:223
+#: apps/analytics/templates/analytics/partials/_index_results.html:225
 msgid "Субъекты, у которых данных меньше %(share)s от числа показателей, в рейтинг не включены: оценка по трём показателям из десяти несопоставима с оценкой по всем десяти. Веса недостающих показателей перераспределяются между имеющимися, иначе отсутствие данных штрафовало бы территорию так же, как плохое значение."
 msgstr "Regions with data for less than %(share)s of the number of indicators are not included in the ranking: a score on three indicators out of ten is not comparable with a score on all ten. The weights of the missing indicators are redistributed among those present, otherwise absence of data would penalise a territory in the same way as a poor value."
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:261
+#: apps/analytics/templates/analytics/partials/_index_results.html:264
 msgid "Направленность: %(name)s"
 msgstr "Polarity: %(name)s"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:283
+#: apps/analytics/templates/analytics/partials/_index_results.html:288
 msgid "Вес: %(name)s"
 msgstr "Weight: %(name)s"
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:299
+#: apps/analytics/templates/analytics/partials/_index_results.html:304
 msgid "Для показателей «меньше — лучше» шкала разворачивается, поэтому сто по любой оси означает «лучше». У основного набора направленность задана вручную, у остальных рядов угадана по формулировке — проверьте её. Год, отличающийся от выбранного, выделен цветом: у показателя нет данных за этот год, и взят ближайший доступный."
 msgstr "For “less is better” indicators the scale is reversed, so one hundred on any axis means “better”. Core-set indicators have a polarity set by hand; for other series it is guessed from the wording — check it. A year that differs from the selected one is highlighted: the indicator has no data for that year, and the nearest available one is used."
 
-#: apps/analytics/templates/analytics/partials/_index_results.html:317
+#: apps/analytics/templates/analytics/partials/_index_results.html:322
 msgid "Значения приводятся к шкале от нуля до ста с учётом направленности показателя, затем назначаются веса, затем выполняется свёртка. Веса по данным (энтропийные, CRITIC, по главным компонентам) считаются после приведения к общей шкале, иначе наибольший вес получил бы показатель с наибольшими числами."
 msgstr "Values are brought to a scale from zero to one hundred, taking the indicator's direction into account; then weights are assigned; then the values are aggregated. Data-driven weights (entropy, CRITIC, principal components) are computed after rescaling to the common scale; otherwise the indicator with the largest numbers would get the largest weight."
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:7
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:9
 msgid "Меры неравенства по этому ряду не рассчитаны"
 msgstr "Inequality measures are not calculated for this series"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:9
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:11
 msgid "Для расчёта нужны значения не менее чем по пяти субъектам за выбранный год."
 msgstr "The calculation requires values for at least five regions for the selected year."
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:93
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:36
+#: apps/userdata/templates/userdata/related.html:48
+msgid "Сумма по региону"
+msgstr "Regional total"
+
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:38
+msgid "Неравенство сумм показывает прежде всего различие регионов по численности населения."
+msgstr "Inequality of totals mostly shows how regions differ in population size."
+
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:40
+msgid "Считать на жителя"
+msgstr "Calculate per inhabitant"
+
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:42
+#: apps/userdata/templates/userdata/dataset.html:65
+msgid "Добавить пересчёт на 100 000 жителей"
+msgstr "Add a per-100,000-inhabitants series"
+
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:113
 msgid "Изменение за период"
 msgstr "Change over the period"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:116
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:136
 msgid "Кривая Лоренца"
 msgstr "Lorenz curve"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:134
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:154
 msgid "Динамика мер неравенства"
 msgstr "Dynamics of the inequality measures"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:163
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:183
 msgid "Откуда берутся различия"
 msgstr "Where the differences come from"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:170
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:190
 msgid "Индекс Тейла, всего"
 msgstr "Theil index, total"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:172
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:192
 msgid "Различия между округами"
 msgstr "Differences between districts"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:176
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:196
 msgid "Различия внутри округов"
 msgstr "Differences within districts"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:194
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:214
 msgid "Вклад округа во внутригрупповую составляющую индекса"
 msgstr "Contribution of the district to the within-group part of the index"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:204
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:222
+msgid "Разложение индекса Тейла по федеральным округам"
+msgstr "Decomposition of the Theil index by federal district"
+
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:225
 #: apps/surface/templates/surface/partials/_district.html:4
 msgid "Федеральный округ"
 msgstr "Federal district"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:205
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:284
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:226
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:306
 #: apps/dashboard/templates/dashboard/release.html:56
 msgid "Субъектов"
 msgstr "Regions"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:206
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:285
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:227
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:307
 msgid "Среднее"
 msgstr "Mean"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:207
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:228
 msgid "К среднему по стране"
 msgstr "To the national average"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:208
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:229
 msgid "Индекс Тейла внутри"
 msgstr "Theil index within"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:209
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:230
 msgid "Вклад"
 msgstr "Contribution"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:233
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:254
 msgid "Наибольшие значения"
 msgstr "Largest values"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:253
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:274
 msgid "Наименьшие значения"
 msgstr "Smallest values"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:276
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:297
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:302
 msgid "Меры неравенства по годам"
 msgstr "Inequality measures by year"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:277
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:298
 msgid "лет"
 msgstr "years"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:286
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:308
 msgid "Джини"
 msgstr "Gini"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:287
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:309
 msgid "Тейл"
 msgstr "Theil"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:288
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:310
 msgid "Вариация"
 msgstr "Variation"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:289
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:311
 msgid "Децильный"
 msgstr "Decile"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:291
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:313
 msgid "Субъектов со скрытым источником значением"
 msgstr "Constituent entities whose value is withheld by the source"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:291
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:313
 #: apps/dashboard/templates/dashboard/release.html:58
 msgid "Скрыто"
 msgstr "Withheld"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:331
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:353
 msgid "Как считаются меры"
 msgstr "How the measures are calculated"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:58
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:78
 msgid "Значения скрыты по субъектам: %(hidden)s"
 msgstr "Values withheld for constituent entities: %(hidden)s"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:61
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:81
 msgid "В %(year)s году источник не раскрыл часть значений. Меры выше посчитаны по остальным субъектам. Если скрытое значение не выходит за наблюдаемые минимум и максимум, меры лежат в таких границах:"
 msgstr "In %(year)s the source did not disclose some values. The measures above are computed over the remaining constituent entities. If a withheld value lies within the observed minimum and maximum, the measures lie within these bounds:"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:73
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:93
 msgid "ширина — %(width)s от оценки"
 msgstr "width — %(width)s of the estimate"
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:82
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:102
 msgid "Значения скрыты по субъектам: %(hidden)s. Границы мер при скрытых значениях считаются для равнозначных территорий."
 msgstr "Values withheld for constituent entities: %(hidden)s. Bounds under withheld values are computed with territories counted equally."
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:123
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:143
 msgid "Диагональ отвечает равному распределению. Удвоенная площадь между ней и кривой — коэффициент Джини."
 msgstr "The diagonal corresponds to an equal distribution. Twice the area between it and the curve is the Gini coefficient."
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:146
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:166
 msgid "Меры измеряются в несопоставимых шкалах, поэтому каждая приведена к своему первому году. График отвечает на вопрос о направлении изменения; сами уровни приведены в таблице ниже."
 msgstr "The measures are expressed on incomparable scales, so each is brought to its own first year. The chart answers the question about the direction of change; the levels themselves are given in the table below."
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:182
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:202
 msgid "На различия между федеральными округами приходится %(between)s общего неравенства, на различия внутри округов — %(within)s."
 msgstr "Differences between federal districts account for %(between)s of the total inequality, differences within districts for %(within)s."
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:315
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:337
 msgid "Меры по годам посчитаны по одним и тем же %(count)s субъектам."
 msgstr "The measures for each year are computed over the same %(count)s constituent entities."
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:319
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:341
 msgid "Число субъектов по годам различается: скачок меры в год смены состава объясняется им, а не изменением неравенства."
 msgstr "The number of constituent entities differs from year to year: a jump in a measure in the year the composition changes is due to that, not to a change in inequality."
 
-#: apps/analytics/templates/analytics/partials/_inequality_results.html:333
+#: apps/analytics/templates/analytics/partials/_inequality_results.html:355
 msgid "Коэффициент Джини — удвоенная площадь между кривой Лоренца и линией равенства. Индекс Тейла раскладывается на различия между округами и внутри округов. Индексы Тейла и Аткинсона считаются только для положительных значений, коэффициент Джини — для неотрицательных; если мера неприменима, вместо неё стоит прочерк с причиной."
 msgstr "The Gini coefficient is twice the area between the Lorenz curve and the line of equality. The Theil index splits into differences between districts and within districts. The Theil and Atkinson indices are computed only for positive values, the Gini coefficient for non-negative ones; where a measure does not apply, a dash with the reason stands in its place."
 
@@ -2269,30 +2312,38 @@ msgstr "The Gini coefficient is twice the area between the Lorenz curve and the 
 msgid "Версии этого наблюдения не найдены."
 msgstr "No versions of this observation were found."
 
-#: apps/analytics/templates/analytics/partials/_revision_trace.html:18
+#: apps/analytics/templates/analytics/partials/_revision_trace.html:16
+msgid "Значение в разных изданиях"
+msgstr "The value in different editions"
+
+#: apps/analytics/templates/analytics/partials/_revision_trace.html:19
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:538
 #: apps/dashboard/templates/dashboard/sources.html:185
 msgid "Выпуск"
 msgstr "Release"
 
-#: apps/analytics/templates/analytics/partials/_revision_trace.html:19
+#: apps/analytics/templates/analytics/partials/_revision_trace.html:20
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:537
 msgid "Издание"
 msgstr "Edition"
 
-#: apps/analytics/templates/analytics/partials/_revision_trace.html:20
+#: apps/analytics/templates/analytics/partials/_revision_trace.html:21
 msgid "Опубликованное значение"
 msgstr "Published value"
 
-#: apps/analytics/templates/analytics/partials/_revision_trace.html:21
+#: apps/analytics/templates/analytics/partials/_revision_trace.html:22
 msgid "Качество"
 msgstr "Quality"
 
-#: apps/analytics/templates/analytics/partials/_revision_trace.html:43
+#: apps/analytics/templates/analytics/partials/_revision_trace.html:44
 msgid "Весь ряд по выпускам: строка — год наблюдения, столбец — выпуск сборника"
 msgstr "The whole series by edition: rows are observation years, columns are editions of the statistical collection"
 
-#: apps/analytics/templates/analytics/partials/_revision_trace.html:84
+#: apps/analytics/templates/analytics/partials/_revision_trace.html:49
+msgid "Весь ряд по выпускам"
+msgstr "The whole series by edition"
+
+#: apps/analytics/templates/analytics/partials/_revision_trace.html:86
 msgid "Насколько значение меняется после первой публикации"
 msgstr "How much the value changes after its first publication"
 
@@ -2300,11 +2351,11 @@ msgstr "How much the value changes after its first publication"
 msgid "%(territory)s, %(year)s год — как значение публиковалось в разных изданиях:"
 msgstr "%(territory)s, %(year)s — how the value was published in different editions:"
 
-#: apps/analytics/templates/analytics/partials/_revision_trace.html:87
+#: apps/analytics/templates/analytics/partials/_revision_trace.html:89
 msgid "выпусков спустя: %(step)s — среднее изменение %(mean)s, наблюдений: %(count)s"
 msgstr "editions later: %(step)s — average change %(mean)s, observations: %(count)s"
 
-#: apps/analytics/templates/analytics/partials/_revision_trace.html:94
+#: apps/analytics/templates/analytics/partials/_revision_trace.html:96
 msgid "Повторных публикаций у этого ряда нет: каждый выпуск печатает свои годы и прежние не переиздаёт, поэтому сравнивать нечего."
 msgstr "This series has no repeated publications: each edition prints its own years and does not reissue earlier ones, so there is nothing to compare."
 
@@ -2382,6 +2433,7 @@ msgid "по отчётному году наблюдения"
 msgstr "by the reporting year of the observation"
 
 #: apps/analytics/templates/analytics/partials/_revisions_results.html:113
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:118
 msgid "Разделы сборников"
 msgstr "Sections of the editions"
 
@@ -2389,21 +2441,21 @@ msgstr "Sections of the editions"
 msgid "по числу пересмотренных наблюдений"
 msgstr "by the number of revised observations"
 
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:120
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:155
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:121
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:157
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:402
 msgid "Раздел"
 msgstr "Section"
 
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:121
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:156
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:122
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:158
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:539
 #: apps/dashboard/templates/dashboard/data.html:184
 #: apps/dashboard/templates/dashboard/data.html:243
 msgid "Наблюдений"
 msgstr "Observations"
 
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:122
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:123
 #: apps/catalog/templates/catalog/partials/_series_results.html:6
 #: apps/dashboard/templates/dashboard/_candidate_report.html:22
 #: apps/dashboard/templates/dashboard/data.html:43
@@ -2411,30 +2463,31 @@ msgstr "Observations"
 msgid "Рядов"
 msgstr "Series"
 
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:123
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:159
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:124
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:161
 msgid "Типичное изменение"
 msgstr "Typical change"
 
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:145
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:146
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:153
 msgid "Ряды, пересматриваемые чаще всего"
 msgstr "The most frequently revised series"
 
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:147
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:148
 msgid "отобран раздел"
 msgstr "section selected"
 
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:154
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:190
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:156
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:193
 #: apps/catalog/templates/catalog/partials/_series_results.html:34
 msgid "Ряд наблюдений"
 msgstr "Series of observations"
 
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:157
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:159
 msgid "Территорий"
 msgstr "Territories"
 
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:158
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:160
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:323
 #: apps/catalog/templates/catalog/partials/_series_results.html:37
 #: apps/catalog/templates/catalog/sources.html:171
@@ -2442,27 +2495,28 @@ msgstr "Territories"
 msgid "Годы"
 msgstr "Years"
 
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:183
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:185
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:190
 msgid "Наиболее крупные расхождения"
 msgstr "The largest differences"
 
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:184
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:186
 msgid "изменение от 1 %% до пятикратного"
 msgstr "change from 1 %% to fivefold"
 
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:193
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:196
 msgid "Первая версия"
 msgstr "First version"
 
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:194
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:197
 msgid "Последняя версия"
 msgstr "Last version"
 
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:217
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:220
 msgid "версии"
 msgstr "versions"
 
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:240
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:243
 msgid "Как определяется пересмотр"
 msgstr "How a revision is determined"
 
@@ -2482,108 +2536,108 @@ msgstr "A difference of hundredths of a per cent is rounding on conversion; a di
 msgid "Если пересматриваются только недавние годы — это уточнение оперативных данных. Если и давние тоже — пересчёт ряда по новой методике, и сравнивать выводы, сделанные по разным изданиям, нельзя."
 msgstr "If only recent years are revised, this is a refinement of operational data. If earlier years are revised as well, the series has been recomputed under a new methodology, and conclusions drawn from different editions cannot be compared."
 
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:229
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:232
 msgid "Расхождения свыше пятикратных отсеяны: почти всегда это смена единицы измерения между изданиями, а не пересмотр самой величины. Кнопка «версии» показывает, в каком издании какое значение было напечатано."
 msgstr "Differences above fivefold are filtered out: almost always this is a change of the unit of measurement between editions rather than a revision of the quantity itself. The “versions” button shows which value was printed in which edition."
 
-#: apps/analytics/templates/analytics/partials/_revisions_results.html:242
+#: apps/analytics/templates/analytics/partials/_revisions_results.html:245
 msgid "Одно наблюдение — ряд, территория и год — выходит в нескольких выпусках изданий. Сохраняются все версии; пересмотр — наблюдение, значения которого в разных выпусках различаются. На сайте показывается значение из самого позднего выпуска, как у источника. Расхождение считается от первой опубликованной версии к последней."
 msgstr "One observation — a series, a territory and a year — appears in several issues of editions. All versions are kept; a revision is an observation whose values differ between issues. The site shows the value from the latest issue, as the source does. The difference is measured from the first published version to the last."
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:7
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:9
 msgid "Пространственный анализ не выполнен"
 msgstr "Spatial analysis was not performed"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:9
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:11
 msgid "Нужны значения не менее чем по двадцати субъектам, связанным соседством."
 msgstr "Values for at least twenty regions connected by adjacency are required."
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:22
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:24
 msgid "соседство"
 msgstr "adjacency"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:23
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:25
 msgid "субъектов в расчёте"
 msgstr "regions in the calculation"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:32
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:34
 msgid "Глобальный индекс Морана"
 msgstr "Global Moran index"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:34
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:36
 msgid "перестановок"
 msgstr "permutations"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:40
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:42
 msgid "Похожие значения группируются в пространстве: соседние регионы похожи друг на друга сильнее, чем случайно выбранные."
 msgstr "Similar values group in space: neighbouring regions resemble each other more than randomly chosen ones."
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:42
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:44
 msgid "Соседние регионы различаются сильнее, чем случайно выбранные: значения чередуются в пространстве."
 msgstr "Neighbouring regions differ more than randomly chosen ones: the values alternate in space."
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:44
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:46
 msgid "Пространственной структуры не обнаружено: показатель распределён так, как если бы значения были розданы регионам случайно."
 msgstr "No spatial structure was found: the indicator is distributed as if the values had been handed out to the regions at random."
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:50
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:52
 msgid "Индекс Морана"
 msgstr "Moran index"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:53
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:55
 msgid "при случайном распределении"
 msgstr "under a random distribution"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:57
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:59
 msgid "Уровень значимости"
 msgstr "Significance level"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:61
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:63
 msgid "структура отличается от случайной"
 msgstr "the structure differs from a random one"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:63
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:65
 msgid "отличие от случайного не подтверждено"
 msgstr "a difference from random is not confirmed"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:68
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:70
 msgid "Стандартизованное отклонение"
 msgstr "Standardised deviation"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:70
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:72
 msgid "во сколько σ индекс отличается от ожидаемого"
 msgstr "by how many σ the index differs from the expected one"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:73
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:75
 msgid "Выделяющихся субъектов"
 msgstr "Outlying regions"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:75
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:77
 msgid "со значимым локальным индексом"
 msgstr "with a significant local index"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:94
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:96
 msgid "Локальные пространственные кластеры"
 msgstr "Local spatial clusters"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:96
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:98
 msgid "раскрашены только субъекты со значимым локальным индексом"
 msgstr "only regions with a significant local index are coloured"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:111
-#: apps/analytics/views/spatial.py:174
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:113
+#: apps/analytics/views/spatial.py:178
 msgid "окружение неотличимо от случайного"
 msgstr "the surroundings are indistinguishable from random"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:128
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:130
 msgid "Диаграмма Морана"
 msgstr "Moran scatterplot"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:130
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:132
 msgid "значение территории и среднее значение её соседей"
 msgstr "the value of the territory and the mean value of its neighbours"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:164
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:167
 #: apps/catalog/templates/catalog/territory_detail.html:232
 #: apps/rankings/templates/rankings/partials/_ranking_results.html:135
 #: apps/surface/templates/surface/panels/_table.html:38
@@ -2591,37 +2645,50 @@ msgstr "the value of the territory and the mean value of its neighbours"
 msgid "Значение"
 msgstr "Value"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:165
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:168
 msgid "Среднее у соседей в стандартных отклонениях"
 msgstr "Mean of the neighbours in standard deviations"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:166
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:169
 msgid "Соседи"
 msgstr "Neighbours"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:168
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:171
 msgid "Соседей"
 msgstr "Neighbours"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:193
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:196
 msgid "Как считается индекс"
 msgstr "How the index is calculated"
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:81
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:83
 msgid "Без соседей при этой схеме (%(count)s): %(names)s. Такие субъекты в расчёт локальных индексов не входят: пространственное окружение для них не определено."
 msgstr "Without neighbours under this scheme (%(count)s): %(names)s. Such regions do not enter the calculation of local indices: their spatial surroundings are undefined."
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:115
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:117
 msgid "«Высокие среди высоких» и «низкие среди низких» — пространственные сгущения. «Высокий среди низких» и «низкий среди высоких» — пространственные исключения: регион, выпадающий из своего окружения."
 msgstr "“High among high” and “low among low” are spatial clusters. “High among low” and “low among high” are spatial exceptions: a region that falls out of its surroundings."
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:137
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:139
 msgid "Наклон облака точек равен глобальному индексу Морана. Осевые линии проходят через средние значения и делят поле на четыре четверти, каждая из которых соответствует своему типу пространственного окружения."
 msgstr "The slope of the cloud of points equals the global Moran index. The axis lines pass through the mean values and divide the field into four quarters, each corresponding to its own type of spatial surroundings."
 
-#: apps/analytics/templates/analytics/partials/_spatial_results.html:195
+#: apps/analytics/templates/analytics/partials/_spatial_results.html:198
 msgid "Веса соседей каждой территории в сумме равны единице, поэтому число соседей не влияет на результат. При случайном размещении значений индекс в среднем равен −1/(n−1). Значимость проверяется перестановками: значения многократно случайно раздаются территориям, и наблюдаемый индекс сравнивается с полученным распределением."
 msgstr "The neighbour weights of each territory sum to one, so the number of neighbours does not affect the result. With values placed at random, the index averages −1/(n−1). Significance is tested by permutations: values are repeatedly dealt to territories at random, and the observed index is compared with the resulting distribution."
+
+#: apps/analytics/templates/analytics/partials/_too_few.html:5
+#: apps/userdata/templates/userdata/related.html:60
+msgid "В таблице меньше 20 субъектов"
+msgstr "The table has fewer than 20 federal subjects"
+
+#: apps/analytics/templates/analytics/partials/_too_few.html:7
+msgid "По нескольким регионам меры различия и пространственные связи неустойчивы, поэтому этот инструмент по таблице не считается. Карта, таблица и динамика работают."
+msgstr "With only a few regions, measures of disparity and spatial links are unstable, so this tool is not calculated for the table. The map, table and dynamics work."
+
+#: apps/analytics/templates/analytics/partials/_too_few.html:8
+msgid "О таблице"
+msgstr "About the table"
 
 #: apps/analytics/templates/analytics/revisions.html:9
 #: apps/catalog/templates/catalog/indicator_list.html:89
@@ -2807,94 +2874,94 @@ msgstr "An examination of the differences between editions: which sections and s
 msgid "сопоставление версий наблюдений по выпускам изданий"
 msgstr "comparison of versions of observations across editions"
 
-#: apps/analytics/views/convergence.py:37
+#: apps/analytics/views/convergence.py:38
 msgid "абсолютная: все регионы сходятся к общему уровню"
 msgstr "absolute: all regions converge to a common level"
 
-#: apps/analytics/views/convergence.py:38
+#: apps/analytics/views/convergence.py:39
 msgid "условная: регионы сходятся к уровню своего округа"
 msgstr "conditional: regions converge to the level of their district"
 
-#: apps/analytics/views/convergence.py:110
+#: apps/analytics/views/convergence.py:114
 msgid "Разброс и темпы роста за период сравнивают значения, посчитанные по разным правилам."
 msgstr "The spread and growth rates over the period compare values computed under different rules."
 
-#: apps/analytics/views/convergence.py:185
+#: apps/analytics/views/convergence.py:189
 msgid "Стандартное отклонение логарифмов"
 msgstr "Standard deviation of logarithms"
 
-#: apps/analytics/views/convergence.py:190
-#: apps/analytics/views/inequality.py:69
+#: apps/analytics/views/convergence.py:194
+#: apps/analytics/views/inequality.py:71
 #: apps/surface/templates/surface/panels/_distribution.html:67
 msgid "Коэффициент вариации"
 msgstr "Coefficient of variation"
 
-#: apps/analytics/views/convergence.py:216
+#: apps/analytics/views/convergence.py:220
 msgid "логарифм значения в начальном году"
 msgstr "logarithm of the value in the first year"
 
-#: apps/analytics/views/convergence.py:217
+#: apps/analytics/views/convergence.py:221
 msgid "среднегодовой темп роста"
 msgstr "average annual growth rate"
 
-#: apps/analytics/views/convergence.py:219
+#: apps/analytics/views/convergence.py:223
 msgid "подобранная зависимость"
 msgstr "fitted dependence"
 
-#: apps/analytics/views/inequality.py:45
+#: apps/analytics/views/inequality.py:47
 msgid "территории равнозначны"
 msgstr "territories are equal"
 
-#: apps/analytics/views/inequality.py:46
+#: apps/analytics/views/inequality.py:48
 msgid "по численности населения"
 msgstr "by population size"
 
-#: apps/analytics/views/inequality.py:70
+#: apps/analytics/views/inequality.py:72
 msgid "Отношение стандартного отклонения к среднему; простейшая мера разброса"
 msgstr "The ratio of the standard deviation to the mean; the simplest measure of spread"
 
-#: apps/analytics/views/inequality.py:74
+#: apps/analytics/views/inequality.py:76
 msgid "Коэффициент Джини"
 msgstr "Gini coefficient"
 
-#: apps/analytics/views/inequality.py:75
+#: apps/analytics/views/inequality.py:77
 msgid "От нуля при полном равенстве до единицы при полной концентрации"
 msgstr "From zero under full equality to one under full concentration"
 
-#: apps/analytics/views/inequality.py:79
+#: apps/analytics/views/inequality.py:81
 msgid "Индекс Тейла"
 msgstr "Theil index"
 
-#: apps/analytics/views/inequality.py:80
+#: apps/analytics/views/inequality.py:82
 msgid "Раскладывается на различия между округами и внутри округов"
 msgstr "Decomposes into differences between districts and within districts"
 
-#: apps/analytics/views/inequality.py:84
+#: apps/analytics/views/inequality.py:86
 msgid "Индекс Аткинсона"
 msgstr "Atkinson index"
 
-#: apps/analytics/views/inequality.py:85
+#: apps/analytics/views/inequality.py:87
 msgid "Учитывает отставание нижней части тем сильнее, чем выше параметр"
 msgstr "The higher the parameter, the more weight is given to the lagging part"
 
-#: apps/analytics/views/inequality.py:89
+#: apps/analytics/views/inequality.py:91
 #: apps/surface/templates/surface/panels/_distribution.html:71
 msgid "Децильный коэффициент"
 msgstr "Decile ratio"
 
-#: apps/analytics/views/inequality.py:90
+#: apps/analytics/views/inequality.py:92
 msgid "Во сколько раз девятый дециль превышает первый"
 msgstr "How many times the ninth decile exceeds the first"
 
-#: apps/analytics/views/inequality.py:94
+#: apps/analytics/views/inequality.py:96
 msgid "Отношение максимума к минимуму"
 msgstr "The ratio of the maximum to the minimum"
 
-#: apps/analytics/views/inequality.py:95
+#: apps/analytics/views/inequality.py:97
 msgid "Простейшая мера: определяется двумя крайними территориями"
 msgstr "The simplest measure: determined by the two extreme territories"
 
-#: apps/analytics/views/inequality.py:192
+#: apps/analytics/views/inequality.py:201
 msgid "Изменение мер за период сравнивает значения, посчитанные по разным правилам."
 msgstr "The change in the measures over the period compares values computed under different rules."
 
@@ -2913,11 +2980,11 @@ msgstr "all revisions"
 msgid "крупные (свыше 5 %)"
 msgstr "large (over 5 %)"
 
-#: apps/analytics/views/spatial.py:98
+#: apps/analytics/views/spatial.py:102
 msgid "Карта локальных пространственных кластеров"
 msgstr "Map of local spatial clusters"
 
-#: apps/analytics/views/spatial.py:176
+#: apps/analytics/views/spatial.py:180
 msgid "не участвует в расчёте"
 msgstr "not taking part in the calculation"
 
@@ -2950,7 +3017,7 @@ msgid "%(count)s обращений %(period)s"
 msgstr "%(count)s requests %(period)s"
 
 #: apps/api/docs.py:38
-#: apps/userdata/templates/userdata/dataset.html:144
+#: apps/userdata/templates/userdata/dataset.html:288
 msgid "Территории"
 msgstr "Territories"
 
@@ -2966,7 +3033,7 @@ msgstr "Territory card: /api/v1/territories/<code>/"
 #: apps/catalog/templates/catalog/indicator_themes.html:17
 #: apps/catalog/templates/catalog/partials/_quick_search.html:47
 #: apps/catalog/views/catalog.py:103
-#: apps/catalog/views/catalog.py:387
+#: apps/catalog/views/catalog.py:392
 msgid "Показатели"
 msgstr "Indicators"
 
@@ -3420,10 +3487,12 @@ msgstr "ratio of annual values"
 
 #: apps/catalog/monthly.py:201
 #: apps/catalog/monthly.py:239
+#: apps/userdata/monthly.py:176
 msgid "%(month)s %(year)s"
 msgstr "%(month)s %(year)s"
 
 #: apps/catalog/monthly.py:354
+#: apps/userdata/monthly.py:227
 msgid "%(sign)s%(value)s %% к тому же периоду прошлого года"
 msgstr "%(sign)s%(value)s%% on the same period a year earlier"
 
@@ -3460,6 +3529,7 @@ msgid "на жителя: годовое значение, делённое на
 msgstr "per resident: the annual value divided by the population"
 
 #: apps/catalog/monthly.py:218
+#: apps/userdata/monthly.py:168
 msgid "на 1 %(month)s %(year)s"
 msgstr "as of 1 %(month)s %(year)s"
 
@@ -3496,6 +3566,7 @@ msgid "среднее двенадцати месяцев, взвешенное 
 msgstr "twelve-month average weighted by lending volume"
 
 #: apps/catalog/monthly.py:203
+#: apps/userdata/monthly.py:152
 msgid "%(first)s — %(month)s %(year)s"
 msgstr "%(first)s–%(month)s %(year)s"
 
@@ -3508,6 +3579,7 @@ msgid "%(span)s к тому же периоду %(previous)s года"
 msgstr "%(span)s against the same period of %(previous)s"
 
 #: apps/catalog/monthly.py:228
+#: apps/userdata/monthly.py:171
 msgid "%(first)s — %(month)s %(year)s, в среднем"
 msgstr "%(first)s–%(month)s %(year)s, average"
 
@@ -3818,7 +3890,7 @@ msgid "Основные показатели"
 msgstr "Key indicators"
 
 #: apps/catalog/selectors.py:64
-#: apps/userdata/series.py:188
+#: apps/userdata/series.py:223
 msgid "Мои таблицы: %(title)s"
 msgstr "My tables: %(title)s"
 
@@ -3868,7 +3940,7 @@ msgid "выпусков изданий"
 msgstr "editions of publications"
 
 #: apps/catalog/templates/catalog/dataset.html:56
-#: apps/userdata/views.py:461
+#: apps/userdata/views.py:463
 msgid "период"
 msgstr "period"
 
@@ -4175,6 +4247,9 @@ msgstr "Full ranking of %(count)s regions"
 
 #: apps/catalog/templates/catalog/partials/_indicator_month.html:8
 #: apps/dashboard/templates/dashboard/visits.html:102
+#: apps/userdata/month_views.py:40
+#: apps/userdata/month_views.py:67
+#: apps/userdata/templates/userdata/dataset.html:208
 msgid "По месяцам"
 msgstr "By month"
 
@@ -4182,6 +4257,7 @@ msgstr "By month"
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:256
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:87
 #: apps/catalog/views/series.py:335
+#: apps/userdata/month_views.py:87
 msgid "Россия"
 msgstr "Russia"
 
@@ -4190,14 +4266,17 @@ msgid "Россия по месяцам, %(first)s–%(last)s"
 msgstr "Russia by month, %(first)s–%(last)s"
 
 #: apps/catalog/templates/catalog/partials/_indicator_month.html:39
+#: apps/userdata/templates/userdata/months.html:85
 msgid "Регионы, %(period)s"
 msgstr "Regions, %(period)s"
 
 #: apps/catalog/templates/catalog/partials/_indicator_month.html:62
+#: apps/userdata/templates/userdata/months.html:108
 msgid "Больше всего — %(high)s: %(high_value)s %(unit)s; меньше всего — %(low)s: %(low_value)s %(unit)s"
 msgstr "Highest: %(high)s, %(high_value)s %(unit)s; lowest: %(low)s, %(low_value)s %(unit)s"
 
 #: apps/catalog/templates/catalog/partials/_indicator_month.html:69
+#: apps/userdata/templates/userdata/months.html:115
 msgid "Нет данных по %(count)s регионам."
 msgstr "No data for %(count)s regions."
 
@@ -4396,6 +4475,7 @@ msgstr "Difference between the first and the latest edition of the yearbook; the
 
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:497
 #: apps/userdata/export.py:50
+#: apps/userdata/templates/userdata/months.html:44
 msgid "Территория"
 msgstr "Territory"
 
@@ -4939,7 +5019,8 @@ msgstr "All indicators"
 #: apps/catalog/templates/catalog/territory_detail.html:90
 #: apps/core/navigation.py:58
 #: apps/surface/panels.py:82
-#: apps/userdata/pages.py:36
+#: apps/userdata/glance.py:336
+#: apps/userdata/pages.py:34
 msgid "Динамика"
 msgstr "Dynamics"
 
@@ -4970,6 +5051,7 @@ msgid "Показатели, по которым регион в числе 15 %
 msgstr "Indicators on which the region is among the best or worst 15%%"
 
 #: apps/catalog/templates/catalog/territory_detail.html:186
+#: apps/userdata/templates/userdata/dataset.html:178
 msgid "Свернуть"
 msgstr "Collapse"
 
@@ -5055,6 +5137,7 @@ msgid "%(name)s: ключевые социально-экономические 
 msgstr "%(name)s: key socio-economic indicators, positions in the regional rankings, dynamics and completeness of the data."
 
 #: apps/catalog/templates/catalog/territory_detail.html:180
+#: apps/userdata/templates/userdata/dataset.html:178
 msgid "Ещё %(count)s"
 msgstr "%(count)s more"
 
@@ -5196,7 +5279,7 @@ msgstr "All regions by rank and who moved up or down"
 #: apps/catalog/views/series.py:273
 #: apps/core/navigation.py:68
 #: apps/surface/panels.py:115
-#: apps/userdata/pages.py:38
+#: apps/userdata/pages.py:36
 #: apps/workspace/constants.py:28
 msgid "Распределение"
 msgstr "Distribution"
@@ -5237,7 +5320,7 @@ msgid "Середина регионов"
 msgstr "Middle of the regions"
 
 #: apps/catalog/views/territory.py:286
-#: apps/compare/panel.py:179
+#: apps/compare/panel.py:180
 #: apps/surface/templates/surface/panels/_distribution.html:65
 #: apps/surface/templates/surface/panels/_table.html:84
 msgid "Российская Федерация"
@@ -5259,15 +5342,15 @@ msgstr "Among the worst"
 msgid "Ни по одному основному показателю регион не входит в число худших"
 msgstr "The region is not among the worst on any key indicator"
 
-#: apps/compare/panel.py:34
+#: apps/compare/panel.py:35
 msgid "значения"
 msgstr "values"
 
-#: apps/compare/panel.py:35
+#: apps/compare/panel.py:36
 msgid "к базовому году"
 msgstr "rebased"
 
-#: apps/compare/panel.py:190
+#: apps/compare/panel.py:191
 msgid "%(year)s = 100"
 msgstr "%(year)s = 100"
 
@@ -5533,6 +5616,7 @@ msgid "Содержание"
 msgstr "Contents"
 
 #: apps/content/templates/content/methodology.html:75
+#: apps/userdata/templates/userdata/formula.html:49
 msgid "Формула"
 msgstr "Formula"
 
@@ -5641,7 +5725,7 @@ msgstr "Help"
 #: apps/core/navigation.py:53
 #: apps/surface/panels.py:66
 #: apps/surface/panels.py:67
-#: apps/userdata/pages.py:35
+#: apps/userdata/glance.py:334
 msgid "Карта"
 msgstr "Map"
 
@@ -5656,8 +5740,8 @@ msgstr "Lines for the selected territories, a profile and a table of differences
 #: apps/core/navigation.py:220
 #: apps/core/navigation.py:63
 #: apps/surface/panels.py:99
-#: apps/userdata/pages.py:37
-#: apps/workspace/constants.py:26
+#: apps/userdata/glance.py:338
+#: apps/userdata/pages.py:35
 msgid "Рейтинг"
 msgstr "Ranking"
 
@@ -5673,7 +5757,7 @@ msgstr "The spread of values across the regions: a histogram, quartiles, positio
 #: apps/surface/panels.py:131
 #: apps/userdata/export.py:168
 #: apps/userdata/ingest.py:424
-#: apps/userdata/pages.py:39
+#: apps/userdata/pages.py:37
 msgid "Таблица"
 msgstr "Table"
 
@@ -6125,6 +6209,7 @@ msgid "нет данных"
 msgstr "no data"
 
 #: apps/core/templates/core/partials/_live_map.html:24
+#: apps/userdata/templates/userdata/dataset.html:143
 msgid "меньше всего"
 msgstr "lowest"
 
@@ -7142,6 +7227,7 @@ msgid "Терминов опубликовано"
 msgstr "Terms published"
 
 #: apps/dashboard/templates/dashboard/content.html:30
+#: apps/userdata/templates/userdata/formula.html:65
 #: templates/partials/_series_select.html:18
 msgid "всего"
 msgstr "in total"
@@ -7164,6 +7250,7 @@ msgid "Виды содержимого"
 msgstr "Kinds of content"
 
 #: apps/dashboard/templates/dashboard/content.html:59
+#: apps/userdata/templates/userdata/formula.html:44
 #: apps/userdata/templates/userdata/series_step.html:146
 #: apps/workspace/templates/workspace/partials/_save_query.html:20
 msgid "Название"
@@ -7314,7 +7401,7 @@ msgstr "The warehouse is unavailable"
 #: apps/dashboard/templates/dashboard/etl_run.html:123
 #: apps/dashboard/templates/dashboard/release.html:24
 #: apps/dashboard/views/data.py:152
-#: apps/userdata/templates/userdata/dataset.html:196
+#: apps/userdata/templates/userdata/dataset.html:340
 msgid "Файл"
 msgstr "File"
 
@@ -7782,6 +7869,7 @@ msgid "Сшивка рядов с набором"
 msgstr "Splicing series with the dataset"
 
 #: apps/dashboard/templates/dashboard/sources.html:122
+#: apps/userdata/templates/userdata/_related_table.html:10
 msgid "Связь"
 msgstr "Splice"
 
@@ -8418,7 +8506,7 @@ msgstr "The positions of the regions on the selected indicator for a year with t
 
 #: apps/exports/templates/exports/partials/_export_button.html:11
 #: apps/exports/templates/exports/partials/_export_button.html:7
-#: apps/userdata/templates/userdata/dataset.html:169
+#: apps/userdata/templates/userdata/dataset.html:313
 msgid "Скачать"
 msgstr "Download"
 
@@ -9257,6 +9345,9 @@ msgstr "Reading is open without a key or sign-in; the limit is %(rate)s from one
 
 #: apps/surface/templates/surface/partials/_subject.html:9
 #: apps/userdata/templates/userdata/dataset.html:18
+#: apps/userdata/templates/userdata/formula.html:18
+#: apps/userdata/templates/userdata/months.html:24
+#: apps/userdata/templates/userdata/related.html:18
 msgid "видно только вам"
 msgstr "visible only to you"
 
@@ -9341,6 +9432,14 @@ msgstr "Stop playback"
 #: apps/surface/templates/surface/partials/_year.html:39
 msgid "У ряда нет годов со значениями"
 msgstr "The series has no years with values"
+
+#: apps/userdata/build.py:431
+msgid "Пересчётов и свёрток получается %(count)s — больше %(limit)s. Отметьте их только у нужных показателей."
+msgstr "This gives %(count)s recalculations and folds — more than %(limit)s. Select them only for the indicators you need."
+
+#: apps/userdata/build.py:680
+msgid "Нет значений показателей: %(names)s."
+msgstr "No values for indicators: %(names)s."
 
 #: apps/userdata/export.py:51
 msgid "Код территории (ISO 3166-2 у субъектов)"
@@ -9478,6 +9577,184 @@ msgstr "The pasted text is larger than %(limit)s MB. Upload the table as a file.
 msgid "определить по тексту"
 msgstr "detect from the text"
 
+#: apps/userdata/formula_store.py:245
+msgid "Назовите показатель."
+msgstr "Give the indicator a name."
+
+#: apps/userdata/formula_store.py:264
+msgid "По этой формуле не получилось ни одного значения: у показателей нет общих лет и регионов."
+msgstr "This formula produced no values: the indicators have no years and regions in common."
+
+#: apps/userdata/formula_store.py:285
+msgid "Таблица ещё не собрана."
+msgstr "The table has not been built yet."
+
+#: apps/userdata/formula_store.py:363
+msgid "Таблица, на показатель которой ссылается формула, сама считается по этой таблице. Такой круг не посчитать."
+msgstr "The table whose indicator the formula refers to is itself calculated from this table. Such a loop cannot be calculated."
+
+#: apps/userdata/formula_store.py:272
+msgid "эта таблица"
+msgstr "this table"
+
+#: apps/userdata/formula_store.py:272
+msgid "официальный ряд"
+msgstr "official series"
+
+#: apps/userdata/formula_store.py:292
+msgid "Формул уже %(count)s — это предел."
+msgstr "There are already %(count)s formulas — that is the limit."
+
+#: apps/userdata/formula_views.py:68
+#: apps/userdata/formula_views.py:87
+#: apps/userdata/templates/userdata/formula.html:19
+msgid "Показатель по формуле"
+msgstr "Indicator from a formula"
+
+#: apps/userdata/formula_views.py:106
+msgid "Показатель «%(title)s» удалён."
+msgstr "Indicator “%(title)s” deleted."
+
+#: apps/userdata/formulas.py:461
+msgid "В формуле нет ни одного показателя: их пишут в квадратных скобках."
+msgstr "The formula has no indicators: they are written in square brackets."
+
+#: apps/userdata/formulas.py:125
+msgid "Формула длиннее %(limit)s знаков."
+msgstr "The formula is longer than %(limit)s characters."
+
+#: apps/userdata/formulas.py:175
+msgid "Нет закрывающей скобки «%(bracket)s» после знака %(position)s."
+msgstr "No closing bracket “%(bracket)s” after character %(position)s."
+
+#: apps/userdata/formulas.py:181
+msgid "Пустая ссылка на показатель у знака %(position)s."
+msgstr "Empty indicator reference at character %(position)s."
+
+#: apps/userdata/formulas.py:212
+msgid "Формула пустая."
+msgstr "The formula is empty."
+
+#: apps/userdata/formulas.py:221
+msgid "Формула обрывается: не хватает числа, показателя или скобки."
+msgstr "The formula ends abruptly: a number, indicator or bracket is missing."
+
+#: apps/userdata/formulas.py:223
+msgid "Неожиданное «%(text)s» у знака %(position)s."
+msgstr "Unexpected “%(text)s” at character %(position)s."
+
+#: apps/userdata/formulas.py:338
+msgid "Второй аргумент %(name)s — целое число от %(low)s до %(high)s."
+msgstr "The second argument of %(name)s is a whole number from %(low)s to %(high)s."
+
+#: apps/userdata/formulas.py:464
+msgid "В формуле больше %(limit)s разных показателей."
+msgstr "The formula has more than %(limit)s different indicators."
+
+#: apps/userdata/formulas.py:651
+msgid "Формулу не удалось посчитать по этим данным."
+msgstr "The formula could not be calculated on this data."
+
+#: apps/userdata/formulas.py:207
+msgid "Слишком глубокая вложенность: больше %(limit)s уровней."
+msgstr "Nesting is too deep: more than %(limit)s levels."
+
+#: apps/userdata/formulas.py:292
+msgid "Нет функции «%(name)s». Можно: %(names)s. Показатель пишется в квадратных скобках: [ДТП]."
+msgstr "There is no function “%(name)s”. Available: %(names)s. An indicator is written in square brackets: [Accidents]."
+
+#: apps/userdata/formulas.py:300
+msgid "После «%(name)s» нужна скобка с аргументами."
+msgstr "“%(name)s” must be followed by brackets with arguments."
+
+#: apps/userdata/formulas.py:426
+msgid "Нет показателя «%(name)s»."
+msgstr "There is no indicator “%(name)s”."
+
+#: apps/userdata/formulas.py:433
+msgid "«%(name)s» подходит к нескольким рядам (%(places)s). Уточните название или таблицу: [Таблица: показатель]."
+msgstr "“%(name)s” matches several series (%(places)s). Specify the name or the table: [Table: indicator]."
+
+#: apps/userdata/formulas.py:514
+msgid "Субъектов с делением на ноль: %(count)s — их значения пусты."
+msgstr "Federal subjects with division by zero: %(count)s — their values are empty."
+
+#: apps/userdata/formulas.py:141
+msgid "Слишком длинное число у знака %(position)s."
+msgstr "Number too long at character %(position)s."
+
+#: apps/userdata/formulas.py:278
+msgid "Не закрыта скобка, открытая у знака %(position)s."
+msgstr "The bracket opened at character %(position)s is not closed."
+
+#: apps/userdata/formulas.py:317
+msgid "У %(name)s аргументов должно быть от %(low)s до %(high)s, а их %(count)s."
+msgstr "%(name)s takes from %(low)s to %(high)s arguments, but there are %(count)s."
+
+#: apps/userdata/formulas.py:320
+msgid "У %(name)s аргументов должно быть %(low)s, а их %(count)s."
+msgstr "%(name)s takes %(low)s arguments, but there are %(count)s."
+
+#: apps/userdata/formulas.py:413
+msgid "Нет показателя с ключом «%(key)s»."
+msgstr "There is no indicator with the key “%(key)s”."
+
+#: apps/userdata/formulas.py:431
+msgid "официальные ряды"
+msgstr "official series"
+
+#: apps/userdata/formulas.py:161
+msgid "Непонятный знак «%(char)s» у знака %(position)s."
+msgstr "Unrecognised character “%(char)s” at position %(position)s."
+
+#: apps/userdata/glance.py:259
+msgid "Значения регионов в сумме дают значение России (или большую его часть): величина складывается по регионам, как сумма."
+msgstr "The regions’ values add up to the value for Russia (or most of it): the quantity adds up across regions, as a sum does."
+
+#: apps/userdata/glance.py:99
+msgid "Состав субъектов меняется: %(parts)s. Неравенство и сближение по умолчанию считаются на постоянном составе."
+msgstr "The set of federal subjects changes: %(parts)s. Inequality and convergence are calculated on a constant set by default."
+
+#: apps/userdata/glance.py:244
+msgid "Значения растут вместе с численностью населения: похоже на сумму. Если это так, отметьте «сумма» в описании — появится пересчёт на жителей."
+msgstr "Values grow with population: this looks like a sum. If so, mark it as “sum” in the description — a per-capita recalculation will appear."
+
+#: apps/userdata/glance.py:250
+msgid "Значение России в таблице — в единицах в %(scale)s раз крупнее, чем у регионов: сумма регионов больше его ровно во столько раз. Пересчёт «Россия = 100» по такой строке неверен."
+msgstr "The value for Russia in the table is in units %(scale)s times larger than the regions’ units: the sum of regions exceeds it exactly that many times. A “Russia = 100” recalculation from this row is wrong."
+
+#: apps/userdata/glance.py:264
+msgid "Значение России лежит между значениями регионов и не равно их сумме: похоже на долю или среднее, а не на сумму."
+msgstr "The value for Russia lies between the regions’ values and is not their sum: this looks like a share or an average rather than a sum."
+
+#: apps/userdata/glance.py:109
+msgid "и ещё %(count)s"
+msgstr "and %(count)s more"
+
+#: apps/userdata/glance.py:256
+msgid "Величина складывается по регионам, как сумма."
+msgstr "The quantity adds up across regions, as a sum does."
+
+#: apps/userdata/glance.py:343
+msgid "Облако точек двух показателей"
+msgstr "Scatter plot of two indicators"
+
+#: apps/userdata/glance.py:92
+msgid "появились — %(names)s"
+msgstr "appeared — %(names)s"
+
+#: apps/userdata/glance.py:94
+msgid "пропали — %(names)s"
+msgstr "disappeared — %(names)s"
+
+#: apps/userdata/glance.py:96
+msgid "с пропусками лет — %(count)s"
+msgstr "with missing years — %(count)s"
+
+#: apps/userdata/glance.py:352
+msgid "Матрица связей"
+msgstr "Correlation matrix"
+
 #: apps/userdata/ingest.py:694
 msgid "Файл защищён паролем. Снимите защиту в Excel и загрузите снова."
 msgstr "The file is password-protected. Remove the protection in Excel and upload it again."
@@ -9596,13 +9873,13 @@ msgid "не разобран"
 msgstr "not read"
 
 #: apps/userdata/models.py:148
-#: apps/userdata/templates/userdata/dataset.html:118
+#: apps/userdata/templates/userdata/dataset.html:205
 #: apps/userdata/templates/userdata/series_step.html:138
 msgid "сумма"
 msgstr "sum"
 
 #: apps/userdata/models.py:149
-#: apps/userdata/templates/userdata/dataset.html:118
+#: apps/userdata/templates/userdata/dataset.html:205
 #: apps/userdata/templates/userdata/series_step.html:138
 msgid "относительная величина"
 msgstr "relative value"
@@ -9627,6 +9904,77 @@ msgstr "per 100,000 inhabitants"
 msgid "на км²"
 msgstr "per km²"
 
+#: apps/userdata/models.py:161
+msgid "в ценах последнего года"
+msgstr "in prices of the last year"
+
+#: apps/userdata/models.py:162
+#: apps/userdata/templates/userdata/series_step.html:174
+msgid "Россия = 100"
+msgstr "Russia = 100"
+
+#: apps/userdata/models.py:163
+msgid "% к предыдущему году"
+msgstr "% of the previous year"
+
+#: apps/userdata/models.py:164
+msgid "доля в сумме по субъектам"
+msgstr "share of the sum over subjects"
+
+#: apps/userdata/models.py:165
+msgid "сумма по разрезу"
+msgstr "sum over a breakdown"
+
+#: apps/userdata/models.py:166
+msgid "месяцы, свёрнутые в год"
+msgstr "months folded into a year"
+
+#: apps/userdata/models.py:167
+msgid "формула"
+msgstr "formula"
+
+#: apps/userdata/monthly.py:233
+msgid "%(sign)s%(value)s к тому же периоду прошлого года"
+msgstr "%(sign)s%(value)s on the same period last year"
+
+#: apps/userdata/monthly.py:158
+msgid "%(quarter)s квартал %(year)s"
+msgstr "Q%(number)s %(year)s"
+
+#: apps/userdata/monthly.py:140
+msgid "по месяцам"
+msgstr "by month"
+
+#: apps/userdata/monthly.py:141
+msgid "по кварталам"
+msgstr "by quarter"
+
+#: apps/userdata/monthly.py:142
+msgid "по полугодиям"
+msgstr "by half-year"
+
+#: apps/userdata/monthly.py:143
+#: apps/userdata/views.py:478
+msgid "с начала года"
+msgstr "year to date"
+
+#: apps/userdata/monthly.py:145
+#: apps/userdata/views.py:480
+msgid "на начало месяца"
+msgstr "at the start of the month"
+
+#: apps/userdata/monthly.py:165
+msgid "I полугодие %(year)s"
+msgstr "H1 %(year)s"
+
+#: apps/userdata/monthly.py:165
+msgid "II полугодие %(year)s"
+msgstr "H2 %(year)s"
+
+#: apps/userdata/monthly.py:144
+msgid "за %(span)s мес., скользящие"
+msgstr "rolling %(span)s months"
+
 #: apps/userdata/naming.py:72
 msgid "II полугодие"
 msgstr "H2"
@@ -9639,68 +9987,74 @@ msgstr "Q%(number)s"
 msgid "на 1 %(month)s"
 msgstr "as of 1 %(month)s"
 
-#: apps/userdata/pages.py:43
+#: apps/userdata/pages.py:41
 msgid "прежний субъект, объединённый с другим"
 msgstr "a former federal subject merged with another"
 
-#: apps/userdata/pages.py:44
+#: apps/userdata/pages.py:42
 msgid "субъект, которого нет в справочнике сайта"
 msgstr "a federal subject that is not in the site’s reference list"
 
-#: apps/userdata/pages.py:45
+#: apps/userdata/pages.py:43
 msgid "федеральный округ, которого нет в справочнике сайта"
 msgstr "a federal district that is not in the site’s reference list"
 
-#: apps/userdata/pages.py:46
+#: apps/userdata/pages.py:44
 msgid "Байконур"
 msgstr "Baikonur"
 
-#: apps/userdata/pages.py:47
+#: apps/userdata/pages.py:45
 msgid "несколько территорий в одной строке"
 msgstr "several territories in one row"
 
-#: apps/userdata/pages.py:48
+#: apps/userdata/pages.py:46
 msgid "ведомство или организация"
 msgstr "an agency or organisation"
 
-#: apps/userdata/pages.py:213
+#: apps/userdata/pages.py:281
 msgid "Отметьте, что таблицу нужно удалить."
 msgstr "Tick the box to confirm that the table should be deleted."
 
-#: apps/userdata/pages.py:217
+#: apps/userdata/pages.py:285
 msgid "Таблица «%(title)s» удалена."
 msgstr "The table “%(title)s” has been deleted."
 
-#: apps/userdata/series.py:119
-#: apps/userdata/series.py:197
+#: apps/userdata/related_views.py:33
+#: apps/userdata/related_views.py:47
+#: apps/userdata/templates/userdata/related.html:19
+msgid "С чем связан показатель"
+msgstr "What the indicator is linked to"
+
+#: apps/userdata/series.py:150
+#: apps/userdata/series.py:274
 msgid "таблица пользователя"
 msgstr "user’s table"
 
-#: apps/userdata/series.py:200
+#: apps/userdata/series.py:277
 msgid "Данные: %(source)s; загружены пользователем; обработка RegionLens."
 msgstr "Data: %(source)s; uploaded by the user; processing by RegionLens."
 
-#: apps/userdata/series.py:65
+#: apps/userdata/series.py:74
 msgid "Свои данные · %(title)s"
 msgstr "Your own data · %(title)s"
 
-#: apps/userdata/services.py:221
+#: apps/userdata/services.py:232
 msgid "Состояние окружающей среды в регионах России"
 msgstr "State of the environment in the regions of Russia"
 
-#: apps/userdata/services.py:222
+#: apps/userdata/services.py:233
 msgid "«Если быть точным», обработка данных Росгидромета и Росстата"
 msgstr "“To Be Precise”, processing of Roshydromet and Rosstat data"
 
-#: apps/userdata/services.py:224
+#: apps/userdata/services.py:235
 msgid "Пример таблицы: набор «Если быть точным» в архиве, как он скачивается с сайта набора. Условия использования — Creative Commons BY 4.0."
 msgstr "Example table: the “To Be Precise” dataset in an archive, as it is downloaded from the dataset’s website. Terms of use — Creative Commons BY 4.0."
 
-#: apps/userdata/services.py:245
+#: apps/userdata/services.py:256
 msgid "Слишком много загрузок подряд — повторите через несколько минут."
 msgstr "Too many uploads in a row — try again in a few minutes."
 
-#: apps/userdata/services.py:250
+#: apps/userdata/services.py:261
 msgid "Файл больше %(limit)s МБ. Загрузите архив ZIP или оставьте в таблице только нужные показатели."
 msgstr "The file is larger than %(limit)s MB. Upload a ZIP archive or keep only the indicators you need."
 
@@ -9726,26 +10080,49 @@ msgstr "The file has no such table."
 msgid "Файл таблицы не найден. Загрузите его снова."
 msgstr "The table file was not found. Upload it again."
 
-#: apps/userdata/services.py:234
-#: apps/userdata/services.py:240
+#: apps/userdata/services.py:245
+#: apps/userdata/services.py:251
 msgid "Пример не разобран. Повторите позже."
 msgstr "The example could not be parsed. Try again later."
 
-#: apps/userdata/services.py:195
+#: apps/userdata/services.py:206
 msgid "Без входа можно держать не больше %(count)s таблиц одни сутки. Войдите, чтобы сохранить их и загрузить новые."
 msgstr "Without signing in you can keep up to %(count)s tables for one day. Sign in to keep them and upload new ones."
 
-#: apps/userdata/services.py:178
+#: apps/userdata/services.py:189
 msgid "Таблиц уже %(count)s — это предел. Удалите ненужные таблицы."
 msgstr "You already have %(count)s tables — that is the limit. Delete tables you no longer need."
 
-#: apps/userdata/services.py:184
+#: apps/userdata/services.py:195
 msgid "Место для таблиц закончилось: %(limit)s МБ. Удалите ненужные таблицы."
 msgstr "The space for tables has run out: %(limit)s MB. Delete tables you no longer need."
 
 #: apps/userdata/templates/userdata/_column_role.html:5
 msgid "столбец %(number)s"
 msgstr "column %(number)s"
+
+#: apps/userdata/templates/userdata/_related_table.html:8
+msgid "Показатель сайта"
+msgstr "Site indicator"
+
+#: apps/userdata/templates/userdata/_related_table.html:12
+#: apps/userdata/templates/userdata/_related_table.html:22
+msgid "Облако точек"
+msgstr "Scatter plot"
+
+#: apps/userdata/templates/userdata/_related_table.html:18
+#: apps/userdata/templates/userdata/formula.html:67
+#: templates/partials/_series_picker_item.html:9
+#: templates/partials/_series_select.html:20
+msgid "Величина не приведена к численности населения или иной основе"
+msgstr "Value is not adjusted for population or any other base"
+
+#: apps/userdata/templates/userdata/_related_table.html:18
+#: apps/userdata/templates/userdata/formula.html:66
+#: templates/partials/_series_picker_item.html:9
+#: templates/partials/_series_select.html:19
+msgid "абс."
+msgstr "abs."
 
 #: apps/userdata/templates/userdata/_sample.html:7
 msgid "Первые строки таблицы «%(name)s»"
@@ -9814,6 +10191,7 @@ msgid "Продолжить"
 msgstr "Continue"
 
 #: apps/userdata/templates/userdata/dataset.html:46
+#: apps/userdata/templates/userdata/formula.html:119
 msgid "значений"
 msgstr "values"
 
@@ -9821,8 +10199,10 @@ msgstr "values"
 msgid "из 85"
 msgstr "of 85"
 
+#: apps/userdata/templates/userdata/dataset.html:139
 #: apps/userdata/templates/userdata/dataset.html:49
-#: apps/userdata/views.py:472
+#: apps/userdata/templates/userdata/formula.html:122
+#: apps/userdata/views.py:474
 msgid "годы"
 msgstr "years"
 
@@ -9838,10 +10218,6 @@ msgstr "On a map of totals large regions stand out because of their size: more p
 msgid "Для сравнения регионов — ряды на жителей или на км² ниже."
 msgstr "To compare regions, use the per-inhabitant or per-km² series below."
 
-#: apps/userdata/templates/userdata/dataset.html:65
-msgid "Добавить пересчёт на 100 000 жителей"
-msgstr "Add a per-100,000-inhabitants series"
-
 #: apps/userdata/templates/userdata/dataset.html:75
 #: apps/userdata/templates/userdata/series_step.html:61
 msgid "Субъектов меньше 20: неравенство и пространственный анализ по таблице не считаются. Карта, таблица и динамика работают."
@@ -9856,101 +10232,210 @@ msgid "Значения последнего года есть не у всех 
 msgstr "Not all regions have values for the last year; the map and ranking open for the last complete year by default."
 
 #: apps/userdata/templates/userdata/dataset.html:98
+msgid "Область, похоже, уже без автономных округов"
+msgstr "The oblast already seems to exclude its autonomous okrugs"
+
+#: apps/userdata/templates/userdata/dataset.html:100
+msgid "Значение области в таблице меньше суммы её автономных округов, поэтому это не итог вместе с ними, и вычитать округа нельзя. Область без округов не вычислена:"
+msgstr "The oblast’s value in the table is smaller than the sum of its autonomous okrugs, so it is not a total including them, and the okrugs cannot be subtracted. The oblast without okrugs was not calculated:"
+
+#: apps/userdata/templates/userdata/dataset.html:102
+msgid "Ответить на вопрос о вложенных областях"
+msgstr "Answer the question about nested oblasts"
+
+#: apps/userdata/templates/userdata/dataset.html:112
 msgid "Область в таблице — вместе с автономными округами. Для долей и средних область без округов не вычислить, и на карте она пустая:"
 msgstr "The oblast in the table includes its autonomous okrugs. For shares and averages the oblast without the okrugs cannot be calculated, so it is empty on the map:"
 
-#: apps/userdata/templates/userdata/dataset.html:110
+#: apps/userdata/templates/userdata/dataset.html:122
+msgid "Первый взгляд"
+msgstr "First look"
+
+#: apps/userdata/templates/userdata/dataset.html:125
+#: apps/userdata/templates/userdata/dataset.html:126
+msgid "Открыть как"
+msgstr "Open as"
+
+#: apps/userdata/templates/userdata/dataset.html:142
+msgid "больше всего"
+msgstr "highest"
+
+#: apps/userdata/templates/userdata/dataset.html:146
+msgid "коэффициент Джини"
+msgstr "Gini coefficient"
+
+#: apps/userdata/templates/userdata/dataset.html:149
+msgid "индекс Морана"
+msgstr "Moran’s I"
+
+#: apps/userdata/templates/userdata/dataset.html:149
+msgid "соседние регионы похожи"
+msgstr "neighbouring regions are alike"
+
+#: apps/userdata/templates/userdata/dataset.html:149
+msgid "соседние регионы различаются"
+msgstr "neighbouring regions differ"
+
+#: apps/userdata/templates/userdata/dataset.html:149
+msgid "размещение неотличимо от случайного"
+msgstr "the pattern is indistinguishable from random"
+
+#: apps/userdata/templates/userdata/dataset.html:152
+msgid "связь с численностью населения"
+msgstr "link with population"
+
+#: apps/userdata/templates/userdata/dataset.html:152
+msgid "незначима"
+msgstr "not significant"
+
+#: apps/userdata/templates/userdata/dataset.html:155
+msgid "Россия и сумма регионов"
+msgstr "Russia and the sum of regions"
+
+#: apps/userdata/templates/userdata/dataset.html:170
+msgid "Значений по субъектам нет."
+msgstr "There are no values for federal subjects."
+
+#: apps/userdata/templates/userdata/dataset.html:192
+msgid "Столбцы и отбор разрезов"
+msgstr "Columns and breakdown selection"
+
+#: apps/userdata/templates/userdata/dataset.html:196
 msgid "Изменить описание"
 msgstr "Edit the description"
 
-#: apps/userdata/templates/userdata/dataset.html:124
+#: apps/userdata/templates/userdata/dataset.html:212
+#: apps/userdata/templates/userdata/series_step.html:209
+msgid "Смена методики"
+msgstr "Change of methodology"
+
+#: apps/userdata/templates/userdata/dataset.html:220
 msgid "как в таблице"
 msgstr "as in the table"
 
-#: apps/userdata/templates/userdata/dataset.html:130
+#: apps/userdata/templates/userdata/dataset.html:226
+#: apps/userdata/templates/userdata/dataset.html:267
 msgid "Открыть ряд"
 msgstr "Open the series"
 
-#: apps/userdata/templates/userdata/dataset.html:149
+#: apps/userdata/templates/userdata/dataset.html:231
+#: apps/userdata/templates/userdata/dataset.html:272
+msgid "С чем связан"
+msgstr "Linked to"
+
+#: apps/userdata/templates/userdata/dataset.html:243
+msgid "Показатели по формулам"
+msgstr "Indicators from formulas"
+
+#: apps/userdata/templates/userdata/dataset.html:246
+msgid "Добавить по формуле"
+msgstr "Add from a formula"
+
+#: apps/userdata/templates/userdata/dataset.html:274
+msgid "Изменить"
+msgstr "Edit"
+
+#: apps/userdata/templates/userdata/dataset.html:281
+msgid "Новый показатель из рядов этой и других ваших таблиц и официальных рядов сайта — например, ДТП на 1 000 автомобилей."
+msgstr "A new indicator from series of this and your other tables and the site’s official series — for example, road accidents per 1,000 cars."
+
+#: apps/userdata/templates/userdata/dataset.html:293
 msgid "Область с автономными округами в таблице — итогом вместе с ними; для сумм область без округов вычислена (пометка «расчёт RegionLens»):"
 msgstr "An oblast with autonomous okrugs is given in the table as a total including them; for sums the oblast without the okrugs is calculated (marked “RegionLens calculation”):"
 
-#: apps/userdata/templates/userdata/dataset.html:159
+#: apps/userdata/templates/userdata/dataset.html:303
 msgid "Эти строки сохранены в таблице и в выгрузке, но на карту и в рейтинг не попадают: таких территорий нет в справочнике сайта."
 msgstr "These rows are kept in the table and in the download, but do not appear on the map or in the ranking: these territories are not in the site’s reference list."
 
-#: apps/userdata/templates/userdata/dataset.html:172
+#: apps/userdata/templates/userdata/dataset.html:316
 msgid "Очищенная таблица: территория с названием и кодами справочника, год, период, показатель, разрезы, значение, единица и пометка."
 msgstr "A cleaned table: the territory with its reference name and codes, year, period, indicator, breakdowns, value, unit and note."
 
-#: apps/userdata/templates/userdata/dataset.html:184
+#: apps/userdata/templates/userdata/dataset.html:328
 msgid "Исходный файл"
 msgstr "Source file"
 
-#: apps/userdata/templates/userdata/dataset.html:192
+#: apps/userdata/templates/userdata/dataset.html:336
 msgid "Файл и хранение"
 msgstr "File and storage"
 
-#: apps/userdata/templates/userdata/dataset.html:198
+#: apps/userdata/templates/userdata/dataset.html:342
 msgid "Загружен"
 msgstr "Uploaded"
 
-#: apps/userdata/templates/userdata/dataset.html:200
+#: apps/userdata/templates/userdata/dataset.html:344
 msgid "Место на диске"
 msgstr "Disk space"
 
-#: apps/userdata/templates/userdata/dataset.html:202
+#: apps/userdata/templates/userdata/dataset.html:346
 msgid "Кто видит"
 msgstr "Who can see it"
 
-#: apps/userdata/templates/userdata/dataset.html:203
+#: apps/userdata/templates/userdata/dataset.html:347
 msgid "только вы"
 msgstr "only you"
 
-#: apps/userdata/templates/userdata/dataset.html:204
+#: apps/userdata/templates/userdata/dataset.html:348
 msgid "Хранится"
 msgstr "Kept"
 
-#: apps/userdata/templates/userdata/dataset.html:208
+#: apps/userdata/templates/userdata/dataset.html:352
 msgid "войдите, чтобы сохранить"
 msgstr "sign in to keep it"
 
-#: apps/userdata/templates/userdata/dataset.html:210
+#: apps/userdata/templates/userdata/dataset.html:354
 msgid "пока вы её не удалите"
 msgstr "until you delete it"
 
-#: apps/userdata/templates/userdata/dataset.html:218
+#: apps/userdata/templates/userdata/dataset.html:362
 msgid "Удалить таблицу вместе с файлами"
 msgstr "Delete the table together with its files"
 
-#: apps/userdata/templates/userdata/dataset.html:219
+#: apps/userdata/templates/userdata/dataset.html:363
 msgid "Удалить таблицу"
 msgstr "Delete the table"
 
-#: apps/userdata/templates/userdata/dataset.html:126
+#: apps/userdata/templates/userdata/dataset.html:139
+msgid "полный — %(year)s"
+msgstr "complete — %(year)s"
+
+#: apps/userdata/templates/userdata/dataset.html:140
+msgid "субъектов в %(year)s"
+msgstr "subjects in %(year)s"
+
+#: apps/userdata/templates/userdata/dataset.html:166
+msgid "Субъектов без значений в %(year)s году: %(count)s"
+msgstr "Subjects without values in %(year)s: %(count)s"
+
+#: apps/userdata/templates/userdata/dataset.html:181
+msgid "Ещё показателей: %(count)s — их ряды ниже."
+msgstr "More indicators: %(count)s — their series are below."
+
+#: apps/userdata/templates/userdata/dataset.html:222
+#: apps/userdata/templates/userdata/dataset.html:258
 #: apps/userdata/templates/userdata/series_step.html:140
 msgid "субъектов: %(count)s"
 msgstr "federal subjects: %(count)s"
 
-#: apps/userdata/templates/userdata/dataset.html:147
+#: apps/userdata/templates/userdata/dataset.html:291
 #: apps/userdata/templates/userdata/file_step.html:92
 msgid "Узнано субъектов: %(count)s из 85."
 msgstr "Regions recognised: %(count)s of 85."
 
-#: apps/userdata/templates/userdata/dataset.html:153
+#: apps/userdata/templates/userdata/dataset.html:297
 msgid "Повторов территории и года с разными числами: %(count)s; оставлено первое значение."
 msgstr "Repeated territory and year with different numbers: %(count)s; the first value was kept."
 
-#: apps/userdata/templates/userdata/dataset.html:158
+#: apps/userdata/templates/userdata/dataset.html:302
 #: apps/userdata/templates/userdata/table_step.html:172
 msgid "Строк вне справочника: %(count)s"
 msgstr "Rows outside the reference list: %(count)s"
 
-#: apps/userdata/templates/userdata/dataset.html:207
+#: apps/userdata/templates/userdata/dataset.html:351
 msgid "до %(moment)s"
 msgstr "until %(moment)s"
 
-#: apps/userdata/templates/userdata/dataset.html:210
+#: apps/userdata/templates/userdata/dataset.html:354
 msgid "из резервных копий удалённая исчезает через %(days)s сут."
 msgstr "once deleted, it disappears from backups after %(days)s days"
 
@@ -10024,6 +10509,105 @@ msgstr "Rows: %(rows)s."
 msgid "Таблица в документе разбита на части? Вставьте следующую часть — строки добавятся в конец, повторённая шапка отбросится."
 msgstr "Is the table split into parts in the document? Paste the next part — the rows are added at the end, a repeated header is dropped."
 
+#: apps/userdata/templates/userdata/formula.html:19
+msgid "Новый показатель по формуле"
+msgstr "New indicator from a formula"
+
+#: apps/userdata/templates/userdata/formula.html:33
+msgid "Формулу не посчитать"
+msgstr "The formula cannot be calculated"
+
+#: apps/userdata/templates/userdata/formula.html:52
+msgid "Показатели — в квадратных скобках, как в перечне ниже. Действия: + − * / ^ и скобки, дробная часть — через точку."
+msgstr "Indicators go in square brackets, as in the list below. Operations: + − * / ^ and brackets; decimals use a point."
+
+#: apps/userdata/templates/userdata/formula.html:57
+msgid "Вставить показатель"
+msgstr "Insert an indicator"
+
+#: apps/userdata/templates/userdata/formula.html:60
+#: templates/partials/_series_select.html:13
+msgid "Загрузка перечня…"
+msgstr "Loading the list…"
+
+#: apps/userdata/templates/userdata/formula.html:61
+#: templates/partials/_series_select.html:14
+msgid "Поиск по названию или разделу"
+msgstr "Search by name or section"
+
+#: apps/userdata/templates/userdata/formula.html:63
+#: apps/userdata/templates/userdata/formula.html:69
+msgid "Выберите показатель"
+msgstr "Choose an indicator"
+
+#: apps/userdata/templates/userdata/formula.html:64
+#: templates/partials/_series_select.html:17
+msgid "найдено"
+msgstr "found"
+
+#: apps/userdata/templates/userdata/formula.html:73
+msgid "Свои таблицы — сверху, затем официальные ряды сайта. Показатель встаёт туда, где стоит курсор."
+msgstr "Your tables come first, then the site’s official series. The indicator is inserted at the cursor."
+
+#: apps/userdata/templates/userdata/formula.html:77
+msgid "Функции"
+msgstr "Functions"
+
+#: apps/userdata/templates/userdata/formula.html:80
+msgid "значение того же региона годом раньше; вторым аргументом — на сколько лет"
+msgstr "the value of the same region a year earlier; the second argument sets how many years"
+
+#: apps/userdata/templates/userdata/formula.html:82
+msgid "место среди субъектов за год, 1 — наибольшее значение"
+msgstr "place among the subjects in the year, 1 is the highest value"
+
+#: apps/userdata/templates/userdata/formula.html:84
+msgid "округление до числа знаков после запятой"
+msgstr "rounding to the number of decimal places"
+
+#: apps/userdata/templates/userdata/formula.html:86
+msgid "наименьшее и наибольшее из значений"
+msgstr "the smallest and the largest of the values"
+
+#: apps/userdata/templates/userdata/formula.html:88
+msgid "модуль, натуральный и десятичный логарифм, корень, экспонента"
+msgstr "absolute value, natural and decimal logarithm, square root, exponent"
+
+#: apps/userdata/templates/userdata/formula.html:90
+msgid "Аргументы — через точку с запятой или запятую. Русские имена тоже понимаются: ОКРУГЛ, МИН, МАКС, РАНГ, НАЗАД, КОРЕНЬ. Деление на ноль и логарифм неположительного числа дают пустое значение."
+msgstr "Arguments are separated by a semicolon or a comma. Russian names are understood too: ОКРУГЛ, МИН, МАКС, РАНГ, НАЗАД, КОРЕНЬ. Division by zero and the logarithm of a non-positive number give an empty value."
+
+#: apps/userdata/templates/userdata/formula.html:99
+#: apps/userdata/templates/userdata/series_step.html:157
+msgid "Вид величины"
+msgstr "Kind of value"
+
+#: apps/userdata/templates/userdata/formula.html:117
+msgid "Проверка по нынешним данным"
+msgstr "Check against the current data"
+
+#: apps/userdata/templates/userdata/formula.html:140
+msgid "Проверить"
+msgstr "Check"
+
+#: apps/userdata/templates/userdata/formula.html:141
+msgid "Сохранить и открыть на карте"
+msgstr "Save and open on the map"
+
+#: apps/userdata/templates/userdata/formula.html:142
+#: apps/userdata/templates/userdata/months.html:126
+#: apps/userdata/templates/userdata/related.html:87
+msgid "К таблице"
+msgstr "Back to the table"
+
+#: apps/userdata/templates/userdata/formula.html:149
+msgid "Удалить показатель"
+msgstr "Delete the indicator"
+
+#: apps/userdata/templates/userdata/formula.html:21
+msgid "Новый ряд из показателей этой таблицы, других ваших таблиц и официальных рядов сайта. Формула пересчитывается при каждой сборке таблицы."
+msgstr "A new series from indicators of this table, your other tables and the site’s official series. The formula is recalculated whenever the table is rebuilt."
+
 #: apps/userdata/templates/userdata/index.html:45
 msgid "Мои таблицы"
 msgstr "My tables"
@@ -10057,12 +10641,12 @@ msgstr "Table layout"
 #: apps/userdata/templates/userdata/index.html:110
 #: apps/userdata/templates/userdata/index.html:119
 #: apps/userdata/templates/userdata/index.html:128
-#: apps/userdata/views.py:458
+#: apps/userdata/views.py:460
 msgid "регион"
 msgstr "region"
 
 #: apps/userdata/templates/userdata/index.html:101
-#: apps/userdata/views.py:466
+#: apps/userdata/views.py:468
 msgid "значение"
 msgstr "value"
 
@@ -10165,6 +10749,63 @@ msgstr "Without signing in a table is kept for %(hours)s h and then deleted. Aft
 msgid "Удалённая таблица сразу исчезает с сайта, а из резервных копий — через %(days)s сут."
 msgstr "A deleted table disappears from the site at once, and from backups after %(days)s days."
 
+#: apps/userdata/templates/userdata/months.html:52
+#: apps/userdata/templates/userdata/related.html:40
+msgid "Показать"
+msgstr "Show"
+
+#: apps/userdata/templates/userdata/months.html:78
+msgid "По этой территории значений нет. Выберите другую."
+msgstr "There are no values for this territory. Choose another one."
+
+#: apps/userdata/templates/userdata/months.html:71
+msgid "%(name)s по месяцам, %(first)s–%(last)s"
+msgstr "%(name)s by month, %(first)s–%(last)s"
+
+#: apps/userdata/templates/userdata/related.html:32
+msgid "Показатель таблицы"
+msgstr "Table indicator"
+
+#: apps/userdata/templates/userdata/related.html:50
+msgid "Сумма связана со всем, что растёт вместе с численностью населения: связи повторяют размер регионов."
+msgstr "A total is linked to everything that grows with population: the links repeat the size of regions."
+
+#: apps/userdata/templates/userdata/related.html:51
+msgid "Смотреть ряд на жителя"
+msgstr "View the per-capita series"
+
+#: apps/userdata/templates/userdata/related.html:61
+msgid "По нескольким регионам связь не оценить."
+msgstr "A link cannot be assessed on a few regions."
+
+#: apps/userdata/templates/userdata/related.html:73
+msgid "Ни одна связь не значима после поправки на число сравнений."
+msgstr "No link is significant after adjusting for the number of comparisons."
+
+#: apps/userdata/templates/userdata/related.html:84
+msgid "Нет года, за который есть значения большинства субъектов."
+msgstr "There is no year with values for most federal subjects."
+
+#: apps/userdata/templates/userdata/related.html:71
+msgid "Значимые связи"
+msgstr "Significant links"
+
+#: apps/userdata/templates/userdata/related.html:80
+msgid "Незначимые связи"
+msgstr "Non-significant links"
+
+#: apps/userdata/templates/userdata/related.html:21
+msgid "Связь показателя таблицы с основными показателями сайта по регионам за один год: коэффициент Спирмена, значимость — с поправкой на число сравнений. Связь не означает, что один показатель влияет на другой."
+msgstr "How the table indicator is linked to the site’s main indicators across regions in one year: Spearman’s coefficient, significance adjusted for the number of comparisons. A link does not mean that one indicator influences the other."
+
+#: apps/userdata/templates/userdata/related.html:67
+msgid "Значимые связи, %(year)s год, субъектов: %(count)s"
+msgstr "Significant links, %(year)s, subjects: %(count)s"
+
+#: apps/userdata/templates/userdata/related.html:79
+msgid "Незначимые после поправки: %(count)s"
+msgstr "Not significant after adjustment: %(count)s"
+
 #: apps/userdata/templates/userdata/series_step.html:33
 msgid "Вернуться к описанию таблицы"
 msgstr "Back to the table description"
@@ -10193,10 +10834,6 @@ msgstr "Check the fields"
 msgid "Сумма складывается по регионам: число людей, преступлений, рублей всего. Относительная величина не складывается: доля, среднее, значение на жителя."
 msgstr "A sum adds up across regions: the number of people, crimes, total roubles. A relative value does not add up: a share, an average, a value per inhabitant."
 
-#: apps/userdata/templates/userdata/series_step.html:157
-msgid "Вид величины"
-msgstr "Kind of value"
-
 #: apps/userdata/templates/userdata/series_step.html:163
 msgid "Пересчёт суммы"
 msgstr "Recalculation of the sum"
@@ -10205,19 +10842,87 @@ msgstr "Recalculation of the sum"
 msgid "Численность — среднегодовая по данным Росстата (как у рядов на жителя на сайте), площадь — из справочника. Только для сумм."
 msgstr "Population is the Rosstat annual average (as for the site’s per-capita series), area is from the reference list. Sums only."
 
+#: apps/userdata/templates/userdata/series_step.html:170
+msgid "Другие пересчёты"
+msgstr "Other recalculations"
+
+#: apps/userdata/templates/userdata/series_step.html:172
+msgid "в ценах последнего года — по индексу потребительских цен региона"
+msgstr "in prices of the last year — by the region’s consumer price index"
+
+#: apps/userdata/templates/userdata/series_step.html:175
+msgid "в %% к предыдущему году"
+msgstr "% of the previous year"
+
+#: apps/userdata/templates/userdata/series_step.html:176
+msgid "доля в сумме по субъектам, %%"
+msgstr "share of the sum over subjects, %%"
+
+#: apps/userdata/templates/userdata/series_step.html:177
+msgid "Каждый пересчёт — отдельный ряд рядом с исходным; при новой сборке пересчитывается сам. Значение России — из таблицы, у сумм без строки России — сумма субъектов."
+msgstr "Each recalculation is a separate series next to the original and is recalculated on every build. The value for Russia comes from the table; for sums without a row for Russia it is the sum of subjects."
+
+#: apps/userdata/templates/userdata/series_step.html:181
+msgid "Сложить значения разреза"
+msgstr "Add up the values of a breakdown"
+
+#: apps/userdata/templates/userdata/series_step.html:185
+msgid "Сумма по всем отобранным значениям разреза — например, по всем возрастам, если итога в таблице нет. Итог («Всего», «Оба пола») в сумму не входит. Только для сумм."
+msgstr "The sum over all selected values of the breakdown — for example, over all ages if the table has no total. A total (“Total”, “Both sexes”) is not included. Sums only."
+
 #: apps/userdata/templates/userdata/series_step.html:190
+msgid "Месяцы — в год"
+msgstr "Months into a year"
+
+#: apps/userdata/templates/userdata/series_step.html:192
+msgid "не сворачивать"
+msgstr "do not fold"
+
+#: apps/userdata/templates/userdata/series_step.html:194
+msgid "сумма за 12 месяцев"
+msgstr "sum of 12 months"
+
+#: apps/userdata/templates/userdata/series_step.html:194
+msgid "среднее за месяц"
+msgstr "monthly average"
+
+#: apps/userdata/templates/userdata/series_step.html:194
+msgid "значение за декабрь"
+msgstr "December value"
+
+#: apps/userdata/templates/userdata/series_step.html:194
+msgid "январь–декабрь из итогов с начала года"
+msgstr "January–December from year-to-date totals"
+
+#: apps/userdata/templates/userdata/series_step.html:197
+msgid "Годовой ряд из месяцев: складываются только суммы, у долей и средних — среднее за месяц. Год без всех месяцев остаётся пустым."
+msgstr "An annual series from months: only sums are added up; shares and averages take the monthly average. A year without all months stays empty."
+
+#: apps/userdata/templates/userdata/series_step.html:210
+msgid "С какого года значения считаются по-другому"
+msgstr "From which year values are calculated differently"
+
+#: apps/userdata/templates/userdata/series_step.html:212
+msgid "Что изменилось"
+msgstr "What changed"
+
+#: apps/userdata/templates/userdata/series_step.html:214
+msgid "Несколько лет — через запятую. Динамика и инструменты анализа покажут разрыв и предложат сравнивать годы по одной методике."
+msgstr "Several years are separated by commas. Dynamics and the analysis tools will show the break and offer to compare years under one methodology."
+
+#: apps/userdata/templates/userdata/series_step.html:229
 msgid "Собрать заново и открыть на карте"
 msgstr "Rebuild and open on the map"
 
-#: apps/userdata/templates/userdata/series_step.html:190
+#: apps/userdata/templates/userdata/series_step.html:229
 msgid "Собрать и открыть на карте"
 msgstr "Build and open on the map"
 
-#: apps/userdata/templates/userdata/series_step.html:193
+#: apps/userdata/templates/userdata/series_step.html:232
 msgid "Страница таблицы"
 msgstr "Table page"
 
-#: apps/userdata/templates/userdata/series_step.html:195
+#: apps/userdata/templates/userdata/series_step.html:234
 msgid "Назад к описанию таблицы"
 msgstr "Back to the table description"
 
@@ -10238,9 +10943,9 @@ msgid "Показатели: %(count)s"
 msgstr "Indicators: %(count)s"
 
 #: apps/userdata/templates/userdata/table_step.html:18
-#: apps/userdata/views.py:218
-#: apps/userdata/views.py:237
-#: apps/userdata/views.py:37
+#: apps/userdata/views.py:219
+#: apps/userdata/views.py:238
+#: apps/userdata/views.py:38
 msgid "Что в таблице"
 msgstr "What is in the table"
 
@@ -10412,103 +11117,95 @@ msgstr "A table with values for the regions of Russia — as a file, a ZIP archi
 msgid "Регионы — субъекты Российской Федерации. Районы и города на карту сайта не попадут. Таблицу видите только вы."
 msgstr "Regions are the constituent entities of the Russian Federation. Districts and cities will not appear on the site map. Only you can see the table."
 
-#: apps/userdata/views.py:473
+#: apps/userdata/views.py:475
 msgid "месяцы"
 msgstr "months"
 
-#: apps/userdata/views.py:474
+#: apps/userdata/views.py:476
 msgid "кварталы"
 msgstr "quarters"
 
-#: apps/userdata/views.py:475
+#: apps/userdata/views.py:477
 msgid "полугодия"
 msgstr "half-years"
 
-#: apps/userdata/views.py:476
-msgid "с начала года"
-msgstr "year to date"
-
-#: apps/userdata/views.py:477
+#: apps/userdata/views.py:479
 msgid "скользящие месяцы"
 msgstr "rolling months"
 
-#: apps/userdata/views.py:478
-msgid "на начало месяца"
-msgstr "at the start of the month"
-
-#: apps/userdata/views.py:481
+#: apps/userdata/views.py:483
 msgid "Длинная таблица: регион, период и значение — в своих столбцах."
 msgstr "A long table: region, period and value in their own columns."
 
-#: apps/userdata/views.py:482
+#: apps/userdata/views.py:484
 msgid "Годы или периоды — в столбцах, регионы — в строках."
 msgstr "Years or periods in columns, regions in rows."
 
-#: apps/userdata/views.py:483
+#: apps/userdata/views.py:485
 msgid "Показатели — в столбцах, регионы — в строках; года в таблице нет."
 msgstr "Indicators in columns, regions in rows; the table has no year."
 
-#: apps/userdata/views.py:484
+#: apps/userdata/views.py:486
 msgid "Регионы — в столбцах, годы — в строках."
 msgstr "Regions in columns, years in rows."
 
-#: apps/userdata/views.py:485
+#: apps/userdata/views.py:487
 msgid "Регионы в таблице не найдены."
 msgstr "No regions were found in the table."
 
-#: apps/userdata/views.py:459
+#: apps/userdata/views.py:461
 msgid "код региона"
 msgstr "region code"
 
-#: apps/userdata/views.py:460
+#: apps/userdata/views.py:462
 msgid "уровень территории"
 msgstr "territory level"
 
-#: apps/userdata/views.py:462
+#: apps/userdata/views.py:464
 msgid "показатель"
 msgstr "indicator"
 
-#: apps/userdata/views.py:463
+#: apps/userdata/views.py:465
 msgid "код показателя"
 msgstr "indicator code"
 
-#: apps/userdata/views.py:464
+#: apps/userdata/views.py:466
 msgid "единица"
 msgstr "unit"
 
-#: apps/userdata/views.py:465
+#: apps/userdata/views.py:467
 msgid "разрез"
 msgstr "breakdown"
 
-#: apps/userdata/views.py:467
+#: apps/userdata/views.py:469
 msgid "причина пропуска"
 msgstr "reason for a missing value"
 
-#: apps/userdata/views.py:468
+#: apps/userdata/views.py:470
 msgid "примечание"
 msgstr "note"
 
-#: apps/userdata/views.py:469
+#: apps/userdata/views.py:471
 msgid "пропустить"
 msgstr "skip"
 
-#: apps/userdata/views.py:270
+#: apps/userdata/views.py:271
 msgid "Описание таблицы сохранено."
 msgstr "The table description has been saved."
 
-#: apps/userdata/views.py:302
+#: apps/userdata/views.py:303
 msgid "Сначала сохраните описание таблицы."
 msgstr "Save the table description first."
 
-#: apps/userdata/views.py:153
+#: apps/userdata/views.py:154
 msgid "Файл: %(name)s"
 msgstr "File: %(name)s"
 
-#: apps/userdata/views.py:196
+#: apps/userdata/views.py:197
 msgid "Новых строк во вставке нет."
 msgstr "The pasted text has no new rows."
 
-#: apps/userdata/views.py:194
+#: apps/userdata/views.py:195
 msgid "Строк добавлено: %(count)s."
 msgstr "Rows added: %(count)s."
 
@@ -11132,39 +11829,17 @@ msgstr "Search indicators"
 msgid "Название или раздел"
 msgstr "Name or section"
 
-#: templates/partials/_series_picker.html:39
+#: templates/partials/_series_picker.html:50
 msgid "Свернуть перечень"
 msgstr "Collapse the list"
 
-#: templates/partials/_series_picker.html:52
+#: templates/partials/_series_picker.html:63
 msgid "Ни один показатель не выбран"
 msgstr "No indicator is selected"
 
-#: templates/partials/_series_picker.html:64
+#: templates/partials/_series_picker.html:75
 msgid "Выбрать из %(total)s показателей"
 msgstr "Choose from %(total)s indicators"
-
-#: templates/partials/_series_picker_item.html:9
-#: templates/partials/_series_select.html:20
-msgid "Величина не приведена к численности населения или иной основе"
-msgstr "Value is not adjusted for population or any other base"
-
-#: templates/partials/_series_picker_item.html:9
-#: templates/partials/_series_select.html:19
-msgid "абс."
-msgstr "abs."
-
-#: templates/partials/_series_select.html:13
-msgid "Загрузка перечня…"
-msgstr "Loading the list…"
-
-#: templates/partials/_series_select.html:14
-msgid "Поиск по названию или разделу"
-msgstr "Search by name or section"
-
-#: templates/partials/_series_select.html:17
-msgid "найдено"
-msgstr "found"
 
 #: templates/partials/_series_select.html:35
 msgid "Показать весь перечень рядов"

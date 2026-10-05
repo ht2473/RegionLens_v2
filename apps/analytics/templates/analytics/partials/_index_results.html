@@ -75,6 +75,7 @@
       </div>
       <div class="data-table-wrapper">
         <table class="data-table">
+          <caption class="visually-hidden">{% translate "Насколько результат зависит от способа расчёта" %}</caption>
           <thead>
             <tr>
               <th scope="col">{% translate "Шкала" %}</th>
@@ -175,6 +176,7 @@
 
     <div class="data-table-wrapper">
       <table class="data-table">
+        <caption class="visually-hidden">{% translate "Рейтинг регионов по индексу" %}</caption>
         <thead>
           <tr>
             <th scope="col" class="is-numeric">{% translate "Место" %}</th>
@@ -238,6 +240,7 @@
     </div>
     <div class="data-table-wrapper">
       <table class="data-table">
+        <caption class="visually-hidden">{% translate "Состав индекса" %}</caption>
         <thead>
           <tr>
             <th scope="col">{% translate "Показатель" %}</th>
@@ -251,7 +254,7 @@
           {% for row in weight_rows %}
             <tr>
               <td class="data-table__long">
-                <a href="{% url 'catalog:series-detail' slug=row.column.series.indicator.slug %}?series={{ row.column.key }}">
+                <a href="{{ row.column.series.detail_url }}"{% if row.column.lang %} lang="{{ row.column.lang }}"{% endif %}>
                   {{ row.column.label }}
                 </a>
               </td>
@@ -269,6 +272,8 @@
                     {% translate "задано вами" %}
                   {% elif row.column.direction.origin == "featured" %}
                     {% translate "основной набор" %}
+                  {% elif row.column.direction.origin == "described" %}
+                    {% translate "из описания таблицы" %}
                   {% else %}
                     {% translate "предложено по формулировке" %}
                   {% endif %}

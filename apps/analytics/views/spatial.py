@@ -25,6 +25,7 @@ from ..selectors import (
     region_rows,
     resolve_choice,
     resolve_one,
+    too_few_regions,
 )
 from .base import AnalyticsView
 
@@ -60,6 +61,9 @@ class SpatialView(AnalyticsView):
             "scheme": scheme,
         }
         if series is None:
+            return context
+        if too_few_regions(series):
+            context["too_few"] = True
             return context
 
         panel = region_panel(series.key)

@@ -97,3 +97,69 @@ def test_journey_english(page: Page, own_data: Any) -> None:
     expect(page.locator(".surface-head__private")).to_have_text("visible only to you")
     assert page.locator("h1 [lang=ru]").count() == 1
     assert not problems, "\n".join(problems)
+
+
+def _analysis(page: Page, base: str) -> list[str]:
+    """
+    После сборки: страница таблицы с первым взглядом, формула со вставкой показателя
+    поиском, проверка и сохранение, «С чем связан показатель», неравенство по ряду таблицы.
+    """
+    problems: list[str] = []
+
+    def audit() -> None:
+        page.wait_for_load_state("networkidle")
+        problems.extend(f"{page.url}: {item}" for item in page.evaluate(AUDIT_SCRIPT))
+        overflow = page.evaluate(OVERFLOW_SCRIPT)
+        if overflow["overflow"] > 0:
+            problems.append(f"{page.url}: переполнение {overflow}")
+
+    page.locator(".surface-head__about a").click()
+    page.wait_for_url(re.compile(r"/own-data/[^/]+/"))
+    audit()
+    expect(page.locator(".glance-card").first).to_be_visible()
+    page.locator("a[href$='/formula/']").click()
+    page.wait_for_url("**/formula/")
+    audit()
+    page.fill("#formula-title", "Вдвое")
+    page.locator("rl-combobox .combobox__trigger").click()
+    page.locator(".combobox__option", has_text=TITLE).first.click()
+    field = page.locator("#formula-expression")
+    expect(field).to_have_value(re.compile(r"^\[.+\]$"))
+    field.press("End")
+    field.type(" * 2")
+    page.locator("button[name=action][value=check]").click()
+    page.wait_for_load_state("networkidle")
+    expect(page.locator(".formula-check")).to_be_visible()
+    audit()
+    page.locator("button[name=action][value=save]").click()
+    page.wait_for_url("**/map/**")
+    page.go_back()
+    page.goto(page.url.split("/formula/")[0] + "/related/")
+    audit()
+    expect(page.locator("h1")).to_be_visible()
+    page.goto(page.url.replace("/related/", "/"))
+    key = page.locator(".own-series__view").first.get_attribute("href") or ""
+    page.goto(f"{base}/ru/analytics/inequality/?{key.split('?', 1)[1]}")
+    audit()
+    expect(page.locator(".tool-subject__title")).to_contain_text(TITLE)
+    return problems
+
+
+def test_analysis_desktop(page: Page, own_data: Any) -> None:
+    page.set_viewport_size({"width": 1440, "height": 900})
+    problems = _walk(page, own_data.url)
+    problems += _analysis(page, own_data.url)
+    assert not problems, "\n".join(problems)
+
+
+def test_analysis_phone(browser: Browser, own_data: Any) -> None:
+    context = browser.new_context(
+        viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True
+    )
+    page = context.new_page()
+    try:
+        problems = _walk(page, own_data.url)
+        problems += _analysis(page, own_data.url)
+        assert not problems, "\n".join(problems)
+    finally:
+        context.close()

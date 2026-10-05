@@ -1,0 +1,10 @@
+{% load i18n %}
+{# Ряд своей таблицы с малым числом субъектов: инструмент по нему не считается. #}
+<div class="empty-state">
+  <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+  <p class="empty-state__title">{% translate "В таблице меньше 20 субъектов" %}</p>
+  <p class="empty-state__hint">
+    {% translate "По нескольким регионам меры различия и пространственные связи неустойчивы, поэтому этот инструмент по таблице не считается. Карта, таблица и динамика работают." %}
+    <a href="{{ series.detail_url }}">{% translate "О таблице" %}</a>
+  </p>
+</div>

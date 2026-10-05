@@ -919,7 +919,7 @@ def _summarize_slices(result: Recognition, loaded: Loaded, recipe: Mapping[str, 
         product *= max(len(selected), 1)
     if product > MAX_SERIES:
         for index, selected in defaults.items():
-            totals = [value for value in selected if _is_total(value, selected)]
+            totals = [value for value in selected if is_total(value, selected)]
             if totals:
                 defaults[index] = totals[:1]
     for index, info in result.slices.items():
@@ -941,7 +941,8 @@ def _indicator_count(result: Recognition, loaded: Loaded) -> int:
     return max(named if indicator else len(result.value_columns), 1)
 
 
-def _is_total(value: str, siblings: Iterable[str]) -> bool:
+def is_total(value: str, siblings: Iterable[str]) -> bool:
+    """Значение разреза — итог по нему: «Всего», «Оба пола», «T» у типа поселения ЕБТ."""
     text = value.strip().lower()
     if text in _TOTAL_VALUES:
         return True

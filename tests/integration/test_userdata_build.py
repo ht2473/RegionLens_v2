@@ -10,8 +10,6 @@ from __future__ import annotations
 
 import csv
 import io
-import shutil
-from collections.abc import Iterator
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
@@ -26,13 +24,19 @@ from django.utils import timezone
 from openpyxl import load_workbook
 
 from apps.userdata import extract, indicators, jobs, scope
-from apps.userdata.models import Dataset, DatasetSeries, DatasetVersion
+from apps.userdata.models import Dataset, DatasetVersion
 from apps.warehouse import queries
 from apps.warehouse.queries.sources import population_table
+from tests.support.userdata import FIXTURES, userdata_dir  # noqa: F401 — приспособление модуля
+from tests.support.userdata import build as _build
+from tests.support.userdata import built as _built
+from tests.support.userdata import describe as _describe
+from tests.support.userdata import key_of as _key
+from tests.support.userdata import upload as _upload
+from tests.support.userdata import version_of as _version
 
 pytestmark = pytest.mark.integration
 
-FIXTURES = Path(__file__).resolve().parent.parent / "fixtures" / "userdata"
 VIEWS = (
     "maps:choropleth",
     "compare:index",
@@ -40,90 +44,6 @@ VIEWS = (
     "surface:distribution",
     "surface:table",
 )
-
-
-@pytest.fixture(autouse=True)
-def userdata_dir(settings: Any, tmp_path: Path) -> Iterator[Path]:
-    """Каталог таблиц теста."""
-    settings.USERDATA_DIR = tmp_path / "userdata"
-    yield settings.USERDATA_DIR
-    from apps.warehouse.duckdb_client import close_connections
-
-    close_connections()
-    shutil.rmtree(settings.USERDATA_DIR, ignore_errors=True)
-
-
-def _upload(client: Client, name: str) -> Dataset:
-    client.post(
-        reverse("userdata:upload"),
-        {"action": "upload", "file": SimpleUploadedFile(name, (FIXTURES / name).read_bytes())},
-    )
-    dataset = Dataset.objects.latest("created_at")
-    version = dataset.current_version
-    assert version is not None
-    best = next(table for table in version.report["inspection"]["tables"] if table["best"])
-    client.post(
-        reverse("userdata:file", args=[dataset.public_id]),
-        {"action": "choose", "table": best["key"], "encoding": ""},
-    )
-    return dataset
-
-
-def _describe(client: Client, dataset: Dataset, answers: dict[str, Any] | None = None) -> None:
-    response = client.post(
-        reverse("userdata:table", args=[dataset.public_id]), {"action": "next", **(answers or {})}
-    )
-    assert response.status_code == 302
-
-
-def _build(
-    client: Client,
-    dataset: Dataset,
-    *,
-    kind: str = "",
-    per: tuple[str, ...] | None = None,
-    title: str = "",
-) -> Any:
-    """Шаг «Показатели» с описанием по умолчанию (или заданным) и сборка."""
-    page = client.get(reverse("userdata:series", args=[dataset.public_id]))
-    assert page.status_code == 200, page.content[:500]
-    version = DatasetVersion.objects.get(pk=dataset.current_version_id)
-    data: dict[str, Any] = {
-        "title": title or dataset.title,
-        "source_title": "Если быть точным",
-        "source_url": "",
-        "description": "",
-    }
-    for number, item in enumerate(indicators.indicators_of(version), start=1):
-        chosen = kind or item.kind
-        data.update(
-            {
-                f"indicator-{number}": item.name,
-                f"title-{number}": item.title,
-                f"unit-{number}": item.unit,
-                f"kind-{number}": chosen,
-                f"polarity-{number}": item.polarity,
-                f"per-{number}": list(per if per is not None else item.per),
-            }
-        )
-    return client.post(reverse("userdata:series", args=[dataset.public_id]), data)
-
-
-def _built(client: Client, name: str = "environment.csv", **options: Any) -> Dataset:
-    dataset = _upload(client, name)
-    _describe(client, dataset)
-    response = _build(client, dataset, **options)
-    assert response.status_code == 302, response.content[:500]
-    dataset.refresh_from_db()
-    return dataset
-
-
-def _version(dataset: Dataset) -> DatasetVersion:
-    return DatasetVersion.objects.get(pk=dataset.current_version_id)
-
-
-def _key(dataset: Dataset, record: DatasetSeries) -> str:
-    return f"u:{dataset.code}:{record.code}"
 
 
 @pytest.mark.django_db
@@ -222,6 +142,18 @@ class TestSeriesStep:
         assert indicators.guess_kind("Валовой продукт", "млн руб.") == indicators.SUM
         assert indicators.guess_kind("Средняя заработная плата", "рублей") == indicators.RELATIVE
         assert indicators.guess_kind("Заболеваемость", "на 100 000 человек") == indicators.RELATIVE
+        # Слова, похожие на признаки средней и доли, — у сумм (найдено первым взглядом).
+        for name, unit in (
+            ("Зарегистрировано преступлений средней тяжести", "единиц"),
+            ("Среднесписочная численность работников малого и среднего бизнеса", ""),
+            ("Преступления в отношении иностранных граждан", "единиц"),
+            ("Закуплено годовых курсов лечения", "годовых курсов"),
+        ):
+            assert indicators.guess_kind(name, unit) == indicators.SUM, name
+        assert indicators.guess_kind("Отношение доходов к прожиточному минимуму", "") == (
+            indicators.RELATIVE
+        )
+        assert indicators.guess_kind("Ожидаемая продолжительность", "года") == indicators.RELATIVE
 
     def test_extraction_failure_is_explained(self, client: Client, warehouse: Any) -> None:
         dataset = _upload(client, "environment.csv")
@@ -401,16 +333,6 @@ class TestCanvas:
         page = client.get(reverse("maps:choropleth"))
         assert "data-own" in page.text
         assert f"u:{dataset.code}:" in page.text
-
-    def test_tools_take_user_key_as_unknown(self, client: Client, warehouse: Any) -> None:
-        dataset = _built(client)
-        record = _version(dataset).series.order_by("order").first()
-        assert record is not None
-        key = _key(dataset, record)
-        for name in ("analytics:inequality", "analytics:convergence", "analytics:spatial"):
-            page = client.get(reverse(name), {"series": key})
-            assert page.status_code == 200, name
-            assert "видно только вам" not in page.text
 
     def test_default_year_is_last_full(self, client: Client, warehouse: Any) -> None:
         dataset = _built(client)
@@ -635,7 +557,7 @@ class TestGuestsAndLimits:
         assert dataset.expires_at is None
         assert client.get(reverse("userdata:dataset", args=[dataset.public_id])).status_code == 200
 
-    def test_prune(self, client: Client, warehouse: Any, userdata_dir: Path) -> None:
+    def test_prune(self, client: Client, warehouse: Any, userdata_dir: Path) -> None:  # noqa: F811
         from django.core.management import call_command
 
         dataset = _built(client)

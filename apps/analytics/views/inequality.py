@@ -12,6 +12,7 @@ from typing import Any
 from django.utils.translation import gettext_lazy as _
 
 from apps.catalog.selectors import default_year, resolve_year, series_options
+from apps.userdata.series import UserSeries
 from apps.warehouse.queries import (
     MIN_YEAR_COVERAGE,
     covered_years,
@@ -37,6 +38,7 @@ from ..selectors import (
     resolve_one,
     resolve_span,
     series_breaks,
+    too_few_regions,
 )
 from .base import AnalyticsView
 
@@ -117,6 +119,13 @@ class InequalityView(AnalyticsView):
         }
         if series is None:
             return context
+        if too_few_regions(series):
+            context["too_few"] = True
+            return context
+        # Сумма из своей таблицы: неравенство сумм — различие в размере регионов.
+        context["per_capita"] = (
+            series.per_capita() if isinstance(series, UserSeries) and series.is_sum else None
+        )
 
         weighting = resolve_choice(request.GET.get("weighting"), WEIGHTING, DEFAULT_WEIGHTING)
         epsilon = resolve_float(

@@ -727,8 +727,16 @@ def _series_form(dataset: Any, version: Any) -> dict[str, Any]:
     return data
 
 
-def _walk_table(row: dict[str, Any], start: Callable[[Any], Any], key: str) -> list[float]:
-    """Пройти мастер до карты; записать исход в ``row``, вернуть отметки времени шагов."""
+def _walk_table(
+    row: dict[str, Any],
+    start: Callable[[Any], Any],
+    key: str,
+    looks: list[dict[str, Any]] | None = None,
+) -> list[float]:
+    """
+    Пройти мастер до карты; записать исход в ``row``, вернуть отметки времени шагов.
+    ``looks`` — собрать и «первый взгляд» по ведущим рядам собранной таблицы.
+    """
     import time
 
     from django.test import Client
@@ -775,9 +783,73 @@ def _walk_table(row: dict[str, Any], start: Callable[[Any], Any], key: str) -> l
             values=version.values_count,
             regions=version.regions_count,
         )
+        if looks is not None:
+            looks.extend(_glance_rows(row, dataset, version))
         return moments
     finally:
         discard(dataset)
+
+
+GLANCE_FIELDS = (
+    "source",
+    "table",
+    "series",
+    "unit",
+    "described",
+    "data_kind",
+    "country",
+    "subjects_sum",
+    "ratio",
+    "regions",
+    "fullest",
+    "first_year",
+    "last_year",
+    "full_year",
+    "entered",
+    "left",
+    "gapped",
+    "missing",
+    "note",
+)
+
+
+def _glance_rows(row: dict[str, Any], dataset: Any, version: Any) -> list[dict[str, Any]]:
+    """«Первый взгляд» по ведущим рядам таблицы — для сверки вида величины и состава."""
+    from apps.userdata import glance, scope
+
+    with scope.reading_as(fingerprint=dataset.guest_key):
+        found = glance.glance(dataset, version)
+    rows = []
+    for look in found["looks"]:
+        ratio = (
+            round(look.subjects_sum / look.country, 4)
+            if look.country and look.subjects_sum is not None
+            else ""
+        )
+        rows.append(
+            {
+                "source": row["source"],
+                "table": row["table"],
+                "series": look.series.full_title[:200],
+                "unit": look.series.record.unit,
+                "described": "sum" if look.series.is_sum else "relative",
+                "data_kind": look.data_kind,
+                "country": look.country if look.country is not None else "",
+                "subjects_sum": look.subjects_sum if look.subjects_sum is not None else "",
+                "ratio": ratio,
+                "regions": look.regions,
+                "fullest": look.fullest,
+                "first_year": look.first_year or "",
+                "last_year": look.last_year or "",
+                "full_year": look.full_year or "",
+                "entered": "; ".join(look.entered),
+                "left": "; ".join(look.left),
+                "gapped": look.gapped,
+                "missing": look.missing_count,
+                "note": look.kind_note,
+            }
+        )
+    return rows
 
 
 def _build_targets(
@@ -813,11 +885,14 @@ def _build_targets(
                 break
 
 
-def command_build(corpus: Path, *, only: str = "", limit: int = 0) -> None:
+def command_build(
+    corpus: Path, *, only: str = "", limit: int = 0, with_glance: bool = False
+) -> None:
     """
     Путь каждой таблицы корпуса до карты, как у человека: загрузка, «Что в таблице» без
     правок, «Показатели» без правок, сборка, карта первого ряда. Всё — в запросе; итог —
-    ``corpus/build.csv`` и время до первой карты.
+    ``corpus/build.csv`` и время до первой карты; с ``with_glance`` — ещё «первый взгляд»
+    по ведущим рядам (``corpus/glance.csv``).
     """
     from apps.userdata import jobs
 
@@ -828,10 +903,11 @@ def command_build(corpus: Path, *, only: str = "", limit: int = 0) -> None:
     settings.ALLOWED_HOSTS = ["*"]
     jobs._inline = _always_inline  # type: ignore[assignment]
     results: list[dict[str, Any]] = []
+    looks: list[dict[str, Any]] | None = [] if with_glance else None
     for source, tag, size, start, key in _build_targets(corpus, only, limit):
         row: dict[str, Any] = {"source": source, "table": tag, "bytes": size, "note": ""}
         try:
-            moments = _walk_table(row, start, key)
+            moments = _walk_table(row, start, key, looks)
         except Exception as error:
             row.update(outcome="ошибка", note=f"{type(error).__name__}: {error}"[:200])
             moments = []
@@ -851,6 +927,23 @@ def command_build(corpus: Path, *, only: str = "", limit: int = 0) -> None:
     shutil.rmtree(settings.USERDATA_DIR, ignore_errors=True)
     _build_summary(results)
     print(f"итог — {target}")
+    if looks is not None:
+        _glance_summary(corpus, looks)
+
+
+def _glance_summary(corpus: Path, looks: list[dict[str, Any]]) -> None:
+    """Вид величины по данным против описания по подсказкам; перечень расхождений."""
+    target = corpus / "glance.csv"
+    with target.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=GLANCE_FIELDS)
+        writer.writeheader()
+        writer.writerows(looks)
+    verdicts = Counter((row["described"], row["data_kind"] or "—") for row in looks)
+    print("\nпервый взгляд: ведущих рядов " + str(len(looks)))
+    for (described, found), count in sorted(verdicts.items()):
+        print(f"  описание {described:8} → по данным {found:8}: {count}")
+    changed = sum(bool(row["entered"] or row["left"]) for row in looks)
+    print(f"  состав меняется: {changed}; итог — {target}")
 
 
 def _build_summary(results: list[dict[str, Any]]) -> None:
@@ -895,6 +988,9 @@ def main() -> None:
     )
     parser.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
     parser.add_argument("--verbose", action="store_true", help="показывать и вопросы")
+    parser.add_argument(
+        "--glance", action="store_true", help="build: собрать и «первый взгляд» (glance.csv)"
+    )
     arguments = parser.parse_args()
     if arguments.command == "labels":
         command_labels(arguments.corpus)
@@ -903,7 +999,12 @@ def main() -> None:
     elif arguments.command == "tables":
         command_tables(arguments.corpus, only=arguments.only)
     elif arguments.command == "build":
-        command_build(arguments.corpus, only=arguments.only, limit=arguments.limit)
+        command_build(
+            arguments.corpus,
+            only=arguments.only,
+            limit=arguments.limit,
+            with_glance=arguments.glance,
+        )
     else:
         command_check(arguments.corpus, verbose=arguments.verbose)
 

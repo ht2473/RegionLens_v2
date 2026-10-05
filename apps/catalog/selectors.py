@@ -149,9 +149,20 @@ def series_options_total() -> int:
 
 
 def selected_series_options(keys: list[str]) -> list[dict[str, Any]]:
-    """Записи перечня для отмеченных рядов — чтобы свёрнутый выбор их не сбрасывал."""
+    """
+    Записи перечня для отмеченных рядов — чтобы свёрнутый выбор их не сбрасывал.
+
+    Ряды своих таблиц — первыми, как в перечне.
+    """
     chosen = set(keys)
-    return [item for group in series_options() for item in group["items"] if item["key"] in chosen]
+    own: list[dict[str, Any]] = []
+    if any(is_user_key(key) for key in keys):
+        from apps.userdata.series import selected_options
+
+        own = selected_options(keys)
+    return own + [
+        item for group in series_options() for item in group["items"] if item["key"] in chosen
+    ]
 
 
 def default_series_key() -> str | None:

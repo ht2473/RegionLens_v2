@@ -12,6 +12,17 @@
     </div>
 
     <div class="territory-picker" id="series-picker">
+      {# Свои таблицы — первыми: они видны только тому, кто их загрузил. #}
+      {% for group in own_groups %}
+        <div class="territory-picker__group" data-filter-group>
+          <div class="territory-picker__title">{{ group.title }}</div>
+          <div class="stack stack--tight">
+            {% for item in group.items %}
+              {% include "partials/_series_picker_item.html" %}
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
       {% for group in series_options %}
         <div class="territory-picker__group" data-filter-group>
           <div class="territory-picker__title">{{ group.title }}</div>

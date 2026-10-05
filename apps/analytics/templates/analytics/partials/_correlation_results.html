@@ -68,6 +68,7 @@
       </div>
       <div class="data-table-wrapper">
         <table class="data-table">
+          <caption class="visually-hidden">{% translate "Наиболее выраженные связи" %}</caption>
           <thead>
             <tr>
               <th scope="col">{% translate "Показатель" %}</th>
@@ -212,6 +213,7 @@
       </div>
       <div class="data-table-wrapper">
         <table class="data-table matrix-table">
+          <caption class="visually-hidden">{% translate "Частная корреляция" %}</caption>
           <thead>
             <tr>
               <th scope="col"></th>
@@ -252,6 +254,7 @@
     </div>
     <div class="data-table-wrapper">
       <table class="data-table">
+        <caption class="visually-hidden">{% translate "Показатели в расчёте" %}</caption>
         <thead>
           <tr>
             <th scope="col" class="is-numeric">№</th>
@@ -266,7 +269,7 @@
             <tr>
               <td class="is-numeric">{{ forloop.counter }}</td>
               <td class="data-table__long">
-                <a href="{% url 'catalog:series-detail' slug=column.series.indicator.slug %}?series={{ column.key }}">
+                <a href="{{ column.series.detail_url }}"{% if column.lang %} lang="{{ column.lang }}"{% endif %}>
                   {{ column.label }}
                 </a>
               </td>

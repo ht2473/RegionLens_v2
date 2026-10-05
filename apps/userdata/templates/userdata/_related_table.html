@@ -1,0 +1,27 @@
+{% load i18n formatting %}
+{# Строки связей: показатель основного набора, коэффициент, теснота, год, облако точек. #}
+<div class="data-table-wrapper">
+  <table class="data-table">
+    <caption class="visually-hidden">{{ caption }}</caption>
+    <thead>
+      <tr>
+        <th scope="col">{% translate "Показатель сайта" %}</th>
+        <th scope="col" class="is-numeric">{% translate "Коэффициент" %}</th>
+        <th scope="col">{% translate "Связь" %}</th>
+        <th scope="col" class="is-numeric">{% translate "Год" %}</th>
+        <th scope="col"><span class="visually-hidden">{% translate "Облако точек" %}</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+        <tr>
+          <th scope="row" class="data-table__long">{{ row.item.short_title }}{% if row.item.absolute %} <span class="series-mark" title="{% translate 'Величина не приведена к численности населения или иной основе' %}">{% translate "абс." %}</span>{% endif %}</th>
+          <td class="is-numeric">{{ row.result.coefficient|ru_number:2 }}</td>
+          <td>{{ row.result.strength }}, {% if row.result.coefficient > 0 %}{% translate "прямая" %}{% else %}{% translate "обратная" %}{% endif %}</td>
+          <td class="is-numeric">{{ row.year|year }}</td>
+          <td><a href="{{ row.url }}">{% translate "Облако точек" %}</a></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

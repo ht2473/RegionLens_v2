@@ -83,7 +83,7 @@ class Migration(migrations.Migration):
                 ('precision', models.PositiveSmallIntegerField(default=1, verbose_name='знаков после запятой')),
                 ('slices', models.JSONField(blank=True, default=list, verbose_name='значения разрезов')),
                 ('period', models.CharField(default='year:12', max_length=16, verbose_name='период года')),
-                ('derived', models.CharField(blank=True, choices=[('', 'из таблицы'), ('per1000', 'на 1 000 жителей'), ('per100000', 'на 100 000 жителей'), ('perkm2', 'на км²')], default='', max_length=10, verbose_name='пересчёт')),
+                ('derived', models.CharField(blank=True, choices=[('', 'из таблицы'), ('per1000', 'на 1 000 жителей'), ('per100000', 'на 100 000 жителей'), ('perkm2', 'на км²'), ('real', 'в ценах последнего года'), ('russia', 'Россия = 100'), ('growth', '% к предыдущему году'), ('share', 'доля в сумме по субъектам'), ('slicesum', 'сумма по разрезу'), ('months', 'месяцы, свёрнутые в год'), ('formula', 'формула')], default='', max_length=10, verbose_name='пересчёт')),
                 ('base_code', models.CharField(blank=True, max_length=24, verbose_name='код исходного ряда')),
                 ('order', models.PositiveIntegerField(default=0, verbose_name='порядок')),
                 ('values_count', models.PositiveIntegerField(default=0, verbose_name='значений')),

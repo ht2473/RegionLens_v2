@@ -1,7 +1,9 @@
 {% load i18n formatting %}
 {# Результаты пространственного анализа: индекс Морана, диаграмма и карта LISA. #}
 
-{% if not global_moran %}
+{% if too_few %}
+  {% include "analytics/partials/_too_few.html" %}
+{% elif not global_moran %}
   <div class="empty-state">
     <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
     <p class="empty-state__title">{% translate "Пространственный анализ не выполнен" %}</p>
@@ -13,7 +15,7 @@
 
   <header class="tool-subject">
     <div class="tool-subject__text">
-      <h2 class="tool-subject__title">
+      <h2 class="tool-subject__title"{% if series_lang %} lang="{{ series_lang }}"{% endif %}>
         {{ series.full_title }}
       </h2>
       <p class="tool-subject__meta">
@@ -158,6 +160,7 @@
           </div>
           <div class="data-table-wrapper">
             <table class="data-table">
+              <caption class="visually-hidden">{{ group.label }}</caption>
               <thead>
                 <tr>
                   <th scope="col">{% translate "Субъект" %}</th>

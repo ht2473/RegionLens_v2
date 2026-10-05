@@ -24,12 +24,10 @@ from apps.core.navigation import Crumb
 from apps.core.views import BreadcrumbMixin
 from apps.warehouse import queries
 
-from . import access, export, ingest, scope, services
+from . import access, export, glance, ingest, monthly, scope, services
 from .models import Dataset, DatasetSeries, DatasetVersion
-from .series import UserSeries
+from .series import FEW_REGIONS, UserSeries
 
-# Субъектов меньше этого: неравенство и пространственный анализ не считаются.
-FEW_REGIONS = 20
 # Представления холста для ряда набора: код, маршрут, подпись.
 VIEWS = (
     ("map", "maps:choropleth", _("Карта")),
@@ -131,12 +129,19 @@ class DatasetView(DatasetMixin, BreadcrumbMixin, TemplateView):
         if version is None or version.state != DatasetVersion.State.BUILT:
             return context
         records = list(version.series.order_by("order"))
-        series = [UserSeries(record, dataset) for record in records]
+        everything = [UserSeries(record, dataset) for record in records]
+        # Показатели по формулам — своим разделом.
+        series = [
+            item for item in everything if item.record.derived != DatasetSeries.Derived.FORMULA
+        ]
         # Слой рядов сам ведёт ключи набора в его файл: набор свой.
-        covered = queries.series_covered_years([item.key for item in series])
+        covered = queries.series_covered_years([item.key for item in everything])
         report = version.report.get("extract") or {}
+        months = monthly.groups(version)
         context.update(
-            groups=_groups(series, covered),
+            groups=_groups(series, covered, months, dataset),
+            formulas=_formulas(dataset, version, everything),
+            glance=glance.glance(dataset, version),
             sums=[item for item in series if item.is_sum],
             per_capita=[item for item in series if item.record.derived],
             few_regions=version.regions_count < FEW_REGIONS,
@@ -147,10 +152,54 @@ class DatasetView(DatasetMixin, BreadcrumbMixin, TemplateView):
             ],
             nested=report.get("nested", []),
             alone_missing=version.report.get("build", {}).get("alone_missing", []),
+            alone_conflict=version.report.get("build", {}).get("alone_conflict", []),
             conflicts=report.get("conflicts", 0),
             xlsx_allowed=(version.values_count or 0) <= export.XLSX_ROWS,
         )
         return context
+
+
+def _formulas(
+    dataset: Dataset, version: DatasetVersion, series: list[UserSeries]
+) -> list[dict[str, Any]]:
+    """Показатели по формулам: формула с нынешними названиями, ряд, причина пустоты."""
+    from . import formula_store, formulas
+
+    by_code = {item.record.code: item for item in series}
+    errors = version.report.get("build", {}).get("formula_errors", {})
+    found = []
+    for item in formula_store.definitions(version):
+        titles = {**item.labels, **formula_store.titles(dataset, item.keys)}
+        record = by_code.get(item.code)
+        found.append(
+            {
+                "definition": item,
+                "expression": formulas.display(item.expression, titles),
+                "series": record,
+                "error": errors.get(item.code, ""),
+                "views": _views(record)
+                if record is not None and record.record.values_count
+                else [],
+                "related_url": f"{reverse('userdata:related', args=[dataset.public_id])}?"
+                f"{urlencode({'series': record.key})}"
+                if record is not None and record.record.regions_count >= FEW_REGIONS
+                else "",
+                "edit_url": reverse("userdata:formula", args=[dataset.public_id, item.code]),
+            }
+        )
+    return found
+
+
+def _views(item: UserSeries) -> list[dict[str, Any]]:
+    """Ссылки на виды холста для ряда."""
+    return [
+        {
+            "code": code,
+            "title": title,
+            "url": f"{reverse(name)}?{urlencode({'series': item.key})}",
+        }
+        for code, name, title in VIEWS
+    ]
 
 
 def _continue_url(dataset: Dataset, version: DatasetVersion | None) -> str:
@@ -162,15 +211,37 @@ def _continue_url(dataset: Dataset, version: DatasetVersion | None) -> str:
     return reverse("userdata:series", args=[dataset.public_id])
 
 
-def _groups(series: list[UserSeries], covered: dict[str, tuple[int, int]]) -> list[dict[str, Any]]:
-    """Ряды по показателям: название, единица, вид величины и ссылки на виды холста."""
+def _groups(
+    series: list[UserSeries],
+    covered: dict[str, tuple[int, int]],
+    months: list[monthly.Group],
+    dataset: Dataset,
+) -> list[dict[str, Any]]:
+    """
+    Ряды по показателям: название, единица, вид величины, ссылки на виды холста и на вид
+    по месяцам, если у показателя есть периоды внутри года.
+    """
+    month_urls: dict[str, str] = {}
+    for month_group in months:
+        month_urls.setdefault(
+            month_group.indicator,
+            f"{reverse('userdata:months', args=[dataset.public_id])}?"
+            f"{urlencode({'group': month_group.code})}",
+        )
     groups: OrderedDict[str, dict[str, Any]] = OrderedDict()
     for item in series:
         record = item.record
         # Пересчёт на жителей и на км² — ряд того же показателя.
         group = groups.setdefault(
             record.indicator,
-            {"title": record.title, "unit": record.unit, "kind": record.kind, "items": []},
+            {
+                "title": record.title,
+                "unit": record.unit,
+                "kind": record.kind,
+                "breaks": item.breaks,
+                "months_url": month_urls.get(record.indicator, ""),
+                "items": [],
+            },
         )
         year = covered.get(item.key, (None, record.last_year))[1]
         derived = str(DatasetSeries.Derived(record.derived).label) if record.derived else ""
@@ -179,14 +250,11 @@ def _groups(series: list[UserSeries], covered: dict[str, tuple[int, int]]) -> li
                 "series": item,
                 "record": record,
                 "detail": ", ".join(part for part in (item.name, derived) if part),
-                "views": [
-                    {
-                        "code": code,
-                        "title": title,
-                        "url": f"{reverse(name)}?{urlencode({'series': item.key})}",
-                    }
-                    for code, name, title in VIEWS
-                ],
+                "views": _views(item),
+                "related_url": f"{reverse('userdata:related', args=[dataset.public_id])}?"
+                f"{urlencode({'series': item.key})}"
+                if record.regions_count >= FEW_REGIONS
+                else "",
                 "last_full_year": year,
             }
         )

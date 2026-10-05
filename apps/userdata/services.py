@@ -150,15 +150,26 @@ def source_path(version: DatasetVersion) -> Path:
     return found[0]
 
 
-def discard(dataset: Dataset) -> None:
+def discard(dataset: Dataset, *, rebuild: bool = True) -> None:
     """
     Удалить набор вместе с файлами. Файл сборки, открытый другим процессом (Windows),
-    удалит очистка ``prune_personal_data``: каталог без набора — осиротевший.
+    удалит очистка ``prune_personal_data``: каталог без набора — осиротевший. ``rebuild`` —
+    пересобрать таблицы, формулы которых ссылались на эту.
     """
+    from .formula_store import dependents
+
+    waiting = dependents(dataset) if rebuild else []
     for path in dataset.directory.rglob("data-*.duckdb"):
         close_dataset(path)
     shutil.rmtree(dataset.directory, ignore_errors=True)
     dataset.delete()
+    # Формулы других таблиц, ссылавшиеся на эту, остаются без значений — с причиной.
+    from . import jobs
+
+    for other in waiting:
+        version = other.current_version
+        if version is not None and version.state == version.State.BUILT:
+            jobs.start(version, jobs.BUILD)
 
 
 def check_limits(request: HttpRequest) -> None:

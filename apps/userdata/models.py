@@ -158,6 +158,13 @@ class DatasetSeries(models.Model):
         PER_1000 = "per1000", _("на 1 000 жителей")
         PER_100000 = "per100000", _("на 100 000 жителей")
         PER_KM2 = "perkm2", _("на км²")
+        REAL = "real", _("в ценах последнего года")
+        RUSSIA = "russia", _("Россия = 100")
+        GROWTH = "growth", _("% к предыдущему году")
+        SHARE = "share", _("доля в сумме по субъектам")
+        SLICE_SUM = "slicesum", _("сумма по разрезу")
+        MONTHS = "months", _("месяцы, свёрнутые в год")
+        FORMULA = "formula", _("формула")
 
     version = models.ForeignKey(
         DatasetVersion, verbose_name="версия", on_delete=models.CASCADE, related_name="series"

@@ -447,7 +447,7 @@ def month_block(series_key: str) -> dict[str, Any] | None:
 
     latest = month_latest(series_key, spec.kind)
     if latest is not None:
-        context.update(_month_map(spec, latest))
+        context.update(month_map(spec, latest))
         country = month_timeline(series_key, COUNTRY_CODE, spec.kind)
         points = {(int(row["year"]), int(row["month"])): row for row in country}
         now = points.get((latest["year"], latest["month"]))
@@ -479,7 +479,8 @@ def _chart_note(spec: MonthlySpec) -> str:
     return ""
 
 
-def _month_map(spec: MonthlySpec, latest: dict[str, Any]) -> dict[str, Any]:
+def month_map(spec: MonthlySpec, latest: dict[str, Any]) -> dict[str, Any]:
+    """Карта последнего периода по регионам: классы, легенда, крайние значения, пропуски."""
     values = {row["territory_code"]: row["value"] for row in latest["rows"]}
     classification = classify(
         [value for value in values.values() if value is not None],

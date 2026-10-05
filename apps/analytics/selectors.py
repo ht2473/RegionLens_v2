@@ -8,10 +8,11 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 from django.conf import settings
 from django.core.cache import cache
+from django.http import Http404
 from django.utils.translation import get_language
 from django.utils.translation import gettext_lazy as _
 
@@ -88,12 +89,21 @@ def resolve_many(
     if not keys:
         keys = default_series_keys(fallback)
 
-    found = {
+    found: dict[str, Series] = {
         series.key: series
         for series in Series.objects.filter(key__in=keys).select_related(
             "indicator", "indicator__section", "unit"
         )
     }
+    own = [key for key in keys if is_user_key(key)]
+    if own:
+        from apps.userdata.series import user_series_many
+
+        # Ряд таблицы — только доступной тому, кто спрашивает; чужой — 404, как везде.
+        found_own = user_series_many(own)
+        if len(found_own) < len(set(own)):
+            raise Http404
+        found.update(cast(dict[str, Series], found_own))
 
     ordered: list[Series] = []
     for key in keys:
@@ -106,12 +116,8 @@ def resolve_many(
 
 
 def resolve_one(value: str | None) -> Series | None:
-    """
-    Отобрать один ряд; при неизвестном ключе берётся ряд по умолчанию.
-
-    Инструменты анализа считают ряды склада: ключ ряда своей таблицы — непонятный параметр.
-    """
-    return resolve_series(None if is_user_key(value) else value)
+    """Отобрать один ряд; при неизвестном ключе берётся ряд по умолчанию, чужая таблица — 404."""
+    return resolve_series(value)
 
 
 def population_series_key() -> str | None:
@@ -126,6 +132,23 @@ def series_label(series: Series) -> str:
     """Краткая подпись ряда для осей диаграмм и заголовков столбцов."""
     title = series.indicator.name
     return f"{title} — {series.name}" if series.has_subsection and series.name else title
+
+
+def label_lang(series: Series, label: str) -> str:
+    """«ru» у подписи из таблицы пользователя по-русски на странице другого языка."""
+    if not getattr(series, "is_user", False):
+        return ""
+    from apps.userdata.templatetags.userdata import source_lang
+
+    return source_lang(label)
+
+
+def too_few_regions(series: Series | None) -> bool:
+    """Ряд таблицы с малым числом субъектов: неравенство и пространственный анализ не считаются."""
+    from apps.userdata.series import FEW_REGIONS
+
+    record = getattr(series, "record", None)
+    return record is not None and record.regions_count < FEW_REGIONS
 
 
 def series_columns(selected: list[Series], year: int) -> list[dict[str, Any]]:
@@ -143,10 +166,12 @@ def series_columns(selected: list[Series], year: int) -> list[dict[str, Any]]:
     for series in selected:
         entry = matrix.get(series.key, {"year": None, "values": {}})
         values = entry["values"]
+        label = series_label(series)
         columns.append(
             {
                 "key": series.key,
-                "label": series_label(series),
+                "label": label,
+                "lang": label_lang(series, label),
                 "short": series.indicator.name,
                 "unit": series.unit.short_name if series.unit else "",
                 "polarity": series.polarity,
@@ -316,7 +341,21 @@ def series_breaks(series: Series, first_year: int, last_year: int) -> list[dict[
 
     Разрыв в первом году отрезка ничего не разделяет. ``methodological`` — смена правил
     счёта; смена состава территорий (``territory``) учитывается составом субъектов.
+    У ряда таблицы — смена методики, отмеченная человеком в описании показателя.
     """
+    if getattr(series, "is_user", False):
+        label = str(BreakKind.METHODOLOGY.label)
+        return [
+            {
+                "year": item["year"],
+                "kind": BreakKind.METHODOLOGY.value,
+                "label": label,
+                "description": item["note"],
+                "methodological": True,
+            }
+            for item in getattr(series, "breaks", [])
+            if first_year < item["year"] <= last_year
+        ]
     found = (
         SeriesBreak.objects.filter(
             series=series, territory__isnull=True, year__gt=first_year, year__lte=last_year

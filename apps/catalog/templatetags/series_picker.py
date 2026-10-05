@@ -23,15 +23,11 @@ def series_options_url() -> str:
 @register.simple_tag(takes_context=True)
 def own_series_options(context: dict[str, Any]) -> list[dict[str, Any]]:
     """Группы рядов своих таблиц того, кто открыл страницу."""
-    request = context.get("request")
-    if request is None:
-        return []
-    from apps.userdata.access import owned
-    from apps.userdata.models import Dataset
-    from apps.userdata.series import option_groups
+    if "own_groups" in context:
+        return list(context["own_groups"])
+    from apps.userdata.series import own_option_groups
 
-    datasets = owned(request).filter(state=Dataset.State.READY).select_related("current_version")
-    return option_groups(list(datasets))
+    return own_option_groups(context.get("request"))
 
 
 @register.simple_tag
