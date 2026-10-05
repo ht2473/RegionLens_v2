@@ -3,9 +3,9 @@
 
 Строки читаются по форме и ролям распознавания с решениями человека; подписи территорий —
 по сопоставлению столбца с ответами. Большая таблица сначала сужается в DuckDB (нужные
-столбцы и отобранные значения разрезов), остальное — построчно. Итог — файл Parquet
-в каталоге версии и перечень рядов в отчёте: по перечню строится шаг «Показатели»,
-из файла — сборка набора.
+столбцы и отобранные значения разрезов), остальное — построчно. Коды-маски вместо чисел
+(9999, 8888…) становятся пропусками (``masks``). Итог — файл Parquet в каталоге версии
+и перечень рядов в отчёте: по перечню строится шаг «Показатели», из файла — сборка набора.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ import json
 import logging
 import os
 import time
-from collections import Counter
+from collections import Counter, defaultdict
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
 from typing import Any
@@ -28,15 +28,15 @@ from django.utils.translation import gettext as _
 from apps.catalog.constants import ValueQuality
 from apps.sources import periods
 
-from . import cells, jobs, matching, naming, recognize, tables
+from . import cells, jobs, masks, matching, naming, recognize, tables
 from .ingest import IngestError, cell_text, iter_rows
 from .models import DatasetVersion
 
 logger = logging.getLogger(__name__)
 
 EXTRACT_FILE = "extract.parquet"
-# Редакция извлечения: меняется вместе с устройством файла и отчёта.
-REVISION = 1
+# Редакция извлечения: меняется вместе с устройством файла и отчёта (2 — коды-маски).
+REVISION = 2
 # Причина пропуска со словами о тайне — значение скрыто, а не отсутствует.
 _HIDDEN_REASONS = ("конфиденц", "скрыт", "confidential", "suppress", "hidden")
 # Строк большой таблицы за одно обращение к DuckDB.
@@ -196,6 +196,8 @@ def extract(version: DatasetVersion) -> dict[str, Any]:
     collector = Collector(limit=value_limit(version))
     reader = _Reader(version, result, places, collector, loaded)
     reader.run()
+    _name_by_codes(collector)
+    masked = _apply_masks(collector, version.recipe.get("masks"))
     if not collector.infos:
         raise ExtractError(_("В таблице не нашлось ни одного значения по территориям."))
     if len(collector.infos) > recognize.MAX_SERIES:
@@ -205,6 +207,7 @@ def extract(version: DatasetVersion) -> dict[str, Any]:
         )
     _write(collector, version.directory / EXTRACT_FILE)
     report = _report(version, result, collector, places)
+    report["masks"] = masked
     report["seconds"] = round(time.perf_counter() - started, 2)
     logger.info(
         "userdata: извлечена версия %s: рядов %s, значений %s, %s с",
@@ -214,6 +217,83 @@ def extract(version: DatasetVersion) -> dict[str, Any]:
         report["seconds"],
     )
     return report
+
+
+# Разделитель названия и кода показателя в ключе ряда на время чтения строк.
+CODE_MARK = chr(0x1F)
+
+
+def _name_by_codes(collector: Collector) -> None:
+    """
+    Названия показателей после чтения: у названия с одним кодом — название, у названия
+    с несколькими кодами — «название (код)»: это разные показатели, а не повторы.
+    """
+    codes: dict[str, set[str]] = {}
+    for info in collector.infos:
+        name, _mark, code = info.indicator.partition(CODE_MARK)
+        codes.setdefault(name, set()).add(code)
+    renamed: dict[str, str] = {}
+    for info in collector.infos:
+        name, mark, code = info.indicator.partition(CODE_MARK)
+        final = f"{name} ({code})" if mark and code and len(codes[name]) > 1 else name
+        renamed[info.indicator] = final
+        info.indicator = final
+    collector.series = {
+        (renamed.get(indicator, indicator), slices, period): index
+        for (indicator, slices, period), index in collector.series.items()
+    }
+    collector.notes = {
+        renamed.get(indicator, indicator): note for indicator, note in collector.notes.items()
+    }
+
+
+def _apply_masks(collector: Collector, answer: list[str] | None) -> list[dict[str, Any]]:
+    """
+    Коды-маски вместо чисел — в пропуски: найденные по значениям показателей или выбранные
+    человеком (``answer`` — перечень кодов; пустой — ни одного). Вернуть перечень для отчёта.
+    """
+    groups: defaultdict[str, list[float]] = defaultdict(list)
+    for series, value in zip(collector.series_index, collector.values, strict=True):
+        if value is not None:
+            groups[collector.infos[series].indicator].append(value)
+    found = masks.detect(groups)
+    if not found:
+        return []
+    codes = masks.chosen(found, answer)
+    if codes:
+        for index, value in enumerate(collector.values):
+            if value in codes:
+                collector.values[index] = None
+                collector.qualities[index] = int(ValueQuality.NO_DATA)
+        _recount(collector)
+    return [
+        {
+            "value": mask.text,
+            "count": mask.count,
+            "detected": mask.detected,
+            "masked": value in codes,
+        }
+        for value, mask in sorted(found.items())
+        if mask.detected or value in codes
+    ]
+
+
+def _recount(collector: Collector) -> None:
+    """Значения, субъекты и годы рядов заново — после замены кодов пропусками."""
+    for info in collector.infos:
+        info.values = 0
+        info.years = set()
+        info.regions = set()
+    for series, code, year, value in zip(
+        collector.series_index, collector.codes, collector.years, collector.values, strict=True
+    ):
+        if value is None:
+            continue
+        info = collector.infos[series]
+        info.values += 1
+        info.years.add(year)
+        if code is not None:
+            info.regions.add(code)
 
 
 def read(version: DatasetVersion) -> pa.Table:
@@ -281,6 +361,9 @@ class _Reader:
         self.period_column = role(recognize.PERIOD)[0].index if role(recognize.PERIOD) else None
         names = role(recognize.INDICATOR) or role(recognize.INDICATOR_CODE)
         self.indicator_column = names[0].index if names else None
+        # Код показателя рядом с названием: одно название у нескольких кодов — разные показатели.
+        codes = role(recognize.INDICATOR_CODE) if role(recognize.INDICATOR) else []
+        self.code_column = codes[0].index if codes else None
         self.unit_column = role(recognize.UNIT)[0].index if role(recognize.UNIT) else None
         reasons = role(recognize.MISSING_REASON)
         self.reason_column = reasons[0].index if reasons else None
@@ -386,10 +469,17 @@ class _Reader:
             if place is None:
                 continue
             base = self.text(row, self.indicator_column) or self.title
+            # Код показателя — в ключ ряда; названия расставит _name_by_codes после чтения.
+            code = (
+                f"{CODE_MARK}{self.text(row, self.code_column)}"
+                if self.code_column is not None
+                else ""
+            )
             unit = self.text(row, self.unit_column)
             hidden = self.hidden(row)
             for column in values:
                 indicator = f"{base} — {column.header}" if named and column.header else base
+                indicator += code
                 raw = row[column.index] if column.index < len(row) else None
                 self.collector.add(
                     indicator=indicator,

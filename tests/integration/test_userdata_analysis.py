@@ -57,7 +57,8 @@ class TestTools:
             assert f'value="{key}"' in page.text, name
         inequality = client.get(reverse("analytics:inequality"), {"series": key})
         assert inequality.context["snapshot"]["available"]
-        assert inequality.context["snapshot"]["count"] >= 80
+        # Субъектов со значениями — 77: у восьми в усечённой таблице только код 8888.
+        assert inequality.context["snapshot"]["count"] >= 75
 
     def test_mixed_series_tools(self, client: Client, warehouse: Any) -> None:
         dataset = built(client)
@@ -233,13 +234,26 @@ class TestGlance:
         assert "Первый взгляд" in page.text
 
     def test_inconsistent_country_gives_no_verdict(self, client: Client, warehouse: Any) -> None:
-        # «Окружающая среда»: Россия — 49, сумма регионов — десятки тысяч: ни сумма, ни доля.
-        dataset = built(client, kind=indicators.SUM, per=())
+        # «Окружающая среда» с кодами 8888, оставленными числами: Россия — 49, сумма регионов —
+        # десятки тысяч: ни сумма, ни доля.
+        dataset = upload(client, "environment.csv")
+        describe(client, dataset)
+        client.get(reverse("userdata:series", args=[dataset.public_id]))
+        client.post(reverse("userdata:series", args=[dataset.public_id]), {"action": "masks"})
+        assert build(client, dataset, kind=indicators.SUM, per=()).status_code == 302
         page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
         look = page.context["glance"]["looks"][0]
         assert look.country is not None
         assert look.data_kind == ""
         assert not look.kind_note
+
+    def test_codes_no_longer_hide_share(self, client: Client, warehouse: Any) -> None:
+        # Без кодов 8888 «Окружающая среда» — доля: Россия — между регионами.
+        dataset = built(client, kind=indicators.SUM, per=())
+        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
+        look = page.context["glance"]["looks"][0]
+        assert look.data_kind == "relative"
+        assert look.kind_note
 
     def test_sum_described_as_relative(self, client: Client, warehouse: Any) -> None:
         dataset = upload(client, "crime_wide.csv")

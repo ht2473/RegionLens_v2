@@ -8,6 +8,11 @@
 и строки вне справочника — отдельной таблицей: на карту и в рейтинг они не попадают.
 Всё считается в DuckDB одним проходом по всем рядам. Файл неизменяем: новая сборка
 пишет новый файл.
+
+Значения рядов таблицы каждой версии — выпуски ``fact_vintage`` и ``dim_edition``, как
+сборники в складе: новая версия переносит выпуски прежних из их файла и добавляет свой,
+витрина пересмотров (``mart_revision``) и отчёт о различиях с прежней версией строятся
+на них.
 """
 
 from __future__ import annotations
@@ -27,9 +32,10 @@ from django.utils.translation import gettext as _
 
 from apps.core.templatetags.formatting import LARGE_VALUE_THRESHOLD, SMALL_VALUE_THRESHOLD
 from apps.warehouse import routing
-from apps.warehouse.duckdb_client import close_dataset
+from apps.warehouse.duckdb_client import DataSource, close_dataset, dataset_connection
 from apps.warehouse.etl import marts
 from apps.warehouse.etl.dimensions import load_territories
+from apps.warehouse.etl.facts import build_revisions
 from apps.warehouse.queries import COUNTRY_CODE
 
 from . import (
@@ -348,6 +354,67 @@ SUMMARY_SQL = """
     ORDER BY 1
 """
 
+# Выпуск версии: значения рядов из таблицы (без пересчётов и формул — они следуют за ними).
+VINTAGE_SQL = """
+    INSERT INTO fact_vintage
+    SELECT f.series_key, f.territory_code, CAST(f.year AS SMALLINT), $edition,
+           CAST($edition_year AS SMALLINT), f.value, CAST(f.quality AS TINYINT),
+           CAST(f.flags AS TINYINT)
+    FROM facts AS f
+    JOIN plan AS p USING (series_key)
+    WHERE p.derived = ''
+    ORDER BY 1, 2, 3
+"""
+# Выпуски прежних версий из файла прежней сборки (своей при пересборке).
+HISTORY_VINTAGE_SQL = """
+    SELECT v.* FROM fact_vintage AS v
+    JOIN dim_edition AS e USING (edition_code)
+    WHERE e.source_code = 'version' AND e.edition_rank < ?
+    ORDER BY v.series_key, v.territory_code, v.year, v.edition_code
+"""
+HISTORY_EDITIONS_SQL = """
+    SELECT * FROM dim_edition
+    WHERE source_code = 'version' AND edition_rank < ?
+    ORDER BY edition_rank
+"""
+# Различия с прежней версией: изменённые, появившиеся и пропавшие значения.
+CHANGES_SQL = """
+    WITH before AS (
+        SELECT series_key, territory_code, year, value
+        FROM fact_vintage WHERE edition_code = $base
+    ),
+    after AS (
+        SELECT series_key, territory_code, year, value
+        FROM fact_vintage WHERE edition_code = $edition
+    ),
+    pairs AS (
+        SELECT b.value AS old, a.value AS new
+        FROM before AS b
+        FULL JOIN after AS a USING (series_key, territory_code, year)
+    )
+    SELECT
+        count(*) FILTER (WHERE old IS NOT NULL AND new IS NOT NULL AND old <> new),
+        count(*) FILTER (WHERE old IS NULL AND new IS NOT NULL),
+        count(*) FILTER (WHERE old IS NOT NULL AND new IS NULL),
+        median(abs((new - old) / old)) FILTER (
+            WHERE old IS NOT NULL AND new IS NOT NULL AND old <> new AND old <> 0
+        ),
+        count(*) FILTER (
+            WHERE old IS NOT NULL AND new IS NOT NULL AND old <> 0
+              AND abs((new - old) / old) >= 0.05
+        )
+    FROM pairs
+"""
+# Территории и годы со значениями в выпуске; столбец — из двух имён схемы.
+PRESENT_SQL = {
+    column: f"""
+        SELECT DISTINCT {column} FROM fact_vintage
+        WHERE edition_code = ? AND value IS NOT NULL
+        ORDER BY 1
+    """  # noqa: S608 — имя столбца — константа модуля, значения — параметрами
+    for column in ("territory_code", "year")
+}
+
 TOTAL_SQL = """
     SELECT count(f.value),
            count(DISTINCT f.territory_code) FILTER (
@@ -588,6 +655,7 @@ def _write_file(
         formula_errors = _formulas(connection, version, plan)
         _dimensions(connection, version, plan)
         connection.execute(OBSERVATIONS_SQL)
+        changes = _vintage(connection, version, plan)
         _months(connection, version)
         connection.execute(OUTSIDE_SQL)
         marts.build_coverage(connection)
@@ -597,6 +665,7 @@ def _write_file(
         summary["alone_missing"] = alone_missing
         summary["alone_conflict"] = alone_conflict
         summary["formula_errors"] = formula_errors
+        summary["changes"] = changes
         connection.execute("DROP TABLE facts")
         connection.executemany(
             "INSERT INTO meta_build VALUES (?, ?)",
@@ -729,6 +798,125 @@ def _formula_inputs(
     official = [key for key in keys if key not in own_keys and not routing.is_user_key(key)]
     inputs.update(formula_store.official_rows(official))
     return inputs
+
+
+def _vintage(
+    connection: duckdb.DuckDBPyConnection, version: DatasetVersion, plan: list[dict[str, Any]]
+) -> dict[str, Any] | None:
+    """
+    Выпуск этой версии и выпуски прежних, витрина пересмотров; вернуть различия с прежней
+    версией (или ``None`` у первой).
+    """
+    edition = edition_code(version.number)
+    _history(connection, version)
+    count, first, last = connection.execute(
+        "SELECT count(*), min(year), max(year) FROM facts AS f JOIN plan AS p USING (series_key) "
+        "WHERE p.derived = '' AND f.value IS NOT NULL"
+    ).fetchone() or (0, None, None)
+    uploaded = timezone.localtime(version.created_at)
+    connection.execute(
+        "INSERT INTO dim_edition VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 'version', ?)",
+        [
+            edition,
+            version.dataset.title,
+            version.file_name[:200],
+            uploaded.year,
+            int(count or 0),
+            first,
+            last,
+            f"{version.number} · {uploaded:%d.%m.%Y}",
+            uploaded.date(),
+            version.number,
+        ],
+    )
+    connection.execute(VINTAGE_SQL, {"edition": edition, "edition_year": uploaded.year})
+    build_revisions(connection)
+    previous = version.previous
+    if previous is None:
+        return None
+    return _changes(connection, version, previous, plan)
+
+
+def _changes(
+    connection: duckdb.DuckDBPyConnection,
+    version: DatasetVersion,
+    previous: DatasetVersion,
+    plan: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    """Различия выпуска версии с выпуском прежней: значения, ряды, территории и годы."""
+    base = edition_code(previous.number)
+    edition = edition_code(version.number)
+    known = connection.execute(
+        "SELECT count(*) FROM dim_edition WHERE edition_code = ?", [base]
+    ).fetchone()
+    if not known or not known[0]:
+        return None
+    changed, added, removed, median, large = connection.execute(
+        CHANGES_SQL, {"base": base, "edition": edition}
+    ).fetchone() or (0, 0, 0, None, 0)
+    primary = {item["code"]: item for item in plan if not item["derived"]}
+    before = {
+        record.code: record
+        for record in previous.series.filter(derived="").only("code", "title", "slices", "period")
+    }
+
+    def present(column: str, code: str) -> set[Any]:
+        return {row[0] for row in connection.execute(PRESENT_SQL[column], [code]).fetchall()}
+
+    territories = present("territory_code", base), present("territory_code", edition)
+    years = present("year", base), present("year", edition)
+    return {
+        "base": previous.number,
+        "changed": int(changed or 0),
+        "added": int(added or 0),
+        "removed": int(removed or 0),
+        "median": float(median) if median is not None else None,
+        "large": int(large or 0),
+        "new_series": [
+            naming.full_title(item["title"], item["slices"], item["period"])
+            for code, item in primary.items()
+            if code not in before
+        ],
+        "gone_series": [
+            naming.full_title(record.title, record.slices, record.period)
+            for code, record in before.items()
+            if code not in primary
+        ],
+        "new_territories": sorted(territories[1] - territories[0]),
+        "gone_territories": sorted(territories[0] - territories[1]),
+        "new_years": sorted(int(year) for year in years[1] - years[0]),
+        "gone_years": sorted(int(year) for year in years[0] - years[1]),
+    }
+
+
+def edition_code(number: int) -> str:
+    """Выпуск версии таблицы в ``fact_vintage``."""
+    return f"v{number}"
+
+
+def _history(connection: duckdb.DuckDBPyConnection, version: DatasetVersion) -> None:
+    """
+    Перенести выпуски прежних версий: из своего прежнего файла сборки (пересборка) или из
+    файла версии, на которой основана эта. Файлы читаются через соединения слоя рядов:
+    второе соединение с открытым процессом файлом DuckDB не открывается.
+    """
+    candidates = [version, version.previous] if version.previous_id else [version]
+    for owner in candidates:
+        if owner is None or not owner.data_file or owner.data_path is None:
+            continue
+        if not owner.data_path.exists():
+            continue
+        source = DataSource(path=owner.data_path, generation=f"u{owner.pk}-{owner.data_file}")
+        reader = dataset_connection(source)
+        rows = reader.execute(HISTORY_VINTAGE_SQL, [version.number]).to_arrow_table()
+        editions = reader.execute(HISTORY_EDITIONS_SQL, [version.number]).to_arrow_table()
+        connection.register("history_vintage", rows)
+        connection.register("history_editions", editions)
+        connection.execute("INSERT INTO fact_vintage SELECT * FROM history_vintage")
+        connection.execute("INSERT INTO dim_edition SELECT * FROM history_editions")
+        connection.unregister("history_vintage")
+        connection.unregister("history_editions")
+        return
 
 
 def _months(connection: duckdb.DuckDBPyConnection, version: DatasetVersion) -> None:
@@ -988,6 +1176,8 @@ def _save(
                 "formula_errors": summary["formula_errors"],
             },
         }
+        if summary["changes"] is not None:
+            version.report["changes"] = summary["changes"]
         version.data_file = file_name
         version.state = DatasetVersion.State.BUILT
         version.error = ""
@@ -1000,6 +1190,10 @@ def _save(
         Dataset.objects.filter(pk=version.dataset_id).update(state=Dataset.State.READY)
     if previous and previous != file_name:
         _remove(version.directory / previous)
+    # Собранная новая версия становится текущей; лишние старые версии уходят.
+    from .renew import promote
+
+    promote(version)
     from .services import update_size
 
     update_size(version.dataset)

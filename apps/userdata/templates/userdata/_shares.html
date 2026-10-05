@@ -1,0 +1,78 @@
+{% load i18n %}
+{% comment %}
+  Закрытые ссылки владельца: новая ссылка (один раз), действующие с отзывом, создание.
+  Ожидает share_create_url, share_revoke_name, share_target (таблица или доска) и
+  share_context из share_views.share_context; what — «таблицу» или «доску».
+{% endcomment %}
+<section class="page-section" aria-labelledby="own-shares-title" id="own-shares">
+  <div class="page-section__head">
+    <h2 class="page-section__title" id="own-shares-title">{% translate "Закрытая ссылка" %}</h2>
+  </div>
+  <p class="page-section__lead" id="own-shares-lead">{{ share_lead }}</p>
+
+  {% if new_share_url %}
+    <div class="callout callout--info own-share-new" role="status">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-link"></use></svg>
+      <div class="share-field">
+        <label class="share-field__label" for="own-share-url">{% translate "Ссылка создана" %}</label>
+        <div class="share-field__row">
+          <input class="input input--sm share-field__value" type="text" id="own-share-url"
+                 value="{{ new_share_url }}" readonly spellcheck="false" data-select-all>
+          <button type="button" class="button button--sm button--secondary"
+                  data-copy="#own-share-url" data-copy-done="{% translate 'Ссылка скопирована' %}">
+            <svg aria-hidden="true"><use href="#icon-copy"></use></svg>
+            {% translate "Копировать" %}
+          </button>
+        </div>
+        <p class="share-field__hint">
+          {% translate "Скопируйте ссылку сейчас: она показывается один раз, на сайте хранится только её отпечаток." %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if shares %}
+    <ul class="own-shares">
+      {% for share in shares %}
+        <li class="own-shares__item">
+          <div class="own-shares__text">
+            <span class="own-shares__term">
+              {% blocktranslate trimmed with created=share.created_at|date:"d.m.Y" until=share.expires_at|date:"d.m.Y" %}
+                создана {{ created }}, действует до {{ until }}
+              {% endblocktranslate %}
+            </span>
+            <span class="own-shares__facts">
+              {% if share.downloads %}{% translate "скачивать можно" %}{% else %}{% translate "без скачивания" %}{% endif %}
+              · {% blocktranslate trimmed with count=share.opened_count %}открывали: {{ count }}{% endblocktranslate %}{% if share.last_opened_at %}, {% blocktranslate trimmed with moment=share.last_opened_at|date:"d.m.Y H:i" %}последний раз {{ moment }}{% endblocktranslate %}{% endif %}
+            </span>
+          </div>
+          <form method="post" action="{% url share_revoke_name share_target.public_id share.public_id %}">
+            {% csrf_token %}
+            <button class="button button--sm button--ghost" type="submit">{% translate "Отозвать" %}</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if shares|length < share_limit %}
+    <form method="post" action="{{ share_create_url }}" class="own-share-form">
+      {% csrf_token %}
+      <div class="field">
+        <label class="field__label" for="own-share-days">{% translate "Срок" %}</label>
+        <select class="select" id="own-share-days" name="days">
+          {% for days in share_terms %}
+            <option value="{{ days }}"{% if days == share_default_term %} selected{% endif %}>
+              {% if days == 7 %}{% translate "неделя" %}{% elif days == 30 %}{% translate "месяц" %}{% elif days == 90 %}{% translate "три месяца" %}{% else %}{% translate "год" %}{% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <label class="checkbox"><input type="checkbox" name="downloads"> <span>{{ share_downloads_label }}</span></label>
+      <div><button class="button button--sm button--secondary" type="submit">
+        <svg aria-hidden="true"><use href="#icon-link"></use></svg>
+        {% translate "Создать ссылку" %}
+      </button></div>
+    </form>
+  {% endif %}
+</section>

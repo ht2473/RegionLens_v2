@@ -8,7 +8,11 @@
 
 {% include "surface/partials/_subject.html" %}
 
-<div class="surface-canvas">
+{# Подпись картинок карты и графиков холста: предмет, год, единица и источник. #}
+<div class="surface-canvas"{% if subject %}
+     data-image-title="{{ subject.title }}{% if panel.code == 'compare' and timeline_years %}, {{ timeline_years.0|stringformat:'d' }}–{{ timeline_years|last|stringformat:'d' }}{% elif year %}, {{ year|stringformat:'d' }}{% endif %}"
+     data-image-subtitle="{{ subject.unit }}"
+     data-image-source="{{ image_source }}"{% endif %}>
   {% include panel.template %}
 </div>
 

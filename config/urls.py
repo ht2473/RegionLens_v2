@@ -6,7 +6,9 @@ from typing import Any
 
 from django.conf import settings
 from django.conf.urls.i18n import i18n_patterns
-from django.urls import include, path
+from django.urls import include, path, re_path
+
+from apps.userdata.share_views import ShareOpenView
 
 # --- Служебные маршруты без языкового префикса --------------------------------------------
 urlpatterns: list[Any] = [
@@ -15,6 +17,8 @@ urlpatterns: list[Any] = [
     path("i18n/", include("django.conf.urls.i18n")),
     # Адрес точки данных не зависит от языка.
     path("api/", include("apps.api.urls")),
+    # Закрытая ссылка на таблицу или доску ведёт на страницу на языке читателя.
+    re_path(r"^s/(?P<token>[A-Za-z0-9_-]{8,64})/?$", ShareOpenView.as_view(), name="share-open"),
 ]
 
 # --- Пользовательские маршруты с языковым префиксом ------------------------------------------

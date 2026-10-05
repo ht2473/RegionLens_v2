@@ -1,6 +1,6 @@
 """
 Приём таблицы: набор и версия в базе, исходный файл на диске, перечень таблиц в нём,
-выбор таблицы и дозагрузка второй части вставки.
+выбор таблицы и дозагрузка второй части вставки; новая версия файла той же таблицы.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from django.conf import settings
 from django.core.files import File
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Max, Sum
 from django.http import HttpRequest
 from django.utils.translation import gettext as _
 
@@ -79,6 +79,110 @@ def create_from_paste(request: HttpRequest, text: str, markup: str = "") -> Data
         discard(dataset)
         raise
     return _accept(dataset, version, inspection, path)
+
+
+def create_version(
+    request: HttpRequest,
+    dataset: Dataset,
+    *,
+    uploaded: UploadedFile | None = None,
+    text: str = "",
+    markup: str = "",
+) -> DatasetVersion:
+    """
+    Принять новый файл той же таблицы: версия-черновик рядом с текущей, которая работает,
+    пока новая не собрана. Прежний черновик удаляется; файл, совпадающий с текущим, — отказ.
+    """
+    from . import renew
+
+    check_limits(request, new_table=False)
+    previous = dataset.current_version
+    renew.discard_draft(dataset)
+    number = (dataset.versions.aggregate(top=Max("number"))["top"] or 0) + 1
+    if uploaded is not None:
+        limit = settings.USERDATA_UPLOAD_MAX_BYTES
+        if uploaded.size is None or uploaded.size > limit:
+            raise ingest.IngestError(upload_size_text(), "upload_size")
+        name = PurePosixPath((uploaded.name or "").replace("\\", "/")).name or "table"
+        suffix = PurePosixPath(name).suffix.lower()
+        version = _new_version(dataset, number, previous, name, uploaded.size)
+        path = version.directory / (SOURCE_STEM + (suffix if suffix in KNOWN_SUFFIXES else ".bin"))
+        try:
+            version.sha256 = _store(uploaded, path, limit)
+            _check_changed(version, previous)
+            inspection = ingest.inspect(path, name)
+        except ingest.IngestError:
+            _drop(version)
+            raise
+    else:
+        rows = paste.rows_of(text, markup)
+        if len(rows) < 2:  # noqa: PLR2004 — шапка и хотя бы одна строка
+            raise ingest.IngestError(
+                _("Таблица не распознана. Скопируйте её целиком вместе с шапкой."), "paste_empty"
+            )
+        version = _new_version(dataset, number, previous, _("Вставка из буфера"), 0)
+        version.file_kind = ingest.PASTE
+        path = version.directory / paste.FILE_NAME
+        version.file_size = paste.write(rows, path)
+        version.sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
+        try:
+            _check_changed(version, previous)
+            inspection = ingest.inspect(path, paste.FILE_NAME)
+        except ingest.IngestError:
+            _drop(version)
+            raise
+    if version.file_kind != ingest.PASTE:
+        version.file_kind = inspection.kind
+    version.file_size = path.stat().st_size
+    version.report = {"inspection": inspection.as_dict(), "renewal": {"state": renew.AUTO}}
+    version.save()
+    update_size(dataset)
+    logger.info(
+        "userdata: новая версия %s набора %s, вид %s, %s байт",
+        version.number,
+        dataset.public_id,
+        version.file_kind,
+        version.file_size,
+    )
+    return version
+
+
+def _new_version(
+    dataset: Dataset, number: int, previous: DatasetVersion | None, name: str, size: int
+) -> DatasetVersion:
+    version = DatasetVersion.objects.create(
+        dataset=dataset,
+        number=number,
+        previous=previous,
+        file_name=name[:255],
+        file_size=size,
+        sha256="",
+        file_kind="",
+    )
+    version.directory.mkdir(parents=True, exist_ok=True)
+    return version
+
+
+def _check_changed(version: DatasetVersion, previous: DatasetVersion | None) -> None:
+    """Файл, совпадающий с текущей версией, новой версией не становится."""
+    if previous is not None and previous.sha256 and previous.sha256 == version.sha256:
+        raise ingest.IngestError(
+            _("Этот файл совпадает с текущей версией таблицы: менять нечего."), "same_file"
+        )
+
+
+def drop_version(version: DatasetVersion) -> None:
+    """Удалить версию вместе с её каталогом; занятый файл сборки удалит очистка."""
+    _drop(version)
+
+
+def _drop(version: DatasetVersion) -> None:
+    for path in version.directory.rglob("data-*.duckdb"):
+        close_dataset(path)
+    shutil.rmtree(version.directory, ignore_errors=True)
+    dataset = version.dataset
+    version.delete()
+    update_size(dataset)
 
 
 def append_paste(version: DatasetVersion, text: str, markup: str = "") -> int:
@@ -172,8 +276,11 @@ def discard(dataset: Dataset, *, rebuild: bool = True) -> None:
             jobs.start(version, jobs.BUILD)
 
 
-def check_limits(request: HttpRequest) -> None:
-    """Пределы до приёма таблицы: частота загрузок, число таблиц и место."""
+def check_limits(request: HttpRequest, *, new_table: bool = True) -> None:
+    """
+    Пределы до приёма таблицы: частота загрузок, число таблиц и место; ``new_table`` ложно —
+    новая версия той же таблицы, число таблиц не растёт.
+    """
     user = request.user
     if user.is_authenticated:
         if not allow_key(
@@ -184,7 +291,7 @@ def check_limits(request: HttpRequest) -> None:
         ):
             raise ingest.IngestError(_rate_text(), "rate")
         mine = Dataset.objects.filter(owner=user)
-        if mine.count() >= settings.USERDATA_MAX_DATASETS:
+        if new_table and mine.count() >= settings.USERDATA_MAX_DATASETS:
             raise ingest.IngestError(
                 _("Таблиц уже %(count)s — это предел. Удалите ненужные таблицы.")
                 % {"count": settings.USERDATA_MAX_DATASETS},
@@ -201,7 +308,7 @@ def check_limits(request: HttpRequest) -> None:
         request, "userdata-upload", limit=settings.USERDATA_GUEST_UPLOADS_PER_HOUR, window=3600
     ):
         raise ingest.IngestError(_rate_text(), "rate")
-    if access.owned(request).count() >= settings.USERDATA_GUEST_MAX_DATASETS:
+    if new_table and access.owned(request).count() >= settings.USERDATA_GUEST_MAX_DATASETS:
         raise ingest.IngestError(
             _(
                 "Без входа можно держать не больше %(count)s таблиц одни сутки. Войдите, "
@@ -334,10 +441,50 @@ def _title(file_name: str) -> str:
     return stem or _("Таблица")
 
 
+def export_boards(user: Any) -> list[dict[str, Any]]:
+    """Доски учётной записи для выгрузки «Персональных данных»: блоки и закрытые ссылки."""
+    from .boards import blocks_of
+    from .models import Board
+
+    return [
+        {
+            "title": board.title,
+            "description": board.description,
+            "created_at": board.created_at.isoformat(),
+            "blocks": blocks_of(board),
+            "year": board.year,
+            "territories": board.territories,
+            "shares": _export_shares(board.shares.all()),
+        }
+        for board in Board.objects.filter(owner=user).prefetch_related("shares")
+    ]
+
+
+def _export_shares(shares: Any) -> list[dict[str, Any]]:
+    """Закрытые ссылки без токенов: срок, отзыв, разрешение скачивать, открытия."""
+    return [
+        {
+            "created_at": share.created_at.isoformat(),
+            "expires_at": share.expires_at.isoformat(),
+            "revoked_at": share.revoked_at.isoformat() if share.revoked_at else None,
+            "downloads": share.downloads,
+            "opened": share.opened_count,
+        }
+        for share in shares
+    ]
+
+
 def export_datasets(user: Any) -> list[dict[str, Any]]:
-    """Таблицы учётной записи для выгрузки «Персональных данных»: описание и ряды без значений."""
+    """
+    Таблицы учётной записи для выгрузки «Персональных данных»: описание, версии, ряды без
+    значений и закрытые ссылки без токенов.
+    """
     found = []
-    for dataset in Dataset.objects.filter(owner=user).select_related("current_version"):
+    for dataset in (
+        Dataset.objects.filter(owner=user)
+        .select_related("current_version")
+        .prefetch_related("shares", "versions")
+    ):
         version = dataset.current_version
         found.append(
             {
@@ -350,6 +497,16 @@ def export_datasets(user: Any) -> list[dict[str, Any]]:
                 "file_size": version.file_size if version else 0,
                 "size_on_disk": dataset.size_bytes,
                 "state": dataset.state,
+                "versions": [
+                    {
+                        "number": item.number,
+                        "file_name": item.file_name,
+                        "uploaded_at": item.created_at.isoformat(),
+                        "state": item.state,
+                    }
+                    for item in sorted(dataset.versions.all(), key=lambda item: item.number)
+                ],
+                "shares": _export_shares(dataset.shares.all()),
                 "series": [
                     {
                         "title": record.title,

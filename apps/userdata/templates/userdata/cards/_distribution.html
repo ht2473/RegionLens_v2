@@ -1,0 +1,13 @@
+{% load i18n %}
+{# Распределение на карточке доски: гистограмма по классам шкалы карты. #}
+{% if histogram_option %}
+  {% with option_id=card.prefix|add:"-histogram" %}
+    <rl-chart class="chart board-card__chart" data-options="{{ option_id }}"
+              data-image-title="{{ card.title }}"
+              data-image-subtitle="{% if year %}{{ year|stringformat:'d' }}{% endif %}{% if unit %} · {{ unit }}{% endif %}"
+              data-image-source="{{ card.source }}"></rl-chart>
+    {{ histogram_option|json_script:option_id }}
+  {% endwith %}
+{% else %}
+  <p class="board-card__empty">{% translate "За этот год значений по субъектам нет." %}</p>
+{% endif %}

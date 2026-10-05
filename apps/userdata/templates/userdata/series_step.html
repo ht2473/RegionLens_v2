@@ -62,6 +62,36 @@
     </div>
   {% endif %}
 
+  {% if report.masks %}
+    <form method="post" class="callout callout--warning own-masks" id="masks">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="masks">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <fieldset class="own-masks__body">
+        <legend class="callout__title">{% translate "Коды вместо чисел" %}</legend>
+        <p>
+          {% blocktranslate trimmed %}
+            Эти числа из одинаковых цифр в десять и более раз больше почти всех остальных
+            значений своих показателей. Так наборы «Если быть точным» и другие обозначают
+            пропуски и значения без точного числа — смысл кодов написан в описании набора.
+            Отмеченные считаются пропусками и на карту не попадают.
+          {% endblocktranslate %}
+        </p>
+        <ul class="own-masks__list">
+          {% for mask in report.masks %}
+            <li>
+              <label class="checkbox">
+                <input type="checkbox" name="mask" value="{{ mask.value }}"{% if mask.masked %} checked{% endif %}>
+                <span><span class="numeric">{{ mask.value }}</span> — {% blocktranslate trimmed with count=mask.count %}значений: {{ count }}{% endblocktranslate %}</span>
+              </label>
+            </li>
+          {% endfor %}
+        </ul>
+        <div><button class="button button--sm button--secondary" type="submit">{% translate "Сохранить выбор кодов" %}</button></div>
+      </fieldset>
+    </form>
+  {% endif %}
+
   {% if report.conflicts %}
     <div class="callout callout--warning">
       <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>

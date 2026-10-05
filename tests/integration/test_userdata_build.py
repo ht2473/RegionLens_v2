@@ -59,7 +59,8 @@ class TestSeriesStep:
         assert 'name="indicator-1"' in page.text
         version = _version(dataset)
         assert extract.is_current(version)
-        assert version.report["extract"]["values"] == 774
+        # 774 значения, из них 73 — код 8888 («в регионе не ведутся наблюдения»).
+        assert version.report["extract"]["values"] == 701
 
     def test_needs_description_first(self, client: Client, warehouse: Any) -> None:
         dataset = _upload(client, "environment.csv")
@@ -78,7 +79,7 @@ class TestSeriesStep:
         assert key.startswith(f"u:{dataset.code}:")
         version = _version(dataset)
         assert version.state == DatasetVersion.State.BUILT
-        assert version.regions_count == 85
+        assert version.regions_count == 77
         assert (version.first_year, version.last_year) == (2014, 2022)
         assert version.data_path is not None and version.data_path.exists()
         dataset.refresh_from_db()
@@ -175,7 +176,7 @@ class TestBuild:
         try:
             tables = {row[0] for row in connection.execute("SHOW TABLES").fetchall()}
             assert {"fact_observation", "dim_series", "mart_rank", "mart_series_stats"} <= tables
-            assert connection.execute("SELECT count(*) FROM mart_rank").fetchone()[0] > 700
+            assert connection.execute("SELECT count(*) FROM mart_rank").fetchone()[0] > 650
             levels = dict(
                 connection.execute(
                     "SELECT territory_level, count(*) FROM fact_observation GROUP BY 1"
@@ -440,7 +441,7 @@ class TestDatasetPage:
         text = page.text
         assert '<meta name="robots" content="noindex, nofollow">' in text
         assert "Абсолютные величины" in text
-        assert "Узнано субъектов: 85 из 85." in text
+        assert "Субъектов со значениями: 77 из 85." in text
         assert "на 100 000 жителей" in text
         section = client.get(reverse("userdata:index"))
         assert dataset.title in section.text
@@ -458,7 +459,10 @@ class TestDatasetPage:
             "ОКАТО",
             "Уровень",
         ]
-        assert len(rows) - 1 == _version(dataset).values_count
+        # Строка на наблюдение: и со значением, и с пропуском (код 8888 — «нет данных»).
+        version = _version(dataset)
+        assert len(rows) - 1 == version.report["extract"]["observations"]
+        assert sum(1 for row in rows[1:] if "нет данных" in row) == 73
         moscow = next(row for row in rows if row[1] == "RU-MOW" and row[4] == "2020")
         assert moscow[0] == "Москва"
         workbook = client.get(reverse("userdata:download", args=[dataset.public_id, "xlsx"]))
@@ -595,3 +599,63 @@ class TestAccount:
         delete_account(member)
         assert not Dataset.objects.filter(pk=dataset.pk).exists()
         assert not directory.exists()
+
+
+@pytest.mark.django_db
+class TestMasks:
+    """Коды-маски «Если быть точным» (8888 — «в регионе не ведутся наблюдения») — пропуски."""
+
+    def test_codes_become_missing(self, client: Client, warehouse: Any) -> None:
+        dataset = _built(client)
+        version = _version(dataset)
+        masks = version.report["extract"]["masks"]
+        assert {"value": "8888", "count": 73, "detected": True, "masked": True} in masks
+        key = _key(dataset, version.series.order_by("order").first())
+        with scope.reading_as(fingerprint=dataset.guest_key):
+            values = queries.series_values([key], ["RU-NEN", "RU-AD", "RU-KL"])
+        assert all(
+            value is None or value <= 100
+            for years in values.get(key, {}).values()
+            for value in years.values()
+        )
+        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
+        assert "Коды вместо чисел считаются пропусками" in page.text
+
+    def test_person_can_keep_codes(self, client: Client, warehouse: Any) -> None:
+        dataset = _built(client)
+        url = reverse("userdata:series", args=[dataset.public_id])
+        response = client.post(url, {"action": "masks"})
+        assert response.status_code == 302
+        assert _version(dataset).recipe["masks"] == []
+        response = _build(client, dataset)
+        assert response.status_code == 302
+        version = _version(dataset)
+        assert not any(item["masked"] for item in version.report["extract"]["masks"])
+        key = _key(dataset, version.series.order_by("order").first())
+        with scope.reading_as(fingerprint=dataset.guest_key):
+            values = queries.series_values([key], ["RU-NEN", "RU-AD", "RU-KL"])
+        assert any(
+            value == 8888 for years in values.get(key, {}).values() for value in years.values()
+        )
+
+
+@pytest.mark.django_db
+class TestIndicatorCodes:
+    """Одно название у нескольких кодов показателя — разные показатели, а не повторы."""
+
+    def test_same_name_different_codes(self, client: Client, warehouse: Any) -> None:
+        lines = ["indicator_name;indicator_code;object_name;year;indicator_value"]
+        names = ("Москва", "Республика Татарстан", "Свердловская область", "Омская область")
+        for number, region in enumerate(names, start=1):
+            for code, factor in (("Y331", 1), ("Y332", 10)):
+                lines.append(f"Пробы почв с превышением, %;{code};{region};2021;{number * factor}")
+        dataset = _upload(client, "soil.csv", "\n".join(lines).encode("utf-8"))
+        _describe(client, dataset)
+        assert _build(client, dataset, kind="relative", per=()).status_code == 302
+        version = _version(dataset)
+        assert version.report["extract"]["conflicts"] == 0
+        titles = sorted(version.series.values_list("indicator", flat=True))
+        assert titles == [
+            "Пробы почв с превышением, % (Y331)",
+            "Пробы почв с превышением, % (Y332)",
+        ]

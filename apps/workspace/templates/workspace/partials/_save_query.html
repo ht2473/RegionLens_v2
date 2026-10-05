@@ -1,5 +1,5 @@
 {% load i18n %}
-{# Кнопка «Сохранить» вида экрана со строкой запроса; название — в popover. #}
+{# Кнопка «Сохранить» вида экрана со строкой запроса: в кабинет или на доску — в popover. #}
 {# Ожидает save_query_target — код страницы из QUERY_TARGETS. #}
 {% if request.user.is_authenticated %}
   <button type="button" class="button button--sm button--ghost no-print"
@@ -28,6 +28,30 @@
       <button type="submit" class="button button--sm button--primary">
         {% translate "Сохранить" %}
       </button>
+    </form>
+
+    {# Тот же вид — карточкой на доску: своей или новой. #}
+    <form method="post" action="{% url 'userdata:board-add' %}" class="save-query__form save-query__board">
+      {% csrf_token %}
+      <input type="hidden" name="target" value="{{ save_query_target }}">
+      <input type="hidden" name="query_string" value="{{ request.META.QUERY_STRING }}">
+      <input type="hidden" name="back" value="{{ request.get_full_path }}">
+      <div class="field">
+        <label class="field__label" for="save-query-board">{% translate "Или на доску" %}</label>
+        <select class="select" id="save-query-board" name="board">
+          {% for board in boards %}<option value="{{ board.public_id }}">{{ board.title }}</option>{% endfor %}
+          <option value="new"{% if not boards %} selected{% endif %}>{% translate "новая доска" %}</option>
+        </select>
+      </div>
+      <div class="field save-query__new-board">
+        <label class="field__label" for="save-query-board-title">{% translate "Название новой доски" %}</label>
+        <input class="input" id="save-query-board-title" name="new_title" maxlength="200"
+               placeholder="{% translate 'Например: к курсовой' %}">
+      </div>
+      <div class="save-query__board-actions">
+        <button type="submit" class="button button--sm button--secondary">{% translate "На доску" %}</button>
+        <button type="submit" class="button button--sm button--ghost" name="open" value="1">{% translate "На доску и открыть её" %}</button>
+      </div>
     </form>
   </div>
 {% else %}

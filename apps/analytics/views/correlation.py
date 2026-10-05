@@ -179,6 +179,7 @@ def _pair_context(
             y_name=_axis_name(second),
             line=line,
             line_label=str(_("линия связи")),
+            labels={row["code"]: row["abbreviation"] for row in rows},
         )
         if points
         else None,

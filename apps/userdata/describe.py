@@ -120,6 +120,8 @@ def save_answers(
 
     ``answers``: ``roles`` (номер столбца → роль), ``year``, ``slices`` (номер → значения),
     ``territories`` и ``nested`` (подпись → код, «outside» или «none»), ``remember``.
+    Рядом — шапки столбцов и подписи, о которых спрашивали: новая версия файла переносит
+    роли по шапке и спрашивает только о новом (``renew``).
     """
     recipe = dict(version.recipe)
     roles = {str(column.index): column.role for column in result.columns}
@@ -127,6 +129,7 @@ def save_answers(
         if str(index) in roles and role in recognize.ROLES:
             roles[str(index)] = role
     recipe["roles"] = roles
+    recipe["headers"] = {str(column.index): column.header for column in result.columns}
     recipe["form"] = result.form
     year = answers.get("year")
     recipe["year"] = int(year) if year else None
@@ -138,7 +141,13 @@ def save_answers(
         ]
         for index, values in (answers.get("slices") or {}).items()
     }
-    recipe["slices"] = {index: values for index, values in slices.items() if values}
+    # Отбор, совпадающий с отбором по умолчанию, не хранится: новые значения разреза
+    # в следующей версии файла не пропадут молча.
+    recipe["slices"] = {
+        index: values
+        for index, values in slices.items()
+        if values and sorted(values) != sorted(result.slices.get(int(index), {}).get("default", []))
+    }
     valid = _valid_codes() | {matching.OUTSIDE, NOT_TERRITORY}
     choices = {
         label: code
@@ -152,6 +161,18 @@ def save_answers(
         if code in matching.NESTED_PARENTS or code in matching.NESTED_PARENTS.values()
     }
     recipe["nested"] = {**(recipe.get("nested") or {}), **nested}
+    seen = recipe.get("seen") or {}
+    recipe["seen"] = {
+        "labels": sorted(
+            {*seen.get("labels", []), *(label for label, _match, _count in unresolved(result))}
+        ),
+        "nested": sorted(
+            {
+                *seen.get("nested", []),
+                *(item.label for item in (result.territories.nested if result.territories else [])),
+            }
+        ),
+    }
     # Описание сохранено заново: отказ прежнего извлечения не мешает попробовать снова;
     # само извлечение устаревает, только если рецепт изменился (отпечаток).
     report = {key: value for key, value in version.report.items() if not key.startswith("extract_")}

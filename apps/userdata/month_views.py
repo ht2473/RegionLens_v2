@@ -21,11 +21,11 @@ from apps.warehouse.queries.monthly import month_latest, month_timeline
 
 from . import monthly
 from .models import DatasetVersion
-from .pages import DatasetMixin
+from .pages import ReadableDatasetMixin
 from .series import source_line
 
 
-class MonthsView(DatasetMixin, BreadcrumbMixin, TemplateView):
+class MonthsView(ReadableDatasetMixin, BreadcrumbMixin, TemplateView):
     """Ход по месяцам и карта последнего периода для группы рядов таблицы."""
 
     template_name = "userdata/months.html"

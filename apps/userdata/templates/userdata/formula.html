@@ -15,7 +15,7 @@
 
   <header class="page-intro">
     <div class="page-intro__text">
-      <p class="page-intro__kicker"><span{% with lang=dataset.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.title }}</span> · <span class="own-private">{% translate "видно только вам" %}</span></p>
+      <p class="page-intro__kicker"><span{% with lang=dataset.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.title }}</span> · <span class="own-private">{% visibility dataset %}</span></p>
       <h1 class="page-intro__title">{% if existing %}{% translate "Показатель по формуле" %}{% else %}{% translate "Новый показатель по формуле" %}{% endif %}</h1>
       <p class="page-intro__lead">
         {% blocktranslate trimmed %}

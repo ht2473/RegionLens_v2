@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% load i18n static formatting userdata %}
+
+{# Что изменилось в версии таблицы по сравнению с прежней — средствами «Пересмотров». #}
+
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+  <link rel="stylesheet" href="{% static 'css/analytics.css' %}">
+  <link rel="stylesheet" href="{% static 'css/userdata.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <p class="page-intro__kicker"><span{% with lang=dataset.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.title }}</span> · <span class="own-private">{% visibility dataset %}</span></p>
+      <h1 class="page-intro__title">{% blocktranslate trimmed with number=version.number %}Версия {{ number }}: что изменилось{% endblocktranslate %}</h1>
+      <p class="page-intro__lead">
+        {% if changes %}
+          {% blocktranslate trimmed with base=changes.base moment=version.created_at|date:"d.m.Y H:i" %}
+            Сравнение с версией {{ base }}: файл загружен {{ moment }}. Значения сравниваются
+            по каждому ряду, субъекту и году — так же, как пересмотры между выпусками сборников.
+          {% endblocktranslate %}
+        {% else %}
+          {% translate "Это первая версия таблицы: сравнивать не с чем." %}
+        {% endif %}
+      </p>
+      <p class="own-source">
+        <span{% with lang=version.file_name|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ version.file_name }}</span>
+        {% if is_current %}· {% translate "текущая версия" %}{% endif %}
+      </p>
+    </div>
+    <div class="page-intro__actions">
+      <a class="button button--sm button--secondary" href="{% url 'userdata:dataset' dataset.public_id %}">{% translate "К таблице" %}</a>
+    </div>
+  </header>
+
+  {% if changes %}
+  <div class="grid grid--kpi own-version-kpi">
+    <div class="kpi">
+      <div class="kpi__label">{% translate "Изменённых значений" %}</div>
+      <div class="kpi__value numeric">{{ changes.changed|ru_number:0 }}</div>
+      <div class="kpi__footer">{% translate "то же наблюдение, другое число" %}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi__label">{% translate "Типичное изменение" %}</div>
+      <div class="kpi__value numeric">{% if changes.median is not None %}{{ changes.median|percent:1 }}{% else %}—{% endif %}</div>
+      <div class="kpi__footer">{% translate "медиана относительного изменения" %}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi__label">{% translate "Новых значений" %}</div>
+      <div class="kpi__value numeric">{{ changes.added|ru_number:0 }}</div>
+      <div class="kpi__footer">{% translate "не было в прежней версии" %}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi__label">{% translate "Пропавших значений" %}</div>
+      <div class="kpi__value numeric">{{ changes.removed|ru_number:0 }}</div>
+      <div class="kpi__footer">{% translate "было в прежней версии" %}</div>
+    </div>
+  </div>
+
+  {% if changes.new_series or changes.gone_series or changes.new_territories or changes.gone_territories or changes.new_years or changes.gone_years %}
+    <section class="page-section" aria-labelledby="version-composition">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="version-composition">{% translate "Состав" %}</h2>
+      </div>
+      <dl class="about-credits own-version-composition">
+        {% if changes.new_years %}<dt>{% translate "Новые годы" %}</dt><dd class="numeric">{{ changes.new_years|join:", " }}</dd>{% endif %}
+        {% if changes.gone_years %}<dt>{% translate "Пропавшие годы" %}</dt><dd class="numeric">{{ changes.gone_years|join:", " }}</dd>{% endif %}
+        {% if changes.new_territories %}<dt>{% translate "Новые территории" %}</dt><dd>{% for code in changes.new_territories %}{{ code|territory_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
+        {% if changes.gone_territories %}<dt>{% translate "Пропавшие территории" %}</dt><dd>{% for code in changes.gone_territories %}{{ code|territory_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
+        {% if changes.new_series %}<dt>{% translate "Новые ряды" %}</dt><dd><ul class="compact-list">{% for title in changes.new_series %}<li{% with lang=title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ title }}</li>{% endfor %}</ul></dd>{% endif %}
+        {% if changes.gone_series %}<dt>{% translate "Пропавшие ряды" %}</dt><dd><ul class="compact-list">{% for title in changes.gone_series %}<li{% with lang=title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ title }}</li>{% endfor %}</ul><p class="own-version-note">{% translate "Сохранённые виды и доски с этими рядами покажут, что ряда больше нет." %}</p></dd>{% endif %}
+      </dl>
+    </section>
+  {% endif %}
+
+  {% if changes.changed %}
+    <section class="page-section" aria-labelledby="version-sizes">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="version-sizes">{% translate "Насколько изменились значения" %}</h2>
+      </div>
+      <ul class="own-version-buckets">
+        {% for bucket in changes.buckets %}
+          <li>
+            <span class="own-version-buckets__label">{{ bucket.label }}</span>
+            <span class="own-version-buckets__bar" style="--share: {{ bucket.share|stringformat:'.3f' }}" aria-hidden="true"></span>
+            <span class="own-version-buckets__count numeric">{{ bucket.count|ru_number:0 }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="page-section" aria-labelledby="version-largest">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="version-largest">{% translate "Самые крупные изменения" %}</h2>
+      </div>
+      <div class="data-table-wrapper" data-scroll>
+        <table class="data-table">
+          <caption class="visually-hidden">{% translate "Самые крупные изменения" %}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Ряд" %}</th>
+              <th scope="col">{% translate "Субъект" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Год" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Было" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Стало" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Изменение" %}</th>
+              <th scope="col"><span class="visually-hidden">{% translate "Все версии значения" %}</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in changes.largest %}
+              <tr>
+                <td class="data-table__long"{% with lang=row.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ row.title }}</td>
+                <td class="data-table__name">{{ row.territory_code|territory_name }}</td>
+                <td class="is-numeric">{{ row.year|year }}</td>
+                <td class="is-numeric text-secondary">{{ row.old|ru_number }}</td>
+                <td class="is-numeric">{{ row.new|ru_number }}</td>
+                <td class="is-numeric">{% if row.rel is not None %}{{ row.rel|percent_delta:1 }}{% else %}—{% endif %}</td>
+                <td>
+                  <button type="button" class="button button--ghost button--sm"
+                          hx-get="{% url 'analytics:revision-trace' %}?series={{ row.series_key|urlencode }}&amp;territory={{ row.territory_code }}&amp;year={{ row.year|year }}"
+                          hx-target="#version-trace-{{ forloop.counter }}"
+                          hx-swap="innerHTML">
+                    {% translate "версии" %}
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="7" class="revision-trace" id="version-trace-{{ forloop.counter }}"></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="page-section__lead">
+        {% blocktranslate trimmed %}
+          Кнопка «версии» показывает значение во всех хранящихся версиях таблицы и весь ряд
+          субъекта по версиям: строка — год, столбец — версия.
+        {% endblocktranslate %}
+      </p>
+    </section>
+  {% endif %}
+  {% endif %}
+
+</div>
+{% endblock %}

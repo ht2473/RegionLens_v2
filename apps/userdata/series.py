@@ -113,6 +113,20 @@ class UserSeries:
             return self.full_title
 
     @property
+    def is_own(self) -> bool:
+        """Ряд своей таблицы, а не открытой закрытой ссылкой."""
+        from .scope import owns
+
+        return owns(self.dataset)
+
+    @property
+    def privacy(self) -> str:
+        """Кто видит таблицу ряда — словами для подписи холста."""
+        from .templatetags.userdata import visibility
+
+        return visibility(self.dataset)
+
+    @property
     def is_unnormalised(self) -> bool:
         """Сумма по региону: на карте крупные регионы выделяются размером."""
         return self.is_sum
@@ -140,10 +154,14 @@ class UserSeries:
         return None
 
     @property
+    def dataset_url(self) -> str:
+        """Страница набора."""
+        return reverse("userdata:dataset", kwargs={"public_id": self.dataset.public_id})
+
+    @property
     def detail_url(self) -> str:
         """Страница набора с этим рядом."""
-        url = reverse("userdata:dataset", kwargs={"public_id": self.dataset.public_id})
-        return f"{url}#series-{self.record.code}"
+        return f"{self.dataset_url}#series-{self.record.code}"
 
     def publisher(self) -> str:
         """Чьи данные: источник, названный при загрузке, или «таблица пользователя»."""

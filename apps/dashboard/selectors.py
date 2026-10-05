@@ -402,12 +402,13 @@ def system_health() -> dict[str, Any]:
 
 def _check_userdata() -> dict[str, Any]:
     """
-    Свои данные: число таблиц, место на диске, разборы и отказы за сутки. Содержимого
-    таблиц панель не показывает.
+    Свои данные: число таблиц, место на диске, разборы и отказы за сутки, доски и действующие
+    закрытые ссылки. Содержимого таблиц и досок панель не показывает.
     """
     from django.db.models import Q, Sum
 
-    from apps.userdata.models import Dataset, DatasetVersion
+    from apps.userdata.models import Board, Dataset, DatasetVersion
+    from apps.userdata.shares import active
 
     title = _("Свои данные")
     since = timezone.now() - timedelta(days=1)
@@ -426,8 +427,16 @@ def _check_userdata() -> dict[str, Any]:
         "title": title,
         "detail": _("таблиц: %(tables)s, из них без входа: %(guests)s; %(size).1f МБ")
         % {"tables": tables, "guests": guests, "size": size / 1024**2},
-        "extra": _("за сутки собрано: %(built)s, не разобрано: %(failed)s")
-        % {"built": built, "failed": failed},
+        "extra": _(
+            "за сутки собрано: %(built)s, не разобрано: %(failed)s; досок: %(boards)s, "
+            "действующих закрытых ссылок: %(shares)s"
+        )
+        % {
+            "built": built,
+            "failed": failed,
+            "boards": Board.objects.count(),
+            "shares": active().count(),
+        },
     }
 
 

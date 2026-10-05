@@ -20,12 +20,18 @@ from .duckdb_client import DataSource, using_source, warehouse_generation
 USER_PREFIX = "u:"
 
 Resolver = Callable[[str], DataSource | None]
+Exporter = Callable[[str], bool]
 _resolvers: list[Resolver] = []
+_exporters: list[Exporter] = []
 
 
-def register(resolver: Resolver) -> None:
-    """Задать, как код набора превращается в файл с проверкой доступа."""
+def register(resolver: Resolver, exporter: Exporter | None = None) -> None:
+    """
+    Задать, как код набора превращается в файл с проверкой доступа и можно ли его ряды
+    выгружать (читатель закрытой ссылки видит набор, но скачивать может не всегда).
+    """
     _resolvers[:] = [resolver]
+    _exporters[:] = [exporter] if exporter is not None else []
 
 
 def is_user_key(key: object) -> bool:
@@ -43,6 +49,15 @@ def source_of(key: str) -> DataSource | None:
     if not is_user_key(key) or not _resolvers:
         return None
     return _resolvers[0](dataset_code(key))
+
+
+def exportable(key: str) -> bool:
+    """Ряд можно выгрузить документом: ряд склада — всегда, ряд набора — по решению владельца."""
+    if not is_user_key(key):
+        return True
+    if source_of(key) is None:
+        return False
+    return bool(_exporters) and _exporters[0](dataset_code(key))
 
 
 def generation_of(values: Iterable[Any]) -> str:

@@ -1005,3 +1005,8 @@
   font-size: var(--text-sm);
   color: var(--text-secondary);
 }
+
+.own-overview__title {
+  margin: var(--space-5) 0 var(--space-2);
+  font-size: var(--text-base);
+}

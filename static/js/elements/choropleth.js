@@ -1,5 +1,18 @@
 /* Картограмма рабочей поверхности <rl-choropleth>: разбор карты по классам легенды
-   и сохранение чертежа файлом; карта приходит с сервера (apps/maps/cartogram.py). */
+   и сохранение картинкой PNG или SVG с легендой, заголовком и источником; карта приходит
+   с сервера (apps/maps/cartogram.py). */
+
+import {
+  captionOf,
+  composeSvg,
+  download,
+  downloadSvg,
+  fileName,
+  saveControls,
+  saveLabels,
+  svgToPng,
+} from "../lib/image-export.js";
+import { token } from "../lib/tokens.js";
 
 /* --- Живая легенда: наведение приглушает остальные классы, щелчок оставляет выбранный -- */
 
@@ -85,18 +98,103 @@ function serialize(source) {
   return '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(copy);
 }
 
-/** Отдать чертёж файлом. */
-function save(map) {
-  const blob = new Blob([serialize(map)], { type: "image/svg+xml;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = (document.title.split(" — ")[0] || "map") + ".svg";
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  // Освобождение ссылки на данные.
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+// Ширина карты на картинке, точки; высота — по пропорциям чертежа.
+const IMAGE_WIDTH = 960;
+// Легенда под картой: образец цвета, отступы, кегль подписи.
+const SWATCH = 14;
+const LEGEND_GAP = 18;
+const LEGEND_SIZE = 12;
+const LEGEND_ROW = 24;
+
+/**
+ * Легенда картинки: классы шкалы и «нет данных» строками под картой.
+ *
+ * @param {Element} root элемент карты с легендой
+ * @param {number} width ширина картинки
+ * @returns {{markup: string, height: number}}
+ */
+function legendMarkup(root, width) {
+  const items = [...root.querySelectorAll(".map-legend__class")].map((item) => {
+    const swatch = item.querySelector(".map-legend__swatch");
+    const range = item.querySelector(".map-legend__range");
+    const style = swatch ? window.getComputedStyle(swatch) : null;
+    return {
+      colour: style ? style.backgroundColor : "transparent",
+      border: style ? style.borderTopColor : "transparent",
+      hatched: Boolean(swatch && swatch.classList.contains("map-legend__swatch--no-data")),
+      label: range ? range.textContent.replace(/\s+/g, " ").trim() : "",
+    };
+  });
+  if (!items.length) {
+    return { markup: "", height: 0 };
+  }
+  const colour = token("--text-secondary", "#4a4239");
+  const font = window.getComputedStyle(document.body).fontFamily || "sans-serif";
+  const parts = [];
+  let x = 0;
+  let y = LEGEND_GAP;
+  items.forEach((item) => {
+    const itemWidth = SWATCH + 6 + item.label.length * LEGEND_SIZE * 0.56 + LEGEND_GAP;
+    if (x > 0 && x + itemWidth > width) {
+      x = 0;
+      y += LEGEND_ROW;
+    }
+    const fill = item.hatched ? token("--no-data-fill", "#ddd") : item.colour;
+    parts.push(
+      `<rect x="${x}" y="${y}" width="${SWATCH}" height="${SWATCH}" rx="3" fill="${fill}"` +
+        ` stroke="${item.border}"/>`,
+      `<text x="${x + SWATCH + 6}" y="${y + SWATCH - 2}" font-size="${LEGEND_SIZE}"` +
+        ` font-family="${font.replace(/"/g, "'")}" fill="${colour}">` +
+        `${item.label.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</text>`,
+    );
+    x += itemWidth;
+  });
+  return { markup: parts.join(""), height: y + SWATCH + LEGEND_GAP / 2 };
+}
+
+/**
+ * Чертёж картинки: карта во всю ширину и легенда под ней.
+ *
+ * @param {Element} root элемент карты
+ * @param {SVGElement} map карта в документе
+ * @returns {{svg: string, width: number, height: number}}
+ */
+function drawing(root, map) {
+  const box = map.viewBox && map.viewBox.baseVal;
+  const ratio = box && box.width ? box.height / box.width : 0.6;
+  const width = IMAGE_WIDTH;
+  const mapHeight = Math.round(width * ratio);
+  const legend = legendMarkup(root, width);
+  const parsed = new DOMParser().parseFromString(serialize(map), "image/svg+xml").documentElement;
+  parsed.setAttribute("width", String(width));
+  parsed.setAttribute("height", String(mapHeight));
+  const height = mapHeight + legend.height;
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"` +
+    ` width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">` +
+    new XMLSerializer().serializeToString(parsed) +
+    `<g transform="translate(0 ${mapHeight})">${legend.markup}</g></svg>`;
+  return { svg, width, height };
+}
+
+/** Сохранить карту картинкой с подписью: «png» или «svg». */
+function save(root, map, kind) {
+  const caption = captionOf(root);
+  // Приглушение классов от наведения и щелчка в картинку не переносится; переходы
+  // на время сохранения отключены, иначе стиль застал бы середину перехода.
+  root.classList.add("is-exporting");
+  root.apply(null);
+  const plan = drawing(root, map);
+  root.classList.remove("is-exporting");
+  root.apply(locked);
+  const composed = composeSvg(plan.svg, plan.width, plan.height, caption);
+  if (kind === "svg") {
+    downloadSvg(composed.svg, fileName(caption, "svg"));
+    return;
+  }
+  svgToPng(composed.svg, composed.width, composed.height)
+    .then((url) => download(url, fileName(caption, "png")))
+    .catch(() => downloadSvg(composed.svg, fileName(caption, "svg")));
 }
 
 class Choropleth extends HTMLElement {
@@ -182,24 +280,13 @@ class Choropleth extends HTMLElement {
     });
   }
 
-  /** Поставить кнопку сохранения в угол карты. */
+  /** Поставить кнопки сохранения картинкой PNG и SVG в угол карты. */
   addSaveControl() {
-    const map = this.querySelector("[data-geo-map]");
-    const label = document.body.dataset.mapSave;
-    if (!map || !label || this.querySelector(".geo-map-wrapper .chart-save")) {
+    const map = this.querySelector("[data-geo-map], svg.tile-map, svg.multiples");
+    if (!map || !document.body.dataset.imageSave || map.parentNode.querySelector(".chart-save")) {
       return;
     }
-
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "chart-save no-print";
-    button.title = label;
-    button.setAttribute("aria-label", label);
-    button.innerHTML =
-      '<svg aria-hidden="true"><use href="#icon-download"></use></svg><span>SVG</span>';
-    button.addEventListener("click", () => save(map));
-
-    map.parentNode.appendChild(button);
+    map.parentNode.appendChild(saveControls(saveLabels(), (kind) => save(this, map, kind), false));
   }
 }
 

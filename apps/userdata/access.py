@@ -2,6 +2,8 @@
 Кто владеет набором: учётная запись или гость по случайному ключу в сеансе.
 
 Чужой набор везде отвечает 404: ни по опознавателю, ни по ошибке представления его не видно.
+Читатель закрытой ссылки видит набор только на страницах чтения (``readable_or_404``);
+шаги загрузки, формулы, ссылки и удаление — только владельцу (``dataset_or_404``).
 """
 
 from __future__ import annotations
@@ -47,6 +49,20 @@ def dataset_or_404(request: HttpRequest, public_id: UUID | str) -> Dataset:
     """Свой набор по опознавателю; чужой и несуществующий — 404."""
     dataset = owned(request).filter(public_id=public_id).first()
     if dataset is None:
+        raise Http404
+    return dataset
+
+
+def readable_or_404(request: HttpRequest, public_id: UUID | str) -> Dataset:
+    """Набор владельца или открытый закрытой ссылкой; прочий — 404."""
+    from . import scope
+
+    dataset = owned(request).filter(public_id=public_id).first()
+    if dataset is not None:
+        return dataset
+    dataset = Dataset.objects.select_related("current_version").filter(public_id=public_id).first()
+    reader = scope.current()
+    if dataset is None or reader is None or not reader.can_read(dataset):
         raise Http404
     return dataset
 

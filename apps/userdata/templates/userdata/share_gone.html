@@ -1,0 +1,23 @@
+{% extends "errors/page.html" %}
+{% load i18n %}
+
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block error_title %}{% if throttled %}{% translate "Слишком много попыток" %}{% else %}{% translate "Ссылка больше не действует" %}{% endif %}{% endblock %}
+{% block error_code %}{% if throttled %}429{% else %}404{% endif %}{% endblock %}
+{% block error_heading %}{% if throttled %}{% translate "Слишком много попыток" %}{% else %}{% translate "Ссылка больше не действует" %}{% endif %}{% endblock %}
+
+{% block error_lead %}
+  {% if throttled %}
+    {% translate "С этого адреса открывали слишком много несуществующих ссылок. Повторите через несколько минут." %}
+  {% else %}
+    {% blocktranslate trimmed %}
+      Срок ссылки истёк, владелец её отозвал или удалил таблицу. Попросите у него новую
+      ссылку.
+    {% endblocktranslate %}
+  {% endif %}
+{% endblock %}
+
+{% block error_actions %}
+  <a class="button button--primary" href="{% url 'core:home' %}">{% translate "На главную" %}</a>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% load i18n formatting userdata %}
+{# Версии таблицы владельцу: новая версия файла, новая в работе, собранные с различиями и возвратом. #}
+<section class="page-section" aria-labelledby="own-versions-title" id="own-versions">
+  <div class="page-section__head">
+    <h2 class="page-section__title" id="own-versions-title">{% translate "Версии" %}</h2>
+  </div>
+
+  {% if draft %}
+    <div class="callout callout--info">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        <div class="callout__title">
+          {% blocktranslate trimmed with number=draft.number %}Новая версия {{ number }} в работе{% endblocktranslate %}
+        </div>
+        <p>
+          <span{% with lang=draft.file_name|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ draft.file_name }}</span>.
+          {% translate "Пока она не собрана, таблица на карте и по ссылкам — в текущей версии." %}
+          {% if draft_questions %}{% translate "Нужно ответить" %}: {{ draft_questions|join:"; " }}.{% endif %}
+        </p>
+        <div class="own-version-actions">
+          <a class="button button--sm button--primary" href="{{ draft_url }}">{% translate "Продолжить" %}</a>
+          <form method="post" action="{% url 'userdata:version-discard' dataset.public_id %}">
+            {% csrf_token %}
+            <button class="button button--sm button--ghost" type="submit">{% translate "Отменить новую версию" %}</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <ol class="own-versions" reversed>
+    {% for item in versions %}
+      <li class="own-versions__item">
+        <div class="own-versions__text">
+          <span class="own-versions__name">
+            {% blocktranslate trimmed with number=item.number %}Версия {{ number }}{% endblocktranslate %}
+            · {{ item.created_at|date:"d.m.Y H:i" }}
+            {% if item.pk == version.pk %}<span class="badge">{% translate "текущая" %}</span>{% endif %}
+          </span>
+          <span class="own-versions__facts">
+            <span{% with lang=item.file_name|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.file_name }}</span>
+            · {% blocktranslate trimmed with count=item.values_count|ru_number:0 %}значений: {{ count }}{% endblocktranslate %}
+          </span>
+          {% with summary=item.report.changes %}
+            {% if summary %}
+              <span class="own-versions__facts">
+                {% blocktranslate trimmed with base=summary.base %}к версии {{ base }}:{% endblocktranslate %}
+                {% blocktranslate trimmed with count=summary.changed %}изменено значений — {{ count }}{% endblocktranslate %}{% if summary.added %}, {% blocktranslate trimmed with count=summary.added %}новых — {{ count }}{% endblocktranslate %}{% endif %}{% if summary.removed %}, {% blocktranslate trimmed with count=summary.removed %}пропало — {{ count }}{% endblocktranslate %}{% endif %}{% if summary.new_series %}; {% blocktranslate trimmed with count=summary.new_series|length %}новых рядов — {{ count }}{% endblocktranslate %}{% endif %}{% if summary.gone_series %}; {% blocktranslate trimmed with count=summary.gone_series|length %}пропавших рядов — {{ count }}{% endblocktranslate %}{% endif %}
+              </span>
+            {% endif %}
+          {% endwith %}
+        </div>
+        <div class="own-version-actions">
+          {% if item.report.changes %}
+            <a class="button button--sm button--ghost" href="{% url 'userdata:version' dataset.public_id item.number %}">{% translate "Что изменилось" %}</a>
+          {% endif %}
+          {% if item.pk != version.pk %}
+            <form method="post" action="{% url 'userdata:version-restore' dataset.public_id item.number %}">
+              {% csrf_token %}
+              <button class="button button--sm button--ghost" type="submit">{% translate "Вернуться к этой версии" %}</button>
+            </form>
+          {% endif %}
+        </div>
+      </li>
+    {% endfor %}
+  </ol>
+
+  <details class="own-version-new"{% if not draft and versions|length == 1 %} open{% endif %}>
+    <summary>{% translate "Загрузить новую версию файла" %}</summary>
+    <p class="page-section__lead">
+      {% blocktranslate trimmed %}
+        Тот же файл в новой редакции — например, следующий месячный выпуск. Описание таблицы,
+        ответы о территориях, пересчёты и формулы перенесутся; спросим только о новом. Карта,
+        ссылки, доски и сохранённые виды продолжат работать: ключи рядов те же.
+      {% endblocktranslate %}
+      {% blocktranslate trimmed with count=keep_versions %}Хранятся последние версии: {{ count }}.{% endblocktranslate %}
+    </p>
+    <div class="upload-layout">
+      <form method="post" action="{% url 'userdata:version-new' dataset.public_id %}" enctype="multipart/form-data" class="form-sheet stack" novalidate data-upload-form>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="upload">
+        <div class="field">
+          <label class="field__label" for="{{ version_upload_form.file.id_for_label }}">{{ version_upload_form.file.label }}</label>
+          {{ version_upload_form.file }}
+          <span class="field__hint">{{ version_upload_form.file.help_text }}</span>
+          <span class="field__error" data-size-error hidden>{{ upload_limit }}</span>
+        </div>
+        <div class="form-sheet__actions">
+          <button class="button button--primary" type="submit">{% translate "Загрузить новую версию" %}</button>
+        </div>
+      </form>
+      <form method="post" action="{% url 'userdata:version-new' dataset.public_id %}" class="form-sheet stack" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="paste">
+        <div class="field">
+          <label class="field__label" for="{{ version_paste_form.text.id_for_label }}">{{ version_paste_form.text.label }}</label>
+          {{ version_paste_form.text }}
+          <span class="field__hint">{{ version_paste_form.text.help_text }}</span>
+        </div>
+        {{ version_paste_form.markup }}
+        <div class="form-sheet__actions">
+          <button class="button button--secondary" type="submit">{% translate "Вставить новую версию" %}</button>
+        </div>
+      </form>
+    </div>
+  </details>
+</section>

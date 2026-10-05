@@ -203,7 +203,7 @@
     {% endif %}
   </section>
 
-  {# --- Свои данные: таблицы и занятое место ----------------------------------------------- #}
+  {# --- Свои данные: таблицы, занятое место и доски --------------------------------------- #}
   <section class="page-section" aria-labelledby="overview-own-data">
     <div class="page-section__head">
       <h2 class="page-section__title" id="overview-own-data">{% translate "Свои данные" %}</h2>
@@ -227,6 +227,16 @@
         {% translate "Своя таблица по регионам открывается на той же карте и в тех же видах, что и данные сайта." %}
         <a href="{% url 'userdata:upload' %}">{% translate "Загрузить таблицу" %}</a>
       </p>
+    {% endif %}
+    {% if own_boards %}
+      <h3 class="own-overview__title">{% translate "Доски" %}</h3>
+      <ul class="own-overview">
+        {% for board in own_boards %}
+          <li><a href="{% url 'userdata:board' board.public_id %}">{{ board.title }}</a>
+            <span class="own-overview__meta">{% blocktranslate trimmed with count=board.blocks|length %}блоков: {{ count }}{% endblocktranslate %}</span>
+          </li>
+        {% endfor %}
+      </ul>
     {% endif %}
   </section>
 

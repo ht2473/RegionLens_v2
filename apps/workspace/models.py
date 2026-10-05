@@ -23,6 +23,19 @@ from .constants import (
 )
 
 
+def parameter_series_keys(parameters: dict[str, Any] | None) -> list[str]:
+    """Ключи рядов в параметрах страницы: ``series``, оси ``x`` и ``y``, веса ``weight:<ключ>``."""
+    values = parameters or {}
+    found: list[str] = []
+    listed = values.get("series")
+    for key in listed if isinstance(listed, list) else [listed]:
+        if key:
+            found.append(str(key))
+    found.extend(str(values[axis]) for axis in ("x", "y") if values.get(axis))
+    found.extend(name.removeprefix("weight:") for name in values if name.startswith("weight:"))
+    return list(dict.fromkeys(found))
+
+
 class SavedQuery(PublicIdentifierModel, TimeStampedModel):
     """Сохранённые параметры страницы; при открытии расчёт выполняется заново."""
 
@@ -102,15 +115,7 @@ class SavedQuery(PublicIdentifierModel, TimeStampedModel):
     @property
     def series_keys(self) -> list[str]:
         """Ключи рядов в параметрах: ``series``, оси ``x`` и ``y``, веса ``weight:<ключ>``."""
-        values = self.parameters or {}
-        found: list[str] = []
-        listed = values.get("series")
-        for key in listed if isinstance(listed, list) else [listed]:
-            if key:
-                found.append(str(key))
-        found.extend(str(values[axis]) for axis in ("x", "y") if values.get(axis))
-        found.extend(name.removeprefix("weight:") for name in values if name.startswith("weight:"))
-        return list(dict.fromkeys(found))
+        return parameter_series_keys(self.parameters)
 
     @property
     def phrases(self) -> list[str]:

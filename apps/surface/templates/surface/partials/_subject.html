@@ -6,7 +6,7 @@
   <div class="surface-head__text">
     {% if subject %}
       <p class="surface-head__kicker">
-        <span{% if series.is_user %}{% with lang=subject.kicker|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}{% endif %}>{{ subject.kicker }}</span>{% if series.is_user %} · <span class="surface-head__private">{% translate "видно только вам" %}</span>{% endif %}{% if not subject.item.absolute %}{% if subject.item.polarity == "positive" %} · {% translate "рост — к лучшему" %}{% elif subject.item.polarity == "negative" %} · {% translate "рост — к худшему" %}{% endif %}{% endif %}
+        <span{% if series.is_user %}{% with lang=subject.kicker|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}{% endif %}>{{ subject.kicker }}</span>{% if series.is_user %} · <span class="surface-head__private">{{ series.privacy }}</span>{% endif %}{% if not subject.item.absolute %}{% if subject.item.polarity == "positive" %} · {% translate "рост — к лучшему" %}{% elif subject.item.polarity == "negative" %} · {% translate "рост — к худшему" %}{% endif %}{% endif %}
       </p>
       <h1 class="surface-head__title">
         {% if series.is_user %}<span{% with lang=subject.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ subject.title }}</span>{% else %}{{ subject.title }}{% endif %}{% if panel.code == "compare" and timeline_years %}, <span class="numeric">{{ timeline_years.0|year }}–{{ timeline_years|last|year }}</span>{% elif year %}, <span class="numeric">{{ year|year }}</span>{% endif %}

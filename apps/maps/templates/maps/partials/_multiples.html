@@ -1,0 +1,29 @@
+{% load i18n formatting %}
+{# Малые графики: в клетке плиточной карты — ход ряда по годам; шкала общая, точка — выбранный год. #}
+{% if multiples %}
+  <div class="tile-map-wrapper multiples-wrapper">
+    <svg class="multiples" viewBox="0 0 {{ multiples.width }} {{ multiples.height }}"
+         role="group" preserveAspectRatio="xMidYMid meet" aria-label="{{ multiples_caption }}">
+      {% for cell in multiples.cells %}
+        <a href="{{ cell.href }}" class="multiples__cell{% if cell.selected %} is-selected{% endif %}"
+           data-territory="{{ cell.code }}">
+          <title>{{ cell.title }}</title>
+          <rect class="multiples__back{% if cell.empty %} multiples__back--empty{% endif %}"
+                x="{{ cell.x }}" y="{{ cell.y }}" width="{{ multiples.cell_width }}"
+                height="{{ multiples.cell_height }}" rx="3"></rect>
+          <text class="multiples__label" x="{{ cell.label_x }}" y="{{ cell.label_y }}">{{ cell.label }}</text>
+          {% if cell.path %}<path class="multiples__line" d="{{ cell.path }}"></path>{% endif %}
+          {% if cell.dot_x %}
+            <path class="multiples__dot" d="M{{ cell.dot_x }} {{ cell.dot_y }}h0"
+                  {% if cell.colour %}style="stroke: var({{ cell.colour }})"{% endif %}></path>
+          {% endif %}
+        </a>
+      {% endfor %}
+    </svg>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+    <p class="empty-state__title">{% translate "Для малых графиков нужно хотя бы два года значений" %}</p>
+  </div>
+{% endif %}

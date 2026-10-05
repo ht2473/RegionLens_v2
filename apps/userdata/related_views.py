@@ -14,11 +14,11 @@ from apps.core.views import BreadcrumbMixin
 
 from . import related
 from .models import DatasetVersion
-from .pages import DatasetMixin
+from .pages import ReadableDatasetMixin
 from .series import FEW_REGIONS, series_of
 
 
-class RelatedView(DatasetMixin, BreadcrumbMixin, TemplateView):
+class RelatedView(ReadableDatasetMixin, BreadcrumbMixin, TemplateView):
     """Связи выбранного ряда таблицы с рядами основного набора."""
 
     template_name = "userdata/related.html"

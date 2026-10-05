@@ -75,3 +75,17 @@ def territory_name(code: Any) -> str:
         *reference["aggregates"],
     ]
     return next((record[field] for record in records if record["code"] == code), str(code))
+
+
+@register.simple_tag
+def visibility(dataset: Any) -> str:
+    """Кто видит таблицу: только владелец, владелец и читатели ссылки — или «по ссылке»."""
+    from django.utils.translation import gettext
+
+    from apps.userdata import scope, shares
+
+    if not scope.owns(dataset):
+        return gettext("открыто по закрытой ссылке")
+    if dataset.owner_id is not None and shares.is_shared(dataset):
+        return gettext("видно вам и по закрытой ссылке")
+    return gettext("видно только вам")

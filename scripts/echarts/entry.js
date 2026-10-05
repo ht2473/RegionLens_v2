@@ -38,7 +38,7 @@ import {
 } from "echarts/components";
 
 import { LabelLayout } from "echarts/features";
-import { CanvasRenderer } from "echarts/renderers";
+import { CanvasRenderer, SVGRenderer } from "echarts/renderers";
 
 echarts.use([
   // Построения: линии динамики, столбцы вкладов, точки рассеяния,
@@ -65,9 +65,10 @@ echarts.use([
   // Расталкивание сошедшихся подписей у концов линий.
   LabelLayout,
 
-  // Отрисовка холстом: тип отрисовки задаётся явно при создании графика,
-  // и слой SVG-отрисовки в сборку не входит.
+  // Отрисовка холстом на странице (тип задаётся явно при создании графика) и SVG —
+  // только для картинки графика файлом SVG (static/js/elements/chart.js).
   CanvasRenderer,
+  SVGRenderer,
 ]);
 
 export * from "echarts/core";

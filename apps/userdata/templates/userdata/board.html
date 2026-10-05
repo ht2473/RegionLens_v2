@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% load i18n static formatting userdata %}
+
+{# Доска: тексты и карточки видов по порядку, общий год и территории; владельцу — правка и ссылки. #}
+
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+  <link rel="stylesheet" href="{% static 'css/surface.css' %}">
+  <link rel="stylesheet" href="{% static 'css/userdata.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page board-page">
+
+  <header class="page-intro">
+    <div class="page-intro__text">
+      <p class="page-intro__kicker">
+        {% translate "Доска" %} ·
+        <span class="own-private">{% if not owner %}{% translate "открыто по закрытой ссылке" %}{% elif shared %}{% translate "видно вам и по закрытой ссылке" %}{% else %}{% translate "видно только вам" %}{% endif %}</span>
+      </p>
+      <h1 class="page-intro__title"{% with lang=board.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ board.title }}</h1>
+      {% if board.description %}
+        <p class="page-intro__lead"{% with lang=board.description|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ board.description|linebreaksbr }}</p>
+      {% endif %}
+    </div>
+    <div class="page-intro__actions no-print">
+      <button type="button" class="button button--sm button--secondary" data-print>
+        <svg aria-hidden="true"><use href="#icon-print"></use></svg>
+        {% translate "Печать или PDF" %}
+      </button>
+    </div>
+  </header>
+
+  {% if canvas_count %}
+    <form method="get" class="board-common no-print" aria-label="{% translate 'Общий выбор для карт и графиков' %}">
+      <input type="hidden" name="common" value="1">
+      <div class="field">
+        <label class="field__label" for="board-year">{% translate "Год" %}</label>
+        <select class="select" id="board-year" name="year">
+          <option value=""{% if year is None %} selected{% endif %}>{% translate "свой у каждой карточки" %}</option>
+          {% for item in years %}
+            <option value="{{ item }}"{% if item == year %} selected{% endif %}>{{ item|year }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field board-common__territories">
+        <label class="field__label" for="board-territories">
+          {% blocktranslate trimmed with count=max_compare %}Территории — не больше {{ count }}{% endblocktranslate %}
+        </label>
+        <select class="select board-common__select" id="board-territories" name="territory" multiple size="6">
+          {% for group in territory_groups %}
+            <optgroup label="{% if group.district %}{{ group.district.name }}{% else %}{% translate 'Вне округов' %}{% endif %}">
+              {% for territory in group.items %}
+                <option value="{{ territory.code }}"{% if territory.code in territories %} selected{% endif %}>{{ territory.name }}</option>
+              {% endfor %}
+            </optgroup>
+          {% endfor %}
+        </select>
+        <span class="field__hint">{% translate "Несколько — с нажатой Ctrl (на Mac — Cmd). Пусто — как в каждой карточке." %}</span>
+      </div>
+      <div class="board-common__actions">
+        <button class="button button--secondary" type="submit">{% translate "Показать" %}</button>
+      </div>
+    </form>
+    {% if owner %}
+      <form method="post" action="{% url 'userdata:board-edit' board.public_id %}" class="board-common__save no-print">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="common">
+        <input type="hidden" name="year" value="{% if year is not None %}{{ year }}{% endif %}">
+        {% for code in territories %}<input type="hidden" name="territory" value="{{ code }}">{% endfor %}
+        <button class="button button--sm button--ghost" type="submit">{% translate "Запомнить этот выбор на доске" %}</button>
+      </form>
+    {% endif %}
+  {% endif %}
+
+  {% if not blocks %}
+    <div class="empty-state">
+      <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+      <p class="empty-state__title">{% translate "На доске пока ничего нет" %}</p>
+      {% if owner %}
+        <p class="empty-state__hint">
+          {% translate "Виды добавляются кнопкой «На доску» на карте, в динамике, рейтинге, распределении, таблице и в инструментах анализа. Текст — формой ниже." %}
+        </p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <div class="board-blocks">
+    {% for block in blocks %}
+      {% if block.kind == "text" %}
+        <section class="board-text" id="block-{{ block.id }}" aria-label="{% translate 'Текст' %}">
+          <div class="board-text__body"{% with lang=block.text|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ block.text|linebreaks }}</div>
+          {% if owner %}{% include "userdata/_board_controls.html" %}{% endif %}
+        </section>
+      {% else %}
+        <article class="board-card{% if block.target == 'map' or block.target == 'compare' %} board-card--wide{% endif %}" id="block-{{ block.id }}">
+          <div class="board-card__slot" hx-get="{{ block.card_url }}" hx-trigger="load" hx-swap="innerHTML">
+            <p class="board-card__kicker">{{ block.target_title }}</p>
+            <p class="board-card__waiting">{% translate "Вид строится…" %}</p>
+          </div>
+          {% if owner %}{% include "userdata/_board_controls.html" %}{% endif %}
+        </article>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  {% if owner %}
+    <section class="page-section no-print" aria-labelledby="board-add-text">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="board-add-text">{% translate "Добавить текст" %}</h2>
+      </div>
+      <form method="post" action="{% url 'userdata:board-edit' board.public_id %}" class="stack board-text-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add-text">
+        <div class="field">
+          <label class="field__label" for="board-new-text">{% translate "Текст" %}</label>
+          <textarea class="textarea" id="board-new-text" name="text" rows="4" maxlength="4000" required></textarea>
+          <span class="field__hint">{% translate "Пояснение к видам: вывод, оговорка, вопрос. Пустая строка — новый абзац." %}</span>
+        </div>
+        <div><button class="button button--secondary" type="submit">{% translate "Добавить" %}</button></div>
+      </form>
+      <p class="page-section__lead">
+        {% translate "Виды добавляются кнопкой «На доску» на карте, в динамике, рейтинге, распределении, таблице и в инструментах анализа." %}
+      </p>
+    </section>
+
+    {% url 'userdata:board-share-create' board.public_id as share_create_url %}
+    {% translate "По ссылке доску смотрят без входа, в том числе с телефона: карточки, тексты и ваши таблицы, ряды которых стоят на доске. Изменить ничего нельзя." as share_lead %}
+    {% translate "Можно скачивать таблицы и документы" as share_downloads_label %}
+    <div class="no-print">
+      {% include "userdata/_shares.html" with share_target=board share_revoke_name="userdata:board-share-revoke" %}
+    </div>
+
+    <section class="page-section no-print" aria-labelledby="board-settings">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="board-settings">{% translate "Название и удаление" %}</h2>
+      </div>
+      <form method="post" action="{% url 'userdata:board-edit' board.public_id %}" class="stack board-text-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="rename">
+        <div class="field">
+          <label class="field__label" for="board-title">{% translate "Название" %}</label>
+          <input class="input" id="board-title" name="title" maxlength="200" value="{{ board.title }}" required>
+        </div>
+        <div class="field">
+          <label class="field__label" for="board-description">{% translate "Описание" %}</label>
+          <textarea class="textarea" id="board-description" name="description" rows="3" maxlength="4000">{{ board.description }}</textarea>
+        </div>
+        <div><button class="button button--secondary" type="submit">{% translate "Сохранить" %}</button></div>
+      </form>
+      <form method="post" action="{% url 'userdata:board-edit' board.public_id %}" class="stack own-delete">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete">
+        <label class="checkbox"><input type="checkbox" name="confirm" value="1" required> <span>{% translate "Удалить доску; таблицы и виды останутся" %}</span></label>
+        <div><button class="button button--danger" type="submit">{% translate "Удалить доску" %}</button></div>
+      </form>
+    </section>
+  {% endif %}
+
+</div>
+{% endblock %}

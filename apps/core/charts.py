@@ -5,9 +5,11 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
+from django.utils.html import escape
 from django.utils.translation import gettext_lazy as _
 
 from apps.core import chart_layout as layout
+from apps.core.templatetags.formatting import ru_number
 
 # Цвет линии страны — ориентира среди сравниваемых.
 COUNTRY_COLOUR = "var(--text-secondary)"
@@ -325,6 +327,82 @@ def bump_option(
         ),
         "series": series,
         **_territory_links(lines),
+    }
+
+
+def dumbbell_option(
+    rows: list[dict[str, Any]],
+    *,
+    before: int,
+    after: int,
+    precision: int | None = None,
+    unit: str = "",
+) -> dict[str, Any] | None:
+    """
+    «Было — стало»: значения двух лет у каждого субъекта — точки, соединённые отрезком.
+
+    Строка — ``{"name", "short", "before", "after"}`` в порядке показа (сверху вниз).
+    Подсказки — готовым текстом с экранированными названиями.
+    """
+    shown = [row for row in rows if row["before"] is not None and row["after"] is not None]
+    if not shown:
+        return None
+
+    def tip(row: dict[str, Any]) -> str:
+        return (
+            f"{escape(row['name'])}<br>{before}: {ru_number(row['before'], precision)}"
+            f"<br>{after}: <strong>{ru_number(row['after'], precision)}</strong>"
+        )
+
+    return {
+        "grid": layout.grid(legend=True, bottom_name=bool(unit), right=24),
+        "legend": layout.legend(scroll=False),
+        "tooltip": {"trigger": "item"},
+        "xAxis": {
+            "type": "value",
+            "scale": True,
+            "splitLine": {"lineStyle": {"type": "dashed"}},
+            **(layout.bottom_axis_name(unit) if unit else {}),
+        },
+        "yAxis": {
+            "type": "category",
+            "data": [row["short"] or row["name"] for row in shown],
+            "inverse": True,
+            "axisTick": {"show": False},
+        },
+        "series": [
+            {
+                "name": str(before),
+                "type": "scatter",
+                "symbolSize": 9,
+                "itemStyle": {"color": MARK_COLOUR},
+                "data": [
+                    {"value": [row["before"], index], "tooltip": {"formatter": tip(row)}}
+                    for index, row in enumerate(shown)
+                ],
+                # Отрезки «было — стало» — парами точек отметок: вида «lines» в сборке нет.
+                "markLine": {
+                    "symbol": "none",
+                    "silent": True,
+                    "label": {"show": False},
+                    "lineStyle": {"color": MARK_COLOUR, "type": "solid", "width": 2},
+                    "data": [
+                        [{"coord": [row["before"], index]}, {"coord": [row["after"], index]}]
+                        for index, row in enumerate(shown)
+                    ],
+                },
+            },
+            {
+                "name": str(after),
+                "type": "scatter",
+                "symbolSize": 11,
+                "itemStyle": {"color": layout.palette_colour(0)},
+                "data": [
+                    {"value": [row["after"], index], "tooltip": {"formatter": tip(row)}}
+                    for index, row in enumerate(shown)
+                ],
+            },
+        ],
     }
 
 

@@ -83,6 +83,48 @@
     {% endif %}
   </section>
 
+  <section class="page-section" aria-labelledby="own-boards" id="own-boards-section">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="own-boards">{% translate "Мои доски" %}</h2>
+    </div>
+    <p class="page-section__lead">
+      {% blocktranslate trimmed %}
+        Доска собирает на одной странице карты, графики и рейтинги — свои и сайта — с вашими
+        пояснениями. Её можно распечатать и показать по закрытой ссылке, в том числе на телефоне.
+      {% endblocktranslate %}
+    </p>
+    {% if user.is_authenticated %}
+      {% if boards %}
+        <ul class="own-boards">
+          {% for board in boards %}
+            <li class="own-boards__item">
+              <a href="{% url 'userdata:board' board.public_id %}"{% with lang=board.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ board.title }}</a>
+              <span class="own-boards__facts">
+                {% blocktranslate trimmed with count=board.blocks|length moment=board.updated_at|date:"d.m.Y" %}блоков: {{ count }} · изменена {{ moment }}{% endblocktranslate %}
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      <form method="post" action="{% url 'userdata:board-new' %}" class="own-board-form">
+        {% csrf_token %}
+        <div class="field">
+          <label class="field__label" for="own-board-title">{% translate "Название новой доски" %}</label>
+          <input class="input" id="own-board-title" name="title" maxlength="200" required
+                 placeholder="{% translate 'Например: к курсовой' %}">
+        </div>
+        <button class="button button--secondary" type="submit">
+          <svg aria-hidden="true"><use href="#icon-plus"></use></svg>
+          {% translate "Создать доску" %}
+        </button>
+      </form>
+    {% else %}
+      <p class="page-section__lead">
+        <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "Войдите, чтобы собирать доски" %}</a>.
+      </p>
+    {% endif %}
+  </section>
+
   <section class="page-section" aria-labelledby="own-forms">
     <div class="page-section__head">
       <h2 class="page-section__title" id="own-forms">{% translate "Какие таблицы подходят" %}</h2>

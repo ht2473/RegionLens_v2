@@ -23,11 +23,14 @@
 
 	# --- Размер запроса ----------------------------------------------------------------
 	# Большой файл принимает только загрузка выпуска набора в панели управления. Загрузке
-	# своей таблицы (предел приложения — 25 МБ) пропускается чуть больше: о превышении
-	# скажет приложение, а не обрыв соединения.
+	# своей таблицы и её новой версии (предел приложения — 25 МБ) пропускается чуть больше:
+	# о превышении скажет приложение, а не обрыв соединения.
 	@dataset_upload path */manage/data/upload/
-	@table_upload path */own-data/new/
-	@other_requests not path */manage/data/upload/ */own-data/new/
+	@table_upload path_regexp ^/[a-z]{2}/own-data/(new|[0-9a-f-]{36}/versions/new)/$
+	@other_requests {
+		not path */manage/data/upload/
+		not path_regexp ^/[a-z]{2}/own-data/(new|[0-9a-f-]{36}/versions/new)/$
+	}
 	request_body @dataset_upload {
 		max_size 256MB
 	}

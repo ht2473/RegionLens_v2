@@ -1,0 +1,30 @@
+{% load i18n formatting userdata %}
+{# Рейтинг на карточке доски: первые места и отмеченные территории. #}
+{% if card_rows %}
+  <div class="data-table-wrapper board-card__table" data-scroll>
+    <table class="data-table">
+      <caption class="visually-hidden">{{ card.title }}</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="is-numeric">{% translate "Место" %}</th>
+          <th scope="col">{% translate "Субъект" %}</th>
+          <th scope="col" class="is-numeric">{% translate "Значение" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in card_rows %}
+          <tr{% if row.selected %} class="is-selected"{% endif %}>
+            <td class="is-numeric">{% if ascending %}{{ row.rank_asc }}{% else %}{{ row.rank_desc }}{% endif %}</td>
+            <td>{{ row.name }}</td>
+            <td class="is-numeric">{{ row.value|ru_number:precision }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if ranked_total > card_rows|length %}
+    <p class="board-card__more">{% blocktranslate trimmed with count=ranked_total %}Всего в рейтинге субъектов: {{ count }}{% endblocktranslate %}</p>
+  {% endif %}
+{% else %}
+  <p class="board-card__empty">{% translate "Рейтинг за этот год не рассчитан." %}</p>
+{% endif %}

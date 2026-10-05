@@ -32,6 +32,12 @@
         и параметры построения. Открытый заново, он покажет то же самое.
       {% endblocktranslate %}
     </p>
+    {% if series.is_user and series.is_own %}
+      <p class="share-field__hint">
+        {% translate "Таблица видна только вам: у другого человека этот адрес не откроется." %}
+        <a href="{{ series.dataset_url }}#own-shares">{% translate "Закрытая ссылка на таблицу" %}</a>
+      </p>
+    {% endif %}
   </div>
 
   {# Ссылка для списка литературы с датой обращения и версией набора. #}

@@ -14,7 +14,7 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from apps.api.docs import anonymous_rate
-from apps.core.citation import view_citation
+from apps.core.citation import series_source, view_citation
 from apps.surface.panels import (
     PANEL_COMPARE,
     PANEL_RANKINGS,
@@ -65,6 +65,8 @@ def share_context(
             series_key=state.series.key if state.series else "",
         ),
         "api_rate": anonymous_rate(),
+        # Строка источника под картинкой карты и графика.
+        "image_source": series_source(state.series.key, state.year or "") if state.series else "",
     }
 
 

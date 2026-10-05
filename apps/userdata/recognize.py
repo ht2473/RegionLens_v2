@@ -924,6 +924,7 @@ def _summarize_slices(result: Recognition, loaded: Loaded, recipe: Mapping[str, 
                 defaults[index] = totals[:1]
     for index, info in result.slices.items():
         picked = chosen.get(str(index))
+        info["default"] = defaults[index]
         info["selected"] = (
             [value for value in picked if value in info["values"]] if picked else defaults[index]
         )

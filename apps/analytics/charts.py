@@ -21,6 +21,9 @@ GUIDE_COLOUR = "var(--text-muted)"
 # Цвет линии подобранной зависимости.
 FIT_COLOUR = "var(--attention)"
 
+# Цвет подписи точки: мелкий текст — текстовой ступенью, а не цветом точки.
+LABEL_COLOUR = "var(--text-secondary)"
+
 # Цвет заливки области между кривой Лоренца и линией равенства.
 AREA_COLOUR = "var(--accent-quiet)"
 
@@ -217,17 +220,41 @@ def scatter_fit_option(
     y_name: str = "",
     line: list[list[float]] | None = None,
     line_label: str = "",
+    labels: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    """Построить диаграмму рассеяния; линия — только при значимой связи."""
+    """
+    Построить диаграмму рассеяния; линия — только при значимой связи. ``labels`` — подписи
+    точек по коду территории (сокращения); перекрывающиеся подписи прячутся.
+    """
+    data: list[dict[str, Any]] = []
+    for point in points:
+        item: dict[str, Any] = {"name": point["name"], "value": [point["x"], point["y"]]}
+        short = (labels or {}).get(point.get("code", ""), "")
+        if short:
+            item["label"] = {"formatter": short}
+        data.append(item)
     series: list[dict[str, Any]] = [
         {
             "name": str(_("субъекты")),
             "type": "scatter",
             "symbolSize": 9,
-            "data": [
-                {"name": point["name"], "value": [point["x"], point["y"]]} for point in points
-            ],
+            "data": data,
             "emphasis": {"focus": "series"},
+            **(
+                {
+                    "label": {
+                        "show": True,
+                        "position": "right",
+                        "distance": 3,
+                        "fontSize": 10,
+                        "color": LABEL_COLOUR,
+                        "textBorderWidth": 0,
+                    },
+                    "labelLayout": {"hideOverlap": True},
+                }
+                if labels
+                else {}
+            ),
         }
     ]
 
@@ -238,6 +265,8 @@ def scatter_fit_option(
                 "type": "line",
                 "data": line,
                 "symbol": "none",
+                # Цвет значка легенды — тот же, что у линии.
+                "itemStyle": {"color": FIT_COLOUR},
                 "lineStyle": {"color": FIT_COLOUR, "width": 2},
                 "silent": True,
                 "tooltip": {"show": False},

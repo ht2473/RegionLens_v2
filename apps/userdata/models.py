@@ -8,6 +8,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.models import PublicIdentifierModel, TimeStampedModel
@@ -96,6 +97,15 @@ class DatasetVersion(TimeStampedModel):
         Dataset, verbose_name="набор", on_delete=models.CASCADE, related_name="versions"
     )
     number = models.PositiveIntegerField("номер")
+    # Версия, на которой основана новая: её рецепт перенесён, с ней сравниваются значения.
+    previous = models.ForeignKey(
+        "self",
+        verbose_name="прежняя версия",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
     file_name = models.CharField("имя файла", max_length=255)
     file_size = models.BigIntegerField("размер файла")
     sha256 = models.CharField("отпечаток SHA-256", max_length=64)
@@ -232,3 +242,82 @@ class TerritoryLabel(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.label_key} → {self.territory_code}"
+
+
+class Board(PublicIdentifierModel, TimeStampedModel):
+    """Доска: тексты и карточки видов холста и инструментов с общим годом и территориями."""
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="владелец",
+        on_delete=models.CASCADE,
+        related_name="boards",
+    )
+    title = models.CharField("название", max_length=200)
+    description = models.TextField("описание", blank=True)
+    # Блоки по порядку: текст или карточка вида (страница и её параметры), см. boards.py.
+    blocks = models.JSONField("блоки", default=list, blank=True)
+    # Общий выбор для карточек холста; пусто — у каждой карточки свой.
+    year = models.SmallIntegerField("общий год", null=True, blank=True)
+    territories = models.JSONField("общие территории", default=list, blank=True)
+
+    class Meta:
+        verbose_name = "доска"
+        verbose_name_plural = "доски"
+        ordering = ["-updated_at"]
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class Share(PublicIdentifierModel, TimeStampedModel):
+    """
+    Закрытая ссылка на таблицу или доску: только чтение без входа, со сроком и отзывом.
+
+    Токен хранится отпечатком SHA-256: увидеть ссылку можно только при создании.
+    """
+
+    dataset = models.ForeignKey(
+        Dataset,
+        verbose_name="таблица",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="shares",
+    )
+    board = models.ForeignKey(
+        Board,
+        verbose_name="доска",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="shares",
+    )
+    token_hash = models.CharField("отпечаток токена", max_length=64, unique=True)
+    expires_at = models.DateTimeField("действует до")
+    revoked_at = models.DateTimeField("отозвана", null=True, blank=True)
+    downloads = models.BooleanField("можно скачивать", default=False)
+    opened_count = models.PositiveIntegerField("открытий", default=0)
+    last_opened_at = models.DateTimeField("последнее открытие", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "закрытая ссылка"
+        verbose_name_plural = "закрытые ссылки"
+        ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(dataset__isnull=False, board__isnull=True)
+                    | models.Q(dataset__isnull=True, board__isnull=False)
+                ),
+                name="userdata_share_one_target",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.dataset or self.board} — {self.expires_at:%d.%m.%Y}"
+
+    @property
+    def is_active(self) -> bool:
+        """Не отозвана и не истекла."""
+        return self.revoked_at is None and self.expires_at > timezone.now()

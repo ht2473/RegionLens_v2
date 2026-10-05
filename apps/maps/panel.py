@@ -1,5 +1,6 @@
 """
-Картограмма рабочей поверхности: географическая (:mod:`apps.maps.cartogram`) или плиточная.
+Картограмма рабочей поверхности: географическая (:mod:`apps.maps.cartogram`), плиточная
+или малые графики по плиточной раскладке (:mod:`apps.maps.multiples`).
 
 Разбиение по классам шкалы (:func:`build_values`) — общее с представлением распределения.
 """
@@ -16,10 +17,10 @@ from apps.catalog.indicator import describe_series
 from apps.catalog.models import Territory
 from apps.core.templatetags.formatting import position_share, ru_number
 from apps.surface.state import SurfaceState
-from apps.warehouse.queries import series_values_by_territory
+from apps.warehouse.queries import region_panel, series_values_by_territory
 
 from .boundaries import boundaries_available, boundaries_meta
-from .cartogram import build_map
+from .cartogram import DEFINITION_PREFIX, build_map
 from .classification import (
     DEFAULT_CLASSES,
     DEFAULT_METHOD,
@@ -32,19 +33,26 @@ from .classification import (
     histogram,
     sequential_palette,
 )
+from .multiples import build_multiples
 from .tiles import tile_grid, tile_position
 
-# Режимы отображения карты.
+# Режимы отображения карты: география, плитки и малые графики по плиточной раскладке.
 MODE_GEOGRAPHIC = "geo"
 MODE_TILES = "tiles"
-MODES = (MODE_GEOGRAPHIC, MODE_TILES)
+MODE_SMALL = "small"
+MODES = (MODE_GEOGRAPHIC, MODE_TILES, MODE_SMALL)
 
 # Число территорий в списках лидеров и аутсайдеров под картой.
 LEADERS_LIMIT = 5
 
 
-def build(request: HttpRequest, state: SurfaceState) -> dict[str, Any]:
-    """Подготовить всё, что нужно для отрисовки карты и легенды."""
+def build(
+    request: HttpRequest, state: SurfaceState, *, prefix: str = DEFINITION_PREFIX
+) -> dict[str, Any]:
+    """
+    Подготовить всё, что нужно для отрисовки карты и легенды; ``prefix`` — приставка
+    опознавателей контуров, если карт на странице несколько (доска).
+    """
     context: dict[str, Any] = {
         "boundaries_available": boundaries_available(),
         "boundaries_meta": boundaries_meta(),
@@ -67,8 +75,18 @@ def build(request: HttpRequest, state: SurfaceState) -> dict[str, Any]:
             "leaders_bottom": bottom,
             "tile_grid": tile_grid(rows),
             "tile_caption": _("Плиточная картограмма: %(title)s") % {"title": series.full_title},
-            "geo_map": (build_map(rows, selected=state.codes) if mode == MODE_GEOGRAPHIC else None),
+            "geo_map": (
+                build_map(rows, selected=state.codes, prefix=prefix)
+                if mode == MODE_GEOGRAPHIC
+                else None
+            ),
             "geo_caption": _("Картограмма: %(title)s") % {"title": series.full_title},
+            "multiples": (
+                build_multiples(rows, region_panel(series.key), state.year)
+                if mode == MODE_SMALL
+                else None
+            ),
+            "multiples_caption": _("Малые графики: %(title)s") % {"title": series.full_title},
         }
     )
     return context
@@ -191,9 +209,9 @@ def build_values(request: HttpRequest, state: SurfaceState) -> dict[str, Any]:
 
 
 def _resolve_mode(value: str | None) -> str:
-    """Определить режим отображения карты; без файла границ — плиточный."""
+    """Определить режим отображения карты; без файла границ вместо географии — плитки."""
     mode = value if value in MODES else MODE_GEOGRAPHIC
-    if not boundaries_available():
+    if mode == MODE_GEOGRAPHIC and not boundaries_available():
         return MODE_TILES
     return mode
 

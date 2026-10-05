@@ -55,9 +55,10 @@
 {# Адрес библиотеки графиков — для догрузки с первым графиком; подписи — здесь ради перевода. #}
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
       data-chart-library="{% static 'vendor/echarts.min.js' %}"
-      data-chart-save="{% translate 'Сохранить график картинкой' %}"
-      data-chart-save-short="{% translate 'PNG' %}"
-      data-map-save="{% translate 'Сохранить карту чертежом SVG' %}"
+      data-image-save="{% translate 'Сохранить картинкой с подписью и источником' %}"
+      data-image-save-png="{% translate 'Сохранить картинкой PNG' %}"
+      data-image-save-svg="{% translate 'Сохранить чертежом SVG' %}"
+      data-site-name="{{ project.name }}"
       data-scroll-back="{% translate 'Прокрутить назад' %}"
       data-scroll-forward="{% translate 'Прокрутить вперёд' %}">
   <a class="skip-link" href="#main-content">{% translate "Перейти к содержимому" %}</a>

@@ -67,6 +67,7 @@ class CabinetOverviewView(CabinetViewMixin, TemplateView):
         )
         context["own_tables_count"] = user.datasets.count()
         context["own_tables_bytes"] = sum(item.size_bytes for item in user.datasets.all())
+        context["own_boards"] = list(user.boards.order_by("-updated_at")[:RECENT_VIEWS])
         context["panel_needs_code"] = user.has_panel_access and not user.two_factor_enabled
         return context
 

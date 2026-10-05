@@ -33,7 +33,9 @@
     {% endif %}
 
     {# --- Поверхность карты ------------------------------------------------------------ #}
-    {% if mode == 'geo' and geo_map %}
+    {% if mode == 'small' %}
+      {% include "maps/partials/_multiples.html" %}
+    {% elif mode == 'geo' and geo_map %}
       {% include "maps/partials/_geo_map.html" %}
     {% else %}
       {% include "partials/_tile_map.html" with tile_rows=rows tile_caption=tile_caption %}
@@ -43,7 +45,13 @@
     {% include "maps/partials/_legend.html" %}
 
     <div class="chart-frame__footer">
-      {% if mode == 'geo' and geo_map %}
+      {% if mode == 'small' and multiples %}
+        {% blocktranslate trimmed with first=multiples.first_year|stringformat:"d" last=multiples.last_year|stringformat:"d" low=multiples.low|ru_number high=multiples.high|ru_number %}
+          Малые графики: в клетке каждого субъекта — ход показателя с {{ first }} по {{ last }} год.
+          Шкала общая для всех клеток — от {{ low }} до {{ high }}; точка — выбранный год в цвете
+          класса шкалы.
+        {% endblocktranslate %}
+      {% elif mode == 'geo' and geo_map %}
         {% translate "Равновеликая проекция: площадь региона на карте пропорциональна настоящей. Малые регионы вынесены во врезки." %}
         {% if boundaries_meta %}{% translate "Границы регионов — Natural Earth, общественное достояние." %}{% endif %}
       {% else %}

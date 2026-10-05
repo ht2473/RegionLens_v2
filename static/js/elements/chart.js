@@ -3,6 +3,16 @@
 
 import { fixTextMeasure, isNarrow, prepare } from "../lib/chart-options.js";
 import { follow } from "../lib/highlight.js";
+import {
+  captionOf,
+  composeSvg,
+  download,
+  downloadSvg,
+  fileName,
+  framePng,
+  saveControls,
+  saveLabels,
+} from "../lib/image-export.js";
 import { onThemeChange } from "../lib/theme.js";
 import { token } from "../lib/tokens.js";
 
@@ -67,27 +77,28 @@ function ensureFont() {
 
 /* --------------------------------------------------------------------------------- */
 
-/** Имя файла картинки: название системы, предмет графика и дата. */
-function fileName(title) {
-  // Название системы в конце заголовка окна отсекается.
-  const page = document.title.split(" — ")[0];
-  const subject = (title || page || "chart")
-    .replace(/[\\/:*?"<>|]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 80);
-  const today = new Date().toISOString().slice(0, 10);
-  return `RegionLens — ${subject} — ${today}.png`;
-}
-
-/** Отдать готовую картинку файлом. */
-function download(url, name) {
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = name;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+/**
+ * Настройки с названиями шрифтов в одинарных кавычках: строковый вывод SVG библиотеки
+ * вписывает семейство в атрибут как есть, и «"Segoe UI"» ломает разметку файла.
+ *
+ * @param {*} value настройки или их часть
+ * @returns {*} копия с исправленными fontFamily
+ */
+function singleQuotedFonts(value) {
+  if (Array.isArray(value)) {
+    return value.map(singleQuotedFonts);
+  }
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+  const copy = {};
+  Object.entries(value).forEach(([key, item]) => {
+    copy[key] =
+      key === "fontFamily" && typeof item === "string"
+        ? item.replace(/"/g, "'")
+        : singleQuotedFonts(item);
+  });
+  return copy;
 }
 
 class RegionChart extends HTMLElement {
@@ -226,45 +237,56 @@ class RegionChart extends HTMLElement {
   }
 
   /**
-   * Поставить кнопку сохранения картинки (двойное разрешение, подложка карточки).
+   * Поставить кнопки сохранения картинкой: PNG (двойное разрешение) и SVG, обе — с
+   * заголовком, годом и единицей сверху и строкой источника снизу.
    *
-   * Кнопка — в строке заголовка рамки графика, без неё — в углу холста; подпись — из разметки.
+   * Кнопки — в строке заголовка рамки графика, без неё — в углу холста; подписи — из разметки.
    */
   addSaveControl() {
-    const label = document.body.dataset.chartSave;
-    if (!label || this.saveControl) {
+    if (!document.body.dataset.imageSave || this.saveControl) {
       return;
     }
     const frame = this.closest(".chart-frame, .card, .indicator-chart");
     const row = frame
       ? frame.querySelector(".chart-frame__header, .card__header, .indicator-chart__caption")
       : null;
+    const group = saveControls(saveLabels(), (kind) => this.saveImage(kind), Boolean(row));
+    (row || this).appendChild(group);
+    this.saveControl = group;
+  }
 
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = row ? "chart-save chart-save--inline no-print" : "chart-save no-print";
-    button.title = label;
-    button.innerHTML =
-      '<svg aria-hidden="true"><use href="#icon-download"></use></svg>' +
-      `<span>${document.body.dataset.chartSaveShort || "PNG"}</span>`;
-    button.setAttribute("aria-label", label);
-
-    button.addEventListener("click", () => {
-      if (!this.instance) {
-        return;
+  /** Сохранить график картинкой с подписью: «png» или «svg». */
+  saveImage(kind) {
+    if (!this.instance) {
+      return;
+    }
+    const caption = captionOf(this);
+    const width = this.instance.getWidth();
+    const height = this.instance.getHeight();
+    if (kind === "svg") {
+      // Чертёж — отдельным экземпляром с векторной отрисовкой в невидимом узле, без анимации.
+      const holder = document.createElement("div");
+      holder.style.cssText = `position:absolute;left:-10000px;top:0;width:${width}px;height:${height}px`;
+      document.body.appendChild(holder);
+      const vector = window.echarts.init(holder, null, { renderer: "svg", width, height });
+      vector.setOption({ ...singleQuotedFonts(prepare(this.options, this)), animation: false });
+      const drawing = vector.renderToSVGString();
+      vector.dispose();
+      holder.remove();
+      if (drawing) {
+        downloadSvg(composeSvg(drawing, width, height, caption).svg, fileName(caption, "svg"));
       }
-      // Подложка явно: холст прозрачен.
-      const url = this.instance.getDataURL({
-        type: "png",
-        pixelRatio: 2,
-        backgroundColor: token("--surface-raised", "#ffffff"),
-      });
-      const title = this.options.title && this.options.title.text ? this.options.title.text : "";
-      download(url, fileName(title));
+      return;
+    }
+    // Подложка явно: холст прозрачен.
+    const chart = this.instance.getDataURL({
+      type: "png",
+      pixelRatio: 2,
+      backgroundColor: token("--surface-raised", "#ffffff"),
     });
-
-    (row || this).appendChild(button);
-    this.saveControl = button;
+    framePng(chart, width, height, caption)
+      .then((url) => download(url, fileName(caption, "png")))
+      .catch(() => download(chart, fileName(caption, "png")));
   }
 }
 

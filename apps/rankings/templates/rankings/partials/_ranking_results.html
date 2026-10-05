@@ -106,6 +106,29 @@
     </div>
   {% endif %}
 
+  {# --- Было — стало: значения двух лет ---------------------------------------------------- #}
+  {% if dumbbell_option %}
+    <div class="chart-frame">
+      <div class="chart-frame__header">
+        <div>
+          <div class="chart-frame__title">{% translate "Было — стало" %}</div>
+          <div class="chart-frame__subtitle">
+            {{ period_start|year }} → {{ period_end|year }} ·
+            {% blocktranslate trimmed with count=dumbbell_edge %}первые и последние {{ count }} мест{% endblocktranslate %}{% if selected_codes %} {% translate "и отмеченные территории" %}{% endif %}
+          </div>
+        </div>
+      </div>
+      <rl-chart class="chart chart--tall" data-options="ranking-dumbbell-option"></rl-chart>
+      {{ dumbbell_option|json_script:"ranking-dumbbell-option" }}
+      <div class="chart-frame__footer">
+        {% blocktranslate trimmed %}
+          Серая точка — значение года сравнения, цветная — года рейтинга; длина отрезка —
+          насколько изменилось значение. Год сравнения выбирается в панели.
+        {% endblocktranslate %}
+      </div>
+    </div>
+  {% endif %}
+
   {# --- Таблица рейтинга -------------------------------------------------------------------- #}
   <section aria-labelledby="ranking-table-title">
     <div class="surface-block__head">

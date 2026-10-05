@@ -24,7 +24,7 @@ from apps.core.navigation import Crumb
 from apps.core.views import BreadcrumbMixin
 from apps.warehouse import queries
 
-from . import access, export, glance, ingest, monthly, scope, services
+from . import access, boards, export, glance, ingest, monthly, scope, services
 from .models import Dataset, DatasetSeries, DatasetVersion
 from .series import FEW_REGIONS, UserSeries
 
@@ -71,6 +71,7 @@ class SectionView(BreadcrumbMixin, TemplateView):
             else settings.USERDATA_GUEST_MAX_DATASETS,
             guest_hours=settings.USERDATA_GUEST_HOURS,
             retention_days=backup_retention_days(),
+            boards=list(boards.owned(user)),
         )
         return context
 
@@ -103,18 +104,41 @@ class DatasetMixin:
         return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
 
 
-class DatasetView(DatasetMixin, BreadcrumbMixin, TemplateView):
-    """Страница таблицы: показатели и виды, пометки, территории, файл, выгрузка, удаление."""
+class ReadableDatasetMixin:
+    """
+    Набор для страниц чтения: свой или открытый закрытой ссылкой (``owner`` ложно);
+    прочий — 404.
+    """
+
+    request: HttpRequest
+    dataset: Dataset
+    owner: bool
+
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        self.dataset = access.readable_or_404(request, kwargs["public_id"])
+        self.owner = scope.owns(self.dataset)
+        return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
+
+
+class DatasetView(ReadableDatasetMixin, BreadcrumbMixin, TemplateView):
+    """
+    Страница таблицы: показатели и виды, пометки, территории, выгрузка; владельцу — ещё
+    файл, версии, закрытые ссылки и удаление. Читатель ссылки ничего не меняет.
+    """
 
     template_name = "userdata/dataset.html"
 
     def get_crumbs(self) -> tuple[Crumb, ...]:
+        if not self.owner:
+            return (Crumb(title=self.dataset.title),)
         return (
             Crumb(title=_("Свои данные"), url=reverse("userdata:index")),
             Crumb(title=self.dataset.title),
         )
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        from .share_views import share_context
+
         context = super().get_context_data(**kwargs)
         dataset = self.dataset
         version = dataset.current_version
@@ -122,10 +146,16 @@ class DatasetView(DatasetMixin, BreadcrumbMixin, TemplateView):
             page_title=dataset.title,
             dataset=dataset,
             version=version,
+            owner=self.owner,
+            can_export=self.owner or scope.exportable(dataset.code),
             continue_url=_continue_url(dataset, version),
             guest=dataset.owner_id is None,
             retention_days=backup_retention_days(),
         )
+        if self.owner and dataset.owner_id is not None:
+            context.update(share_context(self.request, dataset))
+        if self.owner:
+            context.update(_versions_context(dataset))
         if version is None or version.state != DatasetVersion.State.BUILT:
             return context
         records = list(version.series.order_by("order"))
@@ -154,6 +184,7 @@ class DatasetView(DatasetMixin, BreadcrumbMixin, TemplateView):
             alone_missing=version.report.get("build", {}).get("alone_missing", []),
             alone_conflict=version.report.get("build", {}).get("alone_conflict", []),
             conflicts=report.get("conflicts", 0),
+            masks=[item["value"] for item in report.get("masks", []) if item.get("masked")],
             xlsx_allowed=(version.values_count or 0) <= export.XLSX_ROWS,
         )
         return context
@@ -203,12 +234,35 @@ def _views(item: UserSeries) -> list[dict[str, Any]]:
 
 
 def _continue_url(dataset: Dataset, version: DatasetVersion | None) -> str:
-    """Шаг мастера, на котором остановилась несобранная таблица."""
+    """Шаг мастера, на котором остановилась несобранная таблица или новая версия."""
+    from . import renew
+
     if version is None or not version.recipe.get("table"):
         return reverse("userdata:file", args=[dataset.public_id])
-    if not version.recipe.get("form"):
+    described = version.recipe.get("headers") if renew.is_renewal(version) else True
+    if not version.recipe.get("form") or not described:
         return reverse("userdata:table", args=[dataset.public_id])
     return reverse("userdata:series", args=[dataset.public_id])
+
+
+def _versions_context(dataset: Dataset) -> dict[str, Any]:
+    """Версии таблицы владельцу: собранные, новая в работе и формы новой версии."""
+    from . import renew
+    from .forms import PasteForm, UploadForm
+
+    draft = renew.draft_of(dataset)
+    return {
+        "versions": list(
+            dataset.versions.filter(state=DatasetVersion.State.BUILT).order_by("-number")
+        ),
+        "draft": draft,
+        "draft_url": _continue_url(dataset, draft) if draft is not None else "",
+        "draft_questions": renew.pending_questions(draft) if draft is not None else [],
+        "version_upload_form": UploadForm(),
+        "version_paste_form": PasteForm(auto_id="id_version_%s"),
+        "upload_limit": services.upload_size_text(),
+        "keep_versions": settings.USERDATA_KEEP_VERSIONS,
+    }
 
 
 def _groups(
@@ -286,8 +340,11 @@ class DeleteView(DatasetMixin, View):
         return redirect("userdata:index")
 
 
-class DownloadView(DatasetMixin, View):
-    """Выгрузка таблицы: длинная таблица CSV или XLSX, исходный файл как загружен."""
+class DownloadView(ReadableDatasetMixin, View):
+    """
+    Выгрузка таблицы: длинная таблица CSV или XLSX, исходный файл как загружен. Читателю
+    ссылки — только если ссылка разрешает скачивать, и без исходного файла.
+    """
 
     def get(
         self,
@@ -296,9 +353,11 @@ class DownloadView(DatasetMixin, View):
         kind: str,
     ) -> HttpResponseBase:
         version = self.dataset.current_version
-        if version is None:
+        if version is None or not (self.owner or scope.exportable(self.dataset.code)):
             raise Http404
         if kind == "source":
+            if not self.owner:
+                raise Http404
             return _source_file(version)
         source = scope.source_of_version(version)
         if source is None or kind not in {"csv", "xlsx"}:

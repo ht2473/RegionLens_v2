@@ -26,6 +26,19 @@
     {% include "userdata/_waiting.html" %}
   {% else %}
 
+  {% if renewal %}
+    <div class="callout callout--info">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        <div class="callout__title">{% blocktranslate trimmed with number=version.number %}Новая версия {{ number }}{% endblocktranslate %}</div>
+        <p>
+          {% translate "Ответы прежней версии уже перенесены. Пока новая версия не собрана, таблица на карте и по ссылкам — в текущей." %}
+          {% if renewal_questions %}{% translate "Нужно ответить" %}: {{ renewal_questions|join:"; " }}.{% endif %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
   <section class="recognition-facts" aria-label="{% translate 'Что найдено' %}">
     <dl class="definition-list definition-list--compact">
       <dt>{% translate "Строк" %}</dt>

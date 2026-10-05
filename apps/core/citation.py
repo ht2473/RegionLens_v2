@@ -60,6 +60,11 @@ def _series_source(series_key: str, year: int | str) -> tuple[str, str]:
     return gettext(settings.DATA_SOURCE_ORIGIN), _dataset_part()
 
 
+def series_source(series_key: str, year: int | str = "") -> str:
+    """Строка источника значений ряда — для подписи карточки доски и картинки."""
+    return _series_source(series_key, year)[1]
+
+
 def view_citation(*, title: str, url: str, year: int | str = "", series_key: str = "") -> str:
     """Ссылка на расчёт: ряд и год среза, адрес вида, дата обращения и источник значений."""
     subject = f"{title}, {year}" if year else title

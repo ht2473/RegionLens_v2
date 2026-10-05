@@ -14,11 +14,16 @@
       <input type="radio" name="mode" value="tiles" {% if mode == 'tiles' %}checked{% endif %}>
       <span>{% translate "плитки" %}</span>
     </label>
+    <label class="segmented__option">
+      <input type="radio" name="mode" value="small" {% if mode == 'small' %}checked{% endif %}>
+      <span>{% translate "малые графики" %}</span>
+    </label>
   </div>
   <span class="field__hint">
     {% blocktranslate trimmed %}
       На плиточной карте все субъекты одинакового размера: площадь региона
-      не связана с величиной показателя.
+      не связана с величиной показателя. Малые графики показывают в той же раскладке
+      ход показателя по годам.
     {% endblocktranslate %}
   </span>
 </div>

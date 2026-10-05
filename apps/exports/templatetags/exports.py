@@ -1,4 +1,4 @@
-"""Кнопка выгрузки с форматами из описания вида документа."""
+"""Кнопка выгрузки с форматами из описания вида документа и право выгружать ряд."""
 
 from __future__ import annotations
 
@@ -54,3 +54,12 @@ def export_button(
         for code, label in available_formats(kind)
     ]
     return {"export_options": options, "export_title": title}
+
+
+@register.filter
+def exportable(series: Any) -> bool:
+    """Ряд можно выгрузить: склада — всегда, своей таблицы — владельцу или по разрешению ссылки."""
+    from apps.warehouse.routing import exportable as allowed
+
+    key = getattr(series, "key", series)
+    return bool(key) and allowed(str(key))

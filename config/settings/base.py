@@ -461,6 +461,15 @@ USERDATA_PARALLEL_JOBS = env.int("USERDATA_PARALLEL_JOBS", default=2)
 USERDATA_JOB_SECONDS = env.int("USERDATA_JOB_SECONDS", default=120)
 # Показ ряда набора: память соединения с файлом набора (поток — один).
 USERDATA_QUERY_MEMORY = env.str("USERDATA_QUERY_MEMORY", default="128MB")
+# Версий таблицы на диске: значения прежних остаются в отчёте о различиях новой.
+USERDATA_KEEP_VERSIONS = env.int("USERDATA_KEEP_VERSIONS", default=5)
+# Закрытые ссылки: действующих на таблицу или доску; неудачных попыток открыть ссылку
+# с адреса за 10 минут (подбор токена).
+USERDATA_MAX_SHARES = env.int("USERDATA_MAX_SHARES", default=10)
+USERDATA_SHARE_ATTEMPTS = env.int("USERDATA_SHARE_ATTEMPTS", default=30)
+# Доски: на учётную запись и блоков на доске.
+USERDATA_MAX_BOARDS = env.int("USERDATA_MAX_BOARDS", default=20)
+USERDATA_BOARD_BLOCKS = env.int("USERDATA_BOARD_BLOCKS", default=40)
 
 # ---------------------------------------------------------------------------------------
 # Программный интерфейс REST: только чтение, без ключей, предел по адресу клиента

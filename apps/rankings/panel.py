@@ -11,9 +11,10 @@ from typing import Any
 from django.http import HttpRequest
 
 from apps.catalog.constants import territory_short_code
+from apps.catalog.indicator import describe_series
 from apps.catalog.models import Territory
 from apps.catalog.selectors import resolve_year
-from apps.core.charts import bump_option
+from apps.core.charts import bump_option, dumbbell_option
 from apps.surface.state import SurfaceState
 from apps.warehouse.queries import (
     rank_history,
@@ -31,6 +32,9 @@ MOVERS_LIMIT = 5
 
 # Наименьшее число лет для графика движения позиций.
 MIN_BUMP_YEARS = 2
+
+# «Было — стало»: первые и последние места рейтинга и отмеченные территории.
+DUMBBELL_EDGE = 10
 
 
 def build(request: HttpRequest, state: SurfaceState) -> dict[str, Any]:
@@ -90,6 +94,10 @@ def build(request: HttpRequest, state: SurfaceState) -> dict[str, Any]:
         "rows": rows,
         "movers": movers,
         "bump_option": _bump_chart(series.key, rows, years, ascending, selected),
+        "dumbbell_option": _dumbbell_chart(series, rows, year, previous_year, selected)
+        if previous_year
+        else None,
+        "dumbbell_edge": DUMBBELL_EDGE,
         "statistics": series_statistics(series.key, year),
         "ranked_total": len(rows),
     }
@@ -130,6 +138,40 @@ def _districts() -> list[Territory]:
 def _territory_slugs() -> dict[str, str]:
     """Сопоставить коды территорий их слагам одной выборкой."""
     return dict(Territory.objects.values_list("code", "slug"))
+
+
+def _dumbbell_chart(
+    series: Any,
+    rows: list[dict[str, Any]],
+    year: int,
+    previous_year: int,
+    selected: set[str],
+) -> dict[str, Any] | None:
+    """
+    «Было — стало» за год сравнения и год рейтинга: первые и последние места и отмеченные
+    территории в порядке рейтинга.
+    """
+    if not rows:
+        return None
+    edge = {row["territory_code"] for row in rows[:DUMBBELL_EDGE] + rows[-DUMBBELL_EDGE:]}
+    item = describe_series(series)
+    shown = [
+        {
+            "name": row["name"],
+            "short": territory_short_code(row["territory_code"], row["abbreviation"]),
+            "before": row["previous_value"],
+            "after": row["value"],
+        }
+        for row in rows
+        if row["territory_code"] in edge | selected
+    ]
+    first, second = sorted((previous_year, year))
+    if previous_year > year:
+        for entry in shown:
+            entry["before"], entry["after"] = entry["after"], entry["before"]
+    return dumbbell_option(
+        shown, before=first, after=second, precision=item.precision, unit=item.unit_label
+    )
 
 
 def _bump_chart(

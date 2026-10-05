@@ -45,7 +45,7 @@ def _moment(value: Any) -> str | None:
 def export_account(user: User) -> dict[str, Any]:
     """Всё, что хранится о пользователе: профиль, сохранённое, таблицы и обращения."""
     from apps.feedback.models import Ticket
-    from apps.userdata.services import export_datasets
+    from apps.userdata.services import export_boards, export_datasets
     from apps.workspace.selectors import favorites, saved_queries
 
     region = user.region
@@ -88,6 +88,7 @@ def export_account(user: User) -> dict[str, Any]:
             for query in saved_queries(user)
         ],
         "own_data": export_datasets(user),
+        "boards": export_boards(user),
         "tickets": [
             {
                 "number": ticket.pk,

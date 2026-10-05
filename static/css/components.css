@@ -1875,16 +1875,24 @@ rl-time-slider {
   min-height: 320px;
 }
 
-/* Кнопка сохранения картинки: почти прозрачна до наведения, при фокусе видна. */
+/* Кнопки сохранения картинкой PNG и SVG: почти прозрачны до наведения, при фокусе видны. */
 
-.chart-save {
+.chart-save-group {
   position: absolute;
   top: var(--space-2);
   right: var(--space-2);
   z-index: var(--z-base);
   display: inline-flex;
+  gap: var(--space-1);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.chart-save {
+  display: inline-flex;
   align-items: center;
   gap: var(--space-1);
+  min-height: 24px;
   padding: var(--space-1) var(--space-2);
   background-color: var(--surface-raised);
   border: 1px solid var(--border-subtle);
@@ -1893,8 +1901,6 @@ rl-time-slider {
   font: inherit;
   font-size: var(--text-2xs);
   cursor: pointer;
-  opacity: 0;
-  transition: opacity var(--duration-fast) var(--ease-out);
 }
 
 .chart-save svg {
@@ -1902,9 +1908,10 @@ rl-time-slider {
   height: 13px;
 }
 
-.chart:hover .chart-save,
-.geo-map-wrapper:hover .chart-save,
-.chart-save:focus-visible {
+.chart:hover .chart-save-group,
+.geo-map-wrapper:hover .chart-save-group,
+.tile-map-wrapper:hover .chart-save-group,
+.chart-save-group:focus-within {
   opacity: 1;
 }
 
@@ -1913,15 +1920,15 @@ rl-time-slider {
   color: var(--text-primary);
 }
 
-/* Без указателя кнопка видна постоянно. */
+/* Без указателя кнопки видны постоянно. */
 @media (hover: none) {
-  .chart-save {
+  .chart-save-group {
     opacity: 1;
   }
 }
 
-/* Кнопка в строке заголовка рамки графика — видна всегда и ничего не закрывает. */
-.chart-save.chart-save--inline {
+/* Кнопки в строке заголовка рамки графика — видны всегда и ничего не закрывают. */
+.chart-save-group.chart-save-group--inline {
   position: static;
   flex-shrink: 0;
   align-self: flex-start;
@@ -2132,6 +2139,11 @@ rl-time-slider {
 .geo-map__region.is-selected use {
   stroke: var(--accent);
   stroke-width: 2.2;
+}
+
+/* Сохранение картинкой: состояние карты без переходов (choropleth.js). */
+.is-exporting .geo-map__region use {
+  transition: none;
 }
 
 /* Приглушение при разборе легенды: гаснет заливка остальных классов, но не граница. */
@@ -2774,11 +2786,64 @@ details[open] > .rail-more__summary {
 
 /* Карты на узком экране: подписи важнее, чем умещение по ширине. */
 .tile-map-wrapper {
+  position: relative;
   overflow-x: auto;
 }
 
+/* Малые графики по плиточной раскладке: линия хода по годам в клетке субъекта. */
+.multiples {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.multiples__back {
+  fill: var(--surface-sunken);
+}
+
+.multiples__back--empty {
+  fill: var(--no-data-fill);
+}
+
+.multiples__cell:hover .multiples__back,
+.multiples__cell:focus-visible .multiples__back {
+  fill: var(--surface-accent-soft);
+}
+
+.multiples__cell.is-selected .multiples__back {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.multiples__label {
+  font-family: var(--font-narrow);
+  font-size: 9px;
+  font-weight: var(--weight-semibold);
+  fill: var(--text-secondary);
+  pointer-events: none;
+}
+
+.multiples__line {
+  fill: none;
+  stroke: var(--text-primary);
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Точка — отрезок нулевой длины с круглым концом: кругом при любом масштабе. */
+.multiples__dot {
+  fill: none;
+  stroke: var(--text-primary);
+  stroke-width: 6;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
 @media (max-width: 720px) {
-  .tile-map {
+  .tile-map,
+  .multiples {
     min-width: 620px;
     max-height: none;
   }
@@ -3229,6 +3294,27 @@ rl-combobox:defined > select {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+/* Вид — карточкой на доску: под сохранением в кабинет, через черту. */
+.save-query__board {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Название новой доски — только когда выбрана новая доска. */
+.save-query__new-board {
+  display: none;
+}
+
+.save-query__board:has(option[value="new"]:checked) .save-query__new-board {
+  display: flex;
+}
+
+.save-query__board-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .export-menu {

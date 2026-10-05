@@ -4,9 +4,10 @@
   <span id="surface-indicator" class="htmx-indicator surface-actions__busy">
     {% translate "Обновление…" %}
   </span>
-  {% save_query_button panel.code %}
+  {# Ряд чужой таблицы, открытой закрытой ссылкой, в свой кабинет не сохраняется. #}
+  {% if not series.is_user or series.is_own %}{% save_query_button panel.code %}{% endif %}
   {% include "surface/partials/_share.html" %}
-  {% if series and year %}
+  {% if series and year and series|exportable %}
     {# Одно меню «Скачать»; вид выгрузки — от представления. #}
     {% export_button panel.export_kind series=series.key year=year ascending=ascending title=series.full_title %}
   {% endif %}

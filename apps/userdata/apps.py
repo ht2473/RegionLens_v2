@@ -13,9 +13,9 @@ class UserdataConfig(AppConfig):
     verbose_name = "Свои данные"
 
     def ready(self) -> None:
-        """Ключи «u:» слоя рядов ведут в файлы наборов с проверкой доступа."""
+        """Ключи «u:» слоя рядов ведут в файлы наборов с проверкой доступа и права скачивать."""
         from apps.warehouse import routing
 
         from . import scope, signals  # noqa: F401 — перенос наборов гостя при входе
 
-        routing.register(scope.resolve)
+        routing.register(scope.resolve, scope.exportable)

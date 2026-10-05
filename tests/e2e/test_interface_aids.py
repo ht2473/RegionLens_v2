@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -404,7 +405,7 @@ class TestTakeAway:
     """
 
     def test_chart_offers_an_image(self, page: Page, site: Any, warehouse_committed: Any) -> None:
-        """У каждого построенного графика есть кнопка сохранения картинки."""
+        """У каждого построенного графика есть кнопки сохранения картинкой PNG и SVG."""
         page.set_viewport_size({"width": 1600, "height": 1000})
         page.goto(f"{site.url}/ru/analytics/inequality/")
         page.wait_for_load_state("networkidle")
@@ -414,11 +415,13 @@ class TestTakeAway:
         if charts.count() == 0:
             pytest.skip("Склад не собран: графиков на странице нет")
 
-        assert page.locator(".chart-save").count() == charts.count()
+        assert page.locator(".chart-save-group").count() == charts.count()
 
-        with page.expect_download() as download:
-            page.locator(".chart-save").first.click()
-        assert download.value.suggested_filename.endswith(".png")
+        group = page.locator(".chart-save-group").first
+        for kind in ("png", "svg"):
+            with page.expect_download() as download:
+                group.locator(".chart-save", has_text=kind.upper()).click()
+            assert download.value.suggested_filename.endswith(f".{kind}")
 
     def test_map_is_saved_as_a_drawing(
         self, page: Page, site: Any, warehouse_committed: Any
@@ -433,13 +436,17 @@ class TestTakeAway:
         page.goto(f"{site.url}/ru/map/")
         page.wait_for_load_state("networkidle")
 
-        button = page.locator(".geo-map-wrapper .chart-save")
+        button = page.locator(".geo-map-wrapper .chart-save", has_text="SVG")
         if button.count() == 0:
             pytest.skip("Склад не собран: карта не построена")
 
         with page.expect_download() as download:
             button.click()
         assert download.value.suggested_filename.endswith(".svg")
+        drawing = Path(download.value.path()).read_text(encoding="utf-8")
+        # Картинка с подписью: заголовок, легенда и строка источника — текстом чертежа.
+        assert "RegionLens" in drawing
+        assert "<text" in drawing
 
     def test_saved_drawing_keeps_its_colours(
         self, page: Page, site: Any, warehouse_committed: Any

@@ -1,5 +1,5 @@
 {% load i18n %}
-{# Плиточная картограмма: плитка на субъект; подпись плитки (title) готовит вызывающий. #}
+{# Плиточная картограмма: плитка на субъект; подпись плитки (title) готовит вызывающий; tile_pattern — опознаватель штриховки, если карт на странице несколько. #}
 
 {% if tile_grid.available %}
   {# На узком экране карта прокручивается вбок. #}
@@ -9,7 +9,7 @@
        aria-label="{{ tile_caption }}">
     <defs>
       {# Штриховка для территорий без данных. #}
-      <pattern id="tile-no-data" width="3" height="3" patternUnits="userSpaceOnUse"
+      <pattern id="{{ tile_pattern|default:"tile-no-data" }}" width="3" height="3" patternUnits="userSpaceOnUse"
                patternTransform="rotate(45)">
         <rect width="3" height="3" fill="var(--no-data-fill)"></rect>
         <line x1="0" y1="0" x2="0" y2="3" stroke="var(--no-data-stroke)" stroke-width="1"></line>
@@ -23,7 +23,7 @@
           <title>{{ row.title }}</title>
           <rect x="{{ row.tile_px }}" y="{{ row.tile_py }}"
                 width="{{ tile_grid.size }}" height="{{ tile_grid.size }}" rx="1.2"
-                fill="{% if row.colour %}var({{ row.colour }}){% else %}url(#tile-no-data){% endif %}"></rect>
+                fill="{% if row.colour %}var({{ row.colour }}){% else %}url(#{{ tile_pattern|default:"tile-no-data" }}){% endif %}"></rect>
           <text x="{{ row.tile_px }}" y="{{ row.tile_py }}" dx="4.5" dy="5.6"
                 text-anchor="middle"
                 class="tile-map__label{% if row.light_label %} tile-map__label--light{% endif %}">{{ row.abbreviation|default:row.code }}</text>

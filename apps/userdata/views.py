@@ -26,6 +26,7 @@ from . import (
     jobs,
     matching,
     recognize,
+    renew,
     services,
     tables,
 )
@@ -41,8 +42,8 @@ STEPS: tuple[tuple[str, Promise], ...] = (
 
 
 def steps(current: str, dataset: Dataset | None = None) -> list[dict[str, Any]]:
-    """Шаги мастера: пройденные — ссылками, текущий отмечен."""
-    version = dataset.current_version if dataset else None
+    """Шаги мастера над версией в работе: пройденные — ссылками, текущий отмечен."""
+    version = renew.working_version(dataset) if dataset else None
     reachable = {
         "file": dataset is not None,
         "table": bool(version and version.recipe),
@@ -104,7 +105,10 @@ class UploadView(BreadcrumbMixin, TemplateView):
 
 
 class DatasetStepMixin(BreadcrumbMixin):
-    """Шаг мастера над своим набором; чужой — 404."""
+    """
+    Шаг мастера над своим набором; чужой — 404. Шаги идут над новой версией в работе,
+    если она есть, иначе над текущей.
+    """
 
     step = ""
     dataset: Dataset
@@ -112,7 +116,7 @@ class DatasetStepMixin(BreadcrumbMixin):
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         self.dataset = access.dataset_or_404(request, kwargs["public_id"])
-        version = self.dataset.current_version
+        version = renew.working_version(self.dataset)
         if version is None:
             return redirect("userdata:upload")
         self.version = version
@@ -129,6 +133,7 @@ class DatasetStepMixin(BreadcrumbMixin):
         context["dataset"] = self.dataset
         context["version"] = self.version
         context["steps"] = steps(self.step, self.dataset)
+        context["renewal"] = renew.is_renewal(self.version)
         return context
 
 
@@ -180,6 +185,10 @@ class FileStepView(DatasetStepMixin, TemplateView):
             except ingest.IngestError as error:
                 form.add_error(None, str(error))
             else:
+                if renew.is_automatic(self.version):
+                    # Новая версия: таблица выбрана человеком, остальное — как в прежней.
+                    renew.transfer(self.version)
+                    return redirect(renew.proceed(self.version, request.user))
                 return redirect("userdata:table", public_id=self.dataset.public_id)
         return self.render_to_response(self.get_context_data(choose_form=form))
 
@@ -211,6 +220,12 @@ class TableStepView(DatasetStepMixin, TemplateView):
         state = jobs.ensure_summary(self.version)
         if state in {jobs.RUNNING, jobs.FAILED}:
             return self.render_to_response(self.get_waiting_context(state))
+        if renew.is_automatic(self.version):
+            # Новая версия, ждавшая сводки большой таблицы: без вопросов — сразу к сборке.
+            target = renew.proceed(self.version, request.user)
+            if target != request.path:
+                return redirect(target)
+            self.version.refresh_from_db()
         return super().get(request, *args, **kwargs)
 
     def get_waiting_context(self, state: str) -> dict[str, Any]:
@@ -258,6 +273,7 @@ class TableStepView(DatasetStepMixin, TemplateView):
                 if kind in PERIOD_TEXTS
             ],
             is_authenticated=self.request.user.is_authenticated,
+            renewal_questions=renew.pending_questions(self.version),
         )
         return context
 
@@ -344,6 +360,11 @@ class SeriesStepView(DatasetStepMixin, TemplateView):
         return context
 
     def post(self, request: HttpRequest, public_id: str) -> HttpResponse:  # noqa: ARG002
+        if request.POST.get("action") == "masks":
+            # Выбор кодов-масок меняет рецепт: извлечение пройдёт заново.
+            self.version.recipe = {**self.version.recipe, "masks": request.POST.getlist("mask")}
+            self.version.save(update_fields=["recipe", "updated_at"])
+            return redirect(f"{reverse('userdata:series', args=[self.dataset.public_id])}#masks")
         if not extract.is_current(self.version):
             return redirect("userdata:series", public_id=self.dataset.public_id)
         meta_form = DatasetMetaForm(request.POST, instance=self.dataset)
@@ -353,7 +374,9 @@ class SeriesStepView(DatasetStepMixin, TemplateView):
         indicators.save(self.version, _indicator_answers(request))
         state = jobs.start(self.version, jobs.BUILD)
         if state == jobs.READY:
-            return redirect(first_view_url(self.version))
+            self.version.refresh_from_db(fields=["state"])
+            if self.version.state == DatasetVersion.State.BUILT:
+                return redirect(renew.after_build_url(self.version))
         return redirect("userdata:series", public_id=self.dataset.public_id)
 
 
@@ -367,8 +390,8 @@ class SeriesStatusView(DatasetStepMixin, View):
             response = HttpResponse(status=204)
             built = jobs.stage_state(self.version, jobs.BUILD) == jobs.READY
             if waited == jobs.BUILD and built:
-                # Сборка закончилась, пока страница ждала: сразу на карту.
-                response["HX-Redirect"] = first_view_url(self.version)
+                # Сборка закончилась, пока страница ждала: сразу на карту или к различиям.
+                response["HX-Redirect"] = renew.after_build_url(self.version)
             else:
                 response["HX-Refresh"] = "true"
             return response

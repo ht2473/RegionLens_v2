@@ -156,3 +156,77 @@ class TestRequests:
         dataset = _built(client)
         url = reverse("userdata:download", args=[dataset.public_id, "parquet"])
         assert client.get(url).status_code == 404
+
+
+class TestBoardsAndLinks:
+    """Доски и закрытые ссылки: разметка экранируется, токен не хранится, правка — с CSRF."""
+
+    def test_board_markup_is_escaped(self, member_client: Client, warehouse: Any) -> None:
+        from apps.userdata.models import Board
+
+        dataset = _built(member_client)
+        version = DatasetVersion.objects.get(pk=dataset.current_version_id)
+        record = version.series.first()
+        assert record is not None
+        member_client.post(reverse("userdata:board-new"), {"title": SCRIPT})
+        board = Board.objects.get()
+        edit = reverse("userdata:board-edit", args=[board.public_id])
+        member_client.post(edit, {"action": "add-text", "text": SCRIPT})
+        member_client.post(
+            reverse("userdata:board-add"),
+            {
+                "target": "map",
+                "query_string": f"series=u:{dataset.code}:{record.code}",
+                "board": str(board.public_id),
+            },
+        )
+        board.refresh_from_db()
+        card = next(block for block in board.blocks if block["kind"] == "view")
+        member_client.post(edit, {"action": "change", "block": card["id"], "title": SCRIPT})
+        pages = [
+            member_client.get(reverse("userdata:board", args=[board.public_id])),
+            member_client.get(reverse("userdata:board-card", args=[board.public_id, card["id"]])),
+            member_client.get(reverse("userdata:index")),
+            member_client.get(reverse("maps:choropleth")),
+        ]
+        for page in pages:
+            assert page.status_code == 200
+            assert SCRIPT not in page.text
+
+    def test_token_is_not_stored(self, member_client: Client, warehouse: Any) -> None:
+        from apps.userdata.models import Share
+
+        dataset = _built(member_client)
+        member_client.post(reverse("userdata:share-create", args=[dataset.public_id]), {})
+        page = member_client.get(reverse("userdata:dataset", args=[dataset.public_id]))
+        token = page.text.split("/s/", 1)[1].split('"', 1)[0]
+        share = Share.objects.get()
+        stored = " ".join(str(value) for value in Share.objects.values_list().get())
+        assert token not in stored
+        assert share.token_hash != token
+
+    def test_board_edit_needs_csrf(self, member: Any, warehouse: Any) -> None:
+        from apps.userdata import boards
+        from apps.userdata.models import Board
+
+        board = boards.create(member, "Доска")
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(member)
+        response = client.post(
+            reverse("userdata:board-edit", args=[board.public_id]),
+            {"action": "delete", "confirm": "1"},
+        )
+        assert response.status_code == 403
+        assert Board.objects.filter(pk=board.pk).exists()
+
+    def test_share_needs_csrf(self, member: Any, warehouse: Any) -> None:
+        from apps.userdata.models import Share
+
+        owner = Client()
+        owner.force_login(member)
+        dataset = _built(owner)
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(member)
+        response = client.post(reverse("userdata:share-create", args=[dataset.public_id]), {})
+        assert response.status_code == 403
+        assert not Share.objects.exists()
