@@ -252,19 +252,19 @@ def _deep_links(series: Series) -> list[dict[str, Any]]:
         {
             "href": reverse("maps:choropleth") + query,
             "icon": "map",
-            "title": _("Карта по годам"),
+            "title": _("Карта"),
             "text": _("Способ разбиения шкалы, округа, подписи значений"),
         },
         {
             "href": reverse("compare:index") + query,
             "icon": "dynamics",
-            "title": _("Динамика регионов"),
+            "title": _("Динамика"),
             "text": _("Ход величины в выбранных регионах рядом со страной"),
         },
         {
             "href": reverse("rankings:index") + query,
             "icon": "ranking",
-            "title": _("Рейтинг и перемещения"),
+            "title": _("Рейтинг"),
             "text": _("Все регионы по местам и кто поднялся или опустился"),
         },
         {
@@ -276,13 +276,13 @@ def _deep_links(series: Series) -> list[dict[str, Any]]:
         {
             "href": reverse("surface:table") + query,
             "icon": "table",
-            "title": _("Таблица значений"),
+            "title": _("Таблица"),
             "text": _("Регионы по строкам, годы по столбцам"),
         },
         {
             "href": reverse("analytics:inequality") + query,
             "icon": "inequality",
-            "title": _("Неравенство регионов"),
+            "title": _("Неравенство"),
             "text": _("Джини, децильный коэффициент и сближение во времени"),
         },
         {

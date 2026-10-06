@@ -51,7 +51,7 @@ class TestRoundTrip:
         "source",
         [
             "Показаны ряды с покрытием не менее 80 % субъектов и не менее десяти лет",
-            "Каталог показателей",
+            "Показатели",
         ],
     )
     def test_translate_tag_finds_the_translation(self, source: str) -> None:

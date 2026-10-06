@@ -59,7 +59,7 @@ def share_context(
         # Адрес запроса — полный, для командной строки и чужого кода.
         "api_request": replace(call, url=request.build_absolute_uri(call.url)) if call else None,
         "citation": view_citation(
-            title=state.series.full_title if state.series else str(panel.heading),
+            title=state.series.full_title if state.series else str(panel.tab),
             url=view_url,
             year=state.year or "",
             series_key=state.series.key if state.series else "",

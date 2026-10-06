@@ -347,7 +347,7 @@ class TestServiceEndpoints:
         """Страница без языкового префикса открывается на языке остального сайта."""
         client.get("/en/analytics/")
         response = client.get(reverse("api:docs"))
-        assert "Indicator catalogue" in response.content.decode("utf-8")
+        assert "Application programming interface" in response.content.decode("utf-8")
 
 
 class TestDetailPages:

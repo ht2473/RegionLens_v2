@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView
 
 from apps.catalog.selectors import MAX_COMPARE, grouped_territories, series_options
@@ -52,15 +54,18 @@ class SurfaceView(BreadcrumbMixin, TemplateView):
         return ["surface/partials/_main.html"]
 
     def get_crumbs(self) -> tuple[Crumb, ...]:
-        """Путь к странице."""
-        return (Crumb(title=self.panel.heading),)
+        """Путь к странице: раздел «Исследовать», как в меню, и представление."""
+        return (
+            Crumb(title=_("Исследовать"), url=reverse("maps:choropleth")),
+            Crumb(title=self.panel.tab),
+        )
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Собрать общее состояние, холст и переключатель представлений."""
         context = super().get_context_data(**kwargs)
         panel = self.panel
         context["panel"] = panel
-        context["page_title"] = panel.heading
+        context["page_title"] = panel.tab
         context["max_compare"] = MAX_COMPARE
 
         try:

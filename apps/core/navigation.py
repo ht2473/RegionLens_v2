@@ -207,20 +207,20 @@ FOOTER_NAVIGATION: tuple[tuple[Translatable, tuple[NavItem, ...]], ...] = (
     (
         _("Данные"),
         (
-            NavItem(title=_("Каталог показателей"), url_name="catalog:indicator-list"),
+            NavItem(title=_("Показатели"), url_name="catalog:indicator-list"),
             NavItem(title=_("Регионы"), url_name="catalog:territory-list"),
             NavItem(title=_("О наборе данных"), url_name="catalog:dataset"),
             NavItem(title=_("Источники данных"), url_name="catalog:sources"),
         ),
     ),
     (
+        _("Исследовать"),
+        tuple(NavItem(title=view.title, url_name=view.url_name) for view in EXPLORE_VIEWS),
+    ),
+    (
         _("Анализ"),
         (
-            NavItem(title=_("Карта"), url_name="maps:choropleth"),
-            NavItem(title=_("Рейтинг"), url_name="rankings:index"),
-            NavItem(title=_("Динамика и сравнение"), url_name="compare:index"),
-            NavItem(title=_("Распределение по субъектам"), url_name="surface:distribution"),
-            NavItem(title=_("Таблица значений"), url_name="surface:table"),
+            NavItem(title=_("Все инструменты анализа"), url_name="analytics:index"),
             NavItem(title=_("Интегральные индексы"), url_name="analytics:index-builder"),
             NavItem(title=_("Неравенство"), url_name="analytics:inequality"),
             NavItem(title=_("Свои данные"), url_name="userdata:index"),

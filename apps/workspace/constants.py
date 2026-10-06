@@ -24,9 +24,9 @@ class QueryTarget:
 QUERY_TARGETS: tuple[QueryTarget, ...] = (
     QueryTarget("map", "maps:choropleth", _("Карта"), "map"),
     QueryTarget("rankings", "rankings:index", _("Рейтинг"), "ranking"),
-    QueryTarget("compare", "compare:index", _("Динамика и сравнение"), "dynamics"),
+    QueryTarget("compare", "compare:index", _("Динамика"), "dynamics"),
     QueryTarget("distribution", "surface:distribution", _("Распределение"), "distribution"),
-    QueryTarget("table", "surface:table", _("Таблица значений"), "table"),
+    QueryTarget("table", "surface:table", _("Таблица"), "table"),
     QueryTarget("inequality", "analytics:inequality", _("Неравенство"), "inequality"),
     QueryTarget("convergence", "analytics:convergence", _("Конвергенция"), "convergence"),
     QueryTarget("correlation", "analytics:correlation", _("Корреляции"), "correlation"),
