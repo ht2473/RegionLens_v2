@@ -1,22 +1,26 @@
 {% load i18n formatting %}
-{# Карточка под указателем; без указателя — подсказка. #}
-<div class="live-map__card" aria-live="polite">
-  <p class="live-map__card-empty" data-live="card-empty">
-    {% blocktranslate trimmed with count=live.frame.classes|length %}
-      Наведите на регион — здесь появится его значение, место среди {{ count }} и сравнение с Россией.
-    {% endblocktranslate %}
-  </p>
-  <div class="live-map__card-body" data-live="card-body" hidden>
-    <p class="live-map__label">{% translate "Регион под указателем" %}</p>
-    <p class="live-map__card-name" data-live="card-name"></p>
+{# Карточка: регион под указателем; без указателя — мой регион или значение по России. #}
+<div class="live-map__card" aria-live="polite"
+     data-label-hover="{% translate 'Регион под указателем' %}"
+     data-label-home="{% translate 'Мой регион' %}"
+     data-label-country="{% translate 'По стране' %}"
+     data-country-name="{% translate 'Россия' %}">
+  <div class="live-map__card-body" data-live="card-body">
+    <p class="live-map__label" data-live="card-label">
+      {% if live.home %}{% translate "Мой регион" %}{% else %}{% translate "По стране" %}{% endif %}
+    </p>
+    <p class="live-map__card-name" data-live="card-name">
+      {% if live.home %}{{ live.home.name }}{% else %}{% translate "Россия" %}{% endif %}
+    </p>
     <p class="live-map__card-value">
-      <span class="numeric" data-live="card-value"></span>
+      <span class="numeric" data-live="card-value">{% if live.home %}{{ live.home.value|default:"—" }}{% else %}{{ live.frame.country|default:"—" }}{% endif %}</span>
       <span class="live-map__unit">{{ live.series.unit_label }}</span>
     </p>
-    <p class="live-map__card-place">
-      <b data-live="card-place"></b> · <span class="verdict" data-live="card-standing"></span>
+    <p class="live-map__card-place" data-live="card-place-line"{% if not live.home.place %} hidden{% endif %}>
+      <b data-live="card-place">{{ live.home.place }}</b> ·
+      <span class="verdict verdict--{{ live.home.tone|default:'neutral' }}" data-live="card-standing">{{ live.home.standing }}</span>
     </p>
-    <p class="live-map__card-versus" data-live="card-versus"></p>
-    <p class="live-map__hint">{% translate "Щелчок открывает карточку региона" %}</p>
+    <p class="live-map__card-versus" data-live="card-versus"{% if not live.home.versus %} hidden{% endif %}>{{ live.home.versus }}</p>
   </div>
+  <p class="live-map__hint">{% translate "Наведите на регион — здесь будет его значение; щелчок открывает его карточку." %}</p>
 </div>

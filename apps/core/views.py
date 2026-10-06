@@ -62,6 +62,8 @@ class HomeView(TemplateView):
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Собрать данные витрины."""
+        from apps.accounts.region import my_region
+
         context = super().get_context_data(**kwargs)
         context["page_title"] = _("Главная")
         context["structured_data"] = structured_data.site(self.request)
@@ -70,8 +72,13 @@ class HomeView(TemplateView):
 
         try:
             item = showcase.resolve_live_series(self.request.GET.get("series"))
+            region = my_region(self.request)
             context["live"] = (
-                showcase.live_map(item, self.request.GET.get("year")) if item else None
+                showcase.live_map(
+                    item, self.request.GET.get("year"), region.code if region else None
+                )
+                if item
+                else None
             )
             context["live_choices"] = [
                 {"series": choice, "active": item is not None and choice.key == item.key}

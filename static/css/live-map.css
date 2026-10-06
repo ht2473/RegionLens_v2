@@ -1,5 +1,7 @@
 /* Общие части живой карты (витрина и страница показателя); раскладка — в home.css и indicator.css. */
 
+@layer pages {
+
 /* Метка над частью карты: «Регион под указателем», «Классы шкалы». */
 .live-map__label {
   margin: 0 0 var(--space-2);
@@ -41,7 +43,7 @@
   outline: 0;
   background: transparent;
   font: inherit;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   color: var(--text-primary);
 }
 
@@ -62,18 +64,6 @@
 
 .live-map__card p {
   margin: 0;
-}
-
-.live-map__card-empty {
-  display: flex;
-  align-items: center;
-  height: 100%;
-  font-size: var(--text-md);
-  color: var(--text-muted);
-}
-
-.live-map__card-empty[hidden] {
-  display: none;
 }
 
 .live-map__card-name,
@@ -171,7 +161,7 @@
   margin: var(--space-1) 0 0;
   padding: 0;
   list-style: none;
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   line-height: 1.25rem;
   color: var(--text-secondary);
 }
@@ -423,13 +413,6 @@ rl-live-map:not(:defined) .live-map__time {
   gap: var(--space-3);
 }
 
-.region-card__kicker {
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--text-muted);
-}
-
 .region-card__title {
   margin: 0;
   font-size: var(--text-2xl);
@@ -565,4 +548,6 @@ rl-live-map:not(:defined) .live-map__time {
   .live-map__card {
     display: none;
   }
+}
+
 }

@@ -35,7 +35,7 @@ class LiveMap extends HTMLElement {
       this.slots[node.dataset.live] = node;
     });
     this.panel = document.getElementById(this.dataset.cardPanel);
-    this.emptyText = this.slots["card-empty"].textContent;
+    this.card = this.querySelector(".live-map__card");
 
     this.bind();
     this.revealChoice();
@@ -199,32 +199,44 @@ class LiveMap extends HTMLElement {
   /* --- Карточка под указателем ------------------------------------------------------ */
 
   /**
-   * Показать в карточке субъект или подсказку, если указателя на карте нет.
+   * Показать в карточке субъект под указателем; без указателя — мой регион или Россию.
    *
    * @param {string|null} code код субъекта
    */
   showCard(code) {
     this.hovered = code;
     const frame = this.frames[String(this.year)];
-    const position = code === null ? -1 : this.index.get(code);
-    const known = frame && position !== undefined && position >= 0 && frame.values[position];
-
-    this.slots["card-empty"].hidden = Boolean(known);
-    this.slots["card-body"].hidden = !known;
-    if (!known) {
-      this.slots["card-empty"].textContent =
-        code !== null && position !== undefined && position >= 0
-          ? `${this.state.names[position]} — ${this.dataset.labelMissing}`
-          : this.emptyText;
+    const shown = code === null ? this.state.home : code;
+    const position = shown === null ? -1 : this.index.get(shown);
+    if (!frame || position === undefined || position < 0) {
+      this.showCountry(frame);
       return;
     }
+    const labels = this.card.dataset;
+    const value = frame.values[position];
+    this.slots["card-label"].textContent = code === null ? labels.labelHome : labels.labelHover;
     this.slots["card-name"].textContent = this.state.names[position];
-    this.slots["card-value"].textContent = frame.values[position];
+    this.slots["card-value"].textContent = value || "—";
+    this.slots["card-place-line"].hidden = !value;
     this.slots["card-place"].textContent = frame.places[position];
     this.slots["card-standing"].textContent = frame.standings[position];
     this.slots["card-standing"].className = `verdict verdict--${frame.tones[position] || "neutral"}`;
-    this.slots["card-versus"].textContent = frame.versus[position];
-    this.slots["card-versus"].hidden = !frame.versus[position];
+    this.slots["card-versus"].textContent = value ? frame.versus[position] : this.dataset.labelMissing;
+    this.slots["card-versus"].hidden = value ? !frame.versus[position] : false;
+  }
+
+  /**
+   * Показать в карточке значение по России за год кадра.
+   *
+   * @param {object|undefined} frame кадр года
+   */
+  showCountry(frame) {
+    const labels = this.card.dataset;
+    this.slots["card-label"].textContent = labels.labelCountry;
+    this.slots["card-name"].textContent = labels.countryName;
+    this.slots["card-value"].textContent = (frame && frame.country) || "—";
+    this.slots["card-place-line"].hidden = true;
+    this.slots["card-versus"].hidden = true;
   }
 
   /* --- Карточка региона ------------------------------------------------------------- */

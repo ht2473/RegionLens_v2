@@ -13,10 +13,13 @@
       <h2 class="page-section__title" id="indicator-map-title">
         {% translate "Где больше, где меньше" %}, <span data-live="year">{{ live.year }}</span>
       </h2>
-      <p class="page-section__note" data-live="country-line"{% if not live.frame.country %} hidden{% endif %}>
-        {% translate "По России" %} — <b class="numeric" data-live="country">{{ live.frame.country }}</b>
-        {{ item.unit_label }}
-      </p>
+      {# Без моего региона значение по России стоит в карточке под картой. #}
+      {% if live.home %}
+        <p class="page-section__note" data-live="country-line"{% if not live.frame.country %} hidden{% endif %}>
+          {% translate "По России" %} — <b class="numeric" data-live="country">{{ live.frame.country }}</b>
+          {{ item.unit_label }}
+        </p>
+      {% endif %}
     </div>
 
     <div class="indicator-map__body">

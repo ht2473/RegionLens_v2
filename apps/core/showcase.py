@@ -294,9 +294,14 @@ def _timeline_breaks(series_key: str, years: list[int]) -> list[dict[str, Any]]:
     ]
 
 
-def live_map(item: FeaturedSeries, year_param: str | None) -> dict[str, Any] | None:
+def live_map(
+    item: FeaturedSeries, year_param: str | None, home_code: str | None = None
+) -> dict[str, Any] | None:
     """
     Контекст живой карты: чертёж, кадр выбранного года и органы управления.
+
+    ``home_code`` — мой регион: его карточка стоит на месте карточки под указателем,
+    пока указателя на карте нет; без него там значение по России.
 
     Остальные кадры сценарий забирает отдельным ответом, когда читатель тронет ползунок.
     """
@@ -329,10 +334,12 @@ def live_map(item: FeaturedSeries, year_param: str | None) -> dict[str, Any] | N
     if geo_map is None:
         return None
 
+    home = _home_card(frames, frame, home_code)
     return {
         "series": item,
         "year": year,
         "years": years,
+        "home": home,
         "first_year": years[0],
         "last_year": years[-1],
         "frame": frame,
@@ -354,11 +361,30 @@ def live_map(item: FeaturedSeries, year_param: str | None) -> dict[str, Any] | N
             "links": frames["links"],
             "cards": frames["cards"],
             "frame": frame,
+            "home": home["code"] if home else None,
             "noData": f"url(#{geo_map['no_data_pattern']})",
             "framesUrl": reverse("core:home-frames")
             + f"?series={item.key}&v={FRAMES_LAYOUT}.{warehouse_generation()}"
             f".{featured_set().digest}",
         },
+    }
+
+
+def _home_card(
+    frames: dict[str, Any], frame: dict[str, Any], code: str | None
+) -> dict[str, str] | None:
+    """Мой регион в карточке живой карты за год кадра."""
+    if code is None or code not in frames["codes"]:
+        return None
+    index = frames["codes"].index(code)
+    return {
+        "code": code,
+        "name": frames["names"][index],
+        "value": frame["values"][index],
+        "place": frame["places"][index],
+        "standing": frame["standings"][index],
+        "tone": frame["tones"][index] or "neutral",
+        "versus": frame["versus"][index],
     }
 
 

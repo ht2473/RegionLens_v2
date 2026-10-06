@@ -191,11 +191,14 @@ def _warehouse_context(
     request: Any, series: Series, item: FeaturedSeries, breaks: list[Any]
 ) -> dict[str, Any]:
     """Собрать данные ряда из аналитического склада."""
+    from apps.accounts.region import my_region
+
     statistics = series_statistics_timeline(series.key)
     country = series_timeline(series.key, COUNTRY_CODE)
     broken = country_break_years(breaks)
 
-    live = showcase.live_map(item, request.GET.get("year"))
+    region = my_region(request)
+    live = showcase.live_map(item, request.GET.get("year"), region.code if region else None)
     context: dict[str, Any] = {
         "live": live,
         "lead": build_lead(item, live, statistics, broken) if live else None,
