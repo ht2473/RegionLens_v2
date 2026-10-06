@@ -1,22 +1,14 @@
-/* Входной ES-модуль без сборки: подключает службы lib/, поведения ui/ и загружает
-   пользовательские элементы elements/, когда они появляются в документе. */
+/* Входной ES-модуль без сборки: подключает службы lib/ и поведения шапки; остальные
+   поведения ui/ и пользовательские элементы elements/ загружаются, когда их признак
+   появляется в документе. */
 
 import * as announce from "./lib/announce.js";
 import * as highlight from "./lib/highlight.js";
 import * as theme from "./lib/theme.js";
-import * as clipboard from "./ui/clipboard.js";
 import * as dialogs from "./ui/dialogs.js";
 import * as fold from "./ui/fold.js";
-import * as forms from "./ui/forms.js";
-import * as formula from "./ui/formula.js";
-import * as more from "./ui/more.js";
 import * as palette from "./ui/palette.js";
 import * as popovers from "./ui/popovers.js";
-import * as print from "./ui/print.js";
-import * as scroll from "./ui/scroll.js";
-import * as sheet from "./ui/sheet.js";
-import * as toc from "./ui/toc.js";
-import * as upload from "./ui/upload.js";
 
 /* --- Пользовательские элементы: адреса строками — так их переписывает хранилище статики -- */
 
@@ -37,23 +29,68 @@ function defineElements() {
   });
 }
 
+/* --- Поведения по признаку в разметке. fold.js — в шапке модуля: он сворачивает блоки
+   при загрузке, и запоздавший модуль дал бы скачок раскрытого блока. ------------------- */
+
+const BEHAVIOURS = {
+  clipboard: ["[data-copy], [data-select-all]", () => import("./ui/clipboard.js")],
+  forms: [
+    "[data-count-of], [data-filter-input], [data-summary-of], form[data-autosubmit]",
+    () => import("./ui/forms.js"),
+  ],
+  formula: ["[data-formula-insert]", () => import("./ui/formula.js")],
+  more: ["[data-more-toggle]", () => import("./ui/more.js")],
+  print: ["[data-print]", () => import("./ui/print.js")],
+  scroll: [
+    ".data-table-wrapper, .admin-table-wrapper, .edition-list, .admin-log, .code-block",
+    () => import("./ui/scroll.js"),
+  ],
+  sheet: ["[data-rail-open]", () => import("./ui/sheet.js")],
+  toc: ["[data-toc]", () => import("./ui/toc.js")],
+  upload: [
+    "form[data-upload-form], textarea.textarea--table, [data-error-summary]",
+    () => import("./ui/upload.js"),
+  ],
+};
+
+// Загруженные поведения: имя → обещание модуля с выполненным init().
+const loaded = new Map();
+
+/** Загрузить поведения, признак которых есть в документе. */
+function loadBehaviours() {
+  Object.entries(BEHAVIOURS).forEach(([name, [selector, load]]) => {
+    if (loaded.has(name) || !document.querySelector(selector)) {
+      return;
+    }
+    const module = load()
+      .then((behaviour) => {
+        behaviour.init();
+        return behaviour;
+      })
+      .catch((error) => window.console.error(`Не удалось загрузить ${name}`, error));
+    loaded.set(name, module);
+  });
+}
+
+/**
+ * Обновить уже загруженное поведение для пришедшего фрагмента.
+ *
+ * @param {string} name имя поведения
+ * @param {(behaviour: object) => void} callback что сделать с модулем
+ */
+function refresh(name, callback) {
+  loaded.get(name)?.then((behaviour) => behaviour && callback(behaviour));
+}
+
 /* --------------------------------------------------------------------------------- */
 
 theme.init();
 highlight.init();
-clipboard.init();
 dialogs.init();
 palette.init();
 popovers.init();
-print.init();
-sheet.init();
-toc.init();
-forms.init();
 fold.init();
-more.init();
-scroll.init();
-upload.init();
-formula.init();
+loadBehaviours();
 defineElements();
 
 // Пересчитываемая область — aria-busy.
@@ -71,14 +108,17 @@ document.body.addEventListener("htmx:afterRequest", (event) => {
   }
 });
 
-// Пришедший фрагмент: элементы, формы, счётчики и состояние листа рейля.
+// Пришедший фрагмент: элементы, поведения, формы, счётчики и состояние листа рейля.
 document.body.addEventListener("htmx:afterSwap", (event) => {
   defineElements();
-  forms.enhance(event.target);
-  forms.refreshCounters();
+  refresh("forms", (forms) => {
+    forms.enhance(event.target);
+    forms.refreshCounters();
+  });
+  refresh("more", (more) => more.enhance(event.target));
+  refresh("scroll", (scroll) => scroll.enhance(event.target));
+  refresh("sheet", (sheet) => sheet.reflect());
+  loadBehaviours();
   fold.enhance(event.target);
-  more.enhance(event.target);
-  scroll.enhance(event.target);
-  sheet.reflect();
   announce.fromSwap(event.target);
 });
