@@ -16,16 +16,14 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <h1 class="page-intro__title">{% translate "Методика расчётов" %}</h1>
-      <p class="page-intro__lead">
-        {% blocktranslate trimmed %}
-          Как рассчитаны показатели и оценки на сайте: формула, условия применения,
-          ограничения и ссылка на инструмент.
-        {% endblocktranslate %}
-      </p>
-    </div>
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Методика расчётов" %}</h1>
+    <p class="page-head__lead">
+      {% blocktranslate trimmed %}
+        Как рассчитаны показатели и оценки на сайте: формула, условия применения,
+        ограничения и ссылка на инструмент.
+      {% endblocktranslate %}
+    </p>
   </header>
 
   {% if blocks %}

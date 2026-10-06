@@ -5,86 +5,84 @@
 {% endcomment %}
 
 {# --- Шапка: что это и главное ------------------------------------------------------- #}
-<header class="indicator-head{% if not country %} indicator-head--single{% endif %}">
-  <div class="indicator-head__text">
-    <p class="indicator-head__kicker">
-      {% if theme %}{{ theme.title }}{% else %}{{ indicator.section.name }}{% endif %}
-      {% if item and not item.absolute %}
-        {% if item.polarity == "positive" %} · {% translate "рост — к лучшему" %}
-        {% elif item.polarity == "negative" %} · {% translate "рост — к худшему" %}{% endif %}
+<header class="page-head indicator-head">
+  <p class="kicker">
+    {% if theme %}{{ theme.title }}{% else %}{{ indicator.section.name }}{% endif %}
+    {% if item and not item.absolute %}
+      {% if item.polarity == "positive" %} · {% translate "рост — к лучшему" %}
+      {% elif item.polarity == "negative" %} · {% translate "рост — к худшему" %}{% endif %}
+    {% endif %}
+  </p>
+  <h1 class="page-head__title">{{ heading }}</h1>
+
+  {% if source_title or unit_name %}
+    <p class="page-head__meta">
+      {% if source_title and collected %}
+        {% blocktranslate trimmed with title=source_title %}Полное название — «{{ title }}»{% endblocktranslate %}{% if unit_name %}, {{ unit_name|lower }}{% endif %}.
+      {% elif source_title %}
+        {% blocktranslate trimmed with title=source_title %}В сборнике Росстата — «{{ title }}»{% endblocktranslate %}{% if unit_name %}, {{ unit_name|lower }}{% endif %}.
+      {% else %}
+        {% blocktranslate trimmed with unit=unit_name|lower %}Единица измерения — {{ unit }}.{% endblocktranslate %}
       {% endif %}
     </p>
-    <h1 class="indicator-head__title">{{ heading }}</h1>
+  {% endif %}
 
-    {% if source_title or unit_name %}
-      <p class="indicator-head__source">
-        {% if source_title and collected %}
-          {% blocktranslate trimmed with title=source_title %}Полное название — «{{ title }}»{% endblocktranslate %}{% if unit_name %}, {{ unit_name|lower }}{% endif %}.
-        {% elif source_title %}
-          {% blocktranslate trimmed with title=source_title %}В сборнике Росстата — «{{ title }}»{% endblocktranslate %}{% if unit_name %}, {{ unit_name|lower }}{% endif %}.
-        {% else %}
-          {% blocktranslate trimmed with unit=unit_name|lower %}Единица измерения — {{ unit }}.{% endblocktranslate %}
-        {% endif %}
-      </p>
-    {% endif %}
-
-    {% if lead %}
-      {# Главное словами — из того же кадра, что рисует карта. #}
-      <ul class="indicator-head__lead" aria-label="{% translate 'Главное' %}">
-        <li>
-          {% blocktranslate trimmed with year=lead.year high_name=lead.highest.name high_href=lead.highest.href high_value=lead.highest.value low_name=lead.lowest.name low_href=lead.lowest.href low_value=lead.lowest.value unit=lead.unit %}
-            В {{ year }} году больше всего — <a href="{{ high_href }}">{{ high_name }}</a>: <b class="numeric">{{ high_value }}</b>{{ unit }}, меньше всего — <a href="{{ low_href }}">{{ low_name }}</a>: <b class="numeric">{{ low_value }}</b>
-          {% endblocktranslate %}{% if lead.gap %}{% blocktranslate trimmed with gap=lead.gap %}; разница — {{ gap }}{% endblocktranslate %}{% endif %}.
-        </li>
-        <li>
-          {% blocktranslate trimmed with median=lead.median %}
-            Середина списка — <b class="numeric">{{ median }}</b>: у половины регионов больше, у половины — меньше.
+  {% if lead %}
+    {# Главное словами — из того же кадра, что рисует карта. #}
+    <ul class="page-head__lead indicator-head__lead" aria-label="{% translate 'Главное' %}">
+      <li>
+        {% blocktranslate trimmed with year=lead.year high_name=lead.highest.name high_href=lead.highest.href high_value=lead.highest.value low_name=lead.lowest.name low_href=lead.lowest.href low_value=lead.lowest.value unit=lead.unit %}
+          В {{ year }} году больше всего — <a href="{{ high_href }}">{{ high_name }}</a>: <b class="numeric">{{ high_value }}</b>{{ unit }}, меньше всего — <a href="{{ low_href }}">{{ low_name }}</a>: <b class="numeric">{{ low_value }}</b>
+        {% endblocktranslate %}{% if lead.gap %}{% blocktranslate trimmed with gap=lead.gap %}; разница — {{ gap }}{% endblocktranslate %}{% endif %}.
+      </li>
+      <li>
+        {% blocktranslate trimmed with median=lead.median %}
+          Середина списка — <b class="numeric">{{ median }}</b>: у половины регионов больше, у половины — меньше.
+        {% endblocktranslate %}
+      </li>
+      <li>
+        {% if lead.first_year == lead.last_year %}
+          {% blocktranslate trimmed with year=lead.year regions=lead.regions total=lead.total %}
+            Данные — только за {{ year }} год, по {{ regions }} регионам из {{ total }}.
           {% endblocktranslate %}
-        </li>
-        <li>
-          {% if lead.first_year == lead.last_year %}
-            {% blocktranslate trimmed with year=lead.year regions=lead.regions total=lead.total %}
-              Данные — только за {{ year }} год, по {{ regions }} регионам из {{ total }}.
-            {% endblocktranslate %}
-          {% else %}
-            {% blocktranslate trimmed with first=lead.first_year last=lead.last_year year=lead.year regions=lead.regions total=lead.total %}
-              Данные за {{ first }}–{{ last }} годы; в {{ year }} году — по {{ regions }} регионам из {{ total }}.
-            {% endblocktranslate %}
-          {% endif %}
-          {% if lead.break_years %}
-            {% blocktranslate trimmed with years=lead.break_years|join:", " %}
-              Разрыв сопоставимости — {{ years }}:
-            {% endblocktranslate %}
-            <a href="#indicator-breaks">{% translate "что изменилось" %}</a>.
-          {% else %}
-            {% translate "Разрывов сопоставимости источник не отмечает." %}
-          {% endif %}
-        </li>
-      </ul>
-    {% endif %}
+        {% else %}
+          {% blocktranslate trimmed with first=lead.first_year last=lead.last_year year=lead.year regions=lead.regions total=lead.total %}
+            Данные за {{ first }}–{{ last }} годы; в {{ year }} году — по {{ regions }} регионам из {{ total }}.
+          {% endblocktranslate %}
+        {% endif %}
+        {% if lead.break_years %}
+          {% blocktranslate trimmed with years=lead.break_years|join:", " %}
+            Разрыв сопоставимости — {{ years }}:
+          {% endblocktranslate %}
+          <a href="#indicator-breaks">{% translate "что изменилось" %}</a>.
+        {% else %}
+          {% translate "Разрывов сопоставимости источник не отмечает." %}
+        {% endif %}
+      </li>
+    </ul>
+  {% endif %}
 
-    {% if status %}
-      <p class="indicator-head__status{% if status.is_discontinued %} indicator-head__status--stopped{% endif %}">
-        <b>{{ status.label|capfirst }}.</b> {{ status.detail }}
-        {% if status.is_discontinued %}{% translate "Новых значений не будет." %}{% endif %}
-      </p>
-    {% endif %}
+  {% if status %}
+    <p class="indicator-head__status{% if status.is_discontinued %} indicator-head__status--stopped{% endif %}">
+      <b>{{ status.label|capfirst }}.</b> {{ status.detail }}
+      {% if status.is_discontinued %}{% translate "Новых значений не будет." %}{% endif %}
+    </p>
+  {% endif %}
 
-    <div class="indicator-head__actions">
-      {% favorite_button "indicator" indicator.slug %}
-      {% if series %}
-        {% export_button "series" series=series.key title=heading %}
-        <a class="button button--secondary button--sm" href="{% url 'maps:choropleth' %}?series={{ series.key }}">
-          <svg aria-hidden="true"><use href="#icon-map"></use></svg>
-          {% translate "Исследовать" %}
-        </a>
-      {% endif %}
-    </div>
+  <div class="page-head__actions">
+    {% favorite_button "indicator" indicator.slug %}
+    {% if series %}
+      {% export_button "series" series=series.key title=heading %}
+      <a class="button button--secondary button--sm" href="{% url 'maps:choropleth' %}?series={{ series.key }}">
+        <svg aria-hidden="true"><use href="#icon-map"></use></svg>
+        {% translate "Исследовать" %}
+      </a>
+    {% endif %}
   </div>
 
   {% if country %}
     {# Изменение за год: у процентов — в пунктах. #}
-    <aside class="stat-tile indicator-head__country" aria-label="{% translate 'Россия' %}">
+    <aside class="stat-tile page-head__aside indicator-head__country" aria-label="{% translate 'Россия' %}">
       <p class="stat-tile__title">
         {% blocktranslate trimmed with year=country.year %}Россия, {{ year }}{% endblocktranslate %}
       </p>

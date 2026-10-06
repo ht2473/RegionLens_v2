@@ -4,7 +4,7 @@
 {# Перечень обращений; по умолчанию — ждущие ответа. #}
 
 {% block admin_subtitle %}
-  <p class="page-header__subtitle">
+  <p class="page-head__lead">
     {% blocktranslate trimmed %}
       Ответ уходит письмом на адрес отправителя. Среднее время до ответа считается
       только по тем обращениям, на которые ответили.
@@ -85,7 +85,7 @@
               <td class="admin-table__numeric">{{ ticket.pk }}</td>
               <td>
                 <a href="{{ ticket.manage_url }}">{{ ticket.subject|truncatechars:70 }}</a>
-                <div class="text-muted" style="font-size: var(--text-xs)">
+                <div class="text-muted text-small">
                   {{ ticket.contact_name }} · {{ ticket.contact_email }}
                 </div>
               </td>

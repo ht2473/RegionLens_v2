@@ -1,52 +1,50 @@
 {% load i18n formatting userdata %}
 {# Предмет экрана: показатель и год, тема, единица; справа — Россия и середина регионов. #}
 {# Предмет экрана объявляется при пересчёте холста. #}
-<header class="surface-head{% if not subject.country and not subject.median %} surface-head--single{% endif %}"
+<header class="page-head surface-head"
         data-announce-subject>
-  <div class="surface-head__text">
-    {% if subject %}
-      <p class="surface-head__kicker">
-        <span{% if series.is_user %}{% with lang=subject.kicker|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}{% endif %}>{{ subject.kicker }}</span>{% if series.is_user %} · <span class="surface-head__private">{{ series.privacy }}</span>{% endif %}{% if not subject.item.absolute %}{% if subject.item.polarity == "positive" %} · {% translate "рост — к лучшему" %}{% elif subject.item.polarity == "negative" %} · {% translate "рост — к худшему" %}{% endif %}{% endif %}
-      </p>
-      <h1 class="surface-head__title">
-        {% if series.is_user %}<span{% with lang=subject.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ subject.title }}</span>{% else %}{{ subject.title }}{% endif %}{% if panel.code == "compare" and timeline_years %}, <span class="numeric">{{ timeline_years.0|year }}–{{ timeline_years|last|year }}</span>{% elif year %}, <span class="numeric">{{ year|year }}</span>{% endif %}
-      </h1>
-      <p class="surface-head__meta">
-        {% if subject.unit %}<span>{{ subject.unit }}</span>{% endif %}
-        {% if subject.item.is_money %}
-          <span title="{% translate 'Значения не пересчитаны на рост цен' %}">
-            {% if panel.code == "compare" %}
-              {% translate "в ценах каждого года" %}
-            {% elif year %}
-              {% blocktranslate trimmed with year=year|year %}в ценах {{ year }} года{% endblocktranslate %}
-            {% endif %}
-          </span>
-        {% endif %}
-        {% if subject.regions %}
-          <span>
-            {% blocktranslate trimmed with regions=subject.regions total=territory_count year=year|year %}
-              в {{ year }} году — значения по {{ regions }} регионам из {{ total }}
-            {% endblocktranslate %}
-          </span>
-        {% endif %}
-      </p>
-      {% if subject.origin and panel.code != "compare" %}
-        <p class="surface-head__origin">{{ subject.origin.text }}</p>
+  {% if subject %}
+    <p class="kicker">
+      <span{% if series.is_user %}{% with lang=subject.kicker|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}{% endif %}>{{ subject.kicker }}</span>{% if series.is_user %} · <span class="surface-head__private">{{ series.privacy }}</span>{% endif %}{% if not subject.item.absolute %}{% if subject.item.polarity == "positive" %} · {% translate "рост — к лучшему" %}{% elif subject.item.polarity == "negative" %} · {% translate "рост — к худшему" %}{% endif %}{% endif %}
+    </p>
+    <h1 class="page-head__title">
+      {% if series.is_user %}<span{% with lang=subject.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ subject.title }}</span>{% else %}{{ subject.title }}{% endif %}{% if panel.code == "compare" and timeline_years %}, <span class="numeric">{{ timeline_years.0|year }}–{{ timeline_years|last|year }}</span>{% elif year %}, <span class="numeric">{{ year|year }}</span>{% endif %}
+    </h1>
+    <p class="page-head__meta">
+      {% if subject.unit %}<span>{{ subject.unit }}</span>{% endif %}
+      {% if subject.item.is_money %}
+        <span title="{% translate 'Значения не пересчитаны на рост цен' %}">
+          {% if panel.code == "compare" %}
+            {% translate "в ценах каждого года" %}
+          {% elif year %}
+            {% blocktranslate trimmed with year=year|year %}в ценах {{ year }} года{% endblocktranslate %}
+          {% endif %}
+        </span>
       {% endif %}
-      <p class="surface-head__about">
-        <a href="{{ series.detail_url }}">
-          {% if series.is_user %}{% translate "О таблице: источник, показатели, территории" %}{% else %}{% translate "О показателе: источник, разрывы, пересмотры" %}{% endif %}
-          <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
-        </a>
-      </p>
-    {% else %}
-      <h1 class="surface-head__title">{% translate "Показатель не выбран" %}</h1>
-      <p class="surface-head__meta">{% translate "Выберите показатель в панели выбора" %}</p>
+      {% if subject.regions %}
+        <span>
+          {% blocktranslate trimmed with regions=subject.regions total=territory_count year=year|year %}
+            в {{ year }} году — значения по {{ regions }} регионам из {{ total }}
+          {% endblocktranslate %}
+        </span>
+      {% endif %}
+    </p>
+    {% if subject.origin and panel.code != "compare" %}
+      <p class="surface-head__origin">{{ subject.origin.text }}</p>
     {% endif %}
-  </div>
+    <p class="surface-head__about">
+      <a href="{{ series.detail_url }}">
+        {% if series.is_user %}{% translate "О таблице: источник, показатели, территории" %}{% else %}{% translate "О показателе: источник, разрывы, пересмотры" %}{% endif %}
+        <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+      </a>
+    </p>
+  {% else %}
+    <h1 class="page-head__title">{% translate "Показатель не выбран" %}</h1>
+    <p class="page-head__meta">{% translate "Выберите показатель в панели выбора" %}</p>
+  {% endif %}
 
   {% if subject.country or subject.median %}
-    <dl class="surface-head__figures">
+    <dl class="page-head__aside surface-head__figures">
       {% if subject.country %}
         <div class="surface-head__figure">
           <dt>{% blocktranslate trimmed with year=year|year %}Россия, {{ year }}{% endblocktranslate %}</dt>

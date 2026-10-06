@@ -15,16 +15,14 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <h1 class="page-intro__title">{% translate "Условия использования" %}</h1>
-      <p class="page-intro__lead">
-        {% translate "Правила пользования сайтом RegionLens, его данными и расчётами." %}
-      </p>
-      <p class="terms__revision">
-        {% blocktranslate trimmed with date=revision|date:"d.m.Y" %}Редакция от {{ date }}{% endblocktranslate %}
-      </p>
-    </div>
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Условия использования" %}</h1>
+    <p class="page-head__lead">
+      {% translate "Правила пользования сайтом RegionLens, его данными и расчётами." %}
+    </p>
+    <p class="terms__revision">
+      {% blocktranslate trimmed with date=revision|date:"d.m.Y" %}Редакция от {{ date }}{% endblocktranslate %}
+    </p>
   </header>
 
   <div class="about">

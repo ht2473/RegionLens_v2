@@ -10,16 +10,14 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <h1 class="page-intro__title">{% translate "О наборе данных" %}</h1>
-      <p class="page-intro__lead">
-        {% blocktranslate trimmed with title=data_source.title_local processor=data_source.processor %}
-          Сборник Росстата «{{ title }}» в обработке «{{ processor }}»: что в нём есть,
-          насколько полны ряды, какие проверки прошли данные и как на них ссылаться.
-        {% endblocktranslate %}
-      </p>
-    </div>
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "О наборе данных" %}</h1>
+    <p class="page-head__lead">
+      {% blocktranslate trimmed with title=data_source.title_local processor=data_source.processor %}
+        Сборник Росстата «{{ title }}» в обработке «{{ processor }}»: что в нём есть,
+        насколько полны ряды, какие проверки прошли данные и как на них ссылаться.
+      {% endblocktranslate %}
+    </p>
   </header>
 
   {% if summary %}

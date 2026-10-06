@@ -59,7 +59,7 @@ class TestPublicPages:
         """
         page.set_viewport_size({"width": 1600, "height": 900})
         page.goto(f"{site.url}/ru/about/")
-        page.locator(".language-switch__option", has_text="EN").click()
+        page.locator(".language-link", has_text="EN").click()
         page.wait_for_load_state("networkidle")
 
         assert "/en/" in page.url
@@ -74,7 +74,8 @@ class TestPublicPages:
         """
         page.set_viewport_size({"width": 1600, "height": 900})
         page.goto(site.url)
-        page.locator('.app-header__actions [data-theme-choice="dark"]').click()
+        page.locator(".theme-menu__trigger").click()
+        page.locator('#theme-menu-panel [data-theme-choice="dark"]').click()
         chosen = page.locator("html").get_attribute("data-theme")
 
         page.goto(f"{site.url}/ru/about/")
@@ -177,7 +178,7 @@ class TestAnalysisPages:
         marked = page.locator(f"[data-territory='{code}'].is-highlighted")
         assert marked.count() > 1
 
-        page.locator(".surface-head__title").hover()
+        page.locator(".surface-head .page-head__title").hover()
         page.wait_for_timeout(300)
         assert page.locator(".is-highlighted").count() == 0
 
@@ -473,12 +474,12 @@ class TestResponsiveLayout:
         page.set_viewport_size({"width": 1440, "height": 900})
         page.goto(site.url)
 
-        for selector in (".language-switch__option", ".app-header__actions [data-theme-choice]"):
+        for selector in (".language-link", ".theme-menu__trigger"):
             box = page.locator(selector).first.bounding_box()
             assert box is not None
             topmost = page.evaluate(
                 "([x, y]) => document.elementFromPoint(x, y).closest("
-                "'.language-switch, .theme-switch, .app-header__actions') !== null",
+                "'.app-header__actions') !== null",
                 [box["x"] + box["width"] / 2, box["y"] + box["height"] / 2],
             )
             assert topmost, f"элемент {selector} перекрыт другим"

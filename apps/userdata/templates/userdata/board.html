@@ -14,18 +14,16 @@
 {% block content %}
 <div class="container page board-page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <p class="page-intro__kicker">
-        {% translate "Доска" %} ·
-        <span class="own-private">{% if not owner %}{% translate "открыто по закрытой ссылке" %}{% elif shared %}{% translate "видно вам и по закрытой ссылке" %}{% else %}{% translate "видно только вам" %}{% endif %}</span>
-      </p>
-      <h1 class="page-intro__title"{% with lang=board.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ board.title }}</h1>
-      {% if board.description %}
-        <p class="page-intro__lead"{% with lang=board.description|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ board.description|linebreaksbr }}</p>
-      {% endif %}
-    </div>
-    <div class="page-intro__actions no-print">
+  <header class="page-head">
+    <p class="kicker">
+      {% translate "Доска" %} ·
+      <span class="own-private">{% if not owner %}{% translate "открыто по закрытой ссылке" %}{% elif shared %}{% translate "видно вам и по закрытой ссылке" %}{% else %}{% translate "видно только вам" %}{% endif %}</span>
+    </p>
+    <h1 class="page-head__title"{% with lang=board.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ board.title }}</h1>
+    {% if board.description %}
+      <p class="page-head__lead"{% with lang=board.description|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ board.description|linebreaksbr }}</p>
+    {% endif %}
+    <div class="page-head__actions no-print">
       <button type="button" class="button button--sm button--secondary" data-print>
         <svg aria-hidden="true"><use href="#icon-print"></use></svg>
         {% translate "Печать или PDF" %}
@@ -97,7 +95,7 @@
       {% else %}
         <article class="board-card{% if block.target == 'map' or block.target == 'compare' %} board-card--wide{% endif %}" id="block-{{ block.id }}">
           <div class="board-card__slot" hx-get="{{ block.card_url }}" hx-trigger="load" hx-swap="innerHTML">
-            <p class="board-card__kicker">{{ block.target_title }}</p>
+            <p class="kicker board-card__kicker">{{ block.target_title }}</p>
             <p class="board-card__waiting">{% translate "Вид строится…" %}</p>
           </div>
           {% if owner %}{% include "userdata/_board_controls.html" %}{% endif %}

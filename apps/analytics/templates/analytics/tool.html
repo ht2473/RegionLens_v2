@@ -17,20 +17,18 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro tool-intro">
-    <div class="page-intro__text">
-      <h1 class="page-intro__title">{{ tool.title }}</h1>
-      <p class="page-intro__lead">{{ tool.question }}</p>
-      <p class="page-intro__meta">{{ tool.methods }}</p>
-      {# Продолжение разбора: отдельной карточки в перечне раздела у него нет. #}
-      {% for child in tool.children %}
-        <p class="tool-intro__next">
-          {% translate "Продолжение разбора:" %}
-          <a href="{{ child.url }}">{{ child.title }}</a> — {{ child.question|lower }}
-        </p>
-      {% endfor %}
-    </div>
-    <div class="page-intro__actions">
+  <header class="page-head tool-intro">
+    <h1 class="page-head__title">{{ tool.title }}</h1>
+    <p class="page-head__lead">{{ tool.question }}</p>
+    <p class="page-head__meta">{{ tool.methods }}</p>
+    {# Продолжение разбора: отдельной карточки в перечне раздела у него нет. #}
+    {% for child in tool.children %}
+      <p class="tool-intro__next">
+        {% translate "Продолжение разбора:" %}
+        <a href="{{ child.url }}">{{ child.title }}</a> — {{ child.question|lower }}
+      </p>
+    {% endfor %}
+    <div class="page-head__actions">
       {% if methodology %}
         {# Ссылка — прямо к разделу методики. #}
         <a class="button button--sm button--secondary"

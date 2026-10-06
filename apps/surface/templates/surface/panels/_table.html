@@ -59,7 +59,7 @@
                     aria-hidden="true"></span>
               <a href="{% url 'catalog:territory-detail' slug=row.slug %}">{{ row.name }}</a>
             </td>
-            <td class="data-table__aside text-secondary" style="font-size: var(--text-xs)">
+            <td class="data-table__aside text-secondary text-small">
               {{ row.district_name|default:"—" }}
             </td>
             <td class="is-numeric">
@@ -74,7 +74,7 @@
                 {% if row.ratio_to_country %}×{{ row.ratio_to_country|ru_number:2 }}{% else %}—{% endif %}
               </td>
             {% endif %}
-            <td class="text-muted" style="font-size: var(--text-xs)">{{ row.note|default:"" }}</td>
+            <td class="text-muted text-small">{{ row.note|default:"" }}</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -82,12 +82,12 @@
         <tfoot>
           <tr>
             <th scope="row">{% translate "Российская Федерация" %}</th>
-            <td class="data-table__aside text-secondary" style="font-size: var(--text-xs)">—</td>
+            <td class="data-table__aside text-secondary text-small">—</td>
             <td class="is-numeric">{{ statistics.country_value|ru_number:precision }}</td>
             <td class="is-numeric text-secondary">—</td>
             <td class="is-numeric text-secondary">—</td>
             {% if not additive %}<td class="is-numeric text-secondary">×1,00</td>{% endif %}
-            <td class="text-muted" style="font-size: var(--text-xs)">
+            <td class="text-muted text-small">
               {% translate "значение по стране, а не сумма по субъектам" %}
             </td>
           </tr>

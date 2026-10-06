@@ -16,42 +16,40 @@
 <div class="container page passport">
 
   {# --- Шапка: где это и главное ------------------------------------------------------- #}
-  <header class="passport-head">
-    <div class="passport-head__text">
-      <p class="passport-head__kicker">
-        {% if territory.parent %}{{ territory.parent.name }}{% endif %}
-        {% if territory.capital %} · {% translate "центр" %}: {{ territory.capital }}{% endif %}
-        {% if territory.area_km2 %} · {{ territory.area_km2|ru_number:0 }} {% translate "км²" %}{% endif %}
-        {% if territory.utc_offset %} · UTC+{{ territory.utc_offset }}{% endif %}
-      </p>
-      <h1 class="passport-head__title">{{ territory.name }}</h1>
+  <header class="page-head passport-head">
+    <p class="kicker">
+      {% if territory.parent %}{{ territory.parent.name }}{% endif %}
+      {% if territory.capital %} · {% translate "центр" %}: {{ territory.capital }}{% endif %}
+      {% if territory.area_km2 %} · {{ territory.area_km2|ru_number:0 }} {% translate "км²" %}{% endif %}
+      {% if territory.utc_offset %} · UTC+{{ territory.utc_offset }}{% endif %}
+    </p>
+    <h1 class="page-head__title">{{ territory.name }}</h1>
 
-      {% if warehouse_ready and passport.positions %}
-        {# Главное словами — из тех же чисел, что ниже. #}
-        <ul class="passport-head__lead" aria-label="{% translate 'Главное' %}">
-          {% for line in passport.summary %}<li>{{ line }}</li>{% endfor %}
-        </ul>
-      {% endif %}
+    {% if warehouse_ready and passport.positions %}
+      {# Главное словами — из тех же чисел, что ниже. #}
+      <ul class="page-head__lead passport-head__lead" aria-label="{% translate 'Главное' %}">
+        {% for line in passport.summary %}<li>{{ line }}</li>{% endfor %}
+      </ul>
+    {% endif %}
 
-      <div class="passport-head__actions">
-        {% if territory.is_region and not territory.is_aggregate %}{% my_region_button territory %}{% endif %}
-        {% favorite_button "territory" territory.code %}
-        {% export_button "territory" territory=territory.code title=territory.name %}
-        <a class="button button--secondary button--sm"
-           href="{% url 'compare:index' %}?territory={{ territory.code }}">
-          <svg aria-hidden="true"><use href="#icon-compare"></use></svg>
-          {% translate "Сравнить" %}
-        </a>
-        <a class="button button--secondary button--sm"
-           href="{% url 'maps:choropleth' %}?territory={{ territory.code }}">
-          <svg aria-hidden="true"><use href="#icon-map"></use></svg>
-          {% translate "На карте" %}
-        </a>
-      </div>
+    <div class="page-head__actions">
+      {% if territory.is_region and not territory.is_aggregate %}{% my_region_button territory %}{% endif %}
+      {% favorite_button "territory" territory.code %}
+      {% export_button "territory" territory=territory.code title=territory.name %}
+      <a class="button button--secondary button--sm"
+         href="{% url 'compare:index' %}?territory={{ territory.code }}">
+        <svg aria-hidden="true"><use href="#icon-compare"></use></svg>
+        {% translate "Сравнить" %}
+      </a>
+      <a class="button button--secondary button--sm"
+         href="{% url 'maps:choropleth' %}?territory={{ territory.code }}">
+        <svg aria-hidden="true"><use href="#icon-map"></use></svg>
+        {% translate "На карте" %}
+      </a>
     </div>
 
     {% if locator %}
-      <figure class="passport-head__locator">
+      <figure class="page-head__aside passport-head__locator">
         {% include "maps/partials/_geo_map.html" with geo_map=locator geo_caption=territory.name plain=True %}
         <figcaption>{% translate "Соседние регионы — ссылки на их паспорта." %}</figcaption>
       </figure>

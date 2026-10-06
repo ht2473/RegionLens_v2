@@ -10,19 +10,17 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <h1 class="page-intro__title">{% translate "Анализ" %}</h1>
-      <p class="page-intro__lead">
-        {% blocktranslate trimmed %}
-          Шесть инструментов: различия между регионами, их сближение, связи показателей,
-          пространственные закономерности, сводные индексы и пересмотры статистики.
-        {% endblocktranslate %}
-      </p>
-    </div>
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Анализ" %}</h1>
+    <p class="page-head__lead">
+      {% blocktranslate trimmed %}
+        Шесть инструментов: различия между регионами, их сближение, связи показателей,
+        пространственные закономерности, сводные индексы и пересмотры статистики.
+      {% endblocktranslate %}
+    </p>
   </header>
 
-  <ul class="tool-cards">
+  <ul class="tool-cards card-row">
     {% for tool in tools %}
       <li class="tool-card">
         <p class="tool-card__name">
@@ -31,12 +29,14 @@
         </p>
         <a class="tool-card__question" href="{{ tool.url }}">{{ tool.question }}</a>
         <p class="tool-card__summary">{{ tool.summary }}</p>
-        {% for child in tool.children %}
-          <p class="tool-card__next">
-            {% translate "Продолжение:" %} <a href="{{ child.url }}">{{ child.title|lower }}</a>
-          </p>
-        {% endfor %}
-        <p class="tool-card__methods">{{ tool.methods }}</p>
+        <div class="tool-card__foot">
+          {% for child in tool.children %}
+            <p class="tool-card__next">
+              {% translate "Продолжение:" %} <a href="{{ child.url }}">{{ child.title|lower }}</a>
+            </p>
+          {% endfor %}
+          <p class="tool-card__methods">{{ tool.methods }}</p>
+        </div>
       </li>
     {% endfor %}
   </ul>

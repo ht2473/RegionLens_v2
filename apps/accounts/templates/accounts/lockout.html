@@ -6,18 +6,20 @@
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/cabinet.css' %}">{% endblock %}
 
 {% block content %}
-<div class="container container--narrow page">
-  <div class="auth-card">
-    <h1 class="auth-card__title">{% translate "Вход временно заблокирован" %}</h1>
-    <p class="auth-card__lead">
+<div class="container page">
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Вход временно заблокирован" %}</h1>
+    <p class="page-head__lead">
       {% blocktranslate trimmed %}
         Превышено число неудачных попыток входа. Попробуйте через час или
         восстановите пароль по ссылке из письма.
       {% endblocktranslate %}
     </p>
-    <a class="button button--secondary button--block" href="{% url 'accounts:password-reset' %}">
-      {% translate "Восстановить пароль" %}
-    </a>
-  </div>
+    <p>
+      <a class="button button--secondary" href="{% url 'accounts:password-reset' %}">
+        {% translate "Восстановить пароль" %}
+      </a>
+    </p>
+  </header>
 </div>
 {% endblock %}

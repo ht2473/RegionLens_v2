@@ -16,13 +16,11 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <h1 class="page-intro__title">{% translate "Согласие на обработку персональных данных" %}</h1>
-      <p class="terms__revision">
-        {% blocktranslate trimmed with date=revision|date:"d.m.Y" %}Редакция от {{ date }}{% endblocktranslate %}
-      </p>
-    </div>
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Согласие на обработку персональных данных" %}</h1>
+    <p class="terms__revision">
+      {% blocktranslate trimmed with date=revision|date:"d.m.Y" %}Редакция от {{ date }}{% endblocktranslate %}
+    </p>
   </header>
 
   <div class="about">

@@ -4,7 +4,7 @@
 {# Правка сведений о версии набора; код, размер и контрольная сумма не правятся. #}
 
 {% block admin_subtitle %}
-  <p class="page-header__subtitle">{% translate "Версия набора данных" %}</p>
+  <p class="page-head__lead">{% translate "Версия набора данных" %}</p>
 {% endblock %}
 
 {% block admin_actions %}
@@ -30,7 +30,7 @@
     </div>
     <p class="text-secondary">{{ version.citation }}</p>
     <div class="card__footer">
-      <p class="text-muted" style="font-size: var(--text-xs)">
+      <p class="text-muted text-small">
         {% blocktranslate trimmed %}
           Собирается из полей ниже и показывается на странице «О наборе данных»
           и в колонтитулах выгружаемых документов.

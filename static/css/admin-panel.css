@@ -1,54 +1,7 @@
 /* Панель управления: дополняет cabinet.css таблицами записей, состоянием служб,
    переключателем языка при правке и текстом обращения. */
 
-/* --- Шапка панели: строка со щитом над заголовком ---------------------------------------- */
-
-.admin__kicker {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.admin__kicker svg {
-  flex: none;
-  width: 16px;
-  height: 16px;
-  color: var(--text-accent);
-}
-
-/* Пояснение раздела. */
-.cabinet-head .page-header__subtitle {
-  max-width: 72ch;
-  margin: var(--space-3) 0 0;
-  font-size: var(--text-md);
-  line-height: var(--leading-snug);
-  color: var(--text-secondary);
-}
-
-.admin__aside {
-  display: grid;
-  gap: var(--space-2);
-  justify-items: end;
-}
-
-.admin__actions:empty {
-  display: none;
-}
-
-.admin__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.admin__links {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--space-1) var(--space-4);
-  margin: 0;
-  font-size: var(--text-sm);
-}
+@layer pages {
 
 .admin__content {
   min-width: 0;
@@ -56,16 +9,6 @@
 
 .admin__content > * + * {
   margin-top: var(--space-6);
-}
-
-@media (max-width: 900px) {
-  .admin__aside {
-    justify-items: start;
-  }
-
-  .admin__links {
-    justify-content: flex-start;
-  }
 }
 
 /* --- Плитки обзорной страницы ------------------------------------------------------------- */
@@ -288,7 +231,7 @@
 
 .admin-tabs__count {
   margin-left: var(--space-2);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -342,7 +285,7 @@
 
 .admin-health__extra {
   margin-top: var(--space-1);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
@@ -534,4 +477,6 @@
   .admin-table td:first-child {
     min-width: 11rem;
   }
+}
+
 }

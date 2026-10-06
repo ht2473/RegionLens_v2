@@ -3,7 +3,7 @@
 
 {% if not query or query|length < 2 %}
   <div class="palette__group-title">{% translate "Начните вводить запрос" %}</div>
-  <p class="text-muted" style="padding: 0 var(--space-3) var(--space-3); font-size: var(--text-xs)">
+  <p class="text-muted text-small" style="padding: 0 var(--space-3) var(--space-3)">
     {% translate "Поиск ведётся по названиям показателей, разрезов и регионов." %}
   </p>
 
@@ -22,7 +22,7 @@
     </button>
   {% endif %}
 
-  <p class="text-muted" style="padding: 0 var(--space-3) var(--space-3); font-size: var(--text-xs)">
+  <p class="text-muted text-small" style="padding: 0 var(--space-3) var(--space-3)">
     {% blocktranslate trimmed %}
       Попробуйте другую формулировку или откройте каталог с фильтрами.
     {% endblocktranslate %}
@@ -38,7 +38,7 @@
           <use href="#icon-{{ tool.icon|default:'activity' }}"></use>
         </svg>
         <span class="palette__item-title">{{ tool.title }}</span>
-        <span class="text-muted" style="font-size: var(--text-2xs)">{{ tool.hint|truncatechars:48 }}</span>
+        <span class="text-muted text-small">{{ tool.hint|truncatechars:48 }}</span>
       </a>
     {% endfor %}
   {% endif %}
@@ -64,7 +64,7 @@
           <use href="#icon-map-pin"></use>
         </svg>
         <span class="palette__item-title">{{ territory.name }}</span>
-        <span class="text-muted" style="font-size: var(--text-2xs)">{{ territory.capital }}</span>
+        <span class="text-muted text-small">{{ territory.capital }}</span>
       </a>
     {% endfor %}
   {% endif %}

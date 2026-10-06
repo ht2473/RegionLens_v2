@@ -171,7 +171,7 @@ class TestCabinetSections:
         page.check("input[name='consent']")
         page.get_by_role("button", name="Отправить обращение").click()
         page.get_by_role("link", name="Обращение в кабинете").click()
-        expect(page.locator(".cabinet-head__title")).to_have_text("Вопрос о постоянном составе")
+        expect(page.locator(".cabinet__heading")).to_have_text("Вопрос о постоянном составе")
 
         page.goto(f"{site.url}/ru/cabinet/tickets/")
         expect(page.locator(".ticket-row")).to_have_count(1)

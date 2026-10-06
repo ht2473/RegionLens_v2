@@ -11,17 +11,15 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <h1 class="page-intro__title">{% translate "Программный интерфейс" %}</h1>
-      <p class="page-intro__lead">
-        {% blocktranslate trimmed %}
-          Чтение показателей регионов России программой: справочники, значения рядов
-          и рейтинги. Формат ответа — JSON, протокол — REST.
-        {% endblocktranslate %}
-      </p>
-    </div>
-    <div class="page-intro__actions">
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Программный интерфейс" %}</h1>
+    <p class="page-head__lead">
+      {% blocktranslate trimmed %}
+        Чтение показателей регионов России программой: справочники, значения рядов
+        и рейтинги. Формат ответа — JSON, протокол — REST.
+      {% endblocktranslate %}
+    </p>
+    <div class="page-head__actions">
       <a class="button button--primary" href="{% url 'api:swagger' %}">Swagger UI</a>
       <a class="button button--ghost" href="{% url 'api:schema' %}">OpenAPI</a>
     </div>

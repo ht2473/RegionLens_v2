@@ -13,16 +13,14 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <h1 class="page-intro__title">{% translate "Показатели" %}</h1>
-      <p class="page-intro__lead">
-        {% blocktranslate trimmed %}
-          Как называются показатели и что означают их значения. Описание действует на все
-          ряды показателя — по разрезам и периодам года.
-        {% endblocktranslate %}
-      </p>
-    </div>
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Показатели" %}</h1>
+    <p class="page-head__lead">
+      {% blocktranslate trimmed %}
+        Как называются показатели и что означают их значения. Описание действует на все
+        ряды показателя — по разрезам и периодам года.
+      {% endblocktranslate %}
+    </p>
   </header>
 
   {% include "userdata/_steps.html" %}

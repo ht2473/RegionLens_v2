@@ -2,12 +2,12 @@
 {# Опубликованные версии одного наблюдения — фрагментом по запросу из таблицы пересмотров. #}
 
 {% if not versions %}
-  <div class="text-muted" style="font-size: var(--text-xs)">
+  <div class="text-muted text-small">
     {% translate "Версии этого наблюдения не найдены." %}
   </div>
 {% else %}
   <div class="stack stack--tight" style="padding: var(--space-2) 0">
-    <div class="text-secondary" style="font-size: var(--text-xs)">
+    <div class="text-secondary text-small">
       {% blocktranslate trimmed with territory=trace_territory year=trace_year|stringformat:"d" %}
         {{ territory }}, {{ year }} год — как значение публиковалось в разных изданиях:
       {% endblocktranslate %}
@@ -28,7 +28,7 @@
             <td class="is-numeric">{{ item.edition_label|default:item.edition_year }}</td>
             <td>{{ item.publication|default:item.edition_code }}</td>
             <td class="is-numeric">{{ item.value|ru_number }}</td>
-            <td class="text-secondary" style="font-size: var(--text-xs)">
+            <td class="text-secondary text-small">
               <span class="quality-dot quality-dot--{% if item.quality == 0 %}observed{% elif item.quality == 1 %}no-data{% elif item.quality == 2 %}hidden{% else %}no-data{% endif %}"></span>
               {{ item.quality|quality_label }}
             </td>
@@ -40,7 +40,7 @@
     {# Треугольник пересмотров (как ALFRED): строка — год величины, столбец — выпуск сборника. #}
     {% if triangle.available %}
       <div class="stack stack--tight" style="margin-top: var(--space-4)">
-        <div class="text-secondary" style="font-size: var(--text-xs)">
+        <div class="text-secondary text-small">
           {% translate "Весь ряд по выпускам: строка — год наблюдения, столбец — выпуск сборника" %}
         </div>
 
@@ -82,7 +82,7 @@
         </div>
 
         {% if triangle.horizons %}
-          <div class="text-muted" style="font-size: var(--text-2xs)">
+          <div class="text-muted text-small">
             {% translate "Насколько значение меняется после первой публикации" %}:
             {# Без согласования числа: множественные формы сборщик переводов не поддерживает. #}
             {% for item in triangle.horizons %}
@@ -92,7 +92,7 @@
             {% endfor %}
           </div>
         {% else %}
-          <div class="text-muted" style="font-size: var(--text-2xs)">
+          <div class="text-muted text-small">
             {% blocktranslate trimmed %}
               Повторных публикаций у этого ряда нет: каждый выпуск печатает свои годы
               и прежние не переиздаёт, поэтому сравнивать нечего.

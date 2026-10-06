@@ -131,6 +131,8 @@ class CabinetViewMixin(LoginRequiredMixin):
             for section in CABINET_SECTIONS
         ]
         context["cabinet_section"] = self.section_code
+        # Подстраница раздела (смена пароля, обращение) — со своим заголовком под вкладками.
+        context["cabinet_subpage"] = self.request.path != self.section.url
         # Шапка кабинета: кто вошёл и в какой роли; с правами панели — переход в неё.
         user = self.current_user
         context["cabinet_user"] = {

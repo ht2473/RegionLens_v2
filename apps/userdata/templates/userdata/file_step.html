@@ -13,25 +13,23 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <h1 class="page-intro__title">{% translate "Что в файле" %}</h1>
-      <p class="page-intro__lead">
-        {% with count=inspection.tables|length %}
-          {% if is_paste %}
-            {% translate "Вставленная таблица." %}
-          {% elif count == 1 %}
-            {% translate "В файле одна таблица." %}
-          {% else %}
-            {% blocktranslate trimmed %}Таблиц в файле: {{ count }}. Выберите нужную.{% endblocktranslate %}
-          {% endif %}
-        {% endwith %}
-        {% if inspection.skipped %}
-          {% translate "Не таблицы:" %}
-          {% for name, reason in inspection.skipped %}{% with lang=name|source_lang %}<span{% if lang %} lang="{{ lang }}"{% endif %}>{{ name }}</span>{% endwith %}{% if not forloop.last %}, {% endif %}{% endfor %}.
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Что в файле" %}</h1>
+    <p class="page-head__lead">
+      {% with count=inspection.tables|length %}
+        {% if is_paste %}
+          {% translate "Вставленная таблица." %}
+        {% elif count == 1 %}
+          {% translate "В файле одна таблица." %}
+        {% else %}
+          {% blocktranslate trimmed %}Таблиц в файле: {{ count }}. Выберите нужную.{% endblocktranslate %}
         {% endif %}
-      </p>
-    </div>
+      {% endwith %}
+      {% if inspection.skipped %}
+        {% translate "Не таблицы:" %}
+        {% for name, reason in inspection.skipped %}{% with lang=name|source_lang %}<span{% if lang %} lang="{{ lang }}"{% endif %}>{{ name }}</span>{% endwith %}{% if not forloop.last %}, {% endif %}{% endfor %}.
+      {% endif %}
+    </p>
   </header>
 
   {% include "userdata/_steps.html" %}

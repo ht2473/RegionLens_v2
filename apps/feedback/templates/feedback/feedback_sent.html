@@ -11,19 +11,17 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <h1 class="page-intro__title">{% translate "Обращение принято" %}</h1>
-      <p class="page-intro__lead">
-        {% if ticket %}
-          {% blocktranslate trimmed with email=ticket.contact_email %}
-            Ответ придёт на адрес {{ email }}. Обычно это занимает один-два рабочих дня.
-          {% endblocktranslate %}
-        {% else %}
-          {% translate "Обращение отправлено. Ответ придёт на указанный адрес электронной почты." %}
-        {% endif %}
-      </p>
-    </div>
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Обращение принято" %}</h1>
+    <p class="page-head__lead">
+      {% if ticket %}
+        {% blocktranslate trimmed with email=ticket.contact_email %}
+          Ответ придёт на адрес {{ email }}. Обычно это занимает один-два рабочих дня.
+        {% endblocktranslate %}
+      {% else %}
+        {% translate "Обращение отправлено. Ответ придёт на указанный адрес электронной почты." %}
+      {% endif %}
+    </p>
   </header>
 
   {% if ticket %}

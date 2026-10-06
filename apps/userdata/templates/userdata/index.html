@@ -11,33 +11,31 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <h1 class="page-intro__title">{% translate "Свои данные" %}</h1>
-      <p class="page-intro__lead">
-        {% blocktranslate trimmed %}
-          Своя таблица по регионам России открывается на той же карте и в тех же видах,
-          что и данные сайта. Регионы, годы и показатели узнаются по таблице; что не узнано,
-          можно выбрать. Таблицу видите только вы.
-        {% endblocktranslate %}
-      </p>
-      <div class="own-data-actions">
-        <a class="button button--primary" href="{% url 'userdata:upload' %}">
-          <svg aria-hidden="true"><use href="#icon-upload"></use></svg>
-          {% translate "Загрузить таблицу" %}
-        </a>
-        <form method="post" action="{% url 'userdata:example' %}">
-          {% csrf_token %}
-          <button class="button button--secondary" type="submit">{% translate "Попробовать на примере" %}</button>
-        </form>
-      </div>
-      <p class="own-data-actions__hint">
-        {% blocktranslate trimmed %}
-          Пример — набор «Если быть точным» о загрязнении воздуха в городах, архивом, как он
-          скачивается с сайта набора.
-        {% endblocktranslate %}
-      </p>
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Свои данные" %}</h1>
+    <p class="page-head__lead">
+      {% blocktranslate trimmed %}
+        Своя таблица по регионам России открывается на той же карте и в тех же видах,
+        что и данные сайта. Регионы, годы и показатели узнаются по таблице; что не узнано,
+        можно выбрать. Таблицу видите только вы.
+      {% endblocktranslate %}
+    </p>
+    <div class="own-data-actions">
+      <a class="button button--primary" href="{% url 'userdata:upload' %}">
+        <svg aria-hidden="true"><use href="#icon-upload"></use></svg>
+        {% translate "Загрузить таблицу" %}
+      </a>
+      <form method="post" action="{% url 'userdata:example' %}">
+        {% csrf_token %}
+        <button class="button button--secondary" type="submit">{% translate "Попробовать на примере" %}</button>
+      </form>
     </div>
+    <p class="own-data-actions__hint">
+      {% blocktranslate trimmed %}
+        Пример — набор «Если быть точным» о загрязнении воздуха в городах, архивом, как он
+        скачивается с сайта набора.
+      {% endblocktranslate %}
+    </p>
   </header>
 
   <section class="page-section" aria-labelledby="own-tables">

@@ -5,7 +5,7 @@
 {# опрашивает себя; по окончании HX-Refresh перезагружает страницу. #}
 
 {% block admin_subtitle %}
-  <p class="page-header__subtitle">
+  <p class="page-head__lead">
     {{ run.get_mode_display }} · {{ run.started_at|date:"d.m.Y H:i" }}
   </p>
 {% endblock %}

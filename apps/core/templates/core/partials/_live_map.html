@@ -9,16 +9,16 @@
              data-label-play="{% translate 'Показать по годам' %}"
              data-label-pause="{% translate 'Пауза' %}"
              data-label-missing="{% translate 'нет данных за этот год' %}">
-  <div class="live-map__head">
-    <p class="live-map__kicker">
+  <header class="page-head live-map__head">
+    <p class="kicker">
       {% blocktranslate trimmed with count=live.frame.classes|length first=live.first_year last=live.last_year %}
         {{ count }} регионов · данные Росстата · {{ first }}–{{ last }}
       {% endblocktranslate %}
     </p>
-    <h1 class="live-map__title">
+    <h1 class="page-head__title">
       {{ live.series.short_title }}, <span data-live="year">{{ live.year }}</span>
     </h1>
-    <p class="live-map__lead">
+    <p class="page-head__lead live-map__lead">
       {% translate "Больше всего" %} — <span data-live="highest-name">{{ live.frame.highest.name }}</span>:
       <b class="numeric" data-live="highest-value">{{ live.frame.highest.value }}</b>;
       {% translate "меньше всего" %} — <span data-live="lowest-name">{{ live.frame.lowest.name }}</span>:
@@ -28,7 +28,7 @@
         {{ live.series.unit_label }}.
       </span>
     </p>
-  </div>
+  </header>
 
   {% include "core/partials/_live_find.html" %}
 

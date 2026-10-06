@@ -4,7 +4,7 @@
 {# Содержимое: глоссарий и методика с отметкой полноты обоих языков. #}
 
 {% block admin_subtitle %}
-  <p class="page-header__subtitle">
+  <p class="page-head__lead">
     {% blocktranslate trimmed %}
       Черновики не видны читателям. Опубликованные записи удалить нельзя — на них могут
       вести внешние ссылки; их снимают с публикации.
@@ -71,7 +71,7 @@
             <tr {% if not row.translated %}class="is-highlighted"{% endif %}>
               <td>
                 <strong>{{ row.record }}</strong>
-                <div class="text-muted" style="font-size: var(--text-xs)">
+                <div class="text-muted text-small">
                   {% if active_tab == "methodology" %}{{ row.record.code }}{% else %}{{ row.record.slug }}{% endif %}
                 </div>
               </td>
@@ -93,7 +93,7 @@
                   <span class="badge badge--outline">{{ code }}</span>
                 {% endfor %}
                 {% if not row.translated %}
-                  <span class="text-attention" style="font-size: var(--text-2xs)">
+                  <span class="text-attention text-small">
                     {% translate "нет en" %}
                   </span>
                 {% endif %}

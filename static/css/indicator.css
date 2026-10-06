@@ -1,5 +1,7 @@
 /* Страница показателя: шапка с главным, живая карта с перечнями, ход по стране, сведения о ряде. */
 
+@layer pages {
+
 .indicator {
   padding-top: var(--space-6);
 }
@@ -37,54 +39,22 @@
 
 /* --- Шапка: что это и главное --------------------------------------------------------- */
 
-.indicator-head {
-  display: grid;
+.indicator-head:has(> .page-head__aside) {
   grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
-  gap: var(--space-8) var(--space-12);
-  align-items: start;
-  margin-bottom: var(--space-12);
+  column-gap: var(--space-12);
 }
 
-.indicator-head--single {
-  grid-template-columns: minmax(0, 1fr);
-}
 
-.indicator-head__kicker {
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--text-muted);
-}
-
-.indicator-head__title {
-  margin: var(--space-2) 0 var(--space-3);
-  font-size: clamp(var(--text-2xl), 3.4vw, var(--text-4xl));
-  font-weight: var(--weight-bold);
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  text-wrap: balance;
-}
 
 /* Формулировка сборника — для сверки с источником, мельче заголовка. */
-.indicator-head__source {
-  max-width: 80ch;
-  margin: 0 0 var(--space-5);
-  font-size: var(--text-sm);
-  line-height: var(--leading-normal);
-  color: var(--text-muted);
-}
 
 /* Главное словами. */
+/* «Главное» — списком в размер вводной. */
 .indicator-head__lead {
   display: grid;
   gap: var(--space-2);
-  max-width: 72ch;
-  margin: 0;
   padding: 0;
   list-style: none;
-  font-size: var(--text-lg);
-  line-height: var(--leading-snug);
-  color: var(--text-secondary);
 }
 
 .indicator-head__lead li:first-child {
@@ -99,7 +69,7 @@
 
 /* Состояние публикации ряда: прекращённая — с линейкой цвета внимания. */
 .indicator-head__status {
-  max-width: 72ch;
+  max-width: var(--measure);
   margin: var(--space-4) 0 0;
   padding-left: var(--space-3);
   border-left: 2px solid var(--border-strong);
@@ -117,12 +87,6 @@
   border-left-color: var(--attention);
 }
 
-.indicator-head__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-top: var(--space-6);
-}
 
 /* Плитка «Россия» — крупнее плиток паспорта. */
 .indicator-head__country {
@@ -130,7 +94,7 @@
 }
 
 .indicator-head__country .stat-tile__value .numeric {
-  font-size: var(--text-4xl);
+  font-size: var(--text-3xl);
 }
 
 .indicator-head__country .sparkline {
@@ -301,7 +265,7 @@
 }
 
 .break-notes__lead {
-  max-width: 80ch;
+  max-width: var(--measure);
   margin: 0 0 var(--space-3);
   line-height: var(--leading-normal);
   color: var(--text-secondary);
@@ -338,7 +302,7 @@
 }
 
 .break-notes__text {
-  max-width: 90ch;
+  max-width: var(--measure);
   margin: var(--space-1) 0 0;
   font-size: var(--text-sm);
   line-height: var(--leading-normal);
@@ -515,7 +479,7 @@
 }
 
 .source-note__text {
-  max-width: 90ch;
+  max-width: var(--measure);
   margin: 0;
   line-height: var(--leading-normal);
 }
@@ -528,7 +492,7 @@
 
 /* Пометка неофициального перевода примечаний Росстата на английской странице. */
 .translation-caveat {
-  max-width: 80ch;
+  max-width: var(--measure);
   margin: 0 0 var(--space-3);
   font-size: var(--text-sm);
   color: var(--text-muted);
@@ -541,9 +505,9 @@
 /* --- Узкие экраны ---------------------------------------------------------------------- */
 
 @media (max-width: 1180px) {
-  .indicator-head {
+  .indicator-head:has(> .page-head__aside) {
     grid-template-columns: minmax(0, 1fr) minmax(0, 18rem);
-    gap: var(--space-6) var(--space-8);
+    column-gap: var(--space-8);
   }
 
   .indicator-map__body {
@@ -589,12 +553,13 @@
 }
 
 @media (max-width: 860px) {
-  .indicator-head {
+  .indicator-head:has(> .page-head__aside) {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .indicator-head__country {
-    margin-top: 0;
+  .indicator-head > :is(.page-head__aside, .page-head__actions) {
+    grid-column: 1;
+    grid-row: auto;
   }
 
   .indicator-data {
@@ -603,12 +568,8 @@
 }
 
 @media (max-width: 720px) {
-  .indicator-head {
-    margin-bottom: var(--space-10);
-  }
-
   .indicator-head__lead {
-    font-size: var(--text-md);
+    font-size: var(--text-base);
   }
 
   .indicator-map__key,
@@ -655,4 +616,6 @@
   .month-block {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
 }

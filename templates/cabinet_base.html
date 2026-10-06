@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n static %}
 
-{# Каркас личного кабинета: заголовок, кто вошёл, вкладки разделов из apps/accounts/cabinet.py. #}
+{# Каркас личного кабинета: заголовок и кто вошёл, вкладки разделов из apps/accounts/cabinet.py. #}
 
 {% block extra_css %}
   <link rel="stylesheet" href="{% static 'css/cabinet.css' %}">
@@ -10,27 +10,22 @@
 {% block content %}
 <div class="container page cabinet">
 
-  <header class="cabinet-head">
-    <div class="cabinet-head__text">
-      <p class="cabinet-head__kicker">{% translate "Личный кабинет" %}</p>
-      <h1 class="cabinet-head__title">{% block cabinet_title %}{{ page_title }}{% endblock %}</h1>
-      {% block cabinet_subtitle %}{% endblock %}
-    </div>
-
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Личный кабинет" %}</h1>
     {% if cabinet_user %}
-      <div class="cabinet-user">
-        <p class="cabinet-user__name">{{ cabinet_user.name }}</p>
-        <p class="cabinet-user__meta">
-          <span>{{ cabinet_user.email }}</span>
-          <span class="cabinet-user__role">{{ cabinet_user.role }}</span>
-        </p>
-        {% if cabinet_user.manages %}
-          <a class="cabinet-user__manage" href="{% url 'dashboard:index' %}">
+      <p class="page-head__meta">
+        <span>{{ cabinet_user.name }}</span>
+        <span>{{ cabinet_user.email }}</span>
+        <span>{{ cabinet_user.role }}</span>
+      </p>
+      {% if cabinet_user.manages %}
+        <div class="page-head__actions">
+          <a class="button button--secondary button--sm" href="{% url 'dashboard:index' %}">
+            <svg aria-hidden="true"><use href="#icon-shield"></use></svg>
             {% translate "Панель управления" %}
-            <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
           </a>
-        {% endif %}
-      </div>
+        </div>
+      {% endif %}
     {% endif %}
   </header>
 
@@ -45,6 +40,10 @@
   </nav>
 
   <div class="cabinet__content">
+    {% block cabinet_heading %}
+      {% if cabinet_subpage %}<h2 class="cabinet__heading">{{ page_title }}</h2>{% endif %}
+    {% endblock %}
+    {% block cabinet_lead %}{% endblock %}
     {% block cabinet_content %}{% endblock %}
   </div>
 

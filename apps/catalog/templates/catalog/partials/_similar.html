@@ -14,7 +14,7 @@
     </a>
 
   {% elif not similar %}
-    <p class="text-muted" style="font-size: var(--text-sm)">
+    <p class="text-muted text-small">
       {% blocktranslate trimmed %}
         Расчёт невозможен: недостаточно субъектов с полными значениями по ключевым
         показателям.
@@ -60,7 +60,7 @@
       {% endfor %}
     </ul>
 
-    <p class="text-muted" style="margin-top: var(--space-3); font-size: var(--text-2xs)">
+    <p class="text-muted text-small similar__footnote">
       {% blocktranslate trimmed %}
         Расстояние измеряется в стандартных отклонениях признаков и годится
         для упорядочивания, а не для утверждений вида «вдвое ближе». Признаки взяты

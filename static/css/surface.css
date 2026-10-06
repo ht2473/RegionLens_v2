@@ -1,6 +1,8 @@
 /* Рабочая поверхность (/map/, /rankings/, /compare/, /distribution/, /table/): холст
    с вкладками, предмет экрана и представления; рейль — в layout.css. */
 
+@layer pages {
+
 /* --- Полоса вкладок и действий ------------------------------------------------------ */
 
 .surface-bar {
@@ -77,49 +79,24 @@
 
 /* --- Предмет экрана: заголовок страницы --------------------------------------------- */
 
+/* Шапка рабочего экрана — общая (.page-head), компактнее: заголовок мельче, числа — справа
+   по нижнему краю. */
 .surface-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
-  gap: var(--space-4) var(--space-8);
   margin-bottom: var(--space-5);
 }
 
-.surface-head--single {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.surface-head__kicker {
-  margin: 0 0 var(--space-2);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--text-muted);
-}
-
-.surface-head__title {
-  margin: 0;
+.surface-head > .page-head__title {
   font-size: clamp(var(--text-2xl), 2.6vw, var(--text-3xl));
-  font-weight: var(--weight-bold);
-  line-height: 1.1;
   letter-spacing: -0.02em;
-  text-wrap: balance;
 }
 
-.surface-head__meta {
-  margin: var(--space-3) 0 0;
-  font-size: var(--text-sm);
-  line-height: var(--leading-snug);
-  color: var(--text-muted);
+.surface-head > .page-head__aside {
+  align-self: end;
 }
 
-/* Точка-разделитель прицеплена к предыдущей части. */
-.surface-head__meta > :not(:last-child)::after {
-  content: " ·";
-}
-
-/* Значения года из внешнего источника: полоса слева — цвет внимания, как у пометки «предв.». */
 .surface-head__origin {
-  max-width: 72ch;
+  max-width: var(--measure);
   margin: var(--space-2) 0 0;
   padding-left: var(--space-3);
   border-left: 2px solid var(--attention);
@@ -237,7 +214,7 @@
 }
 
 .surface-note {
-  max-width: 80ch;
+  max-width: var(--measure);
   margin: var(--space-10) 0 0;
   font-size: var(--text-sm);
   line-height: var(--leading-normal);
@@ -248,7 +225,6 @@
 .surface-block__head {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-3);
   margin-bottom: var(--space-3);
@@ -260,13 +236,16 @@
   font-weight: var(--weight-bold);
 }
 
+/* Пометка — под заголовком блока. */
 .surface-block__note {
+  flex-basis: 100%;
+  order: 1;
   font-size: var(--text-sm);
   color: var(--text-muted);
 }
 
 .surface-block__footnote {
-  max-width: 80ch;
+  max-width: var(--measure);
   margin: var(--space-3) 0 0;
   font-size: var(--text-xs);
   line-height: var(--leading-normal);
@@ -374,6 +353,12 @@
     align-items: start;
   }
 
+  .surface-head > .page-head__aside {
+    grid-column: 1;
+    grid-row: auto;
+    margin-top: var(--space-4);
+  }
+
   .surface-head__figures {
     justify-content: start;
   }
@@ -427,4 +412,6 @@
   .surface-columns {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
 }

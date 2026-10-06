@@ -12,37 +12,35 @@
 {% block content %}
 <div class="container page catalog">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <h1 class="page-intro__title">{% translate "Показатели" %}</h1>
-      <p class="page-intro__lead">
-        {% blocktranslate trimmed with count=featured_total themes=themes|length %}
-          {{ count }} основных показателей в {{ themes }} темах. У каждого — своя страница:
-          где больше и где меньше, как менялся и откуда данные.
-        {% endblocktranslate %}
-      </p>
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Показатели" %}</h1>
+    <p class="page-head__lead">
+      {% blocktranslate trimmed with count=featured_total themes=themes|length %}
+        {{ count }} основных показателей в {{ themes }} темах. У каждого — своя страница:
+        где больше и где меньше, как менялся и откуда данные.
+      {% endblocktranslate %}
+    </p>
 
-      {# Поиск ведёт в полный перечень: основной набор виден целиком и без поиска. #}
-      <form class="find-form" method="get" action="{% url 'catalog:indicator-list' %}" role="search">
-        <input type="hidden" name="view" value="all">
-        <label class="find-field">
-          <svg aria-hidden="true"><use href="#icon-search"></use></svg>
-          <span class="visually-hidden">{% translate "Поиск по всем рядам" %}</span>
-          <input type="search" name="q" autocomplete="off"
-                 placeholder="{% blocktranslate trimmed with total=total_series|ru_number:0 %}Найти среди всех {{ total }} рядов{% endblocktranslate %}">
-        </label>
-        <button class="button button--primary find-form__submit" type="submit">{% translate "Найти" %}</button>
-      </form>
-      <p class="find-form__hint">
-        {% translate "Например: безработица, ВРП, Y477110005." %}
-        <a href="{% url 'catalog:indicator-list' %}?view=all">
-          {% blocktranslate trimmed with total=total_series|ru_number:0 %}
-            Полный перечень — {{ total }} рядов с отборами
-          {% endblocktranslate %}
-          <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
-        </a>
-      </p>
-    </div>
+    {# Поиск ведёт в полный перечень: основной набор виден целиком и без поиска. #}
+    <form class="find-form" method="get" action="{% url 'catalog:indicator-list' %}" role="search">
+      <input type="hidden" name="view" value="all">
+      <label class="find-field">
+        <svg aria-hidden="true"><use href="#icon-search"></use></svg>
+        <span class="visually-hidden">{% translate "Поиск по всем рядам" %}</span>
+        <input type="search" name="q" autocomplete="off"
+               placeholder="{% blocktranslate trimmed with total=total_series|ru_number:0 %}Найти среди всех {{ total }} рядов{% endblocktranslate %}">
+      </label>
+      <button class="button button--primary find-form__submit" type="submit">{% translate "Найти" %}</button>
+    </form>
+    <p class="find-form__hint">
+      {% translate "Например: безработица, ВРП, Y477110005." %}
+      <a href="{% url 'catalog:indicator-list' %}?view=all">
+        {% blocktranslate trimmed with total=total_series|ru_number:0 %}
+          Полный перечень — {{ total }} рядов с отборами
+        {% endblocktranslate %}
+        <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+      </a>
+    </p>
   </header>
 
   {% if not warehouse_ready %}
@@ -92,7 +90,7 @@
         {% if block.theme.lead %}<p class="page-section__note">{{ block.theme.lead }}</p>{% endif %}
       </div>
 
-      <ul class="catalog-grid">
+      <ul class="catalog-grid card-row">
         {% for row in block.rows %}
           {# Ссылка растянута на всю плитку. #}
           <li class="stat-tile catalog-tile">

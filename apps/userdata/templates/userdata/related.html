@@ -13,18 +13,16 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <p class="page-intro__kicker"><span{% with lang=dataset.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.title }}</span> · <span class="own-private">{% visibility dataset %}</span></p>
-      <h1 class="page-intro__title">{% translate "С чем связан показатель" %}</h1>
-      <p class="page-intro__lead">
-        {% blocktranslate trimmed %}
-          Связь показателя таблицы с основными показателями сайта по регионам за один год:
-          коэффициент Спирмена, значимость — с поправкой на число сравнений. Связь не
-          означает, что один показатель влияет на другой.
-        {% endblocktranslate %}
-      </p>
-    </div>
+  <header class="page-head">
+    <p class="kicker"><span{% with lang=dataset.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.title }}</span> · <span class="own-private">{% visibility dataset %}</span></p>
+    <h1 class="page-head__title">{% translate "С чем связан показатель" %}</h1>
+    <p class="page-head__lead">
+      {% blocktranslate trimmed %}
+        Связь показателя таблицы с основными показателями сайта по регионам за один год:
+        коэффициент Спирмена, значимость — с поправкой на число сравнений. Связь не
+        означает, что один показатель влияет на другой.
+      {% endblocktranslate %}
+    </p>
   </header>
 
   <form method="get" class="months-form">

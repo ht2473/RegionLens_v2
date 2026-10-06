@@ -1,5 +1,7 @@
 /* Паспорт региона: место среди остальных — словами и полоской (.rank-strip). */
 
+@layer pages {
+
 .passport {
   padding-top: var(--space-6);
 }
@@ -10,52 +12,20 @@
 
 /* --- Шапка: где это и главное --------------------------------------------------------- */
 
-.passport-head {
-  display: grid;
+.passport-head:has(> .page-head__aside) {
   grid-template-columns: minmax(0, 1fr) minmax(0, 32rem);
-  gap: var(--space-8) var(--space-10);
-  align-items: start;
-  margin-bottom: var(--space-12);
+  column-gap: var(--space-10);
 }
 
-.passport-head__kicker {
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--text-muted);
-}
-
-.passport-head__title {
-  margin: var(--space-2) 0 var(--space-4);
-  font-size: clamp(var(--text-2xl), 3.4vw, var(--text-4xl));
-  font-weight: var(--weight-bold);
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  text-wrap: balance;
-}
-
-/* Главное словами — крупнее остального. */
 .passport-head__lead {
   display: grid;
   gap: var(--space-2);
-  max-width: 68ch;
-  margin: 0;
   padding: 0;
   list-style: none;
-  font-size: var(--text-lg);
-  line-height: var(--leading-snug);
-  color: var(--text-secondary);
 }
 
 .passport-head__lead li:first-child {
   color: var(--text-primary);
-}
-
-.passport-head__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-top: var(--space-6);
 }
 
 /* Карта-указатель в рамке, без подписей значений. */
@@ -426,12 +396,18 @@
 /* --- Узкие экраны ---------------------------------------------------------------------- */
 
 @media (max-width: 1100px) {
-  .passport-head {
+  .passport-head:has(> .page-head__aside) {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .passport-head > :is(.page-head__aside, .page-head__actions) {
+    grid-column: 1;
+    grid-row: auto;
   }
 
   .passport-head__locator {
     max-width: 36rem;
+    margin-top: var(--space-6);
   }
 }
 
@@ -594,4 +570,6 @@
   .passport-facts__card {
     padding: var(--space-4);
   }
+}
+
 }

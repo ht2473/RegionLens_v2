@@ -2,7 +2,7 @@
 {# Карточка доски фрагментом: заголовок, вид, источник и переход к виду целиком. #}
 <div class="board-card__body">
   <header class="board-card__head">
-    <p class="board-card__kicker">
+    <p class="kicker board-card__kicker">
       <svg aria-hidden="true"><use href="#icon-{{ card.icon }}"></use></svg>
       {{ card.target_title }}{% if card.year and card.target != "compare" %} · <span class="numeric">{{ card.year|year }}</span>{% endif %}{% if card.unit %} · <span{% with lang=card.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ card.unit }}</span>{% endif %}
     </p>

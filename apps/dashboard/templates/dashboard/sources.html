@@ -4,7 +4,7 @@
 {# Внешние источники: состояние сбора, сверка связей рядов с набором и журнал выпусков. #}
 
 {% block admin_subtitle %}
-  <p class="page-header__subtitle">
+  <p class="page-head__lead">
     {% blocktranslate trimmed %}
       Откуда продолжаются ряды набора и берутся ряды Банка России и ФНС: когда проверялся
       каждый источник, какие выпуски получены и разобраны и насколько значения изданий
@@ -36,7 +36,7 @@
               <tr {% if not source.check_ok or entry.failed %}class="is-highlighted"{% endif %}>
                 <td>
                   <strong>{{ source.title }}</strong>
-                  <div class="text-muted" style="font-size: var(--text-xs)">
+                  <div class="text-muted text-small">
                     {{ source.publisher }} · <code>{{ source.code }}</code> ·
                     <a href="{{ source.page_url }}" rel="noopener noreferrer">{% translate "страница" %}</a>
                   </div>
@@ -47,7 +47,7 @@
                   {% elif source.checked_at %}
                     {{ source.checked_at|date:"d.m.Y H:i" }}
                     {% if not source.check_ok %}
-                      <div class="text-negative" style="font-size: var(--text-xs)">{{ source.check_error|truncatechars:160 }}</div>
+                      <div class="text-negative text-small">{{ source.check_error|truncatechars:160 }}</div>
                     {% endif %}
                   {% else %}
                     <span class="text-muted">{% translate "не проверялся" %}</span>
@@ -56,14 +56,14 @@
                 <td>
                   {% if latest %}
                     <a href="{% url 'dashboard:release' pk=latest.pk %}">{{ latest.code }}</a>
-                    <div class="text-muted" style="font-size: var(--text-xs)">
+                    <div class="text-muted text-small">
                       {{ latest.title }}{% if latest.published_on %} · {{ latest.published_on|date:"d.m.Y" }}{% endif %}
                     </div>
                   {% else %}
                     <span class="text-muted">—</span>
                   {% endif %}
                   {% if entry.failed %}
-                    <div class="text-negative" style="font-size: var(--text-xs)">
+                    <div class="text-negative text-small">
                       {% blocktranslate trimmed with count=entry.failed %}не разобрано: {{ count }}{% endblocktranslate %}
                     </div>
                   {% endif %}
@@ -133,7 +133,7 @@
                 <tr {% if link.is_conditional %}class="is-highlighted"{% endif %}>
                   <td>
                     {{ row.title }}
-                    <div class="text-muted" style="font-size: var(--text-xs)"><code>{{ link.series_key }}</code> · {{ link.method }}</div>
+                    <div class="text-muted text-small"><code>{{ link.series_key }}</code> · {{ link.method }}</div>
                   </td>
                   <td>
                     {% if link.link == "conditional" %}
@@ -156,7 +156,7 @@
                   <td class="admin-table__numeric">
                     {% if row.maximum is not None %}
                       {% if row.unit == "points" %}{{ row.maximum|ru_number:2 }} {% translate "п." %}{% else %}{{ row.maximum|percent:1 }}{% endif %}
-                      <div class="text-muted" style="font-size: var(--text-xs)">{{ row.worst }}, {{ row.worst_year }}</div>
+                      <div class="text-muted text-small">{{ row.worst }}, {{ row.worst_year }}</div>
                     {% else %}—{% endif %}
                   </td>
                   <td class="admin-table__numeric">{{ link.revised_count }}</td>
@@ -197,7 +197,7 @@
                 <td><code>{{ release.source.code }}</code></td>
                 <td>
                   {{ release.code }}
-                  <div class="text-muted" style="font-size: var(--text-xs)">{{ release.title }}</div>
+                  <div class="text-muted text-small">{{ release.title }}</div>
                 </td>
                 <td class="admin-table__numeric">{{ release.published_on|date:"d.m.Y" }}</td>
                 <td class="admin-table__numeric">{{ release.size_bytes|filesizeformat }}</td>
@@ -206,7 +206,7 @@
                     <span class="badge badge--positive">{{ release.get_status_display }}</span>
                   {% elif release.status == "failed" %}
                     <span class="badge badge--negative">{{ release.get_status_display }}</span>
-                    <div class="text-negative" style="font-size: var(--text-xs)">{{ release.error|truncatechars:140 }}</div>
+                    <div class="text-negative text-small">{{ release.error|truncatechars:140 }}</div>
                   {% else %}
                     <span class="badge badge--attention">{{ release.get_status_display }}</span>
                   {% endif %}

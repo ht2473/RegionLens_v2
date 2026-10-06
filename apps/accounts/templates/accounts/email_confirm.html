@@ -6,33 +6,39 @@
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/cabinet.css' %}">{% endblock %}
 
 {% block content %}
-<div class="container container--narrow page">
-  <div class="auth-card">
-    <h1 class="auth-card__title">{% translate "Новый адрес почты" %}</h1>
+<div class="container page">
+  <div class="auth-layout">
+    <header class="page-head auth-layout__intro">
+      <h1 class="page-head__title">{% translate "Новый адрес почты" %}</h1>
+      {% if not error %}
+        <p class="page-head__lead">
+          {% blocktranslate trimmed %}
+            Подтвердите, что этот адрес ваш: после нажатия он станет адресом входа, а сеансы
+            на других устройствах завершатся.
+          {% endblocktranslate %}
+        </p>
+      {% endif %}
+    </header>
 
-    {% if error %}
-      <div class="callout callout--danger">
-        <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
-        <div>
-          <div class="callout__title">{% translate "Адрес не изменён" %}</div>
-          <p>{{ error }}</p>
+    <div class="auth-card">
+      {% if error %}
+        <div class="callout callout--danger">
+          <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+          <div>
+            <div class="callout__title">{% translate "Адрес не изменён" %}</div>
+            <p>{{ error }}</p>
+          </div>
         </div>
-      </div>
-      <div class="auth-card__links">
-        <a href="{% url 'accounts:security' %}">{% translate "Запросить ссылку заново" %}</a>
-      </div>
-    {% else %}
-      <p class="auth-card__lead">
-        {% blocktranslate trimmed %}
-          Подтвердите, что этот адрес ваш: после нажатия он станет адресом входа, а сеансы
-          на других устройствах завершатся.
-        {% endblocktranslate %}
-      </p>
-      <form method="post">
-        {% csrf_token %}
-        <button type="submit" class="button button--primary button--block">{% translate "Подтвердить адрес" %}</button>
-      </form>
-    {% endif %}
+        <div class="auth-card__links">
+          <a href="{% url 'accounts:security' %}">{% translate "Запросить ссылку заново" %}</a>
+        </div>
+      {% else %}
+        <form method="post">
+          {% csrf_token %}
+          <button type="submit" class="button button--primary button--block">{% translate "Подтвердить адрес" %}</button>
+        </form>
+      {% endif %}
+    </div>
   </div>
 </div>
 {% endblock %}

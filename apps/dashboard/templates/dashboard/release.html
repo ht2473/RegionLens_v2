@@ -4,7 +4,7 @@
 {# Карточка выпуска источника: файл в архиве, разбор по таблицам, изменения к прежнему. #}
 
 {% block admin_subtitle %}
-  <p class="page-header__subtitle">{{ release.source.title }} — {{ release.title }}</p>
+  <p class="page-head__lead">{{ release.source.title }} — {{ release.title }}</p>
 {% endblock %}
 
 {% block admin_content %}
@@ -66,14 +66,14 @@
                 <td><code>{{ measure }}</code></td>
                 <td>
                   {% if info.table %}{{ info.table }} · {% endif %}«{{ info.sheet }}»
-                  <div class="text-muted" style="font-size: var(--text-xs)">{{ info.title|truncatechars:90 }}</div>
+                  <div class="text-muted text-small">{{ info.title|truncatechars:90 }}</div>
                 </td>
                 <td class="admin-table__numeric">{{ info.years|join:"–" }}</td>
                 <td class="admin-table__numeric">{{ info.regions }}</td>
                 <td class="admin-table__numeric">{{ info.values|ru_number:0 }}</td>
                 <td class="admin-table__numeric">{{ info.hidden|ru_number:0 }}</td>
                 <td>{{ info.preliminary_years|join:", "|default:"—" }}</td>
-                <td class="text-muted" style="font-size: var(--text-xs)">{{ info.unmatched|join:"; "|default:"—" }}</td>
+                <td class="text-muted text-small">{{ info.unmatched|join:"; "|default:"—" }}</td>
               </tr>
             {% endfor %}
           </tbody>

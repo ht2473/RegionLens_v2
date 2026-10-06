@@ -1,17 +1,13 @@
 /* Витрина: раскладка первого экрана с живой картой и разделы ниже; части карты — live-map.css. */
 
+@layer pages {
+
 .home {
   padding-top: var(--space-6);
 }
 
 .home__notice {
   margin-bottom: var(--space-6);
-}
-
-.home__title {
-  margin-bottom: var(--space-10);
-  font-size: var(--text-3xl);
-  letter-spacing: var(--tracking-tight);
 }
 
 /* --- Мой регион: полоса над живой картой ------------------------------------------------ */
@@ -27,10 +23,7 @@
 }
 
 .home-region__kicker {
-  margin: 0 0 var(--space-1);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--text-muted);
+  margin-bottom: var(--space-1);
 }
 
 .home-region__title {
@@ -127,6 +120,7 @@
 
 .live-map__head {
   grid-area: head;
+  margin-bottom: 0;
 }
 
 .live-map__find {
@@ -153,35 +147,11 @@
   grid-area: map;
 }
 
-.live-map__kicker {
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--text-muted);
-}
-
-.live-map__title {
-  margin: var(--space-2) 0 var(--space-3);
-  font-size: clamp(var(--text-2xl), 3.4vw, var(--text-4xl));
-  font-weight: var(--weight-bold);
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  text-wrap: balance;
-}
-
-.live-map__lead {
-  margin: 0;
-  font-size: var(--text-lg);
-  line-height: var(--leading-snug);
-  color: var(--text-secondary);
-}
-
 .live-map__lead b {
   font-weight: var(--weight-semibold);
   color: var(--text-primary);
   white-space: nowrap;
 }
-
 
 /* --- Разделы ниже карты --------------------------------------------------------------- */
 
@@ -195,10 +165,12 @@
   list-style: none;
 }
 
+/* Карточка — ссылка внутри пункта ряда: её части стоят на строках ряда. */
 .question-card {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  display: grid;
+  grid-row: 1 / -1;
+  grid-template-rows: subgrid;
+  row-gap: 0;
   padding: var(--space-5) var(--space-6) var(--space-5);
   background-color: var(--surface-raised);
   border: 1px solid var(--border-subtle);
@@ -258,7 +230,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-top: auto;
+  align-self: end;
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   color: var(--text-muted);
@@ -340,12 +312,6 @@
   color: var(--text-primary);
 }
 
-.entry-card__kicker {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--text-muted);
-}
-
 .entry-card__title {
   margin-bottom: var(--space-1);
   font-size: var(--text-xl);
@@ -409,4 +375,6 @@
   .entry-grid {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
 }

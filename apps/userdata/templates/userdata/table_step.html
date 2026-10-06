@@ -13,11 +13,9 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <h1 class="page-intro__title">{% translate "Что в таблице" %}</h1>
-      {% if result %}<p class="page-intro__lead">{{ form_text }}</p>{% endif %}
-    </div>
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Что в таблице" %}</h1>
+    {% if result %}<p class="page-head__lead">{{ form_text }}</p>{% endif %}
   </header>
 
   {% include "userdata/_steps.html" %}

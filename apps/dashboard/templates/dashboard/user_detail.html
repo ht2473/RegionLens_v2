@@ -4,7 +4,7 @@
 {# Карточка учётной записи: отдельные формы ролей, сведений, блокировки и сброса входа с кодом. #}
 
 {% block admin_subtitle %}
-  <p class="page-header__subtitle">
+  <p class="page-head__lead">
     {{ account.email }}
   </p>
 {% endblock %}
@@ -166,7 +166,7 @@
           {% endif %}
         </form>
       {% else %}
-        <p class="text-muted" style="margin-top: var(--space-4); font-size: var(--text-xs)">
+        <p class="text-muted text-small" style="margin-top: var(--space-4)">
           {% translate "Это ваша учётная запись: заблокировать её нельзя." %}
         </p>
       {% endif %}

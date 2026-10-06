@@ -14,26 +14,24 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <p class="page-intro__kicker"><span{% with lang=dataset.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.title }}</span> · <span class="own-private">{% visibility dataset %}</span></p>
-      <h1 class="page-intro__title">{% blocktranslate trimmed with number=version.number %}Версия {{ number }}: что изменилось{% endblocktranslate %}</h1>
-      <p class="page-intro__lead">
-        {% if changes %}
-          {% blocktranslate trimmed with base=changes.base moment=version.created_at|date:"d.m.Y H:i" %}
-            Сравнение с версией {{ base }}: файл загружен {{ moment }}. Значения сравниваются
-            по каждому ряду, субъекту и году — так же, как пересмотры между выпусками сборников.
-          {% endblocktranslate %}
-        {% else %}
-          {% translate "Это первая версия таблицы: сравнивать не с чем." %}
-        {% endif %}
-      </p>
-      <p class="own-source">
-        <span{% with lang=version.file_name|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ version.file_name }}</span>
-        {% if is_current %}· {% translate "текущая версия" %}{% endif %}
-      </p>
-    </div>
-    <div class="page-intro__actions">
+  <header class="page-head">
+    <p class="kicker"><span{% with lang=dataset.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.title }}</span> · <span class="own-private">{% visibility dataset %}</span></p>
+    <h1 class="page-head__title">{% blocktranslate trimmed with number=version.number %}Версия {{ number }}: что изменилось{% endblocktranslate %}</h1>
+    <p class="page-head__lead">
+      {% if changes %}
+        {% blocktranslate trimmed with base=changes.base moment=version.created_at|date:"d.m.Y H:i" %}
+          Сравнение с версией {{ base }}: файл загружен {{ moment }}. Значения сравниваются
+          по каждому ряду, субъекту и году — так же, как пересмотры между выпусками сборников.
+        {% endblocktranslate %}
+      {% else %}
+        {% translate "Это первая версия таблицы: сравнивать не с чем." %}
+      {% endif %}
+    </p>
+    <p class="own-source">
+      <span{% with lang=version.file_name|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ version.file_name }}</span>
+      {% if is_current %}· {% translate "текущая версия" %}{% endif %}
+    </p>
+    <div class="page-head__actions">
       <a class="button button--sm button--secondary" href="{% url 'userdata:dataset' dataset.public_id %}">{% translate "К таблице" %}</a>
     </div>
   </header>

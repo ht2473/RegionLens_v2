@@ -4,7 +4,7 @@
 {# Карточка обращения; после ответа форма сменяется его текстом. #}
 
 {% block admin_subtitle %}
-  <p class="page-header__subtitle">
+  <p class="page-head__lead">
     {{ ticket.get_topic_display }} ·
     {{ ticket.contact_name }}{% if ticket.contact_email %} &lt;{{ ticket.contact_email }}&gt;{% endif %} ·
     {{ ticket.created_at|date:"d.m.Y H:i" }}
@@ -32,7 +32,7 @@
 
         {% if ticket.page_url %}
           <div class="card__footer">
-            <p class="text-muted" style="font-size: var(--text-xs)">
+            <p class="text-muted text-small">
               {% translate "Отправлено со страницы" %}:
               <a href="{{ ticket.page_url }}">{{ ticket.page_url|truncatechars:80 }}</a>
             </p>
@@ -48,7 +48,7 @@
           </div>
           <div class="thread__body">{{ ticket.answer }}</div>
           <div class="card__footer">
-            <p class="text-muted" style="font-size: var(--text-xs)">
+            <p class="text-muted text-small">
               {% blocktranslate trimmed with date=ticket.answered_at|date:"d.m.Y H:i" email=ticket.contact_email %}
                 Написан {{ date }} для {{ email }}
               {% endblocktranslate %}{% if ticket.answered_by %} · {{ ticket.answered_by.get_short_name }}{% endif %}
@@ -57,7 +57,7 @@
               {% endif %}
             </p>
             {% if ticket.answer_error and ticket.answer_delivery != "sent" %}
-              <p class="text-negative" style="font-size: var(--text-xs)">
+              <p class="text-negative text-small">
                 {% blocktranslate trimmed with attempts=ticket.answer_attempts %}
                   Попыток отправки: {{ attempts }}.
                 {% endblocktranslate %}
@@ -94,7 +94,7 @@
             <button class="button button--primary" type="submit">
               {% blocktranslate with email=ticket.contact_email %}Отправить на {{ email }}{% endblocktranslate %}
             </button>
-            <p class="text-muted" style="margin-top: var(--space-2); font-size: var(--text-xs)">
+            <p class="text-muted text-small" style="margin-top: var(--space-2)">
               {% blocktranslate trimmed %}
                 Ответ один: он уходит письмом, а обращению из учётной записи виден и в кабинете
                 автора. Если вопрос не исчерпан, автор напишет новое обращение.
@@ -110,7 +110,7 @@
               <button class="button button--sm button--ghost" type="submit">
                 {% translate "Закрыть без ответа" %}
               </button>
-              <span class="text-muted" style="font-size: var(--text-xs)">
+              <span class="text-muted text-small">
                 {% translate "для рекламы, пустых и повторных обращений; автор не уведомляется" %}
               </span>
             </form>

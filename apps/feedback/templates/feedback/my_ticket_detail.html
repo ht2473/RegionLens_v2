@@ -3,8 +3,8 @@
 
 {# Обращение в кабинете: текст, состояние и ответ. #}
 
-{% block cabinet_subtitle %}
-  <p class="cabinet-head__lead">
+{% block cabinet_lead %}
+  <p class="cabinet__lead">
     {% blocktranslate trimmed with number=ticket.pk date=ticket.created_at|date:"d.m.Y H:i" topic=ticket.get_topic_display %}
       Обращение № {{ number }} от {{ date }} · {{ topic }}
     {% endblocktranslate %}

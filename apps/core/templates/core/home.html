@@ -30,7 +30,7 @@
     {% with brief=my_region_brief %}
       <section class="home-region" aria-labelledby="home-region-title">
         <div class="home-region__text">
-          <p class="home-region__kicker">
+          <p class="kicker home-region__kicker">
             {% translate "Мой регион" %}{% if brief.territory.parent %} · {{ brief.territory.parent.name }}{% endif %}
           </p>
           <h2 class="home-region__title" id="home-region-title">
@@ -69,7 +69,9 @@
   {% if live %}
     {% include "core/partials/_live_map.html" %}
   {% else %}
-    <h1 class="home__title">{% translate "Социально-экономические показатели регионов России" %}</h1>
+    <header class="page-head">
+      <h1 class="page-head__title">{% translate "Социально-экономические показатели регионов России" %}</h1>
+    </header>
   {% endif %}
 
   {# --- Свои данные ---------------------------------------------------------------------- #}
@@ -99,7 +101,7 @@
         <h2 class="page-section__title" id="home-questions">{% translate "С чего начать" %}</h2>
         <a href="{% url 'catalog:indicator-list' %}">{% translate "Все основные показатели по темам" %}</a>
       </div>
-      <ul class="question-grid">
+      <ul class="question-grid card-row">
         {% for card in questions %}
           <li>
             <a class="question-card" href="{{ card.href }}">
@@ -134,7 +136,7 @@
         <h2 class="page-section__title" id="home-country">{% translate "Россия: главное" %}</h2>
         <p class="page-section__note">{% translate "Последний год с данными и изменение к предыдущему" %}</p>
       </div>
-      <ul class="stat-grid">
+      <ul class="stat-grid card-row">
         {% for tile in tiles %}
           <li class="stat-tile">
             <a class="stat-tile__title" href="{{ tile.href }}">{{ tile.series.short_title }}</a>
@@ -188,9 +190,9 @@
   {% endif %}
 
   {# --- Входы вглубь --------------------------------------------------------------------- #}
-  <section class="page-section entry-grid" aria-label="{% translate 'Дальше' %}">
+  <section class="page-section entry-grid card-row" aria-label="{% translate 'Дальше' %}">
     <a class="entry-card" href="{% url 'maps:choropleth' %}">
-      <span class="entry-card__kicker">{% translate "Исследовать" %}</span>
+      <span class="kicker">{% translate "Исследовать" %}</span>
       <span class="entry-card__title">{% translate "Пять способов посмотреть на показатель" %}</span>
       <span class="entry-card__text">
         {% blocktranslate trimmed %}
@@ -200,7 +202,7 @@
       </span>
     </a>
     <a class="entry-card" href="{% url 'analytics:index' %}">
-      <span class="entry-card__kicker">{% translate "Анализ" %}</span>
+      <span class="kicker">{% translate "Анализ" %}</span>
       <span class="entry-card__title">{% translate "Инструменты для исследователя" %}</span>
       <span class="entry-card__text">
         {% blocktranslate trimmed %}
@@ -210,7 +212,7 @@
       </span>
     </a>
     <a class="entry-card" href="{% url 'catalog:dataset' %}">
-      <span class="entry-card__kicker">{% translate "О данных" %}</span>
+      <span class="kicker">{% translate "О данных" %}</span>
       <span class="entry-card__title">{% translate "Где данные требуют оговорки" %}</span>
       <span class="entry-card__text">
         {% if summary %}

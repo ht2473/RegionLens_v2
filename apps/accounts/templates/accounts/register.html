@@ -9,34 +9,32 @@
 <div class="container page">
 
   <div class="auth-layout">
-    <header class="page-intro auth-layout__intro">
-      <div class="page-intro__text">
-        <h1 class="page-intro__title">{% translate "Регистрация" %}</h1>
-        <p class="page-intro__lead">
-          {% blocktranslate trimmed %}
-            Всё открыто и без учётной записи — карта, рейтинги, анализ, выгрузка чисел
-            и документов. Учётная запись нужна, чтобы сохранять и возвращаться.
-          {% endblocktranslate %}
-        </p>
-        <ul class="auth-benefits">
-          <li>
-            <strong>{% translate "Регионы и показатели" %}</strong>
-            {% translate "— свои, собраны в разделе «Сохранённое» личного кабинета." %}
-          </li>
-          <li>
-            <strong>{% translate "Виды экрана" %}</strong>
-            {% translate "— карта, рейтинг или расчёт с теми же настройками; открываются заново на свежих данных." %}
-          </li>
-          <li>
-            <strong>{% translate "Новое по сохранённому" %}</strong>
-            {% translate "— какие выпуски Росстата, Банка России и ФНС принесли данные по вашим регионам и показателям." %}
-          </li>
-          <li>
-            <strong>{% translate "Обращения" %}</strong>
-            {% translate "— ваши вопросы и ответы на них в одном месте." %}
-          </li>
-        </ul>
-      </div>
+    <header class="page-head auth-layout__intro">
+      <h1 class="page-head__title">{% translate "Регистрация" %}</h1>
+      <p class="page-head__lead">
+        {% blocktranslate trimmed %}
+          Всё открыто и без учётной записи — карта, рейтинги, анализ, выгрузка чисел
+          и документов. Учётная запись нужна, чтобы сохранять и возвращаться.
+        {% endblocktranslate %}
+      </p>
+      <ul class="auth-benefits">
+        <li>
+          <strong>{% translate "Регионы и показатели" %}</strong>
+          {% translate "— свои, собраны в разделе «Сохранённое» личного кабинета." %}
+        </li>
+        <li>
+          <strong>{% translate "Виды экрана" %}</strong>
+          {% translate "— карта, рейтинг или расчёт с теми же настройками; открываются заново на свежих данных." %}
+        </li>
+        <li>
+          <strong>{% translate "Новое по сохранённому" %}</strong>
+          {% translate "— какие выпуски Росстата, Банка России и ФНС принесли данные по вашим регионам и показателям." %}
+        </li>
+        <li>
+          <strong>{% translate "Обращения" %}</strong>
+          {% translate "— ваши вопросы и ответы на них в одном месте." %}
+        </li>
+      </ul>
     </header>
 
     <div class="auth-card">

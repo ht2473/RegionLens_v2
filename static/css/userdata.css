@@ -1,6 +1,8 @@
 /* Свои данные: мастер загрузки таблицы — шаги, формы файла и вставки, выбор таблицы,
    образец строк. */
 
+@layer pages {
+
 /* --- Шаги мастера ------------------------------------------------------------------------- */
 
 .wizard-steps {
@@ -262,7 +264,7 @@
   display: block;
   margin: 0 0 var(--space-3);
   padding: 0;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-snug);
 }
@@ -532,7 +534,7 @@ legend.question-card__title ~ * {
 
 .table-forms__title {
   margin: 0 0 var(--space-2);
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-semibold);
 }
 
@@ -594,7 +596,7 @@ legend.question-card__title ~ * {
 
 .own-indicator__title {
   margin: 0;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-semibold);
   overflow-wrap: anywhere;
 }
@@ -1058,9 +1060,6 @@ legend.question-card__title ~ * {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1);
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
 }
 
 .board-card__kicker svg {
@@ -1249,4 +1248,6 @@ legend.question-card__title ~ * {
   margin: var(--space-3) 0;
   padding: 0;
   list-style: none;
+}
+
 }

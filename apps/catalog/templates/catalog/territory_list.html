@@ -16,51 +16,49 @@
 <div class="container page regions">
 
   <div class="regions-head">
-    <header class="page-intro regions-head__intro">
-      <div class="page-intro__text">
-        <h1 class="page-intro__title">{% translate "Регионы" %}</h1>
-        <p class="page-intro__lead">
-          {% blocktranslate trimmed with total=total_regions districts=districts|length %}
-            {{ total }} регионов России в {{ districts }} федеральных округах. У каждого —
-            паспорт: главное словами, сильные и слабые стороны, основные показатели
-            и место среди регионов.
-          {% endblocktranslate %}
-        </p>
+    <header class="page-head regions-head__intro">
+      <h1 class="page-head__title">{% translate "Регионы" %}</h1>
+      <p class="page-head__lead">
+        {% blocktranslate trimmed with total=total_regions districts=districts|length %}
+          {{ total }} регионов России в {{ districts }} федеральных округах. У каждого —
+          паспорт: главное словами, сильные и слабые стороны, основные показатели
+          и место среди регионов.
+        {% endblocktranslate %}
+      </p>
 
-        <form class="find-form" method="get" role="search">
-          <label class="find-field">
-            <svg aria-hidden="true"><use href="#icon-search"></use></svg>
-            <span class="visually-hidden">{% translate "Найти регион" %}</span>
-            <input type="search" name="q" value="{{ query }}" autocomplete="off"
-                   data-filter-input="#territory-groups" data-filter-empty="#territory-empty"
-                   placeholder="{% translate 'Регион или его центр' %}">
-          </label>
-        </form>
-        <p class="find-form__hint">
-          {% if query or selected_district %}
-            <a href="{% url 'catalog:territory-list' %}">
-              {% translate "Показать все регионы" %}
-              <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
-            </a>
-          {% else %}
-            {% translate "Например: Казань, Тыва, Калининград." %}
-          {% endif %}
-        </p>
-
-        {% if largest %}
-          <div class="regions-quick">
-            <p class="regions-quick__title">{% translate "Самые населённые" %}</p>
-            <ul class="choice-list">
-              {% for territory in largest %}
-                <li>
-                  <a class="choice-chip" data-territory="{{ territory.code }}"
-                     href="{% url 'catalog:territory-detail' slug=territory.slug %}">{{ territory.name }}</a>
-                </li>
-              {% endfor %}
-            </ul>
-          </div>
+      <form class="find-form" method="get" role="search">
+        <label class="find-field">
+          <svg aria-hidden="true"><use href="#icon-search"></use></svg>
+          <span class="visually-hidden">{% translate "Найти регион" %}</span>
+          <input type="search" name="q" value="{{ query }}" autocomplete="off"
+                 data-filter-input="#territory-groups" data-filter-empty="#territory-empty"
+                 placeholder="{% translate 'Регион или его центр' %}">
+        </label>
+      </form>
+      <p class="find-form__hint">
+        {% if query or selected_district %}
+          <a href="{% url 'catalog:territory-list' %}">
+            {% translate "Показать все регионы" %}
+            <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+          </a>
+        {% else %}
+          {% translate "Например: Казань, Тыва, Калининград." %}
         {% endif %}
-      </div>
+      </p>
+
+      {% if largest %}
+        <div class="regions-quick">
+          <p class="regions-quick__title">{% translate "Самые населённые" %}</p>
+          <ul class="choice-list">
+            {% for territory in largest %}
+              <li>
+                <a class="choice-chip" data-territory="{{ territory.code }}"
+                   href="{% url 'catalog:territory-detail' slug=territory.slug %}">{{ territory.name }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
     </header>
 
     {% if regions_map %}

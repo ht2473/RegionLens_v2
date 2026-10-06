@@ -15,43 +15,41 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <h1 class="page-intro__title">{% translate "Глоссарий" %}</h1>
-      <p class="page-intro__lead">
-        {% blocktranslate trimmed %}
-          Термины статистики и региональной экономики в том значении, в каком они
-          используются на сайте. Где возможно, определение связано с показателем
-          каталога и с разделом методики.
-        {% endblocktranslate %}
-      </p>
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Глоссарий" %}</h1>
+    <p class="page-head__lead">
+      {% blocktranslate trimmed %}
+        Термины статистики и региональной экономики в том значении, в каком они
+        используются на сайте. Где возможно, определение связано с показателем
+        каталога и с разделом методики.
+      {% endblocktranslate %}
+    </p>
 
-      <form class="find-form" method="get" action="{% url 'content:glossary' %}" role="search">
-        {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
-        <label class="find-field">
-          <svg aria-hidden="true"><use href="#icon-search"></use></svg>
-          <span class="visually-hidden">{% translate "Поиск по глоссарию" %}</span>
-          <input type="search" name="q" value="{{ query }}" autocomplete="off"
-                 data-filter-input="#glossary-groups" data-filter-empty="#glossary-empty"
-                 placeholder="{% translate 'Термин, синоним или часть определения' %}">
-        </label>
-      </form>
+    <form class="find-form" method="get" action="{% url 'content:glossary' %}" role="search">
+      {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+      <label class="find-field">
+        <svg aria-hidden="true"><use href="#icon-search"></use></svg>
+        <span class="visually-hidden">{% translate "Поиск по глоссарию" %}</span>
+        <input type="search" name="q" value="{{ query }}" autocomplete="off"
+               data-filter-input="#glossary-groups" data-filter-empty="#glossary-empty"
+               placeholder="{% translate 'Термин, синоним или часть определения' %}">
+      </label>
+    </form>
 
-      <ul class="choice-list glossary__categories" aria-label="{% translate 'Раздел глоссария' %}">
+    <ul class="choice-list glossary__categories" aria-label="{% translate 'Раздел глоссария' %}">
+      <li>
+        <a class="choice-chip"
+           href="{% url 'content:glossary' %}{% if query %}?q={{ query|urlencode }}{% endif %}"
+           {% if not selected_category %}aria-current="true"{% endif %}>{% translate "Все разделы" %}</a>
+      </li>
+      {% for value, label in categories %}
         <li>
           <a class="choice-chip"
-             href="{% url 'content:glossary' %}{% if query %}?q={{ query|urlencode }}{% endif %}"
-             {% if not selected_category %}aria-current="true"{% endif %}>{% translate "Все разделы" %}</a>
+             href="?category={{ value }}{% if query %}&amp;q={{ query|urlencode }}{% endif %}"
+             {% if value == selected_category %}aria-current="true"{% endif %}>{{ label }}</a>
         </li>
-        {% for value, label in categories %}
-          <li>
-            <a class="choice-chip"
-               href="?category={{ value }}{% if query %}&amp;q={{ query|urlencode }}{% endif %}"
-               {% if value == selected_category %}aria-current="true"{% endif %}>{{ label }}</a>
-          </li>
-        {% endfor %}
-      </ul>
-    </div>
+      {% endfor %}
+    </ul>
   </header>
 
   {% if groups %}

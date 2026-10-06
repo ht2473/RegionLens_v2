@@ -198,7 +198,7 @@
               {{ decomposition.within|ru_number:4 }} ({{ decomposition.within_share|percent }})
             </dd>
           </dl>
-          <p class="text-secondary" style="font-size: var(--text-sm); margin-top: var(--space-3)">
+          <p class="text-secondary text-small" style="margin-top: var(--space-3)">
             {% blocktranslate trimmed with between=decomposition.between_share|percent within=decomposition.within_share|percent %}
               На различия между федеральными округами приходится {{ between }} общего
               неравенства, на различия внутри округов — {{ within }}.

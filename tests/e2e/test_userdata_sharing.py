@@ -78,7 +78,7 @@ def test_board_and_link_desktop(
     try:
         other = reader.new_page()
         other.goto(link)
-        expect(other.locator(".page-intro__kicker")).to_contain_text("открыто по закрытой ссылке")
+        expect(other.locator(".page-head .kicker")).to_contain_text("открыто по закрытой ссылке")
         expect(other.locator(".board-card__body")).to_have_count(1)
         assert other.locator("form[action$='/edit/']").count() == 0
         _audit(other, problems)

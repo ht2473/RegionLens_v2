@@ -1,6 +1,8 @@
 /* Компоненты интерфейса. Пропуск, скрытое значение и разрыв сопоставимости
    имеют собственные признаки и не сливаются с обычными значениями. */
 
+@layer components {
+
 /* --- Кнопки ---------------------------------------------------------------------------- */
 
 .button {
@@ -117,6 +119,24 @@
   height: 18px;
 }
 
+/* --- Строка раздела над заголовком: тема, путь, охват -------------------------------------- */
+
+.kicker {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.kicker > svg {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: var(--space-1);
+  vertical-align: -3px;
+  color: var(--text-accent);
+}
+
 /* --- Карточки ---------------------------------------------------------------------------- */
 
 .card {
@@ -126,12 +146,29 @@
   border-radius: var(--radius-md);
 }
 
+/* Голова карточки: заголовок слева, действия справа на его линии; пометка и состояние —
+   под заголовком. */
 .card__header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
   margin-bottom: var(--space-3);
+}
+
+.card__header > .card__title {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.card__header > .card__meta {
+  flex-basis: 100%;
+  order: 1;
+}
+
+.card__header > .badge {
+  order: 1;
+  margin-right: 100%;
 }
 
 .card__title {
@@ -333,6 +370,7 @@ a.stat-tile__title:hover {
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-3);
+  align-self: end;
   margin-top: auto;
   padding-top: var(--space-3);
 }
@@ -550,7 +588,7 @@ a.leader-list__name:hover {
   display: flex;
   justify-content: space-between;
   gap: var(--space-2);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
@@ -562,7 +600,7 @@ a.leader-list__name:hover {
   gap: var(--space-1);
   padding: 0.15em 0.6em;
   border-radius: var(--radius-pill);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   font-weight: var(--weight-medium);
   line-height: 1.6;
   white-space: nowrap;
@@ -580,7 +618,7 @@ a.leader-list__name:hover {
   padding: 0.05em 0.45em;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xs);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   line-height: 1.5;
   white-space: nowrap;
   color: var(--text-muted);
@@ -589,7 +627,7 @@ a.leader-list__name:hover {
 
 /* Пометка значения из внешнего источника: «предв.», «расчёт»; пояснение — в подсказке. */
 .origin-mark {
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   font-weight: var(--weight-medium);
   line-height: 1;
   white-space: nowrap;
@@ -762,7 +800,7 @@ a.leader-list__name:hover {
 /* Пояснение — второй строкой записи. */
 .break-list__note {
   display: block;
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
@@ -858,6 +896,58 @@ a.leader-list__name:hover {
   background-repeat: no-repeat;
 }
 
+/* Раскрытый список — в облике сайта там, где браузер это умеет; в остальных — системный
+   с нарисованной стрелкой. Список со множественным выбором остаётся системным. */
+@supports (appearance: base-select) {
+  .select:not([multiple]),
+  .select:not([multiple])::picker(select) {
+    appearance: base-select;
+  }
+
+  .select:not([multiple]) {
+    padding-right: var(--space-3);
+    background-image: none;
+  }
+
+  .select:not([multiple])::picker-icon {
+    color: var(--text-muted);
+    transition: rotate var(--duration-fast) var(--ease-out);
+  }
+
+  .select:not([multiple]):open::picker-icon {
+    rotate: 180deg;
+  }
+
+  .select::picker(select) {
+    margin-block: var(--space-1);
+    padding: var(--space-1);
+    background-color: var(--surface-raised);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+  }
+
+  .select:not([multiple]) option {
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+  }
+
+  .select:not([multiple]) option:hover,
+  .select:not([multiple]) option:focus-visible {
+    background-color: var(--surface-sunken);
+    outline: none;
+  }
+
+  .select:not([multiple]) option:checked {
+    font-weight: var(--weight-semibold);
+  }
+
+  .select:not([multiple]) option::checkmark {
+    color: var(--accent);
+  }
+}
+
 .textarea {
   min-height: 96px;
   resize: vertical;
@@ -915,7 +1005,7 @@ a.leader-list__name:hover {
 .checkbox__count {
   margin-left: auto;
   font-family: var(--font-numeric);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   color: var(--text-muted);
   /* Счётчик не переносится и не сжимается. */
   flex-shrink: 0;
@@ -1203,7 +1293,7 @@ a.leader-list__name:hover {
 .error-page__code {
   margin: 0 0 var(--space-2);
   font-family: var(--font-numeric);
-  font-size: var(--text-4xl);
+  font-size: var(--text-3xl);
   font-weight: var(--weight-bold);
   line-height: 1;
   color: var(--accent-ink);
@@ -1218,7 +1308,7 @@ a.leader-list__name:hover {
 }
 
 .error-page__lead {
-  max-width: 56ch;
+  max-width: var(--measure-lead);
   margin: 0 0 var(--space-6);
   font-size: var(--text-lg);
   line-height: var(--leading-snug);
@@ -1408,7 +1498,7 @@ a.leader-list__name:hover {
   background: transparent;
   border: none;
   border-bottom: 1px solid var(--border-subtle);
-  font-size: var(--text-md);
+  font-size: var(--text-base);
 }
 
 .palette__input:focus {
@@ -1422,7 +1512,7 @@ a.leader-list__name:hover {
 
 .palette__group-title {
   padding: var(--space-2) var(--space-3);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
@@ -1460,7 +1550,7 @@ a.leader-list__name:hover {
   gap: var(--space-4);
   padding: var(--space-2) var(--space-4);
   border-top: 1px solid var(--border-subtle);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
@@ -1534,7 +1624,7 @@ a.leader-list__name:hover {
   outline: 0;
   background: transparent;
   font: inherit;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   color: var(--text-primary);
 }
 
@@ -1899,7 +1989,7 @@ rl-time-slider {
   border-radius: var(--radius-sm);
   color: var(--text-muted);
   font: inherit;
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   cursor: pointer;
 }
 
@@ -1975,7 +2065,7 @@ rl-time-slider {
   margin-top: var(--space-3);
   padding-top: var(--space-3);
   border-top: 1px solid var(--border-subtle);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
@@ -1989,7 +2079,7 @@ rl-time-slider {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-4);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
@@ -2278,7 +2368,7 @@ rl-time-slider {
   margin: var(--space-3) 0 0;
   padding: 0;
   list-style: none;
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   color: var(--text-secondary);
 }
 
@@ -2447,7 +2537,7 @@ rl-time-slider {
 }
 
 .time-slider__bounds {
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
@@ -2672,7 +2762,7 @@ details[open] > .rail-more__summary {
 
 .matrix-table__position {
   display: block;
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
@@ -2716,6 +2806,10 @@ details[open] > .rail-more__summary {
 }
 
 /* --- Похожие регионы ------------------------------------------------------------------------- */
+
+.similar__footnote {
+  margin-top: var(--space-3);
+}
 
 /* Похожий регион: название и расстояние, чем расходятся — второй строкой. */
 .similar-list {
@@ -2766,7 +2860,7 @@ details[open] > .rail-more__summary {
 
 .similar-list__apart {
   grid-column: 1 / -1;
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
@@ -2904,27 +2998,17 @@ details[open] > .rail-more__summary {
   color: var(--text-muted);
 }
 
-.user-menu__item {
-  display: block;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  text-decoration: none;
-}
-
-.user-menu__item:hover {
-  background: var(--surface-sunken);
-  color: var(--text-primary);
-}
-
 .user-menu__form {
   margin: 0;
   padding-top: var(--space-2);
   border-top: 1px solid var(--border-subtle);
 }
 
-.user-menu__form button {
+/* Пункт всплывающего меню: ссылка или кнопка; выбранный (aria-pressed) — с отметкой. */
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   width: 100%;
   padding: var(--space-2) var(--space-3);
   background: none;
@@ -2934,12 +3018,67 @@ details[open] > .rail-more__summary {
   font: inherit;
   font-size: var(--text-sm);
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
 }
 
-.user-menu__form button:hover {
+.menu-item:hover {
   background: var(--surface-sunken);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.menu-item svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.menu-item[aria-pressed="true"] {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.menu-item[aria-pressed="true"]::after {
+  content: "✓";
+  margin-left: auto;
+  color: var(--accent);
+}
+
+.menu-item--danger:hover {
   color: var(--negative);
+}
+
+/* Меню оформления: значок кнопки — выбранное оформление. */
+.menu-popover.theme-menu__panel {
+  width: 13rem;
+}
+
+.menu-popover.theme-menu__panel:popover-open {
+  gap: 0;
+  padding: var(--space-2);
+}
+
+.theme-menu__icon {
+  display: none;
+}
+
+:root:not([data-theme]) .theme-menu__icon--system,
+:root[data-theme="light"] .theme-menu__icon--light,
+:root[data-theme="dark"] .theme-menu__icon--dark {
+  display: block;
+}
+
+/* Другая языковая версия — ссылкой с кодом языка. */
+.language-link {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-decoration: none;
+}
+
+.language-link:hover {
+  text-decoration: none;
 }
 
 /* --- Поле выбора с поиском <rl-combobox>; select скрывается, только когда элемент определён -- */
@@ -3037,7 +3176,7 @@ rl-combobox:defined > select {
 .combobox__count {
   flex-shrink: 0;
   padding-inline: var(--space-2);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -3090,7 +3229,7 @@ rl-combobox:defined > select {
   padding: var(--space-2) var(--space-3);
   background-color: var(--surface-sunken);
   border-bottom: 1px solid var(--border-subtle);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
@@ -3199,7 +3338,7 @@ rl-combobox:defined > select {
 /* Доля субъектов ниже — второй строкой. */
 .position-list__share {
   grid-column: 2 / -1;
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
@@ -3411,12 +3550,12 @@ rl-combobox:defined > select {
   min-width: 0;
   flex: 1 1 auto;
   font-family: var(--font-numeric);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
 }
 
 .share-field__hint {
   margin: 0;
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   line-height: var(--leading-normal);
   color: var(--text-muted);
 }
@@ -3484,7 +3623,7 @@ rl-combobox:defined > select {
 }
 
 .rail-dock__summary {
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
@@ -3545,6 +3684,21 @@ rl-combobox:defined > select {
 /* Отклонение от первой публикации — под значением. */
 .triangle__change {
   display: block;
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   font-weight: var(--weight-regular);
+}
+
+/* --- Ряд карточек: части карточек стоят на общих строках ряда (subgrid) -------------------- */
+
+/* Карточка занимает --parts строк родителя: заголовок в две строки опускает содержимое
+   всех соседей по ряду одинаково. Отступы между частями — их собственные или row-gap
+   карточки. */
+.card-row > * {
+  display: grid;
+  grid-row: span var(--parts, 3);
+  grid-template-rows: subgrid;
+  align-content: start;
+  row-gap: 0;
+}
+
 }

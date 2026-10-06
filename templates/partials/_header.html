@@ -76,34 +76,42 @@
       <span class="palette-trigger__label">{% translate "Поиск" %}</span>
     </button>
 
-    {# Адрес другой языковой версии — разбором маршрута (тег switch_language_url). #}
-    <div class="language-switch" role="group" aria-label="{% translate 'Язык интерфейса' %}">
-      {% get_available_languages as languages %}
-      {% for code, name in languages %}
+    {# Другая языковая версия той же страницы (тег switch_language_url). #}
+    {% get_available_languages as languages %}
+    {% for code, name in languages %}
+      {% if code != LANGUAGE_CODE %}
         {% switch_language_url code as language_url %}
-        <a class="language-switch__option {% if code == LANGUAGE_CODE %}is-active{% endif %}"
-           href="{{ language_url }}" hreflang="{{ code }}" lang="{{ code }}"
-           title="{{ name }}">{{ code }}</a>
-      {% endfor %}
-    </div>
+        <a class="icon-button language-link" href="{{ language_url }}" hreflang="{{ code }}"
+           lang="{{ code }}" title="{{ name }}" aria-label="{{ name }}">{{ code|upper }}</a>
+      {% endif %}
+    {% endfor %}
 
-    {# Тема: как на устройстве, светлая, тёмная; выбранная отмечена aria-pressed. #}
-    <div class="theme-switch no-print" role="group" aria-label="{% translate 'Оформление' %}">
-      <button type="button" class="theme-switch__option" data-theme-choice="system"
-              aria-pressed="false" title="{% translate 'Как на устройстве' %}"
-              aria-label="{% translate 'Оформление как на устройстве' %}">
-        <svg aria-hidden="true"><use href="#icon-theme-system"></use></svg>
+    {# Оформление: значок кнопки — выбранное; в меню — три варианта, выбранный отмечен. #}
+    <div class="theme-menu no-print">
+      <button type="button" class="icon-button theme-menu__trigger"
+              popovertarget="theme-menu-panel" aria-haspopup="true"
+              title="{% translate 'Оформление' %}" aria-label="{% translate 'Оформление' %}">
+        <svg class="theme-menu__icon theme-menu__icon--system" aria-hidden="true"><use href="#icon-theme-system"></use></svg>
+        <svg class="theme-menu__icon theme-menu__icon--light" aria-hidden="true"><use href="#icon-sun"></use></svg>
+        <svg class="theme-menu__icon theme-menu__icon--dark" aria-hidden="true"><use href="#icon-moon"></use></svg>
       </button>
-      <button type="button" class="theme-switch__option" data-theme-choice="light"
-              aria-pressed="false" title="{% translate 'Светлое' %}"
-              aria-label="{% translate 'Светлое оформление' %}">
-        <svg aria-hidden="true"><use href="#icon-sun"></use></svg>
-      </button>
-      <button type="button" class="theme-switch__option" data-theme-choice="dark"
-              aria-pressed="false" title="{% translate 'Тёмное' %}"
-              aria-label="{% translate 'Тёмное оформление' %}">
-        <svg aria-hidden="true"><use href="#icon-moon"></use></svg>
-      </button>
+      <div class="menu-popover theme-menu__panel" id="theme-menu-panel" popover data-anchor-fixed>
+        <button type="button" class="menu-item" data-theme-choice="system" aria-pressed="false"
+                popovertarget="theme-menu-panel" popovertargetaction="hide">
+          <svg aria-hidden="true"><use href="#icon-theme-system"></use></svg>
+          {% translate "Как на устройстве" %}
+        </button>
+        <button type="button" class="menu-item" data-theme-choice="light" aria-pressed="false"
+                popovertarget="theme-menu-panel" popovertargetaction="hide">
+          <svg aria-hidden="true"><use href="#icon-sun"></use></svg>
+          {% translate "Светлое" %}
+        </button>
+        <button type="button" class="menu-item" data-theme-choice="dark" aria-pressed="false"
+                popovertarget="theme-menu-panel" popovertargetaction="hide">
+          <svg aria-hidden="true"><use href="#icon-moon"></use></svg>
+          {% translate "Тёмное" %}
+        </button>
+      </div>
     </div>
 
     {# Меню учётной записи; гостю — ссылка входа. #}
@@ -120,27 +128,27 @@
         <div class="menu-popover user-menu__panel" id="user-menu-panel" popover data-anchor-fixed>
           <div class="user-menu__header">{{ request.user.email }}</div>
 
-          <a class="user-menu__item" href="{% url 'accounts:dashboard' %}">
+          <a class="menu-item" href="{% url 'accounts:dashboard' %}">
             {% translate "Личный кабинет" %}
           </a>
-          <a class="user-menu__item" href="{% url 'workspace:saved' %}">
+          <a class="menu-item" href="{% url 'workspace:saved' %}">
             {% translate "Сохранённое" %}
           </a>
-          <a class="user-menu__item" href="{% url 'feedback:mine' %}">
+          <a class="menu-item" href="{% url 'feedback:mine' %}">
             {% translate "Обращения" %}
           </a>
-          <a class="user-menu__item" href="{% url 'accounts:security' %}">
+          <a class="menu-item" href="{% url 'accounts:security' %}">
             {% translate "Безопасность" %}
           </a>
           {% if request.user.has_panel_access %}
-            <a class="user-menu__item" href="{% url 'dashboard:index' %}">
+            <a class="menu-item" href="{% url 'dashboard:index' %}">
               {% translate "Панель управления" %}
             </a>
           {% endif %}
 
           <form class="user-menu__form" method="post" action="{% url 'accounts:logout' %}">
             {% csrf_token %}
-            <button type="submit">{% translate "Выйти" %}</button>
+            <button type="submit" class="menu-item menu-item--danger">{% translate "Выйти" %}</button>
           </form>
         </div>
       </div>

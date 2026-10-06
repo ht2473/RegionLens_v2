@@ -13,17 +13,15 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <h1 class="page-intro__title">{% translate "Полный перечень рядов" %}</h1>
-      <p class="page-intro__lead">
-        {% blocktranslate trimmed with total=total_series|ru_number:0 ready=ready_series|ru_number:0 %}
-          {{ total }} рядов: сборник Росстата, ряды Банка России и ФНС. {{ ready }} из них пригодны
-          для сравнения регионов: покрывают не менее 80 % субъектов и не менее десяти лет.
-        {% endblocktranslate %}
-      </p>
-    </div>
-    <div class="page-intro__actions">
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Полный перечень рядов" %}</h1>
+    <p class="page-head__lead">
+      {% blocktranslate trimmed with total=total_series|ru_number:0 ready=ready_series|ru_number:0 %}
+        {{ total }} рядов: сборник Росстата, ряды Банка России и ФНС. {{ ready }} из них пригодны
+        для сравнения регионов: покрывают не менее 80 % субъектов и не менее десяти лет.
+      {% endblocktranslate %}
+    </p>
+    <div class="page-head__actions">
       <a class="button button--secondary button--sm" href="{% url 'catalog:indicator-list' %}">
         {% translate "Основные показатели по темам" %}
       </a>

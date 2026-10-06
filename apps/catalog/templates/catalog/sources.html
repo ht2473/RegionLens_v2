@@ -10,19 +10,17 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <h1 class="page-intro__title">{% translate "Источники данных" %}</h1>
-      <p class="page-intro__lead">
-        {% blocktranslate trimmed with title=data_source.title_local %}
-          Основа — набор «{{ title }}», собранный из сборников Росстата; сайт работает
-          на его последней версии. Ряды, которые Росстат публикует и после последнего года
-          набора, продолжаются по другим его изданиям: они собираются автоматически,
-          сверяются с набором за общие годы и хранятся в архиве в том виде, в каком получены.
-          Ипотека, кредиты и малый бизнес — ряды по данным Банка России и ФНС, помесячно.
-        {% endblocktranslate %}
-      </p>
-    </div>
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Источники данных" %}</h1>
+    <p class="page-head__lead">
+      {% blocktranslate trimmed with title=data_source.title_local %}
+        Основа — набор «{{ title }}», собранный из сборников Росстата; сайт работает
+        на его последней версии. Ряды, которые Росстат публикует и после последнего года
+        набора, продолжаются по другим его изданиям: они собираются автоматически,
+        сверяются с набором за общие годы и хранятся в архиве в том виде, в каком получены.
+        Ипотека, кредиты и малый бизнес — ряды по данным Банка России и ФНС, помесячно.
+      {% endblocktranslate %}
+    </p>
   </header>
 
   <section class="page-section" aria-labelledby="sources-editions">

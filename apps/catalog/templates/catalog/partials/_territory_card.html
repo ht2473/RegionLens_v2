@@ -2,7 +2,7 @@
 {# Карточка региона во всплывающей панели живой карты; открытый показатель — первым. #}
 <header class="region-card__head">
   <div>
-    {% if territory.parent %}<p class="region-card__kicker">{{ territory.parent.name }}</p>{% endif %}
+    {% if territory.parent %}<p class="kicker">{{ territory.parent.name }}</p>{% endif %}
     <h2 class="region-card__title">{{ territory.name }}</h2>
   </div>
   <button type="button" class="icon-button region-card__close" popovertarget="region-card"

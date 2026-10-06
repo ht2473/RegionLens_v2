@@ -184,7 +184,7 @@
               <td>
                 <a href="{% url 'catalog:territory-detail' slug=row.slug %}">{{ row.name }}</a>
               </td>
-              <td class="text-secondary" style="font-size: var(--text-xs)">
+              <td class="text-secondary text-small">
                 {{ row.district_name|default:"—" }}
               </td>
               <td class="is-numeric">{{ row.value|ru_number:precision }}</td>

@@ -1,10 +1,12 @@
 /* Каталог показателей (/indicators/): темы с плитками и полный перечень рядов (?view=all). */
 
+@layer pages {
+
 .catalog__notice {
   margin-bottom: var(--space-8);
 }
 
-/* Шапка, поиск и оглавление — .page-intro (layout.css), .find-form и .toc-pills (components.css). */
+/* Шапка, поиск и оглавление — .page-head (layout.css), .find-form и .toc-pills (components.css). */
 
 .catalog-questions {
   margin-bottom: var(--space-12);
@@ -288,4 +290,6 @@
   .series-table__marks .badge {
     margin-bottom: 0;
   }
+}
+
 }

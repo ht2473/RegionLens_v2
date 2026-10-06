@@ -13,18 +13,16 @@
 {% block content %}
 <div class="container page">
 
-  <header class="page-intro">
-    <div class="page-intro__text">
-      <p class="page-intro__kicker">{% if owner %}{% translate "Моя таблица" %}{% else %}{% translate "Таблица пользователя" %}{% endif %} · <span class="own-private">{% visibility dataset %}</span></p>
-      <h1 class="page-intro__title"{% with lang=dataset.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.title }}</h1>
-      {% if dataset.description %}
-        <p class="page-intro__lead"{% with lang=dataset.description|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.description }}</p>
-      {% endif %}
-      <p class="own-source">
-        {% translate "Источник" %}:
-        {% if dataset.source_url %}<a href="{{ dataset.source_url }}" rel="noopener noreferrer nofollow" target="_blank"{% with lang=dataset.source_title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.source_title|default:dataset.source_url }}</a>{% elif dataset.source_title %}<span{% with lang=dataset.source_title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.source_title }}</span>{% else %}{% translate "не указан" %}{% endif %}
-      </p>
-    </div>
+  <header class="page-head">
+    <p class="kicker">{% if owner %}{% translate "Моя таблица" %}{% else %}{% translate "Таблица пользователя" %}{% endif %} · <span class="own-private">{% visibility dataset %}</span></p>
+    <h1 class="page-head__title"{% with lang=dataset.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.title }}</h1>
+    {% if dataset.description %}
+      <p class="page-head__lead"{% with lang=dataset.description|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.description }}</p>
+    {% endif %}
+    <p class="own-source">
+      {% translate "Источник" %}:
+      {% if dataset.source_url %}<a href="{{ dataset.source_url }}" rel="noopener noreferrer nofollow" target="_blank"{% with lang=dataset.source_title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.source_title|default:dataset.source_url }}</a>{% elif dataset.source_title %}<span{% with lang=dataset.source_title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.source_title }}</span>{% else %}{% translate "не указан" %}{% endif %}
+    </p>
   </header>
 
   {% if not version or version.state != "built" %}

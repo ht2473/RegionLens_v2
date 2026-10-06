@@ -160,22 +160,25 @@ class TestThemeToggle:
     """Переключатель оформления."""
 
     def test_switch_marks_the_chosen_state(self, page: Page, site: Any) -> None:
-        """Переключатель темы отмечает выбранное из трёх состояний атрибутом aria-pressed."""
+        """Меню оформления отмечает выбранное из трёх состояний атрибутом aria-pressed."""
         page.set_viewport_size({"width": 1600, "height": 900})
         page.goto(site.url)
         page.wait_for_load_state("networkidle")
 
-        # Переключатель есть и в шапке, и в выдвижном меню (на смартфоне шапка
-        # его не вмещает), поэтому берётся именно шапочный.
-        switch = page.locator(".app-header__actions .theme-switch")
-        dark = switch.locator('[data-theme-choice="dark"]')
-        system = switch.locator('[data-theme-choice="system"]')
+        # В шапке оформление — кнопкой с меню; в выдвижном меню телефона — тремя кнопками.
+        trigger = page.locator(".theme-menu__trigger")
+        menu = page.locator("#theme-menu-panel")
+        dark = menu.locator('[data-theme-choice="dark"]')
+        system = menu.locator('[data-theme-choice="system"]')
 
+        trigger.click()
         dark.click()
         expect(page.locator("html")).to_have_attribute("data-theme", "dark")
+        expect(menu).to_be_hidden()
         expect(dark).to_have_attribute("aria-pressed", "true")
         expect(system).to_have_attribute("aria-pressed", "false")
 
+        trigger.click()
         system.click()
         expect(page.locator("html")).not_to_have_attribute("data-theme", re.compile(".*"))
         expect(system).to_have_attribute("aria-pressed", "true")

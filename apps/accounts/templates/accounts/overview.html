@@ -3,8 +3,8 @@
 
 {# Обзор кабинета: мой регион, новое по сохранённому, последние открытые виды. #}
 
-{% block cabinet_subtitle %}
-  <p class="cabinet-head__lead">
+{% block cabinet_lead %}
+  <p class="cabinet__lead">
     {% translate "Мой регион, новые данные по сохранённому и виды экрана, которые вы открывали последними." %}
   </p>
 {% endblock %}
@@ -62,7 +62,7 @@
       <div class="my-region">
         <header class="my-region__head">
           <div>
-            {% if region.territory.parent %}<p class="my-region__kicker">{{ region.territory.parent.name }}</p>{% endif %}
+            {% if region.territory.parent %}<p class="kicker my-region__kicker">{{ region.territory.parent.name }}</p>{% endif %}
             <h3 class="my-region__title"><a href="{{ region.href }}">{{ region.territory.name }}</a></h3>
           </div>
           <a class="button button--secondary button--sm" href="{{ region.href }}">
