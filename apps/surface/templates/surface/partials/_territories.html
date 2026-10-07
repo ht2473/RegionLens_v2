@@ -11,12 +11,12 @@
   {% include "surface/partials/_district.html" %}
 {% endif %}
 
-<label class="rail-find territory-search">
-  <svg aria-hidden="true"><use href="#icon-search"></use></svg>
-  <span class="visually-hidden">{% translate "Поиск по субъектам" %}</span>
+<label class="filter-field territory-search">
+  <svg aria-hidden="true"><use href="#icon-filter"></use></svg>
+  <span class="visually-hidden">{% translate "Отобрать регион" %}</span>
   <input type="search" autocomplete="off"
          data-filter-input="#surface-territories" data-filter-empty="#surface-territories-empty"
-         placeholder="{% translate 'Найти регион' %}">
+         placeholder="{% translate 'Отобрать регион' %}">
 </label>
 
 <details class="territory-list" {% if selected_codes or panel.code == "compare" %}open{% endif %}>

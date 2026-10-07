@@ -26,16 +26,16 @@
         {% endblocktranslate %}
       </p>
 
-      <form class="find-form" method="get" role="search">
-        <label class="find-field">
-          <svg aria-hidden="true"><use href="#icon-search"></use></svg>
-          <span class="visually-hidden">{% translate "Найти регион" %}</span>
+      <form class="filter-form" method="get">
+        <label class="filter-field">
+          <svg aria-hidden="true"><use href="#icon-filter"></use></svg>
+          <span class="visually-hidden">{% translate "Отобрать регион" %}</span>
           <input type="search" name="q" value="{{ query }}" autocomplete="off"
                  data-filter-input="#territory-groups" data-filter-empty="#territory-empty"
-                 placeholder="{% translate 'Регион или его центр' %}">
+                 placeholder="{% translate 'Отобрать: регион или его центр' %}">
         </label>
       </form>
-      <p class="find-form__hint">
+      <p class="field__hint filter-form__hint">
         {% if query or selected_district %}
           <a href="{% url 'catalog:territory-list' %}">
             {% translate "Показать все регионы" %}

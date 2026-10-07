@@ -550,47 +550,6 @@ button.main-nav__link {
   flex-shrink: 0;
 }
 
-/* Поиск в рейле — поле-пилюля. */
-.rail-find {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  height: 2.5rem;
-  padding: 0 var(--space-4);
-  background-color: var(--surface-raised);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  color: var(--text-muted);
-  transition: border-color var(--duration-fast) var(--ease-out);
-}
-
-.rail-find:focus-within {
-  border-color: var(--border-accent);
-  box-shadow: var(--shadow-focus);
-}
-
-.rail-find svg {
-  flex-shrink: 0;
-  width: 16px;
-  height: 16px;
-}
-
-.rail-find input {
-  width: 100%;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  font: inherit;
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-}
-
-.rail-find input::placeholder {
-  color: var(--text-muted);
-}
-
 .workspace__content {
   min-width: 0;
 }

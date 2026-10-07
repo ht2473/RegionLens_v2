@@ -3,13 +3,13 @@
 <div id="series-picker-frame">
   {% if picker_open %}
 
-    <div class="search-field search-field--sm" style="margin-bottom: var(--space-3)">
-      <svg class="search-field__icon" aria-hidden="true"><use href="#icon-search"></use></svg>
-      <input type="search" class="input" autocomplete="off"
+    <label class="filter-field series-picker__filter">
+      <svg aria-hidden="true"><use href="#icon-filter"></use></svg>
+      <input type="search" autocomplete="off"
              data-filter-input="#series-picker" data-filter-empty="#series-picker-empty"
-             aria-label="{% translate 'Поиск по показателям' %}"
-             placeholder="{% translate 'Название или раздел' %}">
-    </div>
+             aria-label="{% translate 'Отобрать показатель' %}"
+             placeholder="{% translate 'Отобрать по названию или разделу' %}">
+    </label>
 
     <div class="territory-picker" id="series-picker">
       {# Свои таблицы — первыми: они видны только тому, кто их загрузил. #}

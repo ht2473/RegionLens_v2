@@ -42,10 +42,10 @@
       {% include "partials/_rail_sheet_head.html" with sheet_title=_("Отбор рядов") %}
 
       <div class="filter-rail__group">
-        <div class="filter-rail__title">{% translate "Поиск" %}</div>
-        <label class="rail-find">
-          <svg aria-hidden="true"><use href="#icon-search"></use></svg>
-          <span class="visually-hidden">{% translate "Поиск по названию или коду" %}</span>
+        <div class="filter-rail__title">{% translate "Отобрать" %}</div>
+        <label class="filter-field">
+          <svg aria-hidden="true"><use href="#icon-filter"></use></svg>
+          <span class="visually-hidden">{% translate "Отобрать по названию или коду" %}</span>
           <input type="search" id="catalog-query" name="q" value="{{ query }}"
                  placeholder="{% translate 'Название или код' %}" autocomplete="off">
         </label>

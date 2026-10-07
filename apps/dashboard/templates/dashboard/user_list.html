@@ -16,7 +16,7 @@
 
   <form class="admin-filters" method="get" action="{% url 'dashboard:user-list' %}" data-autosubmit>
     <div class="admin-filters__field admin-filters__field--wide">
-      <label class="admin-filters__label" for="q">{% translate "Поиск" %}</label>
+      <label class="admin-filters__label" for="q">{% translate "Отобрать" %}</label>
       <input class="input" type="search" id="q" name="q" value="{{ query }}"
              placeholder="{% translate 'Имя или адрес почты' %}">
     </div>

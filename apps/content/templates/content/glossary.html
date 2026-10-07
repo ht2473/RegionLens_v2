@@ -25,14 +25,14 @@
       {% endblocktranslate %}
     </p>
 
-    <form class="find-form" method="get" action="{% url 'content:glossary' %}" role="search">
+    <form class="filter-form" method="get" action="{% url 'content:glossary' %}">
       {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
-      <label class="find-field">
-        <svg aria-hidden="true"><use href="#icon-search"></use></svg>
-        <span class="visually-hidden">{% translate "Поиск по глоссарию" %}</span>
+      <label class="filter-field">
+        <svg aria-hidden="true"><use href="#icon-filter"></use></svg>
+        <span class="visually-hidden">{% translate "Отобрать термин" %}</span>
         <input type="search" name="q" value="{{ query }}" autocomplete="off"
                data-filter-input="#glossary-groups" data-filter-empty="#glossary-empty"
-               placeholder="{% translate 'Термин, синоним или часть определения' %}">
+               placeholder="{% translate 'Отобрать: термин, синоним или часть определения' %}">
       </label>
     </form>
 
