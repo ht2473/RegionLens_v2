@@ -1,10 +1,10 @@
 {% load i18n series_picker %}
-{# Выбор ряда: свои таблицы (с own), основной набор, затем пригодные ряды по разделам. #}
+{# Выбор ряда: основной набор, затем пригодные ряды по разделам; свой ряд — только открытый. #}
+{# select_label — своя подпись поля, select_empty — пустой пункт, пока ряд не выбран, select_name — имя поля. #}
 {% series_choice series as choice %}
-{% if own %}{% own_series_options as own_groups %}{% endif %}
 <div class="field">
   <label class="field__label" id="series-select-label" for="series-select">
-    {% translate "Показатель" %}
+    {% if select_label %}{{ select_label }}{% else %}{% translate "Показатель" %}{% endif %}
   </label>
   {# <rl-combobox> — выбор с поиском; в странице только выбранный ряд, перечень догружается. #}
   {# Без сценариев перечень раскрывается ссылкой ниже. #}
@@ -20,9 +20,10 @@
                data-total="{% translate 'всего' %}"
                data-unnormalised="{% translate 'абс.' %}"
                data-unnormalised-hint="{% translate 'Величина не приведена к численности населения или иной основе' %}">
-    <select class="select" id="series-select" name="series">
-      {# Свои таблицы — в разметке страницы: общий перечень один на всех и хранится браузером. #}
-      {% for group in own_groups %}<optgroup label="{{ group.title }}" data-own>{% for item in group.items %}<option value="{{ item.key }}"{% if item.unnormalised %} data-unnormalised="1"{% endif %} data-search="{{ item.search }}"{% if item.lang %} lang="{{ item.lang }}"{% endif %}{% if item.key == series.key %} selected{% endif %}>{{ item.title }}</option>{% endfor %}</optgroup>{% endfor %}
+    <select class="select" id="series-select" name="{{ select_name|default:'series' }}">
+      {% if select_empty %}<option value="" selected>{{ select_empty }}</option>{% endif %}
+      {# Открытый ряд своей таблицы остаётся первым и после догрузки общего перечня. #}
+      {% if series.is_user %}<optgroup label="{{ choice.group }}" data-own><option value="{{ series.key }}"{% if choice.unnormalised %} data-unnormalised="1"{% endif %} selected>{{ choice.title }}</option></optgroup>{% endif %}
       {% if request.GET.series_list %}
         {% include "partials/_series_options.html" with selected_key=series.key %}
       {% elif series and not series.is_user %}

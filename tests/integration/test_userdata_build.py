@@ -329,11 +329,15 @@ class TestCanvas:
             # У ряда своей таблицы нет запроса к программному интерфейсу.
             assert "/api/v1/observations/?series=u" not in page.text
 
-    def test_picker_lists_own_tables(self, client: Client, warehouse: Any) -> None:
+    def test_picker_keeps_only_open_own_series(self, client: Client, warehouse: Any) -> None:
+        # Свои ряды живут в лаборатории: на холсте в выборе — только открытый свой ряд.
         dataset = _built(client)
-        page = client.get(reverse("maps:choropleth"))
+        assert f"u:{dataset.code}:" not in client.get(reverse("maps:choropleth")).text
+        record = _version(dataset).series.order_by("order").first()
+        assert record is not None
+        page = client.get(reverse("maps:choropleth"), {"series": _key(dataset, record)})
         assert "data-own" in page.text
-        assert f"u:{dataset.code}:" in page.text
+        assert f'<option value="{_key(dataset, record)}"' in page.text
 
     def test_default_year_is_last_full(self, client: Client, warehouse: Any) -> None:
         dataset = _built(client)

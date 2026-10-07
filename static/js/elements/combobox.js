@@ -183,7 +183,10 @@ class Combobox extends HTMLElement {
     let restNamed = false;
     [...this.select.children].forEach((node) => {
       if (node.tagName !== "OPTGROUP") {
-        this.addGroup("", [node], {});
+        // Пустой пункт «ряд не выбран» в перечень не попадает.
+        if (node.value) {
+          this.addGroup("", [node], {});
+        }
         return;
       }
       // Первая группа вне тем открывает «Остальные ряды» в перечне слева.

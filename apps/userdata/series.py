@@ -280,6 +280,15 @@ def own_option_groups(request: HttpRequest | None) -> list[dict[str, Any]]:
     return option_groups(list(datasets))
 
 
+def chosen_option_groups(keys: Iterable[str]) -> list[dict[str, Any]]:
+    """
+    Выбранные ряды своих таблиц одной группой — для перечней сайта: свои ряды живут
+    в лаборатории, на страницах сайта видны только уже открытые.
+    """
+    items = selected_options(keys)
+    return [{"title": gettext("Свои данные"), "items": items}] if items else []
+
+
 def selected_options(keys: Iterable[str]) -> list[dict[str, Any]]:
     """Записи перечня для отмеченных рядов таблиц — в порядке ключей."""
     ordered = [key for key in keys if routing.is_user_key(key)]

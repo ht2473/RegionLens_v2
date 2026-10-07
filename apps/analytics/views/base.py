@@ -12,7 +12,7 @@ from apps.catalog.selectors import selected_series_options, series_options_total
 from apps.content.selectors import methodology_for_tool
 from apps.core.navigation import Crumb
 from apps.core.views import BreadcrumbMixin
-from apps.userdata.series import own_option_groups
+from apps.userdata.series import chosen_option_groups
 from apps.warehouse.duckdb_client import WarehouseNotBuiltError
 
 from ..selectors import label_lang
@@ -60,12 +60,10 @@ class AnalyticsView(BreadcrumbMixin, TemplateView):
         context["methodology"] = methodology_for_tool(f"analytics:{self.tool.url_name}")
 
         # Свёрнутый перечень показателей — для инструментов с выбором нескольких рядов;
-        # ряды своих таблиц — первыми группами, в разметке страницы.
+        # свои ряды живут в лаборатории: здесь — только уже выбранные, первой группой.
         context["picker_open"] = bool(self.request.GET.get("picker"))
-        context["own_groups"] = own_option_groups(self.request)
-        context["series_total"] = series_options_total() + sum(
-            len(group["items"]) for group in context["own_groups"]
-        )
+        context["own_groups"] = chosen_option_groups(self.request.GET.getlist("series"))
+        context["series_total"] = series_options_total()
 
         try:
             context.update(self.build_context())

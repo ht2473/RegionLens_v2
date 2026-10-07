@@ -12,7 +12,7 @@
     </label>
 
     <div class="territory-picker" id="series-picker">
-      {# Свои таблицы — первыми: они видны только тому, кто их загрузил. #}
+      {# Выбранные ряды своих таблиц — первыми: остальные свои ряды — в лаборатории. #}
       {% for group in own_groups %}
         <div class="territory-picker__group" data-filter-group>
           <div class="territory-picker__title">{{ group.title }}</div>

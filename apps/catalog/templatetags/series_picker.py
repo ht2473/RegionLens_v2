@@ -20,16 +20,6 @@ def series_options_url() -> str:
     return f"{reverse('catalog:series-options')}?{urlencode({'v': series_options_version()})}"
 
 
-@register.simple_tag(takes_context=True)
-def own_series_options(context: dict[str, Any]) -> list[dict[str, Any]]:
-    """Группы рядов своих таблиц того, кто открыл страницу."""
-    if "own_groups" in context:
-        return list(context["own_groups"])
-    from apps.userdata.series import own_option_groups
-
-    return own_option_groups(context.get("request"))
-
-
 @register.simple_tag
 def series_choice(series: Series | str | None) -> dict[str, Any] | None:
     """Группа, название и пометка выбранного ряда — так же, как в полном перечне."""

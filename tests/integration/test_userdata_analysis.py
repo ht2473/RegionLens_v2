@@ -82,11 +82,15 @@ class TestTools:
         assert [item.key for item in index.context["selected"]] == [own, official]
         assert index.context["scores"]
 
-    def test_picker_lists_own_tables(self, client: Client, warehouse: Any) -> None:
+    def test_picker_keeps_only_chosen_own_series(self, client: Client, warehouse: Any) -> None:
+        # Свои ряды живут в лаборатории: в перечне сайта — только уже выбранный.
         dataset = built(client)
+        key = key_of(dataset, first_record(dataset))
         page = client.get(reverse("catalog:series-picker"), {"picker": "1"})
-        assert f"u:{dataset.code}:" in page.text
-        assert "Мои таблицы" in page.text
+        assert f"u:{dataset.code}:" not in page.text
+        chosen = client.get(reverse("catalog:series-picker"), {"picker": "1", "series": key})
+        assert chosen.text.count(f"u:{dataset.code}:") == chosen.text.count(key)
+        assert key in chosen.text
 
     def test_other_session_gets_404(self, client: Client, warehouse: Any) -> None:
         dataset = built(client)
