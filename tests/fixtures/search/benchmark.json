@@ -1,0 +1,1793 @@
+{
+ "meta": {
+  "purpose": "Мерило поиска вопросом: верный ряд в первых трёх у ≥ 90 % запросов с рядом, верный вид ответа у ≥ 85 %.",
+  "fields": "series — по группе на каждый нужный ряд (relation — два), в группе — допустимые ключи; regions — по группе на регион, в группе — допустимые коды; year и target — где запрос их задаёт; kind none — ответа в данных нет."
+ },
+ "queries": [
+  {
+   "q": "где самые высокие зарплаты",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110378:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где больше всего платят",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110378:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "в каком регионе самая большая зарплата",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110378:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "самая низкая зарплата",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110378:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "зарплата",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110378:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где дольше живут",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110256:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "продолжительность жизни",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110256:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где больше бедных",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110463:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "бедность",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110463:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где труднее найти работу",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110418:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "безработица",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110418:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где самая высокая безработица",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110418:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где просторнее живут",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110226:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "сколько квадратных метров жилья на человека",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110226:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где рождается больше детей",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110402:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "рождаемость",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110402:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где самая низкая рождаемость",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110402:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "куда переезжают люди",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110197:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "миграция",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110197:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "откуда уезжают люди",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110197:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где дороже жильё",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110380:00",
+     "Y477110379:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "цена квадратного метра",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110380:00",
+     "Y477110379:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где дешевле квартиры",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110380:00",
+     "Y477110379:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где опаснее на дорогах",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110496:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "ДТП",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110496:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где больше всего гибнут в авариях",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110496:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где предприятия больше загрязняют воздух",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110053:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "выбросы в атмосферу",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110053:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "загрязнение воздуха",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110053:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где дороже жить",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110395:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "стоимость жизни",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110395:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где чаще берут ипотеку",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "RL_MORTGAGE_COUNT_PC:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "ипотека",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "RL_MORTGAGE_COUNT_PC:00",
+     "RL_MORTGAGE_AVERAGE:00",
+     "RL_MORTGAGE_DEBT_PC:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где больше всего должны банкам",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "RL_RETAIL_DEBT_PC:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "долги населения по кредитам",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "RL_RETAIL_DEBT_PC:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где больше предпринимателей",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "RL_SME_COUNT_PC:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "малый бизнес",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "RL_SME_COUNT_PC:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "численность населения",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110461:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "сколько людей живёт",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110461:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "ВРП на душу",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110006:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "ВРП",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110006:00",
+     "Y477110005:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "самые богатые регионы",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110006:00",
+     "Y477110374:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "доходы населения",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110374:00",
+     "Y477110363:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "инфляция",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110111:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где быстрее растут цены",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110111:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "инвестиции",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110108:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "обеспеченность врачами",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110441:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где не хватает врачей",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110441:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "детские сады",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110004:00",
+     "Y477110217:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "интернет",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110152:00",
+     "Y477110435:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где больше машин",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110499:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "младенческая смертность",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110198:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "смертность",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110232:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "ставка по ипотеке",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "RL_MORTGAGE_RATE:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "просрочка по кредитам",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "RL_RETAIL_OVERDUE_SHARE:00",
+     "RL_SME_LOANS_OVERDUE_SHARE:00",
+     "RL_MORTGAGE_OVERDUE_SHARE:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "где больше лесов",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110203:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "работающие пенсионеры",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110448:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "студенты",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110485:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "театры",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110450:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "реальные доходы",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110363:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "промышленное производство",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110126:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "городское население",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110408:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "медианная зарплата",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110208:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "зарплта",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110378:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "безработеца",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110418:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "рождаемост",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110402:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "продолжительнасть жизни",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110256:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "ипатека",
+   "lang": "ru",
+   "kind": "rank",
+   "series": [
+    [
+     "RL_MORTGAGE_COUNT_PC:00",
+     "RL_MORTGAGE_AVERAGE:00",
+     "RL_MORTGAGE_DEBT_PC:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "зарплата в Татарстане",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110378:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-TA"
+    ]
+   ]
+  },
+  {
+   "q": "средняя зарплата в Москве",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110378:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-MOW"
+    ]
+   ]
+  },
+  {
+   "q": "безработица в Чечне",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110418:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-CE"
+    ]
+   ]
+  },
+  {
+   "q": "продолжительность жизни в Дагестане",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110256:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-DA"
+    ]
+   ]
+  },
+  {
+   "q": "сколько людей живёт в Свердловской области",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110461:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-SVE"
+    ]
+   ]
+  },
+  {
+   "q": "ВРП на душу Тюменская область",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110006:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-TYU",
+     "RU-TYU-AGG"
+    ]
+   ]
+  },
+  {
+   "q": "уровень бедности в Тыве",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110463:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-TY"
+    ]
+   ]
+  },
+  {
+   "q": "цена жилья в Санкт-Петербурге",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110380:00",
+     "Y477110379:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-SPE"
+    ]
+   ]
+  },
+  {
+   "q": "рождаемость в Якутии",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110402:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-SA"
+    ]
+   ]
+  },
+  {
+   "q": "ипотека в Краснодарском крае",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "RL_MORTGAGE_COUNT_PC:00",
+     "RL_MORTGAGE_AVERAGE:00",
+     "RL_MORTGAGE_DEBT_PC:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-KDA"
+    ]
+   ]
+  },
+  {
+   "q": "зарплата Новосибирск",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110378:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-NVS"
+    ]
+   ]
+  },
+  {
+   "q": "безработица Ингушетия 2023",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110418:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-IN"
+    ]
+   ],
+   "year": 2023
+  },
+  {
+   "q": "население Москвы в 2020 году",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110461:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-MOW"
+    ]
+   ],
+   "year": 2020
+  },
+  {
+   "q": "ДТП в Московской области",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110496:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-MOS"
+    ]
+   ]
+  },
+  {
+   "q": "выбросы Красноярский край",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110053:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-KYA"
+    ]
+   ]
+  },
+  {
+   "q": "зарплата в Питере",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110378:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-SPE"
+    ]
+   ]
+  },
+  {
+   "q": "доход на человека в Башкирии",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110374:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-BA"
+    ]
+   ]
+  },
+  {
+   "q": "кредитный долг Чукотка",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "RL_RETAIL_DEBT_PC:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-CHU"
+    ]
+   ]
+  },
+  {
+   "q": "малый бизнес в Калининградской области",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "RL_SME_COUNT_PC:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-KGD"
+    ]
+   ]
+  },
+  {
+   "q": "инфляция в Приморье",
+   "lang": "ru",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110111:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-PRI"
+    ]
+   ]
+  },
+  {
+   "q": "сравнить Москву и Санкт-Петербург",
+   "lang": "ru",
+   "kind": "compare",
+   "series": [],
+   "regions": [
+    [
+     "RU-MOW"
+    ],
+    [
+     "RU-SPE"
+    ]
+   ]
+  },
+  {
+   "q": "зарплата в Москве и Петербурге",
+   "lang": "ru",
+   "kind": "compare",
+   "series": [
+    [
+     "Y477110378:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-MOW"
+    ],
+    [
+     "RU-SPE"
+    ]
+   ]
+  },
+  {
+   "q": "Татарстан и Башкортостан",
+   "lang": "ru",
+   "kind": "compare",
+   "series": [],
+   "regions": [
+    [
+     "RU-TA"
+    ],
+    [
+     "RU-BA"
+    ]
+   ]
+  },
+  {
+   "q": "безработица Дагестан и Чечня",
+   "lang": "ru",
+   "kind": "compare",
+   "series": [
+    [
+     "Y477110418:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-DA"
+    ],
+    [
+     "RU-CE"
+    ]
+   ]
+  },
+  {
+   "q": "Новосибирская область против Омской",
+   "lang": "ru",
+   "kind": "compare",
+   "series": [],
+   "regions": [
+    [
+     "RU-NVS"
+    ],
+    [
+     "RU-OMS"
+    ]
+   ]
+  },
+  {
+   "q": "сравнение Краснодарского края и Ростовской области",
+   "lang": "ru",
+   "kind": "compare",
+   "series": [],
+   "regions": [
+    [
+     "RU-KDA"
+    ],
+    [
+     "RU-ROS"
+    ]
+   ]
+  },
+  {
+   "q": "как менялась зарплата",
+   "lang": "ru",
+   "kind": "trend",
+   "series": [
+    [
+     "Y477110378:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "динамика безработицы в Татарстане",
+   "lang": "ru",
+   "kind": "trend",
+   "series": [
+    [
+     "Y477110418:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-TA"
+    ]
+   ]
+  },
+  {
+   "q": "как менялось население Москвы",
+   "lang": "ru",
+   "kind": "trend",
+   "series": [
+    [
+     "Y477110461:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-MOW"
+    ]
+   ]
+  },
+  {
+   "q": "рождаемость за 10 лет",
+   "lang": "ru",
+   "kind": "trend",
+   "series": [
+    [
+     "Y477110402:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "как росли цены на жильё",
+   "lang": "ru",
+   "kind": "trend",
+   "series": [
+    [
+     "Y477110380:00",
+     "Y477110379:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "изменение продолжительности жизни на Чукотке",
+   "lang": "ru",
+   "kind": "trend",
+   "series": [
+    [
+     "Y477110256:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-CHU"
+    ]
+   ]
+  },
+  {
+   "q": "связана ли зарплата с продолжительностью жизни",
+   "lang": "ru",
+   "kind": "relation",
+   "series": [
+    [
+     "Y477110378:00"
+    ],
+    [
+     "Y477110256:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "зависит ли рождаемость от доходов",
+   "lang": "ru",
+   "kind": "relation",
+   "series": [
+    [
+     "Y477110402:00"
+    ],
+    [
+     "Y477110374:00",
+     "Y477110363:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "связь безработицы и бедности",
+   "lang": "ru",
+   "kind": "relation",
+   "series": [
+    [
+     "Y477110418:00"
+    ],
+    [
+     "Y477110463:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "корреляция ВРП и инвестиций",
+   "lang": "ru",
+   "kind": "relation",
+   "series": [
+    [
+     "Y477110006:00",
+     "Y477110005:00"
+    ],
+    [
+     "Y477110108:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "Татарстан",
+   "lang": "ru",
+   "kind": "region",
+   "series": [],
+   "regions": [
+    [
+     "RU-TA"
+    ]
+   ]
+  },
+  {
+   "q": "Республика Саха",
+   "lang": "ru",
+   "kind": "region",
+   "series": [],
+   "regions": [
+    [
+     "RU-SA"
+    ]
+   ]
+  },
+  {
+   "q": "Калининградская область",
+   "lang": "ru",
+   "kind": "region",
+   "series": [],
+   "regions": [
+    [
+     "RU-KGD"
+    ]
+   ]
+  },
+  {
+   "q": "Москва",
+   "lang": "ru",
+   "kind": "region",
+   "series": [],
+   "regions": [
+    [
+     "RU-MOW"
+    ]
+   ]
+  },
+  {
+   "q": "Чукотка",
+   "lang": "ru",
+   "kind": "region",
+   "series": [],
+   "regions": [
+    [
+     "RU-CHU"
+    ]
+   ]
+  },
+  {
+   "q": "что такое коэффициент Джини",
+   "lang": "ru",
+   "kind": "define",
+   "series": [],
+   "regions": [],
+   "target": "gini"
+  },
+  {
+   "q": "что значит медиана",
+   "lang": "ru",
+   "kind": "define",
+   "series": [],
+   "regions": [],
+   "target": "median"
+  },
+  {
+   "q": "разрыв сопоставимости",
+   "lang": "ru",
+   "kind": "define",
+   "series": [],
+   "regions": [],
+   "target": "comparability-break"
+  },
+  {
+   "q": "что такое процентный пункт",
+   "lang": "ru",
+   "kind": "define",
+   "series": [],
+   "regions": [],
+   "target": "percentage-point"
+  },
+  {
+   "q": "как считается неравенство",
+   "lang": "ru",
+   "kind": "method",
+   "series": [],
+   "regions": [],
+   "target": "inequality"
+  },
+  {
+   "q": "как пересчитывают доходы в реальное выражение",
+   "lang": "ru",
+   "kind": "method",
+   "series": [],
+   "regions": [],
+   "target": "real-terms"
+  },
+  {
+   "q": "почему в Москве высокие зарплаты",
+   "lang": "ru",
+   "kind": "none",
+   "series": [],
+   "regions": []
+  },
+  {
+   "q": "почему падает рождаемость",
+   "lang": "ru",
+   "kind": "none",
+   "series": [],
+   "regions": []
+  },
+  {
+   "q": "погода в Сочи",
+   "lang": "ru",
+   "kind": "none",
+   "series": [],
+   "regions": []
+  },
+  {
+   "q": "курс доллара",
+   "lang": "ru",
+   "kind": "none",
+   "series": [],
+   "regions": []
+  },
+  {
+   "q": "кто губернатор Татарстана",
+   "lang": "ru",
+   "kind": "none",
+   "series": [],
+   "regions": []
+  },
+  {
+   "q": "highest wages",
+   "lang": "en",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110378:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "where are wages highest",
+   "lang": "en",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110378:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "life expectancy",
+   "lang": "en",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110256:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "unemployment rate",
+   "lang": "en",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110418:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "poverty",
+   "lang": "en",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110463:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "birth rate",
+   "lang": "en",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110402:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "where do people move",
+   "lang": "en",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110197:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "housing prices",
+   "lang": "en",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110380:00",
+     "Y477110379:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "road deaths",
+   "lang": "en",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110496:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "air pollution",
+   "lang": "en",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110053:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "mortgage",
+   "lang": "en",
+   "kind": "rank",
+   "series": [
+    [
+     "RL_MORTGAGE_COUNT_PC:00",
+     "RL_MORTGAGE_AVERAGE:00",
+     "RL_MORTGAGE_DEBT_PC:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "small business",
+   "lang": "en",
+   "kind": "rank",
+   "series": [
+    [
+     "RL_SME_COUNT_PC:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "population",
+   "lang": "en",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110461:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "GRP per capita",
+   "lang": "en",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110006:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "inflation",
+   "lang": "en",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110111:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "doctors",
+   "lang": "en",
+   "kind": "rank",
+   "series": [
+    [
+     "Y477110441:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "wages in Tatarstan",
+   "lang": "en",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110378:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-TA"
+    ]
+   ]
+  },
+  {
+   "q": "unemployment in Chechnya",
+   "lang": "en",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110418:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-CE"
+    ]
+   ]
+  },
+  {
+   "q": "population of Moscow",
+   "lang": "en",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110461:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-MOW"
+    ]
+   ]
+  },
+  {
+   "q": "life expectancy Dagestan 2022",
+   "lang": "en",
+   "kind": "value",
+   "series": [
+    [
+     "Y477110256:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-DA"
+    ]
+   ],
+   "year": 2022
+  },
+  {
+   "q": "compare Moscow and Saint Petersburg",
+   "lang": "en",
+   "kind": "compare",
+   "series": [],
+   "regions": [
+    [
+     "RU-MOW"
+    ],
+    [
+     "RU-SPE"
+    ]
+   ]
+  },
+  {
+   "q": "Tatarstan vs Bashkortostan",
+   "lang": "en",
+   "kind": "compare",
+   "series": [],
+   "regions": [
+    [
+     "RU-TA"
+    ],
+    [
+     "RU-BA"
+    ]
+   ]
+  },
+  {
+   "q": "how has unemployment changed",
+   "lang": "en",
+   "kind": "trend",
+   "series": [
+    [
+     "Y477110418:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "population trend in Yakutia",
+   "lang": "en",
+   "kind": "trend",
+   "series": [
+    [
+     "Y477110461:00"
+    ]
+   ],
+   "regions": [
+    [
+     "RU-SA"
+    ]
+   ]
+  },
+  {
+   "q": "is income related to life expectancy",
+   "lang": "en",
+   "kind": "relation",
+   "series": [
+    [
+     "Y477110374:00"
+    ],
+    [
+     "Y477110256:00"
+    ]
+   ],
+   "regions": []
+  },
+  {
+   "q": "Tatarstan",
+   "lang": "en",
+   "kind": "region",
+   "series": [],
+   "regions": [
+    [
+     "RU-TA"
+    ]
+   ]
+  },
+  {
+   "q": "what is the Gini coefficient",
+   "lang": "en",
+   "kind": "define",
+   "series": [],
+   "regions": [],
+   "target": "gini"
+  },
+  {
+   "q": "what is a median",
+   "lang": "en",
+   "kind": "define",
+   "series": [],
+   "regions": [],
+   "target": "median"
+  },
+  {
+   "q": "how is inequality calculated",
+   "lang": "en",
+   "kind": "method",
+   "series": [],
+   "regions": [],
+   "target": "inequality"
+  },
+  {
+   "q": "why are wages high in Moscow",
+   "lang": "en",
+   "kind": "none",
+   "series": [],
+   "regions": []
+  }
+ ]
+}

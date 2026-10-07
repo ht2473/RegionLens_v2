@@ -523,7 +523,7 @@ class TestStatusAnnouncement:
 
 
 class TestPaletteMemory:
-    """Палитра с пустым полем и исправление опечаток."""
+    """Палитра с пустым полем и запрос с опечаткой."""
 
     def test_recent_pages_are_offered(self, page: Page, site: Any) -> None:
         """Пустая палитра предлагает недавно открытое, хранимое в браузере."""
@@ -540,15 +540,15 @@ class TestPaletteMemory:
         titles = items.all_text_contents()
         assert any("Неравенство" in title for title in titles)
 
-    def test_typo_is_offered_for_repair(self, page: Page, site: Any) -> None:
+    def test_typo_still_finds_the_region(self, page: Page, site: Any) -> None:
         """
-        Опечатка предлагается к исправлению.
+        Опечатка в названии не оставляет выдачу пустой.
 
-        Поиск отвечает вхождением подстроки, и один неверный знак означает пустую
-        выдачу: «Татарстн» в наборе не встречается.
+        Место узнаётся по основе слова с допуском, поэтому «татарстн» — Татарстан,
+        и исправлять запрос вручную не нужно.
         """
         page.set_viewport_size({"width": 1600, "height": 900})
-        page.goto(site.url)
+        page.goto(f"{site.url}/ru/about/")
         page.wait_for_load_state("networkidle")
 
         page.keyboard.press("Control+k")
@@ -556,17 +556,8 @@ class TestPaletteMemory:
         page.fill(".palette__input", "татарстн")
         page.wait_for_timeout(900)
 
-        suggestion = page.locator("[data-palette-suggest]")
-        if suggestion.count() == 0:
-            pytest.skip("Справочник пуст: исправлять не по чему")
-
-        assert suggestion.get_attribute("data-palette-suggest") == "татарстан"
-
-        # Нажатие подставляет исправленный запрос в поле, а не уводит по ссылке:
-        # палитра остаётся раскрытой, и видно, что нашлось по исправленному запросу.
-        suggestion.click()
-        page.wait_for_timeout(900)
-        assert page.locator(".palette__input").input_value() == "татарстан"
+        titles = page.locator(".palette__item-title").all_text_contents()
+        assert any("Татарстан" in title for title in titles)
 
 
 class TestActionPanels:

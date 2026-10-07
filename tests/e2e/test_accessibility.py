@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import urlencode
 
 import pytest
 from django.urls import reverse
@@ -106,8 +107,9 @@ class TestMarkup:
         page.set_viewport_size({"width": 1440, "height": 900})
 
         failures: list[str] = []
-        for name in PAGES:
-            path = reverse(name)
+        # Страница результатов — и с ответом: чипы «понято как» и группы найденного.
+        search = reverse("search:results") + "?" + urlencode({"q": "зарплата в Татарстане"})
+        for path in [*(reverse(name) for name in PAGES), search]:
             response = page.goto(f"{site.url}{path}")
             assert response is not None and response.status == 200, f"{path}: страница не открылась"
             page.wait_for_load_state("networkidle")

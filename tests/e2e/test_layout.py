@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import urlencode
 
 import pytest
 from django.urls import reverse
@@ -19,12 +20,16 @@ PAGES = (*PUBLIC_PAGES, "content:methodology", "content:glossary", "feedback:cre
 MAX_SCRIPTS = 24
 MAX_NODES = 5000
 
+# Ответы поиска с самой широкой разметкой: два столбца рейтинга и таблица сравнения.
+SEARCHES = ("где самые высокие зарплаты", "сравнить Москву и Санкт-Петербург")
+
 
 def page_paths() -> list[str]:
     """Адреса разделов и страниц отдельных записей с настоящей длиной названий."""
     from apps.catalog.models import Series, Territory
 
     paths = [reverse(route) for route in PAGES]
+    paths += [reverse("search:results") + "?" + urlencode({"q": query}) for query in SEARCHES]
     territory = Territory.objects.comparable().order_by("code").first()
     if territory is not None:
         paths.append(reverse("catalog:territory-detail", kwargs={"slug": territory.slug}))

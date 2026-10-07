@@ -7,6 +7,7 @@ PUBLIC_PAGES = [
     "core:home",
     "core:about",
     "core:terms",
+    "search:results",
     "catalog:indicator-list",
     "catalog:territory-list",
     "catalog:dataset",
