@@ -1,0 +1,8 @@
+{# Малая линия хода величины: spark — из apps.core.charts.sparkline_path. #}
+{% if spark %}
+  <svg class="sparkline answer__spark" viewBox="0 0 {{ spark.width }} {{ spark.height }}"
+       preserveAspectRatio="none" aria-hidden="true">
+    <path class="sparkline__line" d="{{ spark.path }}"></path>
+    <path class="sparkline__end" d="M{{ spark.end_x }} {{ spark.end_y }}h0"></path>
+  </svg>
+{% endif %}

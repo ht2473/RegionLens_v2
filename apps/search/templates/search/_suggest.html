@@ -1,0 +1,58 @@
+{% load i18n %}
+{# Подсказки быстрого перехода: первой — страница результатов с тем, как понят запрос. #}
+
+{% if not reading %}
+  <div class="palette__group-title">{% translate "Регион, показатель или вопрос" %}</div>
+  <p class="palette__hint">
+    {% translate "Например: где самые высокие зарплаты, безработица в Татарстане, что такое медиана." %}
+  </p>
+
+{% else %}
+  <a class="palette__item palette__item--answer" href="{{ results_url }}">
+    <svg aria-hidden="true"><use href="#icon-search"></use></svg>
+    <span class="palette__item-title">{% blocktranslate trimmed %}Найти: «{{ query }}»{% endblocktranslate %}</span>
+    {% if kind_label %}<span class="palette__item-hint">{{ kind_label }}</span>{% endif %}
+  </a>
+
+  {% if groups.series %}
+    <div class="palette__group-title">{% translate "Показатели" %}</div>
+    {% for row in groups.series %}
+      <a class="palette__item" href="{{ row.href }}">
+        <svg aria-hidden="true"><use href="#icon-list"></use></svg>
+        <span class="palette__item-title">{{ row.title }}</span>
+        <span class="palette__item-hint">{% if row.subtitle %}{{ row.subtitle }}{% else %}{{ row.unit }}{% endif %}</span>
+      </a>
+    {% endfor %}
+  {% endif %}
+
+  {% if groups.regions %}
+    <div class="palette__group-title">{% translate "Регионы" %}</div>
+    {% for row in groups.regions %}
+      <a class="palette__item" href="{{ row.href }}">
+        <svg aria-hidden="true"><use href="#icon-map-pin"></use></svg>
+        <span class="palette__item-title">{{ row.name }}</span>
+        <span class="palette__item-hint">{{ row.parent }}</span>
+      </a>
+    {% endfor %}
+  {% endif %}
+
+  {% if groups.terms %}
+    <div class="palette__group-title">{% translate "Термины" %}</div>
+    {% for row in groups.terms %}
+      <a class="palette__item" href="{{ row.href }}">
+        <svg aria-hidden="true"><use href="#icon-book"></use></svg>
+        <span class="palette__item-title">{{ row.title }}</span>
+      </a>
+    {% endfor %}
+  {% endif %}
+
+  {% if groups.pages %}
+    <div class="palette__group-title">{% translate "Страницы" %}</div>
+    {% for row in groups.pages %}
+      <a class="palette__item" href="{{ row.href }}">
+        <svg aria-hidden="true"><use href="#icon-file-text"></use></svg>
+        <span class="palette__item-title">{{ row.title }}</span>
+      </a>
+    {% endfor %}
+  {% endif %}
+{% endif %}

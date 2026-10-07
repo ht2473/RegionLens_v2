@@ -22,7 +22,6 @@ urlpatterns = [
         "datasets/quality/",
         RedirectView.as_view(pattern_name="catalog:dataset", permanent=True),
     ),
-    path("search/quick/", views.quick_search, name="quick-search"),
     path("picker/series/", views.series_picker, name="series-picker"),
     path("picker/series/options/", views.series_options_markup, name="series-options"),
 ]

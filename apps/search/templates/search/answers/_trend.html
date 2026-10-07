@@ -1,0 +1,23 @@
+{% load i18n %}
+{# Как менялся показатель: последнее значение, изменение за пять лет и ход. #}
+<h2 class="answer__title" id="answer-title">
+  {{ a.item.short_title }} — {% if a.is_country %}{% translate "Россия" %}{% else %}{{ a.territory.name }}{% endif %},
+  <span class="numeric">{{ a.first_year }}–{{ a.year }}</span>
+</h2>
+<div class="answer__figure">
+  <p class="answer__value"><span class="numeric">{{ a.value }}</span> <span class="answer__unit">{{ a.item.unit_label }}, {{ a.year }}</span></p>
+  {% include "search/answers/_spark.html" with spark=a.spark %}
+</div>
+<p class="answer__meta">
+  {% if a.change %}
+    <span>{% blocktranslate trimmed with since=a.since change=a.change %}С {{ since }} года — {{ change }}{% endblocktranslate %}</span>
+  {% endif %}
+  {% if a.breaks %}
+    <span class="text-attention">
+      {% blocktranslate trimmed with years=a.breaks|join:", " %}
+        Разрыв сопоставимости — {{ years }}:
+      {% endblocktranslate %}
+      {% translate "изменение — с оговоркой." %}
+    </span>
+  {% endif %}
+</p>

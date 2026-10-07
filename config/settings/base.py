@@ -114,6 +114,7 @@ LOCAL_APPS = [
     "apps.dashboard",  # панель управления системой
     "apps.sources",  # сбор выпусков внешних источников: архив, разбор, журнал
     "apps.userdata",  # свои данные: таблицы пользователей, разбор, ряды
+    "apps.search",  # поиск вопросом: разбор запроса, ответы, журнал запросов без ответа
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

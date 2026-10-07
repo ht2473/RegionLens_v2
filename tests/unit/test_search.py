@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from apps.core.search import correct, escape_like, normalize, search_q, terms, words_of
+from apps.core.search import escape_like, normalize, search_q, terms
 
 pytestmark = pytest.mark.unit
 
@@ -91,67 +91,3 @@ class TestSearchQ:
         condition = search_q("доходы населения", "name_ru")
         assert condition.connector == "AND"
         assert len(condition.children) == 2
-
-
-class TestWordsOf:
-    """Словарь слов для исправления опечаток."""
-
-    def test_short_words_are_left_out(self) -> None:
-        """
-        Предлоги и союзы в словарь не идут.
-
-        Они есть почти в каждом названии, а исправлять по ним нечего: слово
-        из двух букв похоже на десяток других так же сильно.
-        """
-        assert words_of("Ввод в действие жилых домов") == {"ввод", "действие", "жилых", "домов"}
-
-    def test_case_and_yo_are_folded(self) -> None:
-        """Словарь хранит слова в том же виде, в каком приходит запрос."""
-        assert words_of("Приём ЖИЛЬЯ") == {"прием", "жилья"}
-
-
-class TestCorrect:
-    """Исправление опечаток по словарю."""
-
-    VOCABULARY = sorted(
-        words_of(
-            "Республика Татарстан",
-            "Ненецкий автономный округ",
-            "Уровень безработицы населения",
-            "Валовой региональный продукт на душу населения",
-        )
-    )
-
-    @pytest.mark.parametrize(
-        ("query", "expected"),
-        [
-            ("татарстн", "татарстан"),
-            ("ннецкий", "ненецкий"),
-            ("безрабтицы", "безработицы"),
-            ("валовый регионльный", "валовой региональный"),
-        ],
-    )
-    def test_typos_are_repaired(self, query: str, expected: str) -> None:
-        """Опечатка в длинном слове исправляется по ближайшему слову словаря."""
-        assert correct(query, self.VOCABULARY) == expected
-
-    def test_correct_query_is_left_alone(self) -> None:
-        """Запрос, слова которого есть в словаре, не переписывается."""
-        assert correct("республика татарстан", self.VOCABULARY) == "республика татарстан"
-
-    def test_short_words_are_not_guessed(self) -> None:
-        """
-        Короткое слово не исправляется.
-
-        У трёхбуквенного слова близких соседей столько, что исправление
-        становится угадыванием: «врп» превратилось бы в первое похожее.
-        """
-        assert correct("врп", self.VOCABULARY) == "врп"
-
-    def test_unknown_word_survives(self) -> None:
-        """Слово, ни на что не похожее, остаётся как есть: это не опечатка."""
-        assert correct("криптовалюта", self.VOCABULARY) == "криптовалюта"
-
-    def test_empty_vocabulary_changes_nothing(self) -> None:
-        """Без словаря исправлять не по чему, и запрос уходит нетронутым."""
-        assert correct("татарстн", []) == "татарстн"

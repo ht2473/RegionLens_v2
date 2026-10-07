@@ -1,0 +1,18 @@
+{% load i18n %}
+{# Значение показателя в регионе: число, место, сравнение с Россией и ход. #}
+<h2 class="answer__title" id="answer-title">{{ a.item.short_title }} — <a href="{{ a.passport }}">{{ a.territory.name }}</a></h2>
+{% if a.year_replaced %}
+  <p class="answer__note">
+    {% blocktranslate trimmed with wanted=reading.year shown=a.year %}За {{ wanted }} год данных нет — показан {{ shown }}.{% endblocktranslate %}
+  </p>
+{% endif %}
+<div class="answer__figure">
+  <p class="answer__value"><span class="numeric">{{ a.value }}</span> <span class="answer__unit">{{ a.item.unit_label }}, {{ a.year }}</span></p>
+  {% include "search/answers/_spark.html" with spark=a.spark %}
+</div>
+<p class="answer__meta">
+  {% if a.position.place %}<span>{{ a.position.place }}</span>{% endif %}
+  {% if a.position.standing %}<span class="verdict verdict--{{ a.position.tone }}">{{ a.position.standing|capfirst }}</span>{% endif %}
+  {% if a.position.versus %}<span>{{ a.position.versus|capfirst }}</span>{% endif %}
+  {% if a.country %}<span>{% translate "По России" %} — <b class="numeric">{{ a.country }}</b></span>{% endif %}
+</p>

@@ -37,6 +37,7 @@ urlpatterns += i18n_patterns(
     path("", include("apps.feedback.urls")),
     path("", include("apps.dashboard.urls")),
     path("", include("apps.userdata.urls")),
+    path("", include("apps.search.urls")),
     prefix_default_language=True,
 )
 

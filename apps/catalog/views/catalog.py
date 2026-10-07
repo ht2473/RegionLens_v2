@@ -20,17 +20,15 @@ from django.utils.translation import get_language
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import ListView
 
-from apps.catalog.constants import TerritoryLevel
 from apps.catalog.models import Section, Series, Territory
 from apps.catalog.selectors import (
-    search_vocabulary,
     selected_series_options,
     series_options,
     series_options_total,
     series_options_version,
 )
-from apps.core.navigation import Crumb, build_breadcrumbs, matching_items
-from apps.core.search import correct, search_q
+from apps.core.navigation import Crumb, build_breadcrumbs
+from apps.core.search import search_q
 from apps.core.showcase import country_tiles
 from apps.core.templatetags.formatting import ru_number
 from apps.core.views import BreadcrumbMixin
@@ -52,9 +50,6 @@ DEFAULT_SORT = "coverage"
 
 # Наименьшая длина поискового запроса.
 MIN_QUERY_LENGTH = 2
-
-# Число подсказок быстрого перехода.
-QUICK_SEARCH_LIMIT = 6
 
 # Поля поиска ряда, с английскими названиями для английской версии.
 SERIES_SEARCH_FIELDS = (
@@ -304,49 +299,6 @@ def series_options_markup(request: HttpRequest) -> HttpResponse:
     else:
         patch_cache_control(response, no_cache=True)
     return response
-
-
-def quick_search(request: HttpRequest) -> HttpResponse:
-    """Подсказки быстрого перехода: показатели, регионы, разделы и инструменты."""
-    query = request.GET.get("q", "").strip()
-
-    if len(query) < MIN_QUERY_LENGTH:
-        return render(request, "catalog/partials/_quick_search.html", {"query": query})
-
-    series = (
-        Series.objects.filter(search_q(query, *SERIES_SEARCH_FIELDS))
-        .select_related("indicator")
-        .order_by("-region_coverage", "-year_count")[:QUICK_SEARCH_LIMIT]
-    )
-
-    territories = (
-        Territory.objects.filter(level=TerritoryLevel.REGION, is_aggregate=False)
-        .filter(search_q(query, *TERRITORY_SEARCH_FIELDS))
-        .order_by("name_ru")[:QUICK_SEARCH_LIMIT]
-    )
-
-    sections = Section.objects.filter(search_q(query, "name_ru", "name_en")).order_by("name_ru")[:4]
-
-    tools = matching_items(query)
-
-    has_results = bool(series or territories or sections or tools)
-
-    # Исправление опечатки предлагается только при пустой выдаче.
-    suggestion = "" if has_results else correct(query, search_vocabulary())
-
-    return render(
-        request,
-        "catalog/partials/_quick_search.html",
-        {
-            "query": query,
-            "series": series,
-            "territories": territories,
-            "sections": sections,
-            "tools": tools,
-            "has_results": has_results,
-            "suggestion": "" if suggestion == query else suggestion,
-        },
-    )
 
 
 # ---------------------------------------------------------------------------------------

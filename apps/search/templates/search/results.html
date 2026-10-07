@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{# Результаты поиска: ответ с разбором «понято как», затем показатели, регионы, термины и страницы. #}
+
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/search.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page search">
+
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Поиск" %}</h1>
+    {% include "search/_field.html" with query=query examples=examples %}
+  </header>
+
+  {% if query and reading %}
+    {% if answer %}
+      <section class="answer" aria-labelledby="answer-title">
+        <div class="understood">
+          <span class="understood__label">{% translate "Понято как" %}</span>
+          {% for chip in chips %}
+            <span class="understood__part">
+              <span class="understood__chip understood__chip--{{ chip.role }}">
+                {{ chip.label }}
+                {% if chip.remove %}
+                  <a class="understood__remove" href="{{ chip.remove }}"
+                     aria-label="{% blocktranslate trimmed with name=chip.label %}Убрать: {{ name }}{% endblocktranslate %}">×</a>
+                {% endif %}
+              </span>
+              {% if chip.options %}
+                {# «или» не отрывается от первого варианта, запятая — от предыдущего. #}
+                <span class="understood__or">{% translate "или" %}</span>&nbsp;{% for option in chip.options %}<a class="understood__option" href="{{ option.href }}">{{ option.label }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
+              {% endif %}
+            </span>
+          {% endfor %}
+        </div>
+        {% include answer.template with a=answer %}
+        <p class="answer__more">
+          <a class="button button--secondary button--sm" href="{{ answer.link }}">
+            {{ answer.link_label }}
+            <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+          </a>
+        </p>
+      </section>
+    {% else %}
+      {# Ответа в данных нет: без придуманного текста — ближайшее найденное и методика. #}
+      <section class="answer answer--none" aria-labelledby="answer-title">
+        <h2 class="answer__title" id="answer-title">{% translate "В данных ответа нет" %}</h2>
+        <p class="answer__note">
+          {% if reading.why %}
+            {% translate "Сайт показывает числа и их изменение, но не объясняет причины." %}
+          {% else %}
+            {% translate "Вопрос не похож ни на один из показателей и терминов сайта." %}
+          {% endif %}
+          {% if found %}{% translate "Ближе всего — ниже." %}{% endif %}
+          <a href="{% url 'content:methodology' %}">{% translate "Как устроены данные" %}</a>
+        </p>
+      </section>
+    {% endif %}
+
+    {% if groups.series %}
+      <section class="page-section results-group" aria-labelledby="results-series">
+        <div class="page-section__head">
+          <h2 class="page-section__title" id="results-series">{% translate "Показатели" %}</h2>
+        </div>
+        <ul class="result-list">
+          {% for row in groups.series %}
+            <li class="result-list__item">
+              <a class="result-list__title" href="{{ row.href }}">{{ row.title }}</a>
+              <span class="result-list__meta">
+                {% if row.subtitle %}{{ row.subtitle }} · {% endif %}{% if row.unit %}{{ row.unit }} · {% endif %}{{ row.years }}
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+
+    {% if groups.regions %}
+      <section class="page-section results-group" aria-labelledby="results-regions">
+        <div class="page-section__head">
+          <h2 class="page-section__title" id="results-regions">{% translate "Регионы" %}</h2>
+        </div>
+        <ul class="result-list">
+          {% for row in groups.regions %}
+            <li class="result-list__item">
+              <a class="result-list__title" href="{{ row.href }}">{{ row.name }}</a>
+              {% if row.parent %}<span class="result-list__meta">{{ row.parent }}</span>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+
+    {% if groups.terms %}
+      <section class="page-section results-group" aria-labelledby="results-terms">
+        <div class="page-section__head">
+          <h2 class="page-section__title" id="results-terms">{% translate "Термины" %}</h2>
+        </div>
+        <ul class="result-list">
+          {% for row in groups.terms %}
+            <li class="result-list__item">
+              <a class="result-list__title" href="{{ row.href }}">{{ row.title }}</a>
+              <span class="result-list__meta">{{ row.text }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+
+    {% if groups.pages %}
+      <section class="page-section results-group" aria-labelledby="results-pages">
+        <div class="page-section__head">
+          <h2 class="page-section__title" id="results-pages">{% translate "Страницы" %}</h2>
+        </div>
+        <ul class="result-list">
+          {% for row in groups.pages %}
+            <li class="result-list__item">
+              <a class="result-list__title" href="{{ row.href }}">{{ row.title }}</a>
+              {% if row.text %}<span class="result-list__meta">{{ row.text }}</span>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+  {% endif %}
+
+</div>
+{% endblock %}

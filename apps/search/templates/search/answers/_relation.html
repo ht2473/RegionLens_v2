@@ -1,0 +1,17 @@
+{% load i18n %}
+{# Связь двух показателей по регионам: коэффициент Спирмена, облако точек, оговорка. #}
+<h2 class="answer__title" id="answer-title">{{ a.first.short_title }} {% translate "и" %} {{ a.second.short_title|lower }}</h2>
+<p class="answer__value">
+  <span class="numeric">{{ a.coefficient }}</span>
+  <span class="answer__unit">
+    {% if a.strength == "weak" %}{% translate "связь слабая" %}{% elif a.strength == "moderate" %}{% translate "связь умеренная" %}{% else %}{% translate "связь сильная" %}{% endif %},
+    {% if a.positive %}{% translate "прямая" %}{% else %}{% translate "обратная" %}{% endif %}
+  </span>
+</p>
+<rl-chart class="chart answer__chart" data-options="answer-relation-option"></rl-chart>
+{{ a.chart|json_script:"answer-relation-option" }}
+<p class="answer__meta">
+  <span>{% blocktranslate trimmed with pairs=a.pairs year=a.year %}Регионов: {{ pairs }}, {{ year }} год, ранговая корреляция Спирмена{% endblocktranslate %}</span>
+  {% if not a.significant %}<span class="text-attention">{% translate "может быть случайной" %}</span>{% endif %}
+</p>
+<p class="answer__note">{% translate "Связь по регионам — не причина и следствие: регионы различаются многим сразу." %}</p>

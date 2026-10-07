@@ -294,10 +294,10 @@ class TestCatalogFiltering:
         assert "app-header" not in content
 
     def test_quick_search_requires_minimum_length(self, client: Client, seeded: None) -> None:
-        """Подсказки палитры не строятся по слишком короткому запросу."""
-        response = client.get(reverse("catalog:quick-search"), {"q": "а"})
+        """Подсказки быстрого перехода не строятся по слишком короткому запросу."""
+        response = client.get(reverse("search:suggest"), {"q": "а"})
         assert response.status_code == 200
-        assert "Начните вводить запрос" in response.content.decode("utf-8")
+        assert "palette__item" not in response.content.decode("utf-8")
 
     @pytest.mark.parametrize("query", ["численность", "Численность", "ЧИСЛЕННОСТЬ"])
     def test_search_ignores_case_of_cyrillic(

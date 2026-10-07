@@ -1,10 +1,8 @@
-"""Поиск по русскому тексту без учёта регистра, «ё» и порядка слов, с исправлением опечаток."""
+"""Отбор списков по русскому тексту без учёта регистра, «ё» и порядка слов."""
 
 from __future__ import annotations
 
-import difflib
 import re
-from collections.abc import Sequence
 
 from django.db.models import CharField, Lookup, Q, TextField
 
@@ -19,12 +17,6 @@ MAX_TERMS = 6
 MIN_TERM_LENGTH = 2
 
 _SPLIT_RE = re.compile(r"[^\w²³·%]+", re.UNICODE)
-
-# Наименьшая длина исправляемого слова: «ВРП» превратилось бы в «вру».
-MIN_CORRECTION_LENGTH = 4
-
-# Порог сходства: исправляет «татарстн» и «безрабтица», но не «жильё» в «жилищный».
-CORRECTION_CUTOFF = 0.75
 
 # Знак экранирования ``LIKE`` в записи для сервера: обратная косая черта в апострофах.
 LIKE_ESCAPE = "'" + chr(92) + "'"
@@ -53,42 +45,6 @@ def terms(query: str) -> list[str]:
     if not meaningful:
         meaningful = words
     return meaningful[:MAX_TERMS]
-
-
-def correct(query: str, vocabulary: Sequence[str]) -> str:
-    """
-    Исправить опечатки в словах запроса по словарю слов из названий.
-
-    Сходство считается в Python: ``pg_trgm`` при локали ``C`` не выделяет триграмм из кириллицы.
-    """
-    if not vocabulary:
-        return query
-
-    fixed: list[str] = []
-    changed = False
-    for word in terms(query):
-        if len(word) < MIN_CORRECTION_LENGTH:
-            fixed.append(word)
-            continue
-
-        close = difflib.get_close_matches(word, vocabulary, n=1, cutoff=CORRECTION_CUTOFF)
-        if close and close[0] != word:
-            fixed.append(close[0])
-            changed = True
-        else:
-            fixed.append(word)
-
-    return " ".join(fixed) if changed else query
-
-
-def words_of(*texts: str) -> set[str]:
-    """Разобрать названия на слова словаря исправлений, без коротких."""
-    found: set[str] = set()
-    for text in texts:
-        for word in _SPLIT_RE.split(normalize(text)):
-            if len(word) >= MIN_CORRECTION_LENGTH:
-                found.add(word)
-    return found
 
 
 def search_q(query: str, *fields: str) -> Q:

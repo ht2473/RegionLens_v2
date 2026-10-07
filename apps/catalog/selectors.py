@@ -13,17 +13,13 @@ from django.db.models import QuerySet
 from django.http import Http404
 from django.utils.translation import get_language, gettext
 
-from apps.catalog.models import Indicator, Section, Series, Territory
-from apps.core.search import words_of
+from apps.catalog.models import Series, Territory
 from apps.warehouse.duckdb_client import warehouse_generation
 from apps.warehouse.queries import FeaturedSeries, covered_years, featured_series, featured_set
 from apps.warehouse.routing import is_user_key
 
 # Время жизни кэша перечня рядов для выпадающих списков.
 SERIES_OPTIONS_CACHE_TTL = 3600
-
-# Словарь исправлений меняется только при пересборке справочника.
-SEARCH_VOCABULARY_CACHE_TTL = 3600
 
 # Наибольшее число территорий в сравнении: больше восьми линий неразличимы.
 MAX_COMPARE = 8
@@ -285,25 +281,3 @@ def grouped_territories() -> list[dict[str, Any]]:
     result = list(groups.values())
     cache.set(key, result, SERIES_OPTIONS_CACHE_TTL)
     return result
-
-
-def search_vocabulary() -> list[str]:
-    """Словарь слов из названий справочника на обоих языках — для исправления опечаток."""
-    key = "catalog:search-vocabulary:1"
-    cached = cache.get(key)
-    if cached is not None:
-        return cached
-
-    texts: list[str] = []
-    for model, fields in (
-        (Indicator, ("name_ru", "name_en")),
-        (Series, ("name_ru", "name_en")),
-        (Territory, ("name_ru", "name_en", "capital_ru", "capital_en")),
-        (Section, ("name_ru", "name_en")),
-    ):
-        for row in model.objects.values_list(*fields):
-            texts.extend(value for value in row if value)
-
-    vocabulary = sorted(words_of(*texts))
-    cache.set(key, vocabulary, SEARCH_VOCABULARY_CACHE_TTL)
-    return vocabulary

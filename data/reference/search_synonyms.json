@@ -1,0 +1,310 @@
+{
+ "meta": {
+  "purpose": "Разговорные слова и формулировки к рядам основного набора и темам: поиск вопросом находит ряд, даже если в запросе нет слов из его названия. Пополняется по журналу запросов без ответа (раздел панели «Поиск»).",
+  "fields": "series — ключ ряда → слова и короткие обороты по-русски (ru) и по-английски (en); prior — перевес общего ряда над частными («смертность» — общая, а не младенческая); themes — код темы → слова темы; places — код субъекта → прозвища, которых нет в справочнике территорий. Слова приводятся к основе при построении указателя."
+ },
+ "series": {
+  "Y477110461:00": {
+   "ru": ["население", "жители", "сколько людей живёт", "сколько жителей", "численность", "людей", "народу", "населённые регионы"],
+   "en": ["population", "inhabitants", "residents", "how many people", "people living", "headcount"]
+  },
+  "Y477110256:00": {
+   "ru": ["продолжительность жизни", "сколько живут", "дольше живут", "долголетие", "живут дольше", "средняя продолжительность"],
+   "en": ["life expectancy", "lifespan", "longevity", "live longer", "how long people live"]
+  },
+  "Y477110006:00": {
+   "ru": ["ВРП на душу", "ВРП на человека", "ВРП", "богатые регионы", "богатство региона", "экономика на душу", "валовой продукт на жителя"],
+   "en": ["GRP per capita", "GRP per person", "GRP", "rich regions", "wealth", "output per person"]
+  },
+  "Y477110374:00": {
+   "ru": ["доход", "доходы населения", "доход на человека", "среднедушевой доход", "сколько получают", "доходы", "богатые регионы"],
+   "en": ["income", "income per capita", "average income", "household income", "earnings per person"]
+  },
+  "Y477110378:00": {
+   "ru": ["зарплата", "зарплаты", "заработная плата", "заработок", "зарабатывают", "платят", "оклад", "средняя зарплата", "зп"],
+   "en": ["wage", "wages", "salary", "salaries", "pay", "average wage", "earnings"]
+  },
+  "Y477110463:00": {
+   "ru": ["бедность", "бедные", "бедных", "за чертой бедности", "ниже прожиточного минимума", "малоимущие", "нищета"],
+   "en": ["poverty", "poor", "poverty rate", "below the poverty line", "poverty line"]
+  },
+  "Y477110418:00": {
+   "ru": ["безработица", "безработные", "без работы", "найти работу", "нет работы", "уровень безработицы"],
+   "en": ["unemployment", "unemployed", "jobless", "unemployment rate", "find a job"]
+  },
+  "Y477110108:00": {
+   "ru": ["инвестиции", "вложения", "капиталовложения", "инвестиции на человека", "инвестиции в основной капитал"],
+   "en": ["investment", "investments", "capital investment", "investment per capita"]
+  },
+  "Y477110224:00": {
+   "ru": ["розничная торговля", "розница", "оборот розницы", "покупки", "магазины", "торговля на человека"],
+   "en": ["retail", "retail trade", "retail sales", "shopping", "retail turnover"]
+  },
+  "Y477110017:00": {
+   "ru": ["ввод жилья", "строят жильё", "строительство жилья", "новое жильё", "стройка", "сколько строят", "новостройки ввод"],
+   "en": ["housing construction", "new housing", "housing completions", "homes built", "construction"]
+  },
+  "Y477110226:00": {
+   "ru": ["жилая площадь", "квадратных метров на человека", "метров на человека", "просторнее живут", "площадь жилья", "теснота"],
+   "en": ["living space", "floor space per person", "square meters per person", "housing space", "dwelling space"]
+  },
+  "Y477110005:00": {
+   "ru": ["ВРП", "валовой региональный продукт", "размер экономики", "экономика региона", "объём экономики"],
+   "en": ["GRP", "gross regional product", "economy size", "regional economy", "economic output"]
+  },
+  "Y477110402:00": {
+   "ru": ["рождаемость", "рождается детей", "рожают", "дети на женщину", "рождения", "суммарный коэффициент рождаемости", "демография"],
+   "en": ["birth rate", "fertility", "births", "children per woman", "total fertility rate"]
+  },
+  "Y477110232:00": {
+   "prior": 1.15,
+   "ru": ["смертность", "умирают", "смерти", "общая смертность", "умерших"],
+   "en": ["mortality", "death rate", "deaths", "dying"]
+  },
+  "Y477110196:00": {
+   "ru": ["естественный прирост", "естественная убыль", "рождаемость минус смертность", "вымирание", "убыль населения"],
+   "en": ["natural increase", "natural decrease", "natural growth", "population decline"]
+  },
+  "Y477110197:00": {
+   "ru": ["миграция", "переезжают", "переезд", "уезжают", "приезжают", "отток населения", "приток населения", "мигранты", "переселение"],
+   "en": ["migration", "people move", "moving", "move to", "net migration", "outflow", "inflow", "migrants"]
+  },
+  "Y477110408:00": {
+   "ru": ["городские жители", "городское население", "горожане", "урбанизация", "живут в городах"],
+   "en": ["urban population", "urbanization", "city dwellers", "urban share"]
+  },
+  "Y477110051:00": {
+   "ru": ["доля детей", "дети и подростки", "молодёжь", "молодое население", "детей в населении"],
+   "en": ["children share", "young population", "children and teenagers", "youth"]
+  },
+  "Y477110052:00": {
+   "ru": ["пожилые", "пенсионеры", "старики", "старше трудоспособного", "старение населения", "доля пожилых", "пенсионного возраста"],
+   "en": ["elderly", "pensioners", "older people", "ageing", "aging population", "retirement age"]
+  },
+  "Y477110198:00": {
+   "ru": ["младенческая смертность", "смертность младенцев", "умирают младенцы", "детская смертность", "грудные дети"],
+   "en": ["infant mortality", "infant deaths", "baby deaths", "child mortality"]
+  },
+  "Y477110369:00": {
+   "ru": ["смертность в трудоспособном возрасте", "умирают молодыми", "ранняя смертность", "сверхсмертность"],
+   "en": ["working-age mortality", "premature mortality", "deaths of working age"]
+  },
+  "Y477110076:00": {
+   "ru": ["заболеваемость", "болеют", "болезни", "впервые выявленные болезни", "здоровье населения"],
+   "en": ["morbidity", "incidence", "diseases", "illness", "new diagnoses"]
+  },
+  "Y477110441:00": {
+   "ru": ["врачи", "врачей", "доктора", "обеспеченность врачами", "не хватает врачей", "медики"],
+   "en": ["doctors", "physicians", "doctors per capita", "medical staff"]
+  },
+  "Y477110482:00": {
+   "ru": ["медсёстры", "фельдшеры", "средний медперсонал", "медсестры"],
+   "en": ["nurses", "nursing staff", "paramedical staff"]
+  },
+  "Y477110211:00": {
+   "ru": ["поликлиники", "мощность поликлиник", "приём в поликлинике", "амбулатории"],
+   "en": ["outpatient clinics", "polyclinics", "clinic capacity"]
+  },
+  "Y477110208:00": {
+   "ru": ["медианная зарплата", "типичная зарплата", "половина получает меньше", "медиана зарплаты"],
+   "en": ["median wage", "median salary", "typical wage"]
+  },
+  "Y477110209:00": {
+   "ru": ["медианный доход", "типичный доход", "медиана дохода"],
+   "en": ["median income", "typical income"]
+  },
+  "Y477110363:00": {
+   "ru": ["реальные доходы", "покупательная способность", "доходы с учётом инфляции", "реальные располагаемые доходы"],
+   "en": ["real income", "real incomes", "purchasing power", "inflation-adjusted income"]
+  },
+  "Y477110362:00": {
+   "ru": ["реальная зарплата", "зарплата с учётом инфляции", "реальная заработная плата"],
+   "en": ["real wage", "real wages", "inflation-adjusted wage"]
+  },
+  "Y477110314:00": {
+   "ru": ["потребительские расходы", "траты", "тратят", "расходы на человека", "сколько тратят"],
+   "en": ["consumer spending", "consumption", "spending per person", "expenditure"]
+  },
+  "Y477110412:00": {
+   "ru": ["коммуналка", "коммунальные услуги", "расходы на жильё", "квартплата", "жкх"],
+   "en": ["utilities", "housing costs", "utility bills", "housing and utilities spending"]
+  },
+  "Y477110499:00": {
+   "ru": ["машины", "автомобили", "легковые автомобили", "авто", "машин на человека", "автомобилизация"],
+   "en": ["cars", "passenger cars", "car ownership", "vehicles", "automobiles"]
+  },
+  "Y477110421:00": {
+   "ru": ["занятость", "работают", "уровень занятости", "работающие", "трудоустроены"],
+   "en": ["employment", "employment rate", "employed", "working population"]
+  },
+  "Y477110420:00": {
+   "ru": ["зарегистрированная безработица", "на бирже труда", "в службе занятости", "официальная безработица"],
+   "en": ["registered unemployment", "job centre", "official unemployment"]
+  },
+  "Y477110448:00": {
+   "ru": ["работающие на пенсионера", "нагрузка на работающих", "пенсионная нагрузка", "работающие пенсионеры", "работников на пенсионера"],
+   "en": ["workers per pensioner", "dependency ratio", "pension burden"]
+  },
+  "Y477110109:00": {
+   "ru": ["рост ВРП", "рост экономики", "экономический рост", "темп ВРП"],
+   "en": ["GRP growth", "economic growth", "growth of the economy"]
+  },
+  "Y477110126:00": {
+   "ru": ["промышленность", "промышленное производство", "рост промышленности", "заводы", "производство"],
+   "en": ["industry", "industrial production", "industrial growth", "manufacturing"]
+  },
+  "Y477110415:00": {
+   "ru": ["убыточные организации", "убыточные предприятия", "убытки", "банкротства"],
+   "en": ["loss-making companies", "unprofitable companies", "losses"]
+  },
+  "Y477110390:00": {
+   "ru": ["износ основных фондов", "износ", "изношенность", "старое оборудование"],
+   "en": ["depreciation", "wear of fixed assets", "worn-out assets"]
+  },
+  "Y477110235:00": {
+   "ru": ["инновации", "инновационная продукция", "инновационные товары", "технологии"],
+   "en": ["innovation", "innovative products", "innovative goods"]
+  },
+  "Y477110380:00": {
+   "ru": ["цена жилья", "цены на жильё", "стоимость квадратного метра", "квадратный метр", "квартиры", "новостройки", "дорогое жильё", "цена квартиры", "дешевле квартиры", "дешёвое жильё", "сколько стоит квартира"],
+   "en": ["housing prices", "house prices", "price per square meter", "apartments", "new buildings", "property prices"]
+  },
+  "Y477110379:00": {
+   "ru": ["вторичное жильё", "вторичка", "цены на квартиры", "квадратный метр", "квартиры", "цена жилья"],
+   "en": ["secondary housing", "resale housing", "apartment prices", "housing prices"]
+  },
+  "Y477110323:00": {
+   "ru": ["очередь на жильё", "нуждаются в жилье", "жилищная очередь"],
+   "en": ["housing waiting list", "housing queue", "families waiting for housing"]
+  },
+  "Y477110004:00": {
+   "ru": ["детские сады", "детсады", "садики", "охват детским садом", "дошкольное образование"],
+   "en": ["kindergartens", "preschool", "nursery", "kindergarten enrolment"]
+  },
+  "Y477110217:00": {
+   "ru": ["места в детских садах", "мест в садиках", "очередь в детский сад"],
+   "en": ["kindergarten places", "preschool places"]
+  },
+  "Y477110410:00": {
+   "ru": ["вторая смена", "школы", "школьники", "учатся во вторую смену", "нехватка школ"],
+   "en": ["second shift", "schools", "pupils", "school shifts"]
+  },
+  "Y477110485:00": {
+   "ru": ["студенты", "вузы", "университеты", "высшее образование", "учатся в вузах"],
+   "en": ["students", "university students", "universities", "higher education"]
+  },
+  "Y477110451:00": {
+   "ru": ["музеи", "посещения музеев", "ходят в музеи", "культура"],
+   "en": ["museums", "museum visits", "culture"]
+  },
+  "Y477110450:00": {
+   "ru": ["театры", "зрители театров", "ходят в театр", "театральные"],
+   "en": ["theatres", "theaters", "theatre audience", "theater visits"]
+  },
+  "Y477110295:00": {
+   "ru": ["плотность дорог", "дороги", "дорожная сеть", "автодороги"],
+   "en": ["road density", "roads", "road network"]
+  },
+  "Y477110406:00": {
+   "ru": ["доля дорог с покрытием", "асфальт", "дороги с твёрдым покрытием", "грунтовые дороги"],
+   "en": ["paved roads", "share of paved roads", "asphalt"]
+  },
+  "Y477110496:00": {
+   "ru": ["ДТП", "аварии", "погибшие в авариях", "гибнут на дорогах", "опасные дороги", "дорожные происшествия", "погибли в ДТП"],
+   "en": ["road deaths", "traffic deaths", "road accidents", "car crashes", "road safety", "traffic fatalities"]
+  },
+  "Y477110152:00": {
+   "ru": ["интернет", "доступ в интернет", "интернет дома", "домохозяйства с интернетом", "подключены к интернету"],
+   "en": ["internet", "internet access", "households online", "home internet"]
+  },
+  "Y477110435:00": {
+   "ru": ["фиксированный интернет", "широкополосный доступ", "проводной интернет", "абоненты интернета"],
+   "en": ["fixed broadband", "broadband subscribers", "fixed internet"]
+  },
+  "Y477110053:00": {
+   "ru": ["выбросы", "загрязнение воздуха", "загрязняют воздух", "экология", "грязный воздух", "выбросы в атмосферу", "вредные выбросы"],
+   "en": ["air pollution", "emissions", "pollutants", "dirty air", "ecology", "air emissions"]
+  },
+  "Y477110070:00": {
+   "ru": ["уловленные вещества", "очистка выбросов", "улавливание загрязнений"],
+   "en": ["captured pollutants", "emission capture", "pollution control"]
+  },
+  "Y477110203:00": {
+   "ru": ["лес", "леса", "лесистость", "лесов", "покрыто лесом"],
+   "en": ["forest", "forests", "forest cover", "woodland"]
+  },
+  "Y477110111:00": {
+   "ru": ["инфляция", "рост цен", "растут цены", "индекс цен", "подорожание", "цены"],
+   "en": ["inflation", "consumer prices", "price growth", "prices rising", "CPI"]
+  },
+  "Y477110395:00": {
+   "ru": ["стоимость жизни", "дороже жить", "дешевле жить", "потребительская корзина", "набор товаров", "сколько стоит жить", "дорогая жизнь"],
+   "en": ["cost of living", "expensive to live", "consumer basket", "basket of goods"]
+  },
+  "RL_MORTGAGE_COUNT_PC:00": {
+   "ru": ["ипотека", "ипотеку", "ипотечные кредиты", "берут ипотеку", "выдано ипотек", "ипотек на жителя"],
+   "en": ["mortgage", "mortgages", "mortgage loans", "home loans", "mortgages issued"]
+  },
+  "RL_MORTGAGE_AVERAGE:00": {
+   "ru": ["размер ипотеки", "средняя ипотека", "сумма ипотеки", "ипотечный кредит в среднем"],
+   "en": ["average mortgage", "mortgage size", "mortgage amount"]
+  },
+  "RL_MORTGAGE_RATE:00": {
+   "ru": ["ставка по ипотеке", "ипотечная ставка", "процент по ипотеке"],
+   "en": ["mortgage rate", "mortgage interest rate"]
+  },
+  "RL_MORTGAGE_DEBT_PC:00": {
+   "ru": ["ипотечный долг", "долг по ипотеке", "задолженность по ипотеке"],
+   "en": ["mortgage debt", "mortgage debt per capita"]
+  },
+  "RL_MORTGAGE_OVERDUE_SHARE:00": {
+   "ru": ["просрочка по ипотеке", "не платят ипотеку", "просроченная ипотека"],
+   "en": ["mortgage arrears", "overdue mortgages", "mortgage delinquency"]
+  },
+  "RL_RETAIL_DEBT_PC:00": {
+   "ru": ["долги", "должны банкам", "кредиты населения", "кредитный долг", "закредитованность", "задолженность по кредитам", "долги по кредитам"],
+   "en": ["household debt", "consumer debt", "loans", "owe banks", "debt per capita", "credit"]
+  },
+  "RL_RETAIL_OVERDUE_SHARE:00": {
+   "ru": ["просрочка по кредитам", "просроченные кредиты", "не платят кредиты", "просрочка населения"],
+   "en": ["loan arrears", "overdue loans", "delinquency", "bad loans"]
+  },
+  "RL_SME_COUNT_PC:00": {
+   "prior": 1.15,
+   "ru": ["малый бизнес", "предприниматели", "бизнес", "МСП", "ИП", "фирмы", "предпринимательство", "средний бизнес"],
+   "en": ["small business", "entrepreneurs", "SMEs", "small and medium enterprises", "businesses", "startups"]
+  },
+  "RL_SME_WORKERS_PC:00": {
+   "ru": ["работники малого бизнеса", "занятые в малом бизнесе", "работают в МСП"],
+   "en": ["SME employees", "small business workers", "SME employment"]
+  },
+  "RL_SME_LOANS_OVERDUE_SHARE:00": {
+   "ru": ["просрочка по кредитам бизнеса", "долги бизнеса", "бизнес не платит кредиты"],
+   "en": ["business loan arrears", "overdue business loans", "SME delinquency"]
+  }
+ },
+ "themes": {
+  "population": {"ru": ["население", "демография", "люди", "жители"], "en": ["population", "demography", "people"]},
+  "health": {"ru": ["здоровье", "медицина", "здравоохранение", "больницы"], "en": ["health", "healthcare", "medicine"]},
+  "income": {"ru": ["доходы", "деньги", "уровень жизни", "благосостояние"], "en": ["income", "money", "living standards", "welfare"]},
+  "labour": {"ru": ["работа", "труд", "рынок труда", "занятость"], "en": ["work", "jobs", "labour market", "labor"]},
+  "economy": {"ru": ["экономика", "производство", "бизнес"], "en": ["economy", "output", "production"]},
+  "housing": {"ru": ["жильё", "квартиры", "дома", "недвижимость"], "en": ["housing", "homes", "real estate", "property"]},
+  "education": {"ru": ["образование", "школы", "учёба", "культура"], "en": ["education", "schools", "culture"]},
+  "transport": {"ru": ["транспорт", "дороги", "связь", "интернет"], "en": ["transport", "roads", "communications"]},
+  "environment": {"ru": ["экология", "природа", "окружающая среда"], "en": ["ecology", "nature", "environment"]},
+  "prices": {"ru": ["цены", "дороговизна", "стоимость"], "en": ["prices", "costs"]},
+  "credit": {"ru": ["кредиты", "банки", "долги", "займы"], "en": ["credit", "banks", "loans", "debt"]},
+  "business": {"ru": ["бизнес", "предприятия", "компании"], "en": ["business", "companies", "firms"]}
+ },
+ "places": {
+  "RU-SPE": ["Питер", "Северная столица"],
+  "RU-MOS": ["Подмосковье"],
+  "RU-LEN": ["Ленобласть"],
+  "RU-KDA": ["Кубань"],
+  "RU-STA": ["Ставрополье"],
+  "RU-PER": ["Прикамье"],
+  "RU-ALT": ["Алтайский край"],
+  "RU-AL": ["Горный Алтай"]
+ }
+}

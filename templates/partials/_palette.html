@@ -1,6 +1,7 @@
 {% load i18n %}
 {% comment %}
-  Быстрый переход (Ctrl+K) к показателю, региону или разделу; поиск — на сервере.
+  Быстрый переход (Ctrl+K): тот же поиск, что на странице результатов; первая подсказка —
+  сама страница результатов, поэтому Enter без выбора открывает её.
   Окно <dialog> на весь экран и прозрачно: нажатие мимо рамки закрывает его (data-dialog-light).
 {% endcomment %}
 <dialog class="palette-dialog" id="palette" data-dialog-light
@@ -10,17 +11,17 @@
     {# Подпись — атрибутом aria-label: видимая отняла бы место. #}
     <input type="search" class="palette__input" autofocus
            name="q" autocomplete="off" spellcheck="false"
-           aria-label="{% translate 'Поиск по показателям, регионам и разделам' %}"
-           placeholder="{% translate 'Показатель, регион или раздел…' %}"
-           hx-get="{% url 'catalog:quick-search' %}"
+           aria-label="{% translate 'Регион, показатель или вопрос' %}"
+           placeholder="{% translate 'Регион, показатель или вопрос' %}"
+           hx-get="{% url 'search:suggest' %}"
            hx-trigger="input changed delay:200ms, search"
            hx-target="#palette-results"
            hx-indicator="#palette-indicator">
 
     <div id="palette-results" class="palette__results">
-      <div class="palette__group-title">{% translate "Начните вводить запрос" %}</div>
+      <div class="palette__group-title">{% translate "Регион, показатель или вопрос" %}</div>
       <p class="palette__hint">
-        {% translate "Поиск ведётся по названиям показателей, разрезов и регионов." %}
+        {% translate "Например: где самые высокие зарплаты, безработица в Татарстане, что такое медиана." %}
       </p>
     </div>
 

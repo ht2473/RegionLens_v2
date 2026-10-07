@@ -5,7 +5,6 @@ from __future__ import annotations
 from .catalog import (
     SeriesListView,
     TerritoryListView,
-    quick_search,
     series_options_markup,
     series_picker,
 )
@@ -22,7 +21,6 @@ __all__ = [
     "TerritoryCardView",
     "TerritoryDetailView",
     "TerritoryListView",
-    "quick_search",
     "series_options_markup",
     "series_picker",
 ]

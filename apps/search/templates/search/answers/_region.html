@@ -1,0 +1,23 @@
+{% load i18n formatting %}
+{# Регион: главное словами и главные показатели с ходом. #}
+{% with brief=a.brief %}
+  <h2 class="answer__title" id="answer-title"><a href="{{ brief.href }}">{{ brief.territory.name }}</a></h2>
+  {% if brief.territory.parent %}<p class="kicker">{{ brief.territory.parent.name }}</p>{% endif %}
+  {% if brief.summary %}
+    <ul class="answer__summary">{% for line in brief.summary %}<li>{{ line }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% if brief.metrics %}
+    <ul class="stat-grid card-row answer__tiles">
+      {% for metric in brief.metrics %}
+        <li class="stat-tile">
+          <a class="stat-tile__title" href="{% url 'rankings:index' %}?series={{ metric.series.key }}&amp;territory={{ brief.territory.code }}">{{ metric.series.short_title }}</a>
+          <p class="stat-tile__value">
+            <span class="numeric">{{ metric.current.value|ru_number:metric.series.precision }}</span>
+            <span class="stat-tile__unit">{{ metric.series.unit_label }}, {{ metric.current.year|year }}</span>
+          </p>
+          <div class="stat-tile__foot">{% include "search/answers/_spark.html" with spark=metric.spark %}</div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}

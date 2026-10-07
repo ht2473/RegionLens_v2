@@ -1,0 +1,21 @@
+{% load i18n %}
+{% comment %}
+  Поле поиска — одно на сайт: шапка (быстрый переход), главная, «Показатели» и страница
+  результатов ведут на одну страницу; Enter — поиск, кнопки нет. ``examples`` — примеры вопросов.
+{% endcomment %}
+<form class="find-form" method="get" action="{% url 'search:results' %}" role="search">
+  <label class="find-field">
+    <svg aria-hidden="true"><use href="#icon-search"></use></svg>
+    <span class="visually-hidden">{% translate "Регион, показатель или вопрос" %}</span>
+    <input type="search" name="q" value="{{ query|default:'' }}" autocomplete="off" spellcheck="false"
+           enterkeyhint="search" placeholder="{% translate 'Регион, показатель или вопрос' %}">
+  </label>
+</form>
+{% if examples %}
+  <p class="find-form__hint">
+    <span>{% translate "Например:" %}</span>
+    {% for example in examples %}
+      <a href="{% url 'search:results' %}?q={{ example|urlencode }}">{{ example }}</a>
+    {% endfor %}
+  </p>
+{% endif %}

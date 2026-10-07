@@ -1,0 +1,31 @@
+{% load i18n %}
+{# Где больше и где меньше: первые и последние три, Россия и мой регион. #}
+<h2 class="answer__title" id="answer-title">{{ a.item.short_title }}, <span class="numeric">{{ a.year }}</span></h2>
+{% if a.year_replaced %}
+  <p class="answer__note">
+    {% blocktranslate trimmed with wanted=reading.year shown=a.year %}За {{ wanted }} год данных нет — показан {{ shown }}.{% endblocktranslate %}
+  </p>
+{% endif %}
+<div class="answer__columns">
+  <div>
+    <h3 class="answer__label">{% translate "Больше всего" %}</h3>
+    <ol class="answer-list">
+      {% for row in a.top %}
+        <li><a href="{{ row.href }}">{{ row.name }}</a> <span class="numeric">{{ row.value }}</span></li>
+      {% endfor %}
+    </ol>
+  </div>
+  <div>
+    <h3 class="answer__label">{% translate "Меньше всего" %}</h3>
+    <ol class="answer-list">
+      {% for row in a.bottom %}
+        <li><a href="{{ row.href }}">{{ row.name }}</a> <span class="numeric">{{ row.value }}</span></li>
+      {% endfor %}
+    </ol>
+  </div>
+</div>
+<p class="answer__meta">
+  <span>{{ a.item.unit_label }}</span>
+  {% if a.country %}<span>{% translate "По России" %} — <b class="numeric">{{ a.country }}</b></span>{% endif %}
+  {% if a.mine %}<span>{% blocktranslate trimmed with name=a.mine.name place=a.mine.place %}Мой регион, {{ name }}: {{ place }}{% endblocktranslate %}</span>{% endif %}
+</p>

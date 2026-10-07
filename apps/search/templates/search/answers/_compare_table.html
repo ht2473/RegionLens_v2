@@ -1,0 +1,26 @@
+{% load i18n %}
+{# Сравнение регионов без названного показателя: главные показатели рядом. #}
+<h2 class="answer__title" id="answer-title">
+  {% for territory in a.territories %}{{ territory.name }}{% if not forloop.last %} {% translate "и" %} {% endif %}{% endfor %}
+</h2>
+<div class="data-table-wrapper">
+  <table class="data-table">
+    <caption class="visually-hidden">{% translate "Главные показатели рядом" %}</caption>
+    <thead>
+      <tr>
+        <th scope="col">{% translate "Показатель" %}</th>
+        {% for territory in a.territories %}<th scope="col" class="is-numeric">{{ territory.name }}</th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in a.table %}
+        <tr>
+          <th scope="row">{{ row.item.short_title }} <span class="text-muted text-small">{{ row.item.unit_label }}</span></th>
+          {% for cell in row.cells %}
+            <td class="is-numeric">{{ cell.value|default:"—" }}{% if cell.year %} <span class="text-muted text-small">{{ cell.year }}</span>{% endif %}</td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

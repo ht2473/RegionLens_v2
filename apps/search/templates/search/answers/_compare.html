@@ -1,0 +1,13 @@
+{% load i18n %}
+{# Сравнение регионов по одному показателю: последние значения и ход. #}
+<h2 class="answer__title" id="answer-title">{{ a.item.short_title }}</h2>
+<ul class="answer-lines">
+  {% for line in a.lines %}
+    <li class="answer-lines__item">
+      <span class="answer-lines__name">{{ line.territory.name }}</span>
+      <span class="answer-lines__value"><span class="numeric">{{ line.value|default:"—" }}</span>{% if line.year %} <span class="answer__unit">{{ line.year }}</span>{% endif %}</span>
+      {% include "search/answers/_spark.html" with spark=line.spark %}
+    </li>
+  {% endfor %}
+</ul>
+<p class="answer__meta"><span>{{ a.item.unit_label }}</span></p>
