@@ -1,0 +1,68 @@
+{% load i18n %}
+{% comment %}
+  Меню карточки или заметки: развернуть, ширина, выше и ниже, убрать; название и пояснение
+  карточки (текст заметки — на месте). Перетаскивание — за ручку; то же без мыши — «Выше»
+  и «Ниже». Со сценарием ширина и порядок меняются на месте (study.js), без него — формой.
+{% endcomment %}
+<div class="study-card-menu no-print">
+  <button type="button" class="icon-button study-card-menu__grip" data-grip hidden
+          aria-label="{% translate 'Перетащить; без мыши — «Выше» и «Ниже» в меню' %}"
+          title="{% translate 'Перетащить' %}">
+    <svg aria-hidden="true"><use href="#icon-grip"></use></svg>
+  </button>
+  <button type="button" class="icon-button" popovertarget="card-menu-{{ block.id }}" aria-haspopup="dialog"
+          aria-label="{% translate 'Действия с карточкой' %}" title="{% translate 'Действия с карточкой' %}">
+    <svg aria-hidden="true"><use href="#icon-more"></use></svg>
+  </button>
+  <div class="menu-popover study-card-menu__panel" id="card-menu-{{ block.id }}" popover role="dialog"
+       aria-label="{% translate 'Действия с карточкой' %}">
+    <form method="post" action="{% url 'userdata:study-edit' study.public_id %}" class="study-card-menu__items"
+          data-card-actions>
+      {% csrf_token %}
+      <input type="hidden" name="block" value="{{ block.id }}">
+      {% if block.kind != "text" %}
+        <button class="menu-item" type="button" data-expand hidden>
+          <svg aria-hidden="true"><use href="#icon-expand"></use></svg>{% translate "Развернуть" %}
+        </button>
+        <button class="menu-item" type="submit" name="action" value="resize">
+          <svg aria-hidden="true"><use href="#icon-width"></use></svg>
+          <span data-wide-label="{% translate 'В половину ширины' %}" data-narrow-label="{% translate 'Во всю ширину' %}">{% if block.wide %}{% translate "В половину ширины" %}{% else %}{% translate "Во всю ширину" %}{% endif %}</span>
+        </button>
+      {% endif %}
+      <button class="menu-item" type="submit" name="action" value="up">
+        <svg aria-hidden="true"><use href="#icon-arrow-up"></use></svg>{% translate "Выше" %}
+      </button>
+      <button class="menu-item" type="submit" name="action" value="down">
+        <svg aria-hidden="true"><use href="#icon-arrow-down"></use></svg>{% translate "Ниже" %}
+      </button>
+      <button class="menu-item menu-item--danger" type="submit" name="action" value="remove"
+              hx-post="{% url 'userdata:study-edit' study.public_id %}" hx-target="#block-{{ block.id }}"
+              hx-swap="delete" hx-select-oob="#study-toast,#study-meta,#study-sources,#study-toolbar">
+        <svg aria-hidden="true"><use href="#icon-close"></use></svg>{% translate "Убрать с поля" %}
+      </button>
+    </form>
+    <form method="post" action="{% url 'userdata:study-edit' study.public_id %}" class="stack study-card-menu__form"
+          data-card-change>
+      {% csrf_token %}
+      <input type="hidden" name="action" value="change">
+      <input type="hidden" name="block" value="{{ block.id }}">
+      {% if block.kind == "text" %}
+        <div class="field">
+          <label class="field__label" for="text-{{ block.id }}">{% translate "Текст заметки" %}</label>
+          <textarea class="textarea" id="text-{{ block.id }}" name="text" rows="4" maxlength="4000">{{ block.text }}</textarea>
+        </div>
+      {% else %}
+        <div class="field">
+          <label class="field__label" for="title-{{ block.id }}">{% translate "Название" %}</label>
+          <input class="input" id="title-{{ block.id }}" name="title" maxlength="200" value="{{ block.title }}"
+                 placeholder="{% translate 'как у показателя' %}">
+        </div>
+        <div class="field">
+          <label class="field__label" for="note-{{ block.id }}">{% translate "Пояснение" %}</label>
+          <input class="input" id="note-{{ block.id }}" name="note" maxlength="500" value="{{ block.note }}">
+        </div>
+      {% endif %}
+      <div><button class="button button--sm button--secondary" type="submit">{% translate "Сохранить" %}</button></div>
+    </form>
+  </div>
+</div>

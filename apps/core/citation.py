@@ -61,7 +61,7 @@ def _series_source(series_key: str, year: int | str) -> tuple[str, str]:
 
 
 def series_source(series_key: str, year: int | str = "") -> str:
-    """Строка источника значений ряда — для подписи карточки доски и картинки."""
+    """Строка источника значений ряда — для подписи карточки исследования и картинки."""
     return _series_source(series_key, year)[1]
 
 

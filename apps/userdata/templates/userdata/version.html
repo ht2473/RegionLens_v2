@@ -71,7 +71,7 @@
         {% if changes.new_territories %}<dt>{% translate "Новые территории" %}</dt><dd>{% for code in changes.new_territories %}{{ code|territory_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
         {% if changes.gone_territories %}<dt>{% translate "Пропавшие территории" %}</dt><dd>{% for code in changes.gone_territories %}{{ code|territory_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
         {% if changes.new_series %}<dt>{% translate "Новые ряды" %}</dt><dd><ul class="compact-list">{% for title in changes.new_series %}<li{% with lang=title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ title }}</li>{% endfor %}</ul></dd>{% endif %}
-        {% if changes.gone_series %}<dt>{% translate "Пропавшие ряды" %}</dt><dd><ul class="compact-list">{% for title in changes.gone_series %}<li{% with lang=title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ title }}</li>{% endfor %}</ul><p class="own-version-note">{% translate "Сохранённые виды и доски с этими рядами покажут, что ряда больше нет." %}</p></dd>{% endif %}
+        {% if changes.gone_series %}<dt>{% translate "Пропавшие ряды" %}</dt><dd><ul class="compact-list">{% for title in changes.gone_series %}<li{% with lang=title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ title }}</li>{% endfor %}</ul><p class="own-version-note">{% translate "Сохранённые виды и исследования с этими рядами покажут, что ряда больше нет." %}</p></dd>{% endif %}
       </dl>
     </section>
   {% endif %}

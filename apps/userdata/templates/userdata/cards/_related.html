@@ -1,0 +1,20 @@
+{% load i18n %}
+{# С чем связан: самые тесные значимые связи с показателями сайта за год. #}
+{% if card.links %}
+  <ol class="answer-list study-card__answer">
+    {% for link in card.links %}
+      <li>
+        <a href="{{ link.url }}">{{ link.title }}</a>
+        <span class="numeric">{{ link.coefficient }}</span>
+        <span class="study-card__muted">{{ link.strength }}, {% if link.direct %}{% translate "прямая" %}{% else %}{% translate "обратная" %}{% endif %}</span>
+      </li>
+    {% endfor %}
+  </ol>
+  <p class="answer__meta">
+    <span>{% blocktranslate trimmed with count=card.significant %}значимых связей: {{ count }}{% endblocktranslate %}</span>
+    <span>{% blocktranslate trimmed with count=card.pairs %}регионов: {{ count }}{% endblocktranslate %}</span>
+    <span>{% translate "коэффициент Спирмена" %}</span>
+  </p>
+{% else %}
+  <p class="study-card__empty">{% translate "Значимых связей с показателями основного набора нет." %}</p>
+{% endif %}

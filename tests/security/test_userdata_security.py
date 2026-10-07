@@ -187,34 +187,34 @@ class TestRequests:
         assert client.get(url).status_code == 404
 
 
-class TestBoardsAndLinks:
-    """Доски и закрытые ссылки: разметка экранируется, токен не хранится, правка — с CSRF."""
+class TestStudiesAndLinks:
+    """Исследования и ссылки: разметка экранируется, токен не хранится, правка — с CSRF."""
 
-    def test_board_markup_is_escaped(self, member_client: Client, warehouse: Any) -> None:
-        from apps.userdata.models import Board
+    def test_study_markup_is_escaped(self, member_client: Client, warehouse: Any) -> None:
+        from apps.userdata.models import Study
 
         dataset = _built(member_client)
         version = DatasetVersion.objects.get(pk=dataset.current_version_id)
         record = version.series.first()
         assert record is not None
-        member_client.post(reverse("userdata:board-new"), {"title": SCRIPT})
-        board = Board.objects.get()
-        edit = reverse("userdata:board-edit", args=[board.public_id])
+        member_client.post(reverse("userdata:study-new"), {"title": SCRIPT})
+        study = Study.objects.get(title=SCRIPT)
+        edit = reverse("userdata:study-edit", args=[study.public_id])
         member_client.post(edit, {"action": "add-text", "text": SCRIPT})
         member_client.post(
-            reverse("userdata:board-add"),
+            reverse("userdata:study-add"),
             {
                 "target": "map",
                 "query_string": f"series=u:{dataset.code}:{record.code}",
-                "board": str(board.public_id),
+                "study": str(study.public_id),
             },
         )
-        board.refresh_from_db()
-        card = next(block for block in board.blocks if block["kind"] == "view")
+        study.refresh_from_db()
+        card = next(block for block in study.blocks if block["kind"] == "view")
         member_client.post(edit, {"action": "change", "block": card["id"], "title": SCRIPT})
         pages = [
-            member_client.get(reverse("userdata:board", args=[board.public_id])),
-            member_client.get(reverse("userdata:board-card", args=[board.public_id, card["id"]])),
+            member_client.get(reverse("userdata:study", args=[study.public_id])),
+            member_client.get(reverse("userdata:study-card", args=[study.public_id, card["id"]])),
             member_client.get(reverse("userdata:index")),
             member_client.get(reverse("maps:choropleth")),
         ]
@@ -234,19 +234,18 @@ class TestBoardsAndLinks:
         assert token not in stored
         assert share.token_hash != token
 
-    def test_board_edit_needs_csrf(self, member: Any, warehouse: Any) -> None:
-        from apps.userdata import boards
-        from apps.userdata.models import Board
+    def test_study_edit_needs_csrf(self, member: Any, warehouse: Any) -> None:
+        from apps.userdata.models import Study
 
-        board = boards.create(member, "Доска")
+        study = Study.objects.create(owner=member, title="Исследование")
         client = Client(enforce_csrf_checks=True)
         client.force_login(member)
         response = client.post(
-            reverse("userdata:board-edit", args=[board.public_id]),
+            reverse("userdata:study-edit", args=[study.public_id]),
             {"action": "delete", "confirm": "1"},
         )
         assert response.status_code == 403
-        assert Board.objects.filter(pk=board.pk).exists()
+        assert Study.objects.filter(pk=study.pk).exists()
 
     def test_share_needs_csrf(self, member: Any, warehouse: Any) -> None:
         from apps.userdata.models import Share

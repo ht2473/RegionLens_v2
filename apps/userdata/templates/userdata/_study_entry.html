@@ -1,0 +1,30 @@
+{% load i18n formatting %}
+{% comment %}
+  Ряд в панели: у показателя с несколькими рядами — заголовок показателя и ряды уточнениями.
+  Ряд выбирается нажатием (у выбранного — «Что сделать»), при выборе второго — вторым;
+  перетаскивается на поле за всю строку (data-series).
+{% endcomment %}
+{% if many and heading %}
+  <li class="study-series__indicator" data-filter-item data-filter-text="{{ entry.title }}">
+    {{ entry.title }}{% if entry.unit %}<span class="study-series__unit"> · {{ entry.unit }}</span>{% endif %}
+  </li>
+{% endif %}
+{% with chosen=panel.chosen.key %}
+<li class="study-series__row{% if many %} study-series__row--nested{% endif %}" data-filter-item
+    data-filter-text="{{ entry.title }} {{ entry.detail }}" data-series="{{ entry.key }}">
+  {% if panel.picking and chosen != entry.key %}
+    <a class="study-series__item" href="?series={{ chosen|urlencode }}&amp;with={{ entry.key|urlencode }}#study-actions"
+       hx-get="?series={{ chosen|urlencode }}&amp;with={{ entry.key|urlencode }}">
+  {% else %}
+    <a class="study-series__item{% if chosen == entry.key or panel.partner.key == entry.key %} is-chosen{% endif %}"
+       href="?series={{ entry.key|urlencode }}#study-actions" hx-get="?series={{ entry.key|urlencode }}"
+       {% if chosen == entry.key %} aria-current="true"{% endif %}>
+  {% endif %}
+    <span class="study-series__name">{% if many %}{{ entry.detail|default:entry.title }}{% else %}{{ entry.title }}{% if entry.detail %}<span class="study-series__detail"> · {{ entry.detail }}</span>{% endif %}{% endif %}</span>
+    <span class="study-series__meta">
+      {% if not many and entry.unit %}{{ entry.unit }} · {% endif %}{% if entry.first_year %}<span class="numeric">{{ entry.first_year|year }}{% if entry.last_year != entry.first_year %}–{{ entry.last_year|year }}{% endif %}</span>{% endif %}{% if entry.key in panel.used %} · <span class="study-series__used">{% translate "на поле" %}</span>{% endif %}
+    </span>
+  </a>
+  {% if chosen == entry.key and not panel.picking %}{% include "userdata/_study_actions.html" %}{% endif %}
+</li>
+{% endwith %}

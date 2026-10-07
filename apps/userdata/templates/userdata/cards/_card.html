@@ -1,21 +1,27 @@
 {% load i18n formatting userdata %}
-{# Карточка доски фрагментом: заголовок, вид, источник и переход к виду целиком. #}
-<div class="board-card__body">
-  <header class="board-card__head">
-    <p class="kicker board-card__kicker">
+{# Карточка исследования фрагментом: заголовок, вид, источник и переход к виду целиком. #}
+<div class="study-card__body">
+  <header class="study-card__head">
+    <p class="kicker study-card__kicker">
       <svg aria-hidden="true"><use href="#icon-{{ card.icon }}"></use></svg>
       {{ card.target_title }}{% if card.year and card.target != "compare" %} · <span class="numeric">{{ card.year|year }}</span>{% endif %}{% if card.unit %} · <span{% with lang=card.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ card.unit }}</span>{% endif %}
     </p>
-    <h2 class="board-card__title"{% with lang=card.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ card.title|default:card.target_title }}</h2>
-    {% if card.block.note %}<p class="board-card__note"{% with lang=card.block.note|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ card.block.note }}</p>{% endif %}
+    <h2 class="study-card__title"{% with lang=card.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>
+      {% if owner %}<button type="button" class="inplace" data-inplace="title" data-block="{{ card.block.id }}"
+              data-default="{{ card.title|default:card.target_title }}"
+              aria-label="{% blocktranslate trimmed with title=card.title|default:card.target_title %}Название карточки «{{ title }}» — изменить{% endblocktranslate %}">{{ card.title|default:card.target_title }}</button>{% else %}{{ card.title|default:card.target_title }}{% endif %}
+    </h2>
+    {% if card.block.note %}<p class="study-card__note"{% with lang=card.block.note|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ card.block.note }}</p>{% endif %}
   </header>
 
   {% include card.template %}
 
-  <footer class="board-card__foot">
-    {% if card.source %}<p class="board-card__source"{% with lang=card.source|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ card.source }}</p>{% endif %}
-    <a class="board-card__open no-print" href="{{ card.open_url }}">
-      {% translate "Открыть вид" %}<svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
-    </a>
+  <footer class="study-card__foot">
+    {% if card.source %}<p class="study-card__source"{% with lang=card.source|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ card.source }}</p>{% endif %}
+    {% if card.open_url %}
+      <a class="study-card__open no-print" href="{{ card.open_url }}">
+        {% translate "Открыть вид" %}<svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+      </a>
+    {% endif %}
   </footer>
 </div>

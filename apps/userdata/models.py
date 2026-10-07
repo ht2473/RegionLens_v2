@@ -244,27 +244,47 @@ class TerritoryLabel(TimeStampedModel):
         return f"{self.label_key} → {self.territory_code}"
 
 
-class Board(PublicIdentifierModel, TimeStampedModel):
-    """Доска: тексты и карточки видов холста и инструментов с общим годом и территориями."""
+class Study(PublicIdentifierModel, TimeStampedModel):
+    """
+    Исследование: рабочее поле лаборатории — карточки и заметки по порядку с общим годом
+    и регионами; таблицы пользователя и ряды сайта — его источники.
+
+    Исследование гостя, как и его таблица, привязано к отпечатку ключа из сеанса и хранится
+    сутки; после входа переходит в учётную запись.
+    """
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name="владелец",
         on_delete=models.CASCADE,
-        related_name="boards",
+        null=True,
+        blank=True,
+        related_name="studies",
     )
+    guest_key = models.CharField(
+        "отпечаток гостевого ключа", max_length=64, blank=True, db_index=True
+    )
+    expires_at = models.DateTimeField("хранится до", null=True, blank=True)
     title = models.CharField("название", max_length=200)
     description = models.TextField("описание", blank=True)
-    # Блоки по порядку: текст или карточка вида (страница и её параметры), см. boards.py.
+    # Блоки по порядку: заметка, вид или ответ, см. studies.py.
     blocks = models.JSONField("блоки", default=list, blank=True)
-    # Общий выбор для карточек холста; пусто — у каждой карточки свой.
+    # Блоки до последней правки — для «Вернуть».
+    undo = models.JSONField("блоки до правки", default=list, blank=True)
+    # Общий выбор для карточек; пусто — у каждой карточки свой.
     year = models.SmallIntegerField("общий год", null=True, blank=True)
     territories = models.JSONField("общие территории", default=list, blank=True)
 
     class Meta:
-        verbose_name = "доска"
-        verbose_name_plural = "доски"
+        verbose_name = "исследование"
+        verbose_name_plural = "исследования"
         ordering = ["-updated_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(owner__isnull=False) | ~models.Q(guest_key=""),
+                name="userdata_study_has_owner",
+            )
+        ]
 
     def __str__(self) -> str:
         return self.title
@@ -272,7 +292,7 @@ class Board(PublicIdentifierModel, TimeStampedModel):
 
 class Share(PublicIdentifierModel, TimeStampedModel):
     """
-    Закрытая ссылка на таблицу или доску: только чтение без входа, со сроком и отзывом.
+    Закрытая ссылка на таблицу или исследование: только чтение без входа, со сроком и отзывом.
 
     Токен хранится отпечатком SHA-256: увидеть ссылку можно только при создании.
     """
@@ -285,9 +305,9 @@ class Share(PublicIdentifierModel, TimeStampedModel):
         blank=True,
         related_name="shares",
     )
-    board = models.ForeignKey(
-        Board,
-        verbose_name="доска",
+    study = models.ForeignKey(
+        Study,
+        verbose_name="исследование",
         on_delete=models.CASCADE,
         null=True,
         blank=True,
@@ -307,15 +327,15 @@ class Share(PublicIdentifierModel, TimeStampedModel):
         constraints = [
             models.CheckConstraint(
                 condition=(
-                    models.Q(dataset__isnull=False, board__isnull=True)
-                    | models.Q(dataset__isnull=True, board__isnull=False)
+                    models.Q(dataset__isnull=False, study__isnull=True)
+                    | models.Q(dataset__isnull=True, study__isnull=False)
                 ),
                 name="userdata_share_one_target",
             )
         ]
 
     def __str__(self) -> str:
-        return f"{self.dataset or self.board} — {self.expires_at:%d.%m.%Y}"
+        return f"{self.dataset or self.study} — {self.expires_at:%d.%m.%Y}"
 
     @property
     def is_active(self) -> bool:

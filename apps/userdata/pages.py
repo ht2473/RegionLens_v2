@@ -24,7 +24,7 @@ from apps.core.navigation import Crumb
 from apps.core.views import BreadcrumbMixin
 from apps.warehouse import queries
 
-from . import access, boards, export, glance, ingest, monthly, scope, services
+from . import access, export, glance, ingest, monthly, scope, services, studies
 from .models import Dataset, DatasetSeries, DatasetVersion
 from .series import FEW_REGIONS, UserSeries
 
@@ -71,16 +71,16 @@ class SectionView(BreadcrumbMixin, TemplateView):
             else settings.USERDATA_GUEST_MAX_DATASETS,
             guest_hours=settings.USERDATA_GUEST_HOURS,
             retention_days=backup_retention_days(),
-            boards=list(boards.owned(user)),
+            studies=list(studies.owned(self.request)),
         )
         return context
 
 
 class ExampleView(View):
-    """«Попробовать на примере»: таблица-пример собирается сразу и открывается на карте."""
+    """«Попробовать на примере»: таблица-пример собирается сразу и открывается в исследовании."""
 
     def post(self, request: HttpRequest) -> HttpResponse:
-        from .views import first_view_url
+        from .renew import after_build_url
 
         try:
             services.check_limits(request)
@@ -90,7 +90,7 @@ class ExampleView(View):
             return redirect("userdata:index")
         version = dataset.current_version
         assert version is not None
-        return redirect(first_view_url(version))
+        return redirect(after_build_url(version, request))
 
 
 class DatasetMixin:

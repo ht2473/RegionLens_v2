@@ -1,0 +1,19 @@
+{% load i18n %}
+{# Связь двух показателей: коэффициент Спирмена, теснота и облако точек регионов. #}
+<div class="answer__figure study-card__answer">
+  <p class="answer__value">
+    <span class="numeric">{{ card.coefficient }}</span>
+    <span class="answer__unit">{{ card.strength }}, {% if card.direct %}{% translate "прямая" %}{% else %}{% translate "обратная" %}{% endif %}</span>
+  </p>
+</div>
+<p class="answer__meta">
+  <span>{% blocktranslate trimmed with count=card.pairs %}регионов: {{ count }}{% endblocktranslate %}</span>
+  <span>{% if card.significant %}{% translate "связь значима" %}{% else %}{% translate "связь незначима" %}{% endif %}</span>
+  <span>{% translate "коэффициент Спирмена" %}</span>
+</p>
+{% with option_id=card.prefix|add:"-scatter" %}
+  <rl-chart class="chart study-card__chart" data-options="{{ option_id }}"
+            data-image-title="{{ card.title }}" data-image-subtitle="{{ card.year|stringformat:'d' }}"
+            data-image-source="{{ card.source }}"></rl-chart>
+  {{ card.chart|json_script:option_id }}
+{% endwith %}

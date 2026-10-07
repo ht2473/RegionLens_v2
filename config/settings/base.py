@@ -464,13 +464,16 @@ USERDATA_JOB_SECONDS = env.int("USERDATA_JOB_SECONDS", default=120)
 USERDATA_QUERY_MEMORY = env.str("USERDATA_QUERY_MEMORY", default="128MB")
 # Версий таблицы на диске: значения прежних остаются в отчёте о различиях новой.
 USERDATA_KEEP_VERSIONS = env.int("USERDATA_KEEP_VERSIONS", default=5)
-# Закрытые ссылки: действующих на таблицу или доску; неудачных попыток открыть ссылку
+# Закрытые ссылки: действующих на таблицу или исследование; неудачных попыток открыть ссылку
 # с адреса за 10 минут (подбор токена).
 USERDATA_MAX_SHARES = env.int("USERDATA_MAX_SHARES", default=10)
 USERDATA_SHARE_ATTEMPTS = env.int("USERDATA_SHARE_ATTEMPTS", default=30)
-# Доски: на учётную запись и блоков на доске.
-USERDATA_MAX_BOARDS = env.int("USERDATA_MAX_BOARDS", default=20)
-USERDATA_BOARD_BLOCKS = env.int("USERDATA_BOARD_BLOCKS", default=40)
+# Исследования: на учётную запись, у гостя (на сутки), карточек с заметками в исследовании;
+# правок поля за 10 минут с учётной записи или адреса.
+USERDATA_MAX_STUDIES = env.int("USERDATA_MAX_STUDIES", default=20)
+USERDATA_GUEST_MAX_STUDIES = env.int("USERDATA_GUEST_MAX_STUDIES", default=3)
+USERDATA_STUDY_BLOCKS = env.int("USERDATA_STUDY_BLOCKS", default=40)
+USERDATA_STUDY_EDITS = env.int("USERDATA_STUDY_EDITS", default=300)
 
 # ---------------------------------------------------------------------------------------
 # Программный интерфейс REST: только чтение, без ключей, предел по адресу клиента

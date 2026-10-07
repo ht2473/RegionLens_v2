@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% load i18n static formatting userdata %}
+
+{# Исследование: панель данных слева, поле карточек с общим годом и регионами; читателю ссылки — только поле. #}
+
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/surface.css' %}">
+  <link rel="stylesheet" href="{% static 'css/userdata.css' %}">
+  <link rel="stylesheet" href="{% static 'css/lab.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+  {% if owner %}<script src="{% static 'vendor/sortable.min.js' %}" defer></script>{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container page study-page"
+     data-study="{% if owner %}{% url 'userdata:study-edit' study.public_id %}{% endif %}"
+     data-my-region="{{ my_region.code|default:'' }}"
+     data-label-saved="{% translate 'Сохранено' %}"
+     data-label-failed="{% translate 'Не сохранено — повторите' %}">
+
+  <header class="page-head">
+    <p class="kicker">
+      {% translate "Исследование" %} ·
+      <span class="own-private">{% if not owner %}{% translate "открыто по закрытой ссылке" %}{% elif guest %}{% blocktranslate trimmed with moment=study.expires_at|date:"d.m.Y H:i" %}без входа — хранится до {{ moment }}{% endblocktranslate %}{% elif shared %}{% translate "видно вам и по закрытой ссылке" %}{% else %}{% translate "видно только вам" %}{% endif %}</span>
+    </p>
+    <h1 class="page-head__title"{% with lang=study.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>
+      {% if owner %}<button type="button" class="inplace" data-inplace="study-title" data-default="{{ study.title }}"
+              aria-label="{% blocktranslate trimmed with title=study.title %}Название исследования «{{ title }}» — изменить{% endblocktranslate %}">{{ study.title }}</button>{% else %}{{ study.title }}{% endif %}
+    </h1>
+    {% if study.description %}
+      <p class="page-head__lead"{% with lang=study.description|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ study.description|linebreaksbr }}</p>
+    {% endif %}
+    <p class="page-head__meta" id="study-meta">
+      {% blocktranslate trimmed with count=card_count %}карточек: {{ count }}{% endblocktranslate %}
+      · {% blocktranslate trimmed with moment=study.updated_at|date:"d.m.Y H:i" %}изменено {{ moment }}{% endblocktranslate %}
+      <span class="study-saved" data-study-status role="status"></span>
+    </p>
+    <div class="page-head__actions no-print">
+      {% if owner %}
+        <button type="button" class="button button--sm button--secondary" popovertarget="study-share" aria-haspopup="dialog">
+          <svg aria-hidden="true"><use href="#icon-link"></use></svg>
+          {% translate "Поделиться" %}
+        </button>
+      {% endif %}
+      <button type="button" class="button button--sm button--ghost" data-print>
+        <svg aria-hidden="true"><use href="#icon-print"></use></svg>
+        {% translate "Печать или PDF" %}
+      </button>
+      {% if owner %}
+        <button type="button" class="icon-button" popovertarget="study-menu" aria-haspopup="dialog"
+                aria-label="{% translate 'Название и удаление' %}" title="{% translate 'Название и удаление' %}">
+          <svg aria-hidden="true"><use href="#icon-more"></use></svg>
+        </button>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if owner %}
+    <div class="menu-popover share-menu study-share no-print" id="study-share" popover role="dialog"
+         aria-label="{% translate 'Закрытая ссылка' %}">
+      {% if guest %}
+        <p class="study-share__guest">
+          {% translate "Закрытой ссылкой делятся после входа: без входа исследование хранится сутки." %}
+          <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "Войти" %}</a>
+        </p>
+      {% else %}
+        {% url 'userdata:study-share-create' study.public_id as share_create_url %}
+        {% translate "По ссылке исследование смотрят без входа, в том числе с телефона: карточки, заметки и ваши таблицы, ряды которых в нём есть. Изменить ничего нельзя." as share_lead %}
+        {% translate "Можно скачивать таблицы и документы" as share_downloads_label %}
+        {% include "userdata/_shares.html" with share_target=study share_revoke_name="userdata:study-share-revoke" %}
+      {% endif %}
+    </div>
+    <div class="menu-popover study-settings no-print" id="study-menu" popover role="dialog"
+         aria-label="{% translate 'Название и удаление' %}">
+      <form method="post" action="{% url 'userdata:study-edit' study.public_id %}" class="stack">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="rename">
+        <div class="field">
+          <label class="field__label" for="study-title">{% translate "Название" %}</label>
+          <input class="input" id="study-title" name="title" maxlength="200" value="{{ study.title }}" required>
+        </div>
+        <div class="field">
+          <label class="field__label" for="study-description">{% translate "Описание" %}</label>
+          <textarea class="textarea" id="study-description" name="description" rows="3" maxlength="4000">{{ study.description }}</textarea>
+        </div>
+        <div><button class="button button--sm button--secondary" type="submit">{% translate "Сохранить" %}</button></div>
+      </form>
+      <form method="post" action="{% url 'userdata:study-edit' study.public_id %}" class="stack study-settings__delete">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete">
+        <label class="checkbox"><input type="checkbox" name="confirm" value="1" required> <span>{% translate "Удалить исследование; таблицы останутся" %}</span></label>
+        <div><button class="button button--sm button--danger" type="submit">{% translate "Удалить" %}</button></div>
+      </form>
+    </div>
+  {% endif %}
+
+  <div class="workspace study{% if not owner %} study--reader{% endif %}">
+    {% if owner %}
+      {% include "userdata/_study_panel.html" %}
+    {% endif %}
+
+    <div class="workspace__content study__field" id="study-field">
+      {% if owner %}
+        {% translate "Данные" as dock_title %}
+        {% include "partials/_rail_dock.html" with rail_id="study-panel" dock_title=dock_title dock_summary=panel.chosen.title %}
+      {% endif %}
+
+      <div class="study-toast no-print" id="study-toast" role="status" aria-live="polite">
+        {% if removed %}
+          <form method="post" action="{% url 'userdata:study-edit' study.public_id %}" class="study-toast__body">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="undo">
+            <span>{% translate "Карточка убрана с поля." %}</span>
+            <button class="button button--sm button--secondary" type="submit">{% translate "Вернуть" %}</button>
+          </form>
+        {% endif %}
+      </div>
+
+      <div id="study-toolbar">
+        {% if canvas_count %}{% include "userdata/_study_toolbar.html" %}{% endif %}
+      </div>
+
+      {% if blocks %}
+        <div id="study-empty" hidden></div>
+      {% else %}
+        <div class="empty-state study-empty" id="study-empty">
+          <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+          <p class="empty-state__title">{% translate "Поле пока пустое" %}</p>
+          {% if owner %}
+            <p class="empty-state__hint">{% translate "Выберите показатель в панели «Данные» — «Что сделать» предложит карту, линии, рейтинг и ответы. Показатель можно и перетащить сюда." %}</p>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <div class="study-cards" id="study-cards"{% if owner %} data-sortable{% endif %}>
+        {% for block in blocks %}
+          {% if block.kind == "text" %}
+            <section class="study-note{% if block.id == added %} is-new{% endif %}" id="block-{{ block.id }}" data-block="{{ block.id }}" aria-label="{% translate 'Заметка' %}">
+              {% if owner %}
+                <button type="button" class="inplace inplace--text study-note__body" data-inplace="text" data-block="{{ block.id }}"
+                        aria-label="{% translate 'Заметка — изменить' %}"{% with lang=block.text|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ block.text|linebreaksbr }}</button>
+                {% include "userdata/_study_card_menu.html" %}
+              {% else %}
+                <div class="study-note__body"{% with lang=block.text|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ block.text|linebreaks }}</div>
+              {% endif %}
+            </section>
+          {% else %}
+            <article class="study-card{% if block.wide %} study-card--wide{% endif %}{% if block.id == added %} is-new{% endif %}"
+                     id="block-{{ block.id }}" data-block="{{ block.id }}">
+              <div class="study-card__slot" hx-get="{{ block.card_url }}" hx-trigger="load" hx-swap="innerHTML">
+                <p class="kicker study-card__kicker">{{ block.target_title }}</p>
+                <p class="study-card__waiting">{% translate "Строится…" %}</p>
+              </div>
+              {% if owner %}{% include "userdata/_study_card_menu.html" %}{% endif %}
+            </article>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      {% if owner %}
+        {# Ряд, перетащенный из панели: карта ряда в место броска (study.js). #}
+        <form id="study-drop" method="post" action="{% url 'userdata:study-edit' study.public_id %}" hidden
+              hx-post="{% url 'userdata:study-edit' study.public_id %}" hx-target="#study-cards"
+              hx-select=".study-cards > .is-new" hx-swap="beforeend"
+              hx-select-oob="#study-sources,#study-meta,#study-empty,#study-toolbar,#study-toast">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add">
+          <input type="hidden" name="do" value="view:map">
+          <input type="hidden" name="series" value="">
+          <input type="hidden" name="at" value="">
+        </form>
+        <details class="study-add-note no-print">
+          <summary class="button button--sm button--ghost">
+            <svg aria-hidden="true"><use href="#icon-plus"></use></svg>
+            {% translate "Заметка" %}
+          </summary>
+          <form method="post" action="{% url 'userdata:study-edit' study.public_id %}" class="stack study-add-note__form"
+                hx-post="{% url 'userdata:study-edit' study.public_id %}" hx-target="#study-cards"
+                hx-select=".study-cards > .is-new" hx-swap="beforeend" hx-select-oob="#study-meta,#study-empty">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add-text">
+            <label class="visually-hidden" for="study-new-note">{% translate "Текст заметки" %}</label>
+            <textarea class="textarea" id="study-new-note" name="text" rows="3" maxlength="4000" required
+                      placeholder="{% translate 'Вывод, оговорка или вопрос' %}"></textarea>
+            <div><button class="button button--sm button--secondary" type="submit">{% translate "Добавить" %}</button></div>
+          </form>
+        </details>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

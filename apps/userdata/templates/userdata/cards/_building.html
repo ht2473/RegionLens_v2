@@ -1,0 +1,5 @@
+{% load i18n %}
+{# Ряд карточки считается: таблица пересобирается; карточка переспросит сама через несколько секунд. #}
+<p class="study-card__waiting" role="status"
+   hx-get="{{ card.poll_url }}" hx-trigger="load delay:3s"
+   hx-target="closest .study-card__slot" hx-swap="innerHTML">{% translate "Считается — карточка обновится сама." %}</p>

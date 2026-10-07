@@ -1,16 +1,16 @@
-"""Маршруты своих данных: раздел, мастер загрузки, страница таблицы, ссылки и доски."""
+"""Маршруты своих данных: раздел, мастер загрузки, страница таблицы, ссылки и исследования."""
 
 from __future__ import annotations
 
 from django.urls import path
 
 from . import (
-    board_views,
     formula_views,
     month_views,
     pages,
     related_views,
     share_views,
+    study_views,
     version_views,
     views,
 )
@@ -21,28 +21,28 @@ urlpatterns = [
     path("own-data/", pages.SectionView.as_view(), name="index"),
     path("own-data/new/", views.UploadView.as_view(), name="upload"),
     path("own-data/example/", pages.ExampleView.as_view(), name="example"),
-    path("own-data/boards/new/", board_views.BoardCreateView.as_view(), name="board-new"),
-    path("own-data/boards/add/", board_views.BoardAddView.as_view(), name="board-add"),
-    path("own-data/boards/<uuid:public_id>/", board_views.BoardView.as_view(), name="board"),
+    path("own-data/studies/new/", study_views.StudyCreateView.as_view(), name="study-new"),
+    path("own-data/studies/add/", study_views.StudyAddView.as_view(), name="study-add"),
+    path("own-data/studies/<uuid:public_id>/", study_views.StudyView.as_view(), name="study"),
     path(
-        "own-data/boards/<uuid:public_id>/edit/",
-        board_views.BoardEditView.as_view(),
-        name="board-edit",
+        "own-data/studies/<uuid:public_id>/edit/",
+        study_views.StudyEditView.as_view(),
+        name="study-edit",
     ),
     path(
-        "own-data/boards/<uuid:public_id>/cards/<slug:block_id>/",
-        board_views.BoardCardView.as_view(),
-        name="board-card",
+        "own-data/studies/<uuid:public_id>/cards/<slug:block_id>/",
+        study_views.StudyCardView.as_view(),
+        name="study-card",
     ),
     path(
-        "own-data/boards/<uuid:public_id>/shares/",
-        share_views.BoardShareCreateView.as_view(),
-        name="board-share-create",
+        "own-data/studies/<uuid:public_id>/shares/",
+        share_views.StudyShareCreateView.as_view(),
+        name="study-share-create",
     ),
     path(
-        "own-data/boards/<uuid:public_id>/shares/<uuid:share_id>/revoke/",
-        share_views.BoardShareRevokeView.as_view(),
-        name="board-share-revoke",
+        "own-data/studies/<uuid:public_id>/shares/<uuid:share_id>/revoke/",
+        share_views.StudyShareRevokeView.as_view(),
+        name="study-share-revoke",
     ),
     path("own-data/<uuid:public_id>/", pages.DatasetView.as_view(), name="dataset"),
     path("own-data/<uuid:public_id>/delete/", pages.DeleteView.as_view(), name="delete"),

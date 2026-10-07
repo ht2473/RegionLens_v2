@@ -1,6 +1,7 @@
 """
-Свои данные целиком в браузере: файл → «Что в таблице» → «Показатели» → карта → страница
-таблицы; на 1440 и 390 точках, по-английски; разметка каждого шага — под аудитом доступности.
+Свои данные целиком в браузере: файл → «Что в таблице» → «Показатели» → исследование
+с картой → карта на холсте → страница таблицы; на 1440 и 390 точках, по-английски;
+разметка каждого шага — под аудитом доступности.
 """
 
 from __future__ import annotations
@@ -55,15 +56,25 @@ def _walk(page: Page, base: str, language: str = "ru") -> list[str]:
     page.wait_for_url("**/series/")
     audit()
     page.locator(".series-form button.button--primary[type=submit]").click()
-    page.wait_for_url("**/map/**")
+    page.wait_for_url("**/own-data/studies/**")
+    expect(page.locator(".study-card .geo-map, .study-card .tile-map")).to_have_count(1)
     audit()
     return problems
+
+
+def _open_card(page: Page) -> None:
+    """Карточка карты в исследовании → та же карта на холсте."""
+    page.locator(".study-card__open").first.click()
+    page.wait_for_url("**/map/**")
+    page.wait_for_load_state("networkidle")
 
 
 def test_journey_desktop(page: Page, own_data: Any) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     problems = _walk(page, own_data.url)
-    expect(page.locator("h1")).to_contain_text(TITLE)
+    expect(page.locator(".study-card__title").first).to_contain_text(TITLE)
+    expect(page.locator(".study-page .own-private")).to_contain_text("без входа — хранится до")
+    _open_card(page)
     expect(page.locator(".surface-head__private")).to_have_text("видно только вам")
     page.locator(".surface-head__about a").click()
     # Ссылка ведёт к ряду на странице таблицы: адрес с якорем.
@@ -85,7 +96,7 @@ def test_journey_phone(browser: Browser, own_data: Any) -> None:
     )
     try:
         problems = _walk(page, own_data.url)
-        expect(page.locator("h1")).to_contain_text(TITLE)
+        expect(page.locator(".study-card__title").first).to_contain_text(TITLE)
         assert not problems, "\n".join(problems)
     finally:
         context.close()
@@ -94,6 +105,7 @@ def test_journey_phone(browser: Browser, own_data: Any) -> None:
 def test_journey_english(page: Page, own_data: Any) -> None:
     page.set_viewport_size({"width": 1440, "height": 900})
     problems = _walk(page, own_data.url, "en")
+    _open_card(page)
     expect(page.locator(".surface-head__private")).to_have_text("visible only to you")
     assert page.locator("h1 [lang=ru]").count() == 1
     assert not problems, "\n".join(problems)
@@ -113,10 +125,11 @@ def _analysis(page: Page, base: str) -> list[str]:
         if overflow["overflow"] > 0:
             problems.append(f"{page.url}: переполнение {overflow}")
 
+    _open_card(page)
     page.locator(".surface-head__about a").click()
     page.wait_for_url(re.compile(r"/own-data/[^/]+/"))
     audit()
-    expect(page.locator(".glance-card").first).to_be_visible()
+    expect(page.locator(".own-series__item").first).to_be_visible()
     page.locator("a[href$='/formula/']").click()
     page.wait_for_url("**/formula/")
     audit()

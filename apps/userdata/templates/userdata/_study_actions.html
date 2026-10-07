@@ -1,0 +1,59 @@
+{% load i18n %}
+{% comment %}
+  «Что сделать» у выбранного ряда: построить, посчитать, узнать, вместе с другим показателем;
+  недоступное — серым с причиной. Новая карточка добавляется в конец поля без перезагрузки
+  (из ответа забираются новая карточка, перечень панели и сведения над полем).
+{% endcomment %}
+<form method="post" action="{% url 'userdata:study-edit' study.public_id %}" class="study-actions" id="study-actions"
+      aria-label="{% translate 'Что сделать' %}"
+      hx-post="{% url 'userdata:study-edit' study.public_id %}" hx-target="#study-cards"
+      hx-select=".study-cards > .is-new" hx-swap="beforeend" hx-push-url="false"
+      hx-select-oob="#study-sources,#study-meta,#study-empty,#study-toolbar,#study-toast">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="add">
+  <input type="hidden" name="series" value="{{ panel.chosen.key }}">
+  {% if panel.partner %}<input type="hidden" name="other" value="{{ panel.partner.key }}">{% endif %}
+  {% for group in panel.groups %}
+    <div class="study-actions__group">
+      <div class="study-actions__title">{{ group.title }}</div>
+      {% if group.reason %}<p class="study-actions__reason study-actions__group-reason">{{ group.reason }}</p>{% endif %}
+      {% if group.actions %}
+        <ul class="study-actions__list">
+          {% for action in group.actions %}
+            <li>
+              {% if action.reason %}
+                <span class="menu-item study-actions__item is-disabled" aria-disabled="true">
+                  {% if action.icon %}<svg aria-hidden="true"><use href="#icon-{{ action.icon }}"></use></svg>{% endif %}
+                  <span class="study-actions__text">
+                    {{ action.title }}
+                    <span class="study-actions__reason">{{ action.reason }}</span>
+                  </span>
+                </span>
+              {% elif action.value %}
+                <button class="menu-item study-actions__item" type="submit" name="do" value="{{ action.value }}">
+                  {% if action.icon %}<svg aria-hidden="true"><use href="#icon-{{ action.icon }}"></use></svg>{% endif %}
+                  <span class="study-actions__text">
+                    {{ action.title }}
+                    {% if action.hint %}<span class="study-actions__reason">{{ action.hint }}</span>{% endif %}
+                  </span>
+                </button>
+              {% elif action.href|slice:":1" == "?" %}
+                <a class="menu-item study-actions__item" href="{{ action.href }}" hx-get="{{ action.href }}"
+                   hx-target="#study-sources" hx-select="#study-sources" hx-swap="outerHTML" hx-push-url="true">
+                  {% if action.icon %}<svg aria-hidden="true"><use href="#icon-{{ action.icon }}"></use></svg>{% endif %}
+                  <span class="study-actions__text">{{ action.title }}</span>
+                </a>
+              {% else %}
+                <a class="menu-item study-actions__item" href="{{ action.href }}">
+                  {% if action.icon %}<svg aria-hidden="true"><use href="#icon-{{ action.icon }}"></use></svg>{% endif %}
+                  <span class="study-actions__text">{{ action.title }}</span>
+                  <svg class="study-actions__away" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+                </a>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+  {% endfor %}
+</form>

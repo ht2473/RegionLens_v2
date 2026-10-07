@@ -3570,22 +3570,22 @@ rl-combobox:defined > select {
   gap: var(--space-3);
 }
 
-/* Вид — карточкой на доску: под сохранением в кабинет, через черту. */
-.save-query__board {
+/* Вид — карточкой в исследование: под сохранением в кабинет, через черту. */
+.save-query__study {
   padding-top: var(--space-3);
   border-top: 1px solid var(--border-subtle);
 }
 
-/* Название новой доски — только когда выбрана новая доска. */
-.save-query__new-board {
+/* Название нового исследования — только когда выбрано новое. */
+.save-query__new-study {
   display: none;
 }
 
-.save-query__board:has(option[value="new"]:checked) .save-query__new-board {
+.save-query__study:has(option[value="new"]:checked) .save-query__new-study {
   display: flex;
 }
 
-.save-query__board-actions {
+.save-query__study-actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);

@@ -38,6 +38,49 @@
     </p>
   </header>
 
+  <section class="page-section" aria-labelledby="own-studies" id="own-studies-section">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="own-studies">{% translate "Мои исследования" %}</h2>
+    </div>
+    <p class="page-section__lead">
+      {% blocktranslate trimmed %}
+        Исследование — рабочее поле: ваши таблицы и показатели сайта, а из них — карты, линии,
+        рейтинги и ответы числами с вашими заметками. Его можно распечатать и показать
+        по закрытой ссылке.
+      {% endblocktranslate %}
+    </p>
+    {% if studies %}
+      <ul class="own-studies">
+        {% for study in studies %}
+          <li class="own-studies__item">
+            <a href="{% url 'userdata:study' study.public_id %}"{% with lang=study.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ study.title }}</a>
+            <span class="own-studies__facts">
+              {% blocktranslate trimmed with count=study.blocks|length moment=study.updated_at|date:"d.m.Y" %}карточек и заметок: {{ count }} · изменено {{ moment }}{% endblocktranslate %}
+            </span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    <form method="post" action="{% url 'userdata:study-new' %}" class="own-study-form">
+      {% csrf_token %}
+      <div class="field">
+        <label class="field__label" for="own-study-title">{% translate "Название" %}</label>
+        <input class="input" id="own-study-title" name="title" maxlength="200"
+               placeholder="{% translate 'Например: к курсовой' %}">
+      </div>
+      <button class="button button--secondary" type="submit">
+        <svg aria-hidden="true"><use href="#icon-plus"></use></svg>
+        {% translate "Начать исследование" %}
+      </button>
+    </form>
+    {% if not user.is_authenticated %}
+      <p class="field__hint">
+        {% blocktranslate trimmed with hours=guest_hours %}Без входа исследование хранится {{ hours }} ч.{% endblocktranslate %}
+        <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "Войдите, чтобы сохранить его" %}</a>
+      </p>
+    {% endif %}
+  </section>
+
   <section class="page-section" aria-labelledby="own-tables">
     <div class="page-section__head">
       <h2 class="page-section__title" id="own-tables">{% translate "Мои таблицы" %}</h2>
@@ -78,48 +121,6 @@
       </p>
     {% else %}
       <p class="page-section__lead">{% translate "Загруженных таблиц пока нет." %}</p>
-    {% endif %}
-  </section>
-
-  <section class="page-section" aria-labelledby="own-boards" id="own-boards-section">
-    <div class="page-section__head">
-      <h2 class="page-section__title" id="own-boards">{% translate "Мои доски" %}</h2>
-    </div>
-    <p class="page-section__lead">
-      {% blocktranslate trimmed %}
-        Доска собирает на одной странице карты, графики и рейтинги — свои и сайта — с вашими
-        пояснениями. Её можно распечатать и показать по закрытой ссылке, в том числе на телефоне.
-      {% endblocktranslate %}
-    </p>
-    {% if user.is_authenticated %}
-      {% if boards %}
-        <ul class="own-boards">
-          {% for board in boards %}
-            <li class="own-boards__item">
-              <a href="{% url 'userdata:board' board.public_id %}"{% with lang=board.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ board.title }}</a>
-              <span class="own-boards__facts">
-                {% blocktranslate trimmed with count=board.blocks|length moment=board.updated_at|date:"d.m.Y" %}блоков: {{ count }} · изменена {{ moment }}{% endblocktranslate %}
-              </span>
-            </li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-      <form method="post" action="{% url 'userdata:board-new' %}" class="own-board-form">
-        {% csrf_token %}
-        <div class="field">
-          <label class="field__label" for="own-board-title">{% translate "Название новой доски" %}</label>
-          <input class="input" id="own-board-title" name="title" maxlength="200" required
-                 placeholder="{% translate 'Например: к курсовой' %}">
-        </div>
-        <button class="button button--secondary" type="submit">
-          <svg aria-hidden="true"><use href="#icon-plus"></use></svg>
-          {% translate "Создать доску" %}
-        </button>
-      </form>
-    {% else %}
-      <p class="page-section__lead">
-        <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "Войдите, чтобы собирать доски" %}</a>.
-      </p>
     {% endif %}
   </section>
 

@@ -1,7 +1,7 @@
 {% load i18n formatting %}
-{# Таблица на карточке доски: отмеченные территории или все субъекты в прокручиваемой области. #}
+{# Таблица на карточке исследования: отмеченные территории или все субъекты в прокручиваемой области. #}
 {% if card_rows %}
-  <div class="data-table-wrapper board-card__table board-card__table--tall" data-scroll>
+  <div class="data-table-wrapper study-card__table study-card__table--tall" data-scroll>
     <table class="data-table">
       <caption class="visually-hidden">{{ card.title }}</caption>
       <thead>
@@ -12,7 +12,7 @@
       </thead>
       <tbody>
         {% for row in card_rows %}
-          <tr>
+          <tr data-territory="{{ row.code }}">
             <td>{{ row.name }}</td>
             <td class="is-numeric">{% if row.value is not None %}{{ row.value|ru_number:precision }}{% else %}<span class="text-muted">{{ row.note|default:"—" }}</span>{% endif %}</td>
           </tr>
@@ -21,5 +21,5 @@
     </table>
   </div>
 {% else %}
-  <p class="board-card__empty">{% translate "За этот год значений по субъектам нет." %}</p>
+  <p class="study-card__empty">{% translate "За этот год значений по субъектам нет." %}</p>
 {% endif %}

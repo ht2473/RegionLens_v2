@@ -68,15 +68,26 @@ class TestSeriesStep:
         assert response.status_code == 302
         assert response["Location"].endswith(f"/own-data/{dataset.public_id}/table/")
 
-    def test_build_opens_map(self, client: Client, warehouse: Any) -> None:
+    def test_build_opens_study_with_map(self, client: Client, warehouse: Any) -> None:
+        from apps.userdata import studies
+        from apps.userdata.models import Study
+
         dataset = _upload(client, "environment.csv")
         _describe(client, dataset)
         response = _build(client, dataset)
         assert response.status_code == 302
+        study = Study.objects.get()
         location = urlparse(response["Location"])
-        assert location.path == reverse("maps:choropleth")
+        assert location.path == reverse("userdata:study", args=[study.public_id])
         key = parse_qs(location.query)["series"][0]
         assert key.startswith(f"u:{dataset.code}:")
+        (block,) = studies.blocks_of(study)
+        assert (block["target"], block["parameters"]["series"]) == ("map", key)
+        assert study.title == dataset.title
+        # Пересборка той же таблицы ведёт в то же исследование, без новой карточки.
+        again = _build(client, dataset)
+        assert urlparse(again["Location"]).path == location.path
+        assert len(studies.blocks_of(Study.objects.get())) == 1
         version = _version(dataset)
         assert version.state == DatasetVersion.State.BUILT
         assert version.regions_count == 77
@@ -85,7 +96,7 @@ class TestSeriesStep:
         dataset.refresh_from_db()
         assert dataset.state == Dataset.State.READY
 
-    def test_pasted_word_table_opens_map(self, client: Client, warehouse: Any) -> None:
+    def test_pasted_word_table_opens_study(self, client: Client, warehouse: Any) -> None:
         first = (FIXTURES / "regions_population_part1.txt").read_text(encoding="utf-8")
         client.post(reverse("userdata:upload"), {"action": "paste", "text": first})
         dataset = Dataset.objects.latest("created_at")
@@ -96,12 +107,12 @@ class TestSeriesStep:
         _describe(client, dataset)
         response = _build(client, dataset)
         assert response.status_code == 302
-        assert urlparse(response["Location"]).path == reverse("maps:choropleth")
+        assert "/own-data/studies/" in urlparse(response["Location"]).path
         version = _version(dataset)
         assert version.regions_count == 85
         assert (version.first_year, version.last_year) == (2010, 2023)
 
-    def test_handwritten_table_opens_map(self, client: Client, warehouse: Any) -> None:
+    def test_handwritten_table_opens_study(self, client: Client, warehouse: Any) -> None:
         # Таблица «от руки»: сокращённые и разговорные названия, запятая в числах.
         rows = [
             "Регион;2022;2023",
@@ -129,7 +140,7 @@ class TestSeriesStep:
         _describe(client, dataset)
         response = _build(client, dataset)
         assert response.status_code == 302
-        assert urlparse(response["Location"]).path == reverse("maps:choropleth")
+        assert "/own-data/studies/" in urlparse(response["Location"]).path
         version = _version(dataset)
         assert version.regions_count == 10
         assert (version.first_year, version.last_year) == (2022, 2023)
@@ -296,7 +307,7 @@ class TestBuild:
             reverse("userdata:series-status", args=[dataset.public_id]), {"stage": jobs.BUILD}
         )
         assert status.status_code == 204
-        assert status["HX-Redirect"].startswith(reverse("maps:choropleth"))
+        assert "/own-data/studies/" in status["HX-Redirect"]
 
     def test_queue_waits_for_free_slot(
         self, client: Client, warehouse: Any, monkeypatch: pytest.MonkeyPatch, settings: Any
@@ -515,7 +526,7 @@ class TestDatasetPage:
     def test_example(self, client: Client, warehouse: Any) -> None:
         response = client.post(reverse("userdata:example"))
         assert response.status_code == 302
-        assert response["Location"].startswith(reverse("maps:choropleth"))
+        assert "/own-data/studies/" in response["Location"]
         dataset = Dataset.objects.get()
         assert dataset.source_url == "https://tochno.st/datasets/environment"
         assert _version(dataset).regions_count == 85

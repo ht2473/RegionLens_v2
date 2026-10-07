@@ -1,5 +1,5 @@
 {% load i18n %}
-{# Кнопка «Сохранить» вида экрана со строкой запроса: в кабинет или на доску — в popover. #}
+{# Кнопка «Сохранить» вида экрана со строкой запроса: в кабинет или в исследование — в popover. #}
 {# Ожидает save_query_target — код страницы из QUERY_TARGETS. #}
 {% if request.user.is_authenticated %}
   <button type="button" class="button button--sm button--ghost no-print"
@@ -30,27 +30,27 @@
       </button>
     </form>
 
-    {# Тот же вид — карточкой на доску: своей или новой. #}
-    <form method="post" action="{% url 'userdata:board-add' %}" class="save-query__form save-query__board">
+    {# Тот же вид — карточкой в исследование: своё или новое. #}
+    <form method="post" action="{% url 'userdata:study-add' %}" class="save-query__form save-query__study">
       {% csrf_token %}
       <input type="hidden" name="target" value="{{ save_query_target }}">
       <input type="hidden" name="query_string" value="{{ request.META.QUERY_STRING }}">
       <input type="hidden" name="back" value="{{ request.get_full_path }}">
       <div class="field">
-        <label class="field__label" for="save-query-board">{% translate "Или на доску" %}</label>
-        <select class="select" id="save-query-board" name="board">
-          {% for board in boards %}<option value="{{ board.public_id }}">{{ board.title }}</option>{% endfor %}
-          <option value="new"{% if not boards %} selected{% endif %}>{% translate "новая доска" %}</option>
+        <label class="field__label" for="save-query-study">{% translate "Или в исследование" %}</label>
+        <select class="select" id="save-query-study" name="study">
+          {% for study in studies %}<option value="{{ study.public_id }}">{{ study.title }}</option>{% endfor %}
+          <option value="new"{% if not studies %} selected{% endif %}>{% translate "новое исследование" %}</option>
         </select>
       </div>
-      <div class="field save-query__new-board">
-        <label class="field__label" for="save-query-board-title">{% translate "Название новой доски" %}</label>
-        <input class="input" id="save-query-board-title" name="new_title" maxlength="200"
+      <div class="field save-query__new-study">
+        <label class="field__label" for="save-query-study-title">{% translate "Название нового исследования" %}</label>
+        <input class="input" id="save-query-study-title" name="new_title" maxlength="200"
                placeholder="{% translate 'Например: к курсовой' %}">
       </div>
-      <div class="save-query__board-actions">
-        <button type="submit" class="button button--sm button--secondary">{% translate "На доску" %}</button>
-        <button type="submit" class="button button--sm button--ghost" name="open" value="1">{% translate "На доску и открыть её" %}</button>
+      <div class="save-query__study-actions">
+        <button type="submit" class="button button--sm button--secondary">{% translate "В исследование" %}</button>
+        <button type="submit" class="button button--sm button--ghost" name="open" value="1">{% translate "В исследование и открыть его" %}</button>
       </div>
     </form>
   </div>

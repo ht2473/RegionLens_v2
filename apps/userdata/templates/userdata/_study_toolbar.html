@@ -1,0 +1,77 @@
+{% load i18n formatting %}
+{% comment %}
+  Общий год и регионы карточек над полем. Владелец меняет и сразу сохраняет; читатель ссылки
+  меняет только свой просмотр (адрес). Регион снимается чипом, добавляется из перечня.
+{% endcomment %}
+{% if owner %}{% url 'userdata:study-edit' study.public_id as common_action %}{% endif %}
+<form class="study-toolbar no-print" data-autosubmit
+      {% if owner %}method="post" action="{{ common_action }}" hx-post="{{ common_action }}"{% else %}method="get" hx-get="" hx-push-url="true"{% endif %}
+      hx-target="#study-field" hx-select="#study-field" hx-swap="outerHTML"
+      aria-label="{% translate 'Общий год и регионы карточек' %}">
+  {% if owner %}{% csrf_token %}<input type="hidden" name="action" value="common">{% else %}<input type="hidden" name="common" value="1">{% endif %}
+  <div class="study-toolbar__year">
+    <label class="study-toolbar__label" for="study-year">{% translate "Год" %}</label>
+    <select class="select" id="study-year" name="year">
+      <option value=""{% if year is None %} selected{% endif %}>{% translate "последний у каждой" %}</option>
+      {% for item in years %}
+        <option value="{{ item|year }}"{% if item == year %} selected{% endif %}>{{ item|year }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="study-toolbar__regions">
+    <span class="study-toolbar__label" id="study-regions-label">{% translate "Регионы" %}</span>
+    {% for code, name in selected_names %}
+      <input type="hidden" name="territory" value="{{ code }}">
+      <span class="chip">
+        {{ name }}
+        <button class="chip__remove" type="submit" name="drop" value="{{ code }}"
+                aria-label="{% blocktranslate trimmed %}Убрать: {{ name }}{% endblocktranslate %}">×</button>
+      </span>
+    {% empty %}
+      <span class="study-toolbar__empty">{% translate "у каждой карточки свои" %}</span>
+    {% endfor %}
+    <button type="button" class="button button--sm button--ghost" popovertarget="study-regions"
+            aria-haspopup="dialog">
+      <svg aria-hidden="true"><use href="#icon-plus"></use></svg>
+      {% translate "Регион" %}
+    </button>
+  </div>
+  <noscript><button class="button button--sm button--secondary" type="submit">{% translate "Показать" %}</button></noscript>
+</form>
+
+<div class="menu-popover study-regions no-print" id="study-regions" popover role="dialog"
+     aria-label="{% translate 'Регионы карточек' %}">
+  <form class="stack" {% if owner %}method="post" action="{{ common_action }}" hx-post="{{ common_action }}"{% else %}method="get" hx-get="" hx-push-url="true"{% endif %}
+        hx-target="#study-field" hx-select="#study-field" hx-swap="outerHTML">
+    {% if owner %}{% csrf_token %}<input type="hidden" name="action" value="common">{% else %}<input type="hidden" name="common" value="1">{% endif %}
+    {% if year is not None %}<input type="hidden" name="year" value="{{ year|year }}">{% endif %}
+    <div class="study-regions__head">
+      <span class="study-regions__title">
+        {% blocktranslate trimmed with count=max_compare %}Регионы карточек — не больше {{ count }}{% endblocktranslate %}
+      </span>
+    </div>
+    <label class="filter-field">
+      <svg aria-hidden="true"><use href="#icon-filter"></use></svg>
+      <span class="visually-hidden">{% translate "Отобрать регион" %}</span>
+      <input type="search" autocomplete="off" data-filter-input="#study-regions-list"
+             data-filter-empty="#study-regions-empty" placeholder="{% translate 'Отобрать регион' %}">
+    </label>
+    <div class="territory-picker study-regions__list" id="study-regions-list">
+      {% for group in territory_groups %}
+        <div class="territory-picker__group" data-filter-group>
+          <div class="territory-picker__title">{% if group.district %}{{ group.district.name }}{% else %}{% translate "вне округов" %}{% endif %}</div>
+          <div class="stack stack--tight">
+            {% for territory in group.items %}
+              <label class="checkbox" data-filter-item data-filter-text="{{ territory.name }}">
+                <input type="checkbox" name="territory" value="{{ territory.code }}"{% if territory.code in territories %} checked{% endif %}>
+                <span class="text-truncate" title="{{ territory.name }}">{{ territory.name }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <p class="field__hint" id="study-regions-empty" hidden>{% translate "Ничего не найдено" %}</p>
+    <div><button class="button button--sm button--primary" type="submit">{% translate "Показать на карточках" %}</button></div>
+  </form>
+</div>

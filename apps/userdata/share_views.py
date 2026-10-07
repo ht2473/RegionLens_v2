@@ -1,6 +1,6 @@
 """
 Закрытые ссылки: открыть по токену (адрес без языка), создать и отозвать — владельцу
-таблицы или доски.
+таблицы или исследования.
 """
 
 from __future__ import annotations
@@ -19,8 +19,8 @@ from django.views.generic import View
 from apps.core.client_ip import client_ip
 from apps.core.throttle import allow, used
 
-from . import access, boards, shares
-from .models import Board, Dataset
+from . import access, shares, studies
+from .models import Dataset, Study
 
 # Окно счёта неудачных попыток открыть ссылку, секунд.
 ATTEMPTS_WINDOW = 600
@@ -31,7 +31,7 @@ TOO_MANY = 429
 
 class ShareOpenView(View):
     """
-    Ссылка ``/s/<токен>``: запомнить её в сеансе и перейти на страницу таблицы или доски
+    Ссылка ``/s/<токен>``: запомнить её в сеансе и перейти на страницу таблицы или исследования
     на языке читателя. Недействующая — 404 «Ссылка больше не действует»; подбор токена
     ограничен числом неудачных попыток с адреса.
     """
@@ -55,8 +55,8 @@ class ShareOpenView(View):
             if share.dataset is not None:
                 url = reverse("userdata:dataset", args=[share.dataset.public_id])
             else:
-                assert share.board is not None
-                url = reverse("userdata:board", args=[share.board.public_id])
+                assert share.study is not None
+                url = reverse("userdata:study", args=[share.study.public_id])
         response = redirect(url)
         response["Cache-Control"] = "private, no-store"
         response["X-Robots-Tag"] = "noindex, nofollow"
@@ -72,15 +72,15 @@ def _gone(request: HttpRequest, *, status: int) -> HttpResponse:
 
 
 class _ShareTargetMixin:
-    """Таблица или доска владельца, к которой относится ссылка; чужая — 404."""
+    """Таблица или исследование владельца, к которой относится ссылка; чужая — 404."""
 
     request: HttpRequest
 
-    def target(self, public_id: str) -> Dataset | Board:
+    def target(self, public_id: str) -> Dataset | Study:
         raise NotImplementedError
 
-    def back(self, target: Dataset | Board) -> str:
-        name = "userdata:dataset" if isinstance(target, Dataset) else "userdata:board"
+    def back(self, target: Dataset | Study) -> str:
+        name = "userdata:dataset" if isinstance(target, Dataset) else "userdata:study"
         return f"{reverse(name, args=[target.public_id])}#own-shares"
 
 
@@ -128,11 +128,11 @@ class _DatasetTarget(_ShareTargetMixin):
         return access.dataset_or_404(self.request, public_id)
 
 
-class _BoardTarget(_ShareTargetMixin):
-    def target(self, public_id: str) -> Board:
+class _StudyTarget(_ShareTargetMixin):
+    def target(self, public_id: str) -> Study:
         from django.shortcuts import get_object_or_404
 
-        return get_object_or_404(boards.owned(self.request.user), public_id=public_id)
+        return get_object_or_404(studies.owned(self.request), public_id=public_id)
 
 
 class DatasetShareCreateView(_DatasetTarget, ShareCreateView):
@@ -143,15 +143,15 @@ class DatasetShareRevokeView(_DatasetTarget, ShareRevokeView):
     """Отзыв ссылки на таблицу."""
 
 
-class BoardShareCreateView(_BoardTarget, ShareCreateView):
-    """Ссылка на доску."""
+class StudyShareCreateView(_StudyTarget, ShareCreateView):
+    """Ссылка на исследование."""
 
 
-class BoardShareRevokeView(_BoardTarget, ShareRevokeView):
-    """Отзыв ссылки на доску."""
+class StudyShareRevokeView(_StudyTarget, ShareRevokeView):
+    """Отзыв ссылки на исследование."""
 
 
-def share_context(request: HttpRequest, target: Dataset | Board) -> dict[str, Any]:
+def share_context(request: HttpRequest, target: Dataset | Study) -> dict[str, Any]:
     """Блок ссылок владельца: действующие ссылки, сроки на выбор и новая ссылка."""
     return {
         "shares": list(shares.of(target)),

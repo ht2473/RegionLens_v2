@@ -24,7 +24,7 @@ from apps.core.throttle import allow, allow_key
 from apps.warehouse.duckdb_client import close_dataset
 
 from . import access, ingest, paste, tables
-from .models import Dataset, DatasetVersion
+from .models import Dataset, DatasetVersion, Study
 
 logger = logging.getLogger(__name__)
 
@@ -441,22 +441,21 @@ def _title(file_name: str) -> str:
     return stem or _("Таблица")
 
 
-def export_boards(user: Any) -> list[dict[str, Any]]:
-    """Доски учётной записи для выгрузки «Персональных данных»: блоки и закрытые ссылки."""
-    from .boards import blocks_of
-    from .models import Board
+def export_studies(user: Any) -> list[dict[str, Any]]:
+    """Исследования учётной записи для выгрузки «Персональных данных»: блоки и закрытые ссылки."""
+    from .studies import blocks_of
 
     return [
         {
-            "title": board.title,
-            "description": board.description,
-            "created_at": board.created_at.isoformat(),
-            "blocks": blocks_of(board),
-            "year": board.year,
-            "territories": board.territories,
-            "shares": _export_shares(board.shares.all()),
+            "title": study.title,
+            "description": study.description,
+            "created_at": study.created_at.isoformat(),
+            "blocks": blocks_of(study),
+            "year": study.year,
+            "territories": study.territories,
+            "shares": _export_shares(study.shares.all()),
         }
-        for board in Board.objects.filter(owner=user).prefetch_related("shares")
+        for study in Study.objects.filter(owner=user).prefetch_related("shares")
     ]
 
 
@@ -525,8 +524,9 @@ def export_datasets(user: Any) -> list[dict[str, Any]]:
 
 def prune() -> tuple[int, int]:
     """
-    Удалить истёкшие таблицы гостей и осиротевшие файлы: каталоги без набора, прежние
-    файлы сборки. Занятый другим процессом файл (Windows) удалится при следующей очистке.
+    Удалить истёкшие таблицы и исследования гостей и осиротевшие файлы: каталоги без
+    набора, прежние файлы сборки. Занятый другим процессом файл (Windows) удалится
+    при следующей очистке.
     Возвращает число удалённых таблиц и каталогов.
     """
     from django.utils import timezone
@@ -534,6 +534,7 @@ def prune() -> tuple[int, int]:
     expired = list(Dataset.objects.filter(owner__isnull=True, expires_at__lt=timezone.now()))
     for dataset in expired:
         discard(dataset)
+    Study.objects.filter(owner__isnull=True, expires_at__lt=timezone.now()).delete()
     root = Path(settings.USERDATA_DIR)
     if not root.exists():
         return len(expired), 0

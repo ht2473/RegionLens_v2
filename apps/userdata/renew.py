@@ -2,7 +2,7 @@
 Новая версия таблицы: рецепт прежней версии переносится на новый файл, спрашивается только
 новое, ключи рядов сохраняются, после сборки — отчёт о различиях и возврат к прежней.
 
-Пока новая версия не собрана, она — черновик: таблица на холсте, ссылки и доски работают
+Пока новая версия не собрана, она — черновик: таблица на холсте, ссылки и исследования работают
 на текущей. Перенос: та же таблица файла (по ключу, по похожему имени или единственная),
 роли столбцов — по тексту шапки (новый столбец получает роль по догадке), ответы о
 территориях и вложенных, отбор разрезов, выбор кодов-масок, описание показателей
@@ -17,6 +17,7 @@ import re
 from typing import Any
 
 from django.conf import settings
+from django.http import HttpRequest
 from django.urls import reverse
 from django.utils.translation import gettext as _
 
@@ -241,13 +242,18 @@ def changes_url(version: DatasetVersion) -> str:
     return reverse("userdata:version", args=[version.dataset.public_id, version.number])
 
 
-def after_build_url(version: DatasetVersion) -> str:
-    """Куда вести после сборки: новая версия — к отчёту о различиях, первая — на карту."""
+def after_build_url(version: DatasetVersion, request: HttpRequest | None = None) -> str:
+    """
+    Куда вести после сборки: новая версия — к отчёту о различиях, первая — в исследование
+    с картой первого ряда; если исследования не завести (предел), — на карту.
+    """
     if is_renewal(version):
         return changes_url(version)
+    from .lab import open_in_study
     from .views import first_view_url
 
-    return first_view_url(version)
+    opened = open_in_study(request, version) if request is not None else None
+    return opened or first_view_url(version)
 
 
 def promote(version: DatasetVersion) -> bool:

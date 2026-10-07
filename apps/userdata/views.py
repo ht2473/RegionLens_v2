@@ -69,6 +69,13 @@ class UploadView(BreadcrumbMixin, TemplateView):
             Crumb(title=_("Загрузить таблицу")),
         )
 
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        # Загрузка начата из панели исследования: собранная таблица вернётся в него.
+        from .lab import remember_study
+
+        remember_study(request, request.GET.get("study", ""))
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context.setdefault("upload_form", UploadForm())
@@ -376,7 +383,7 @@ class SeriesStepView(DatasetStepMixin, TemplateView):
         if state == jobs.READY:
             self.version.refresh_from_db(fields=["state"])
             if self.version.state == DatasetVersion.State.BUILT:
-                return redirect(renew.after_build_url(self.version))
+                return redirect(renew.after_build_url(self.version, request))
         return redirect("userdata:series", public_id=self.dataset.public_id)
 
 
@@ -391,7 +398,7 @@ class SeriesStatusView(DatasetStepMixin, View):
             built = jobs.stage_state(self.version, jobs.BUILD) == jobs.READY
             if waited == jobs.BUILD and built:
                 # Сборка закончилась, пока страница ждала: сразу на карту или к различиям.
-                response["HX-Redirect"] = renew.after_build_url(self.version)
+                response["HX-Redirect"] = renew.after_build_url(self.version, request)
             else:
                 response["HX-Refresh"] = "true"
             return response
@@ -436,9 +443,17 @@ def _progress(version: DatasetVersion) -> tuple[str, str]:
 
 def first_view_url(version: DatasetVersion) -> str:
     """Карта первого ряда собранной таблицы; у суммы — её пересчёт на жителей."""
+    key = first_key(version)
+    if key is None:
+        return reverse("userdata:dataset", args=[version.dataset.public_id])
+    return f"{reverse('maps:choropleth')}?{urlencode({'series': key})}"
+
+
+def first_key(version: DatasetVersion) -> str | None:
+    """Первый ряд собранной таблицы; у суммы — её пересчёт на 100 000 жителей."""
     records = list(version.series.order_by("order"))
     if not records:
-        return reverse("userdata:dataset", args=[version.dataset.public_id])
+        return None
     first = records[0]
     preferred = next(
         (
@@ -450,8 +465,7 @@ def first_view_url(version: DatasetVersion) -> str:
         ),
         first,
     )
-    key = f"u:{version.dataset.code}:{preferred.code}"
-    return f"{reverse('maps:choropleth')}?{urlencode({'series': key})}"
+    return f"u:{version.dataset.code}:{preferred.code}"
 
 
 def _indicator_answers(request: HttpRequest) -> dict[str, dict[str, Any]]:

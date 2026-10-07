@@ -1,4 +1,4 @@
-"""Таблицы гостя переходят в учётную запись при входе — как «Мой регион»."""
+"""Таблицы и исследования гостя переходят в учётную запись при входе — как «Мой регион»."""
 
 from __future__ import annotations
 
@@ -9,21 +9,25 @@ from django.http import HttpRequest
 from django.utils import timezone
 
 from .access import GUEST_SESSION_KEY, guest_fingerprint
-from .models import Dataset
+from .models import Dataset, Study
 
 
 def adopt_guest_datasets(
     request: HttpRequest | None = None, user: Any = None, **_kwargs: Any
 ) -> None:
-    """Неистёкшие наборы гостевого ключа сеанса получают владельца и больше не истекают."""
+    """
+    Неистёкшие таблицы и исследования гостевого ключа сеанса получают владельца и больше
+    не истекают.
+    """
     if request is None or user is None or not hasattr(request, "session"):
         return
     fingerprint = guest_fingerprint(request)
     if not fingerprint:
         return
-    Dataset.objects.filter(
-        owner__isnull=True, guest_key=fingerprint, expires_at__gt=timezone.now()
-    ).update(owner=user, guest_key="", expires_at=None)
+    for model in (Dataset, Study):
+        model.objects.filter(
+            owner__isnull=True, guest_key=fingerprint, expires_at__gt=timezone.now()
+        ).update(owner=user, guest_key="", expires_at=None)
     request.session.pop(GUEST_SESSION_KEY, None)
 
 

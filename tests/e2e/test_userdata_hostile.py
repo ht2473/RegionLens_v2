@@ -1,7 +1,8 @@
 """
 Названия из своей таблицы остаются текстом в браузере: показатель с ``<img onerror>``,
-единица с разметкой, разрез с «=» в начале, название и источник таблицы, доска, её тексты
-и карточки — на видах холста, в инструментах анализа, в подсказках графиков, в списке
+единица с разметкой, разрез с «=» в начале, название и источник таблицы, исследование,
+его заметки, карточки видов и ответов — на видах холста, в инструментах анализа,
+в подсказках графиков, в списке
 выбора ряда, в картинках SVG и у читателя закрытой ссылки.
 """
 
@@ -21,6 +22,8 @@ from django.core.cache import cache
 from django.test import Client
 from django.urls import reverse
 from playwright.sync_api import Browser, Page
+
+from tests.e2e.test_userdata_sharing import share_link
 
 pytestmark = [pytest.mark.e2e, pytest.mark.django_db(transaction=True)]
 
@@ -122,12 +125,15 @@ def _dataset(client: Client) -> tuple[Any, list[str]]:
     return dataset, keys
 
 
-def _board(client: Client, keys: list[str], site_key: str) -> Any:
-    """Доска с видами холста, инструментом, текстом и карточкой с названием и пояснением."""
-    from apps.userdata.models import Board
+def _study(client: Client, keys: list[str], site_key: str) -> Any:
+    """
+    Исследование с видами холста, инструментом, ответами, заметкой и карточкой
+    с названием и пояснением.
+    """
+    from apps.userdata.models import Study
 
-    client.post(reverse("userdata:board-new"), {"title": TITLE})
-    board = Board.objects.get()
+    client.post(reverse("userdata:study-new"), {"title": TITLE})
+    study = Study.objects.latest("created_at")
     for target, query in (
         ("map", {"series": keys[0]}),
         ("compare", {"series": [keys[0], site_key]}),
@@ -137,19 +143,25 @@ def _board(client: Client, keys: list[str], site_key: str) -> Any:
         ("inequality", {"series": keys[0]}),
     ):
         client.post(
-            reverse("userdata:board-add"),
+            reverse("userdata:study-add"),
             {
                 "target": target,
                 "query_string": urlencode(query, doseq=True),
-                "board": str(board.public_id),
+                "study": str(study.public_id),
             },
         )
-    edit = reverse("userdata:board-edit", args=[board.public_id])
+    edit = reverse("userdata:study-edit", args=[study.public_id])
+    for question in ("leaders", "change", "spread", "neighbours", "related"):
+        client.post(edit, {"action": "add", "do": f"answer:{question}", "series": keys[0]})
+    client.post(
+        edit,
+        {"action": "add", "do": "answer:relation", "series": keys[0], "other": site_key},
+    )
     client.post(edit, {"action": "add-text", "text": NOTE})
-    board.refresh_from_db()
-    card = next(block for block in board.blocks if block["kind"] == "view")
+    study.refresh_from_db()
+    card = next(block for block in study.blocks if block["kind"] == "view")
     client.post(edit, {"action": "change", "block": card["id"], "title": TITLE, "note": NOTE})
-    return board
+    return study
 
 
 def _visit(page: Page, url: str, shown: list[int]) -> list[str]:
@@ -209,7 +221,7 @@ def test_hostile_names_stay_text(
     client.force_login(registered_user)
     dataset, keys = _dataset(client)
     site_key = Series.objects.exclude(key__startswith="u:").order_by("key").first().key
-    board = _board(client, keys, site_key)
+    study = _study(client, keys, site_key)
 
     page.context.add_cookies(
         [
@@ -249,14 +261,14 @@ def test_hostile_names_stay_text(
         f"{base}{reverse('analytics:spatial')}?{one}",
         f"{base}{reverse('analytics:correlation')}?{pair}",
         f"{base}{reverse('analytics:index-builder')}?{three}",
-        f"{base}{reverse('userdata:board', args=[board.public_id])}",
+        f"{base}{reverse('userdata:study', args=[study.public_id])}",
     ]
     problems: list[str] = []
     shown: list[int] = []
     for url in urls:
         problems += _visit(page, url, shown)
 
-    # Картинки: карта, график динамики и карточка доски.
+    # Картинки: карта и график динамики.
     page.goto(f"{base}{reverse('maps:choropleth')}?{one}")
     page.wait_for_load_state("networkidle")
     problems += _save_svg(page, "rl-choropleth")
@@ -264,18 +276,16 @@ def test_hostile_names_stay_text(
     page.wait_for_load_state("networkidle")
     problems += _save_svg(page, "rl-chart")
 
-    # Читатель закрытой ссылки на доску — без входа.
-    page.goto(f"{base}{reverse('userdata:board', args=[board.public_id])}")
+    # Читатель закрытой ссылки на исследование — без входа.
+    page.goto(f"{base}{reverse('userdata:study', args=[study.public_id])}")
     page.wait_for_load_state("networkidle")
-    page.locator("#own-shares form.own-share-form button[type=submit]").click()
-    page.wait_for_load_state("networkidle")
-    link = page.locator("#own-share-url").input_value()
+    link = share_link(page)
     reader = browser.new_context(viewport={"width": 1440, "height": 900})
     try:
         other = reader.new_page()
         other.on("dialog", lambda dialog: (dialogs.append(dialog.message), dialog.dismiss()))
         problems += _visit(other, link, shown)
-        other.locator(".board-card__open").first.click()
+        other.locator(".study-card__open").first.click()
         other.wait_for_load_state("networkidle")
         problems += [f"{other.url}: {item}" for item in other.evaluate(CHECK_SCRIPT)]
     finally:

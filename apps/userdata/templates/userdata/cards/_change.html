@@ -1,0 +1,18 @@
+{% load i18n %}
+{# Как изменился показатель: значение региона (моего, выбранного или России), изменение за пять лет, ход. #}
+<div class="answer__figure study-card__answer">
+  <p class="answer__value">
+    <span class="numeric">{{ card.value }}</span>
+    <span class="answer__unit">{% if card.is_country %}{% translate "Россия" %}{% else %}{{ card.territory.name }}{% endif %}</span>
+  </p>
+  {% include "search/answers/_spark.html" with spark=card.spark %}
+</div>
+<p class="answer__meta">
+  {% if card.change %}
+    <span>
+      {% blocktranslate trimmed with since=card.since change=card.change %}С {{ since }} года — {{ change }}{% endblocktranslate %}
+    </span>
+  {% else %}
+    <span>{% translate "Пять лет назад значения нет" %}</span>
+  {% endif %}
+</p>

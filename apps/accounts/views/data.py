@@ -45,7 +45,7 @@ class DataView(CabinetViewMixin, FormView):
             "views": user.saved_queries.count(),
             "tickets": Ticket.objects.filter(author=user).count(),
             "tables": user.datasets.count(),
-            "boards": user.boards.count(),
+            "studies": user.studies.count(),
         }
         context["last_administrator"] = is_last_administrator(user)
         context["account"] = user

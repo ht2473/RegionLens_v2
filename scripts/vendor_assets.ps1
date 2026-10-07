@@ -29,6 +29,12 @@ $assets = @(
         Note    = 'HTMX 2.0.10 — обмен фрагментами разметки с сервером'
     },
     @{
+        Path    = 'vendor/sortable.min.js'
+        Url     = 'https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js'
+        MinSize = 40000
+        Note    = 'SortableJS 1.15.6 — перетаскивание карточек исследования, в том числе пальцем'
+    },
+    @{
         Path    = 'fonts/onest-cyrillic.woff2'
         Url     = 'https://cdn.jsdelivr.net/npm/@fontsource-variable/onest@5.2.5/files/onest-cyrillic-wght-normal.woff2'
         MinSize = 10000

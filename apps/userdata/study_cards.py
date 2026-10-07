@@ -1,9 +1,10 @@
 """
-Карточка доски: вид холста, построенный заново по параметрам карточки и общему выбору
-доски, или ссылка на инструмент анализа с параметрами словами.
+Карточка исследования: вид холста, построенный заново по параметрам карточки и общему
+выбору исследования, ответ числами (``answers``) или ссылка на инструмент анализа
+с параметрами словами.
 
 Вид холста строится теми же сборщиками, что и рабочая поверхность, — по копии запроса
-с параметрами карточки. У карты на странице свои опознаватели контуров: карт на доске
+с параметрами карточки. У карты на странице свои опознаватели контуров: карт в исследовании
 несколько.
 """
 
@@ -11,7 +12,6 @@ from __future__ import annotations
 
 import copy
 from typing import Any
-from urllib.parse import urlencode
 
 from django.http import Http404, HttpRequest, QueryDict
 from django.urls import reverse
@@ -25,7 +25,8 @@ from apps.warehouse.duckdb_client import WarehouseNotBuiltError
 from apps.workspace.constants import QUERY_TARGETS_BY_CODE
 from apps.workspace.describe import describe_parameters
 
-from .boards import CANVAS_TARGETS
+from . import answers
+from .studies import ANSWER, CANVAS_TARGETS, PAIR_QUESTIONS
 
 # Строк рейтинга и таблицы на карточке; остальное — по ссылке «Открыть».
 CARD_ROWS = 10
@@ -34,7 +35,7 @@ CARD_ROWS = 10
 def card_query(
     parameters: dict[str, Any], *, year: int | None, territories: list[str]
 ) -> QueryDict:
-    """Параметры вида карточки с общим годом и территориями доски поверх своих."""
+    """Параметры вида карточки с общим годом и регионами исследования поверх своих."""
     query = QueryDict(mutable=True)
     for name, value in (parameters or {}).items():
         if isinstance(value, list):
@@ -49,10 +50,28 @@ def card_query(
 
 
 def open_url(block: dict[str, Any], query: QueryDict) -> str:
-    """Адрес вида карточки целиком — с общим выбором доски."""
+    """Адрес вида карточки целиком — с общим выбором исследования."""
     target = QUERY_TARGETS_BY_CODE[block["target"]]
     encoded = query.urlencode()
     return f"{reverse(target.url_name)}?{encoded}" if encoded else reverse(target.url_name)
+
+
+def kind_title(block: dict[str, Any]) -> Any:
+    """Вид карточки словами — над её названием."""
+    if block["kind"] == ANSWER:
+        return answers.TITLES[block["question"]]
+    return QUERY_TARGETS_BY_CODE[block["target"]].title
+
+
+def _state(request: HttpRequest, query: QueryDict) -> tuple[HttpRequest, SurfaceState]:
+    """Выбор холста по параметрам карточки; ряд удалённой или чужой таблицы — 404."""
+    clone = copy.copy(request)
+    # Параметры карточки вместо параметров страницы исследования; запрос — копия.
+    setattr(clone, "GET", query)  # noqa: B010 — у запроса GET объявлен неизменяемым
+    state = resolve_state(clone)
+    if state.series is None:
+        raise Http404
+    return clone, state
 
 
 def render(
@@ -63,6 +82,8 @@ def render(
     territories: list[str],
 ) -> dict[str, Any]:
     """Контекст карточки: шаблон, заголовок, адрес вида и содержимое."""
+    if block["kind"] == ANSWER:
+        return _answer(request, block, year=year, territories=territories)
     query = card_query(block.get("parameters") or {}, year=year, territories=territories)
     target = block["target"]
     card: dict[str, Any] = {
@@ -80,14 +101,8 @@ def render(
             phrases=describe_parameters(target, block.get("parameters")),
         )
         return card
-    clone = copy.copy(request)
-    # Параметры карточки вместо параметров страницы доски; запрос — копия.
-    setattr(clone, "GET", query)  # noqa: B010 — у запроса GET объявлен неизменяемым
     try:
-        # Ряд удалённой или чужой таблицы холст считает несуществующим (404) — карточка тоже.
-        state = resolve_state(clone)
-        if state.series is None:
-            raise Http404
+        clone, state = _state(request, query)
         card.update(_canvas(clone, state, target, card["prefix"]))
     except Http404, WarehouseNotBuiltError:
         card.update(template="userdata/cards/_missing.html", title=block.get("title", ""))
@@ -111,7 +126,7 @@ def _canvas(request: HttpRequest, state: SurfaceState, target: str, prefix: str)
         "precision": subject.item.precision if subject else None,
     }
     if target == "map":
-        # Свои опознаватели контуров: карт на доске несколько.
+        # Свои опознаватели контуров: карт в исследовании несколько.
         context.update(build_map_view(request, state, prefix=prefix))
         return context
     context.update(PANELS_BY_CODE[target].builder(request, state))
@@ -131,6 +146,57 @@ def _canvas(request: HttpRequest, state: SurfaceState, target: str, prefix: str)
     return context
 
 
-def add_url(target: str, query_string: str) -> str:
-    """Адрес формы «На доску» с видом страницы — для ссылок вне формы."""
-    return f"{reverse('userdata:board-add')}?{urlencode({'target': target, 'q': query_string})}"
+def _answer(
+    request: HttpRequest,
+    block: dict[str, Any],
+    *,
+    year: int | None,
+    territories: list[str],
+) -> dict[str, Any]:
+    """Карточка-ответ числами; ответа нет — причина словами вместо чисел."""
+    question = block["question"]
+    card: dict[str, Any] = {
+        "block": block,
+        "target": question,
+        "target_title": answers.TITLES[question],
+        "icon": answers.ICONS[question],
+        "prefix": f"b{block['id']}",
+    }
+    try:
+        _clone, state = _state(
+            request, card_query({"series": block["series"]}, year=year, territories=territories)
+        )
+        subject = describe_subject(state)
+        if subject is None or state.year is None:
+            raise Http404
+        if question in PAIR_QUESTIONS:
+            _other_clone, other = _state(
+                request, card_query({"series": block["other"]}, year=year, territories=[])
+            )
+            partner = describe_subject(other)
+            if partner is None:
+                raise Http404
+            built = answers.relation(answers.Asked(request, state, subject), other, partner)
+            title = f"{subject.title} — {partner.title}"
+        else:
+            built = getattr(answers, question)(answers.Asked(request, state, subject))
+            title = subject.title
+    except Http404, WarehouseNotBuiltError:
+        card.update(template="userdata/cards/_missing.html", title=block.get("title", ""))
+        return card
+    except answers.NoAnswerError as reason:
+        card.update(
+            template="userdata/cards/_unanswered.html",
+            title=block.get("title") or (subject.title if subject is not None else ""),
+            reason=str(reason),
+        )
+        return card
+    assert state.series is not None
+    card.update(
+        built,
+        template=f"userdata/cards/_{question}.html",
+        title=block.get("title") or title,
+        unit=subject.unit,
+        source=series_source(state.series.key, built.get("year") or state.year),
+    )
+    return card

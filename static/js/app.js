@@ -46,6 +46,7 @@ const BEHAVIOURS = {
     () => import("./ui/scroll.js"),
   ],
   sheet: ["[data-rail-open]", () => import("./ui/sheet.js")],
+  study: ["[data-study]", () => import("./ui/study.js")],
   toc: ["[data-toc]", () => import("./ui/toc.js")],
   upload: [
     "form[data-upload-form], textarea.textarea--table, [data-error-summary]",

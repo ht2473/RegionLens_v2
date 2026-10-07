@@ -17,7 +17,7 @@ urlpatterns: list[Any] = [
     path("i18n/", include("django.conf.urls.i18n")),
     # Адрес точки данных не зависит от языка.
     path("api/", include("apps.api.urls")),
-    # Закрытая ссылка на таблицу или доску ведёт на страницу на языке читателя.
+    # Закрытая ссылка на таблицу или исследование ведёт на страницу на языке читателя.
     re_path(r"^s/(?P<token>[A-Za-z0-9_-]{8,64})/?$", ShareOpenView.as_view(), name="share-open"),
 ]
 

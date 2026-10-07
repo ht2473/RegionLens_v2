@@ -1,0 +1,26 @@
+{% load i18n %}
+{# Лидеры и отстающие: первые и последние три региона года, Россия и мой регион с местом. #}
+<div class="answer__columns study-card__answer">
+  <div>
+    <h3 class="answer__label">{% translate "Больше всего" %}</h3>
+    <ol class="answer-list">
+      {% for row in card.top %}
+        <li value="{{ row.place }}" data-territory="{{ row.code }}"><span>{{ row.name }}</span> <span class="numeric">{{ row.value }}</span></li>
+      {% endfor %}
+    </ol>
+  </div>
+  <div>
+    <h3 class="answer__label">{% translate "Меньше всего" %}</h3>
+    <ol class="answer-list">
+      {% for row in card.bottom %}
+        <li value="{{ row.place }}" data-territory="{{ row.code }}"><span>{{ row.name }}</span> <span class="numeric">{{ row.value }}</span></li>
+      {% endfor %}
+    </ol>
+  </div>
+</div>
+<p class="answer__meta">
+  {% if card.country %}<span>{% translate "По России" %} — <b class="numeric">{{ card.country }}</b></span>{% endif %}
+  {% if card.mine %}
+    <span>{% blocktranslate trimmed with name=card.mine.name place=card.mine.place count=card.count %}Мой регион, {{ name }}: {{ place }}-е из {{ count }}{% endblocktranslate %}</span>
+  {% endif %}
+</p>

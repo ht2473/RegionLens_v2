@@ -1,0 +1,93 @@
+{% load i18n formatting userdata %}
+{% comment %}
+  Панель «Данные» исследования: свои таблицы — показатели и их ряды, ряды сайта; у выбранного
+  ряда — «Что сделать». Выбор ряда меняет только перечень (#study-sources): лист на телефоне
+  остаётся открытым. Ряды перетаскиваются на поле (study.js). На телефоне — нижний лист.
+  Выбор ряда сайта — в отдельном окне; перечень рядов грузится, когда окно открыто.
+{% endcomment %}
+<aside class="filter-rail study-panel" id="study-panel" aria-label="{% translate 'Данные исследования' %}">
+  {% translate "Данные" as sheet_title %}
+  {% include "partials/_rail_sheet_head.html" with sheet_title=sheet_title %}
+
+  <div class="filter-rail__group">
+    <div class="filter-rail__title">{% translate "Данные" %}</div>
+    <label class="filter-field">
+      <svg aria-hidden="true"><use href="#icon-filter"></use></svg>
+      <span class="visually-hidden">{% translate "Отобрать показатель" %}</span>
+      <input type="search" autocomplete="off" data-filter-input="#study-sources"
+             data-filter-empty="#study-sources-empty" placeholder="{% translate 'Отобрать показатель' %}">
+    </label>
+    <p class="field__hint" id="study-sources-empty" hidden>{% translate "Ничего не найдено" %}</p>
+  </div>
+
+  <div class="study-panel__sources" id="study-sources"
+       hx-target="#study-sources" hx-select="#study-sources" hx-swap="outerHTML" hx-push-url="true">
+    {% if panel.picking %}
+      <div class="study-pick" role="status">
+        <span>{% blocktranslate trimmed with title=panel.chosen.title %}Второй показатель — для связи с «{{ title }}»{% endblocktranslate %}</span>
+        <a href="?series={{ panel.chosen.key|urlencode }}" hx-get="?series={{ panel.chosen.key|urlencode }}">{% translate "Отмена" %}</a>
+      </div>
+    {% endif %}
+
+    <div class="filter-rail__group">
+      <div class="filter-rail__title">
+        {% translate "Мои таблицы" %}
+        <a class="study-panel__add" href="{% url 'userdata:upload' %}?study={{ study.public_id }}">{% translate "Загрузить" %}</a>
+      </div>
+      {% for source in panel.tables %}
+        <details class="study-source" data-filter-group{% if source.open %} open{% endif %}>
+          <summary class="study-source__summary">
+            <span class="study-source__title"{% with lang=source.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ source.title }}</span>
+            <span class="study-source__facts numeric" title="{% translate 'рядов' %}">{{ source.series_count }}</span>
+            <svg class="study-source__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
+          </summary>
+          <ul class="study-series" data-drag-source>
+            {% for indicator in source.indicators %}
+              {% for entry in indicator.entries %}
+                {% include "userdata/_study_entry.html" with heading=forloop.first many=indicator.entries|length|add:"-1" %}
+              {% endfor %}
+            {% endfor %}
+          </ul>
+        </details>
+      {% empty %}
+        <p class="field__hint">{% translate "Своих таблиц пока нет." %}</p>
+      {% endfor %}
+    </div>
+
+    <div class="filter-rail__group">
+      <div class="filter-rail__title">{% translate "Данные сайта" %}</div>
+      {% if panel.site %}
+        <ul class="study-series" data-filter-group data-drag-source>
+          {% for entry in panel.site %}
+            {% include "userdata/_study_entry.html" with heading=True many=0 %}
+          {% endfor %}
+        </ul>
+      {% endif %}
+      <button type="button" class="button button--sm button--ghost study-site-pick"
+              popovertarget="study-site-picker" aria-haspopup="dialog">
+        <svg aria-hidden="true"><use href="#icon-plus"></use></svg>
+        {% translate "Показатель сайта" %}
+      </button>
+    </div>
+  </div>
+</aside>
+
+<div class="menu-popover study-site-picker" id="study-site-picker" popover role="dialog"
+     aria-label="{% translate 'Показатель сайта' %}">
+  <form method="get" data-autosubmit>
+    {% if panel.picking %}<input type="hidden" name="series" value="{{ panel.chosen.key }}">{% endif %}
+    <div data-picker-slot></div>
+  </form>
+  <template id="study-site-picker-content">
+    {% translate "Показатель сайта" as select_label %}
+    {% translate "выберите ряд" as select_empty %}
+    {% if panel.picking %}
+      {% include "partials/_series_select.html" with select_label=select_label select_empty=select_empty select_name="with" %}
+    {% else %}
+      {% include "partials/_series_select.html" with select_label=select_label select_empty=select_empty %}
+    {% endif %}
+  </template>
+  <noscript>
+    <p class="field__hint">{% translate "Ряд сайта добавляется и со страницы его карты: «Сохранить» → «В исследование»." %}</p>
+  </noscript>
+</div>

@@ -1,0 +1,13 @@
+{% load i18n %}
+{# Похожи ли соседи: глобальный индекс Морана и вывод правилом. #}
+<div class="answer__figure study-card__answer">
+  <p class="answer__value">
+    <span class="numeric">{{ card.value }}</span>
+    <span class="answer__unit">{% translate "индекс Морана" %}</span>
+  </p>
+</div>
+<p class="answer__meta">
+  <span><b>{{ card.direction }}</b></span>
+  <span>{% blocktranslate trimmed with count=card.regions %}регионов: {{ count }}{% endblocktranslate %}</span>
+  <span>p = <span class="numeric">{{ card.p_value }}</span></span>
+</p>

@@ -1,11 +1,11 @@
 """
-Закрытые ссылки на таблицу или доску: только чтение без входа, срок, отзыв, разрешение
+Закрытые ссылки на таблицу или исследование: только чтение без входа, срок, отзыв, разрешение
 скачивать.
 
 Токен — случайные 24 знака; в базе — его отпечаток SHA-256, поэтому ссылку видно только
 при создании. Открытая ссылка запоминается в сеансе читателя: слой рядов (``scope``)
-пускает его к таблице ссылки, а у доски — к таблицам её владельца, ряды которых стоят
-на доске. Подбор токена ограничен числом неудачных попыток с адреса.
+пускает его к таблице ссылки, а у исследования — к таблицам его владельца, ряды
+которых в нём есть. Подбор токена ограничен числом неудачных попыток с адреса.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from django.db.models import F, QuerySet
 from django.http import HttpRequest
 from django.utils import timezone
 
-from .models import Board, Dataset, Share
+from .models import Dataset, Share, Study
 
 SESSION_KEY = "userdata_shares"
 # Ссылка, созданная последней: показывается владельцу один раз после перехода.
@@ -48,11 +48,11 @@ def active() -> QuerySet[Share]:
 
 
 def create(
-    target: Dataset | Board, *, days: int = DEFAULT_TERM, downloads: bool = False
+    target: Dataset | Study, *, days: int = DEFAULT_TERM, downloads: bool = False
 ) -> tuple[Share, str]:
     """Создать ссылку; вернуть её и токен — его больше нигде не будет."""
     days = days if days in TERMS else DEFAULT_TERM
-    field = "dataset" if isinstance(target, Dataset) else "board"
+    field = "dataset" if isinstance(target, Dataset) else "study"
     if active().filter(**{field: target}).count() >= settings.USERDATA_MAX_SHARES:
         raise ShareError
     token = secrets.token_urlsafe(TOKEN_BYTES)
@@ -69,7 +69,7 @@ def find(token: str) -> Share | None:
     """Действующая ссылка по токену."""
     if not token or len(token) > 64:  # noqa: PLR2004 — токен короче
         return None
-    return active().select_related("dataset", "board").filter(token_hash=fingerprint(token)).first()
+    return active().select_related("dataset", "study").filter(token_hash=fingerprint(token)).first()
 
 
 def remember(request: HttpRequest, share: Share) -> None:
@@ -89,24 +89,24 @@ def opened(request: HttpRequest) -> list[Share]:
     ids = request.session.get(SESSION_KEY) or []
     if not ids:
         return []
-    return list(active().select_related("dataset", "board").filter(pk__in=ids))
+    return list(active().select_related("dataset", "study").filter(pk__in=ids))
 
 
 def readable(shares: list[Share]) -> dict[str, bool]:
     """
-    Коды таблиц, открытых ссылками, и можно ли их скачивать. Доска открывает таблицы
-    своего владельца, ряды которых на ней стоят; чужой ключ на доске ничего не открывает.
+    Коды таблиц, открытых ссылками, и можно ли их скачивать. Исследование открывает
+    таблицы своего владельца, ряды которых в нём есть; чужой ключ в нём ничего не открывает.
     """
-    from .boards import dataset_codes
+    from .studies import dataset_codes
 
     found: dict[str, bool] = {}
     for share in shares:
         if share.dataset is not None:
             codes = {share.dataset.code}
-        elif share.board is not None:
+        elif share.study is not None:
             codes = set(
                 Dataset.objects.filter(
-                    owner_id=share.board.owner_id, code__in=dataset_codes(share.board)
+                    owner_id=share.study.owner_id, code__in=dataset_codes(share.study)
                 ).values_list("code", flat=True)
             )
         else:
@@ -116,43 +116,43 @@ def readable(shares: list[Share]) -> dict[str, bool]:
     return found
 
 
-def opened_board(request: HttpRequest, board: Board) -> Share | None:
-    """Ссылка этого сеанса, по которой открыта доска."""
-    return next((share for share in opened(request) if share.board_id == board.pk), None)
+def opened_study(request: HttpRequest, study: Study) -> Share | None:
+    """Ссылка этого сеанса, по которой открыто исследование."""
+    return next((share for share in opened(request) if share.study_id == study.pk), None)
 
 
 def opened_dataset(request: HttpRequest, dataset: Dataset) -> Share | None:
-    """Ссылка этого сеанса, по которой открыта таблица: своя или доски с её рядами."""
+    """Ссылка этого сеанса, по которой открыта таблица: своя или исследования с её рядами."""
     shares = opened(request)
     direct = next((share for share in shares if share.dataset_id == dataset.pk), None)
     if direct is not None:
         return direct
     return next(
-        (share for share in shares if share.board_id and dataset.code in readable([share])),
+        (share for share in shares if share.study_id and dataset.code in readable([share])),
         None,
     )
 
 
-def of(target: Dataset | Board) -> QuerySet[Share]:
-    """Действующие ссылки таблицы или доски — для владельца."""
-    field = "dataset" if isinstance(target, Dataset) else "board"
+def of(target: Dataset | Study) -> QuerySet[Share]:
+    """Действующие ссылки таблицы или исследования — для владельца."""
+    field = "dataset" if isinstance(target, Dataset) else "study"
     return active().filter(**{field: target}).order_by("-created_at")
 
 
 def is_shared(dataset: Dataset) -> bool:
-    """Таблицу видно по закрытой ссылке: своей или доски, на которой стоят её ряды."""
+    """Таблицу видно по закрытой ссылке: своей или исследования, в котором есть её ряды."""
     if of(dataset).exists():
         return True
     if dataset.owner_id is None:
         return False
-    from .boards import dataset_codes
+    from .studies import dataset_codes
 
-    boards = Board.objects.filter(owner_id=dataset.owner_id, shares__in=active()).distinct()
-    return any(dataset.code in dataset_codes(board) for board in boards)
+    studies = Study.objects.filter(owner_id=dataset.owner_id, shares__in=active()).distinct()
+    return any(dataset.code in dataset_codes(study) for study in studies)
 
 
-def pop_new(request: HttpRequest, target: Dataset | Board) -> str:
-    """Адрес только что созданной ссылки — один раз, для этой таблицы или доски."""
+def pop_new(request: HttpRequest, target: Dataset | Study) -> str:
+    """Адрес только что созданной ссылки — один раз, для этой таблицы или исследования."""
     stored: dict[str, Any] = request.session.get(NEW_SESSION_KEY) or {}
     if stored.get("target") != str(target.public_id):
         return ""
@@ -160,7 +160,7 @@ def pop_new(request: HttpRequest, target: Dataset | Board) -> str:
     return str(stored.get("url", ""))
 
 
-def stash_new(request: HttpRequest, target: Dataset | Board, token: str) -> None:
+def stash_new(request: HttpRequest, target: Dataset | Study, token: str) -> None:
     """Запомнить адрес новой ссылки до следующей страницы владельца."""
     from django.urls import reverse
 

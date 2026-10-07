@@ -28,15 +28,15 @@ def favorite_button(context: Any, kind: str, identifier: str) -> dict[str, Any]:
 @register.inclusion_tag("workspace/partials/_save_query.html", takes_context=True)
 def save_query_button(context: Any, target: str) -> dict[str, Any]:
     """
-    Кнопка сохранения состояния страницы в кабинет или на доску; ``target`` — код
+    Кнопка сохранения состояния страницы в кабинет или в исследование; ``target`` — код
     из ``QUERY_TARGETS``.
     """
-    from apps.userdata.boards import owned
+    from apps.userdata.studies import owned
 
     request = context["request"]
     return {
         "request": request,
         "save_query_target": target,
-        "boards": list(owned(request.user).values("public_id", "title")[:50]),
+        "studies": list(owned(request).values("public_id", "title")[:50]),
         "csrf_token": context.get("csrf_token", ""),
     }

@@ -1,12 +1,12 @@
 {% load i18n %}
-{# Динамика на карточке доски: линии отмеченных территорий. #}
+{# Динамика на карточке исследования: линии отмеченных территорий. #}
 {% if timeline_option %}
   {% with option_id=card.prefix|add:"-timeline" %}
-    <rl-chart class="chart board-card__chart" data-options="{{ option_id }}"
+    <rl-chart class="chart study-card__chart" data-options="{{ option_id }}"
               data-image-title="{{ card.title }}" data-image-subtitle="{{ unit }}"
               data-image-source="{{ card.source }}"></rl-chart>
     {{ timeline_option|json_script:option_id }}
   {% endwith %}
 {% else %}
-  <p class="board-card__empty">{% translate "Для динамики нет значений у отмеченных территорий." %}</p>
+  <p class="study-card__empty">{% translate "Для динамики нет значений у отмеченных территорий." %}</p>
 {% endif %}

@@ -1,9 +1,9 @@
 {% load i18n %}
-{# Карта на карточке доски: та же картограмма и легенда, что на холсте; опознаватели — свои. #}
+{# Карта на карточке исследования: та же картограмма и легенда, что на холсте; опознаватели — свои. #}
 {% if not rows %}
-  <p class="board-card__empty">{% translate "За этот год значений по субъектам нет." %}</p>
+  <p class="study-card__empty">{% translate "За этот год значений по субъектам нет." %}</p>
 {% else %}
-  <rl-choropleth class="board-map"
+  <rl-choropleth class="study-map"
                  data-image-title="{{ card.title }}"
                  data-image-subtitle="{% if year %}{{ year|stringformat:'d' }}{% endif %}{% if unit %} · {{ unit }}{% endif %}"
                  data-image-source="{{ card.source }}">
