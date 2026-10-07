@@ -16,10 +16,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import partial
 from typing import Any
-from urllib.parse import urlencode
 
 import numpy as np
-from django.urls import reverse
 from django.utils.translation import gettext as _
 
 from apps.analytics.core import composition, correlation, inequality, spatial
@@ -46,8 +44,6 @@ SCALE_TOLERANCE = 0.005
 POPULATION_LINK = 0.9
 # Сколько названий субъектов называть в перечнях.
 NAMES_SHOWN = 5
-# Сколько карточек видно сразу; остальные — под «Ещё N».
-CARDS_SHOWN = 4
 # Редакция содержимого: кэш расчётов не знает о правке кода.
 RESULT_REVISION = 1
 
@@ -136,7 +132,7 @@ def _lead_score(record: DatasetSeries, values: dict[str, set[str]]) -> tuple[int
 
 
 def glance(dataset: Dataset, version: DatasetVersion) -> dict[str, Any]:
-    """Первый взгляд на таблицу: ряды показателей и что открыть первым."""
+    """Первый взгляд на таблицу: разбор ведущих рядов показателей."""
     leads = lead_series(version, dataset)
     looks = cached_result(
         "userdata-glance",
@@ -147,9 +143,19 @@ def glance(dataset: Dataset, version: DatasetVersion) -> dict[str, Any]:
     return {
         "looks": looks,
         "more": max(total - len(leads), 0),
-        "hidden_count": max(len(looks) - CARDS_SHOWN, 0),
-        "open_as": open_as(looks),
     }
+
+
+def checks(dataset: Dataset, version: DatasetVersion) -> list[Look]:
+    """
+    Ведущие ряды с замечаниями — для страницы таблицы: вид величины по данным расходится
+    с описанием, состав субъектов меняется, у последнего года есть пропуски.
+    """
+    return [
+        look
+        for look in glance(dataset, version)["looks"]
+        if look.kind_note or look.composition_text or look.missing_count
+    ]
 
 
 def _look(series: UserSeries) -> Look:
@@ -317,49 +323,3 @@ def _composition(
         missing = sorted(names.get(code, code) for code in everyone - set(last))
         look.missing_count = len(missing)
         look.missing_last = missing[:NAMES_SHOWN]
-
-
-def open_as(looks: list[Look]) -> list[dict[str, Any]]:
-    """
-    Какие виды открыть первыми: один год — карта и рейтинг; много лет — карта со шкалой
-    времени и динамика; два показателя — облако точек; три и больше — матрица связей и индекс.
-    """
-    usable = [look for look in looks if look.full_year is not None]
-    if not usable:
-        return []
-    first = usable[0].series.key
-    many_years = any(
-        look.first_year is not None and look.last_year != look.first_year for look in usable
-    )
-    found = [_view(_("Карта"), "maps:choropleth", {"series": first}, "map")]
-    if many_years:
-        found.append(_view(_("Динамика"), "compare:index", {"series": first}, "dynamics"))
-    else:
-        found.append(_view(_("Рейтинг"), "rankings:index", {"series": first}, "ranking"))
-    keys = [look.series.key for look in usable if look.regions >= FEW_REGIONS]
-    if len(keys) == 2:  # noqa: PLR2004 — пара показателей
-        found.append(
-            _view(
-                _("Облако точек двух показателей"),
-                "analytics:correlation",
-                {"series": keys, "x": keys[0], "y": keys[1]},
-                "correlation",
-            )
-        )
-    elif len(keys) > 2:  # noqa: PLR2004 — три и больше
-        chosen = keys[:12]
-        found.append(
-            _view(_("Матрица связей"), "analytics:correlation", {"series": chosen}, "correlation")
-        )
-        found.append(
-            _view(_("Интегральный индекс"), "analytics:index-builder", {"series": chosen}, "index")
-        )
-    return found
-
-
-def _view(title: Any, name: str, query: dict[str, Any], icon: str) -> dict[str, Any]:
-    return {
-        "title": title,
-        "url": f"{reverse(name)}?{urlencode(query, doseq=True)}",
-        "icon": icon,
-    }

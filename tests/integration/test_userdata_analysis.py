@@ -200,7 +200,20 @@ class TestLimits:
 
 @pytest.mark.django_db
 class TestGlance:
-    """Первый взгляд: вид величины по данным, охват и состав, что открыть первым."""
+    """
+    Разбор ведущих рядов: вид величины по данным, охват и состав; на странице таблицы —
+    проверки только у рядов с замечаниями.
+    """
+
+    @staticmethod
+    def _looks(dataset: Dataset) -> list[Any]:
+        from apps.userdata import glance, scope
+        from apps.userdata.models import DatasetVersion
+
+        version = DatasetVersion.objects.get(pk=dataset.current_version_id)
+        # Таблица гостя: читать её ряды — от имени его ключа, как это делает страница.
+        with scope.reading_as(fingerprint=dataset.guest_key):
+            return list(glance.glance(dataset, version)["looks"])
 
     def _shares(self, client: Client, kind: str) -> Dataset:
         """Доля по регионам 10–94 % за два года и Россия — 52 %: относительная величина."""
@@ -230,12 +243,13 @@ class TestGlance:
     def test_relative_described_as_sum(self, client: Client, warehouse: Any) -> None:
         dataset = self._shares(client, indicators.SUM)
         page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
-        look = page.context["glance"]["looks"][0]
+        look = self._looks(dataset)[0]
         assert look.data_kind == "relative"
         assert look.regions >= 80
         assert look.gini is not None and look.moran is not None
         assert "похоже на долю или среднее" in page.text
-        assert "Первый взгляд" in page.text
+        assert "Проверки" in page.text
+        assert "Первый взгляд" not in page.text
 
     def test_inconsistent_country_gives_no_verdict(self, client: Client, warehouse: Any) -> None:
         # «Окружающая среда» с кодами 8888, оставленными числами: Россия — 49, сумма регионов —
@@ -245,8 +259,7 @@ class TestGlance:
         client.get(reverse("userdata:series", args=[dataset.public_id]))
         client.post(reverse("userdata:series", args=[dataset.public_id]), {"action": "masks"})
         assert build(client, dataset, kind=indicators.SUM, per=()).status_code == 302
-        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
-        look = page.context["glance"]["looks"][0]
+        look = self._looks(dataset)[0]
         assert look.country is not None
         assert look.data_kind == ""
         assert not look.kind_note
@@ -254,32 +267,30 @@ class TestGlance:
     def test_codes_no_longer_hide_share(self, client: Client, warehouse: Any) -> None:
         # Без кодов 8888 «Окружающая среда» — доля: Россия — между регионами.
         dataset = built(client, kind=indicators.SUM, per=())
-        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
-        look = page.context["glance"]["looks"][0]
+        look = self._looks(dataset)[0]
         assert look.data_kind == "relative"
         assert look.kind_note
+        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
+        assert [item.series.key for item in page.context["checks"]] == [look.series.key]
 
     def test_sum_described_as_relative(self, client: Client, warehouse: Any) -> None:
         dataset = upload(client, "crime_wide.csv")
         describe(client, dataset)
         build(client, dataset, kind=indicators.RELATIVE)
         page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
-        looks = page.context["glance"]["looks"]
+        looks = self._looks(dataset)
         assert len(looks) == 2
         assert all(look.data_kind == "sum" for look in looks)
         assert "величина складывается по регионам" in page.text
         assert 0.85 < looks[0].subjects_sum / looks[0].country < 1
-        # Два показателя — облако точек.
-        titles = [str(item["title"]) for item in page.context["glance"]["open_as"]]
-        assert "Облако точек двух показателей" in titles
-        assert "Динамика" in titles
 
     def test_no_note_when_description_agrees(self, client: Client, warehouse: Any) -> None:
         dataset = self._shares(client, indicators.RELATIVE)
-        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
-        look = page.context["glance"]["looks"][0]
+        look = self._looks(dataset)[0]
         assert look.data_kind == "relative"
         assert not look.kind_note
+        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
+        assert page.context["checks"] == []
 
 
 @pytest.mark.django_db

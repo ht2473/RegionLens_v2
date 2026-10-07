@@ -171,7 +171,7 @@ class DatasetView(ReadableDatasetMixin, BreadcrumbMixin, TemplateView):
         context.update(
             groups=_groups(series, covered, months, dataset),
             formulas=_formulas(dataset, version, everything),
-            glance=glance.glance(dataset, version),
+            checks=glance.checks(dataset, version),
             sums=[item for item in series if item.is_sum],
             per_capita=[item for item in series if item.record.derived],
             few_regions=version.regions_count < FEW_REGIONS,

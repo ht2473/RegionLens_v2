@@ -670,89 +670,10 @@ legend.question-card__title ~ * {
   gap: var(--space-2);
 }
 
-/* --- Первый взгляд -------------------------------------------------------------------------- */
+/* --- Проверки ведущих рядов на странице таблицы ------------------------------------------- */
 
-.own-open-as {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-3);
-  align-items: center;
-  margin-bottom: var(--space-5);
-}
-
-.own-open-as__label {
-  color: var(--text-secondary);
-}
-
-.glance-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(22rem, 100%), 1fr));
-  gap: var(--space-4);
-  margin: 0 0 var(--space-3);
-  padding: 0;
-  list-style: none;
-}
-
-.glance-card {
-  padding: var(--space-4);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: var(--surface-raised);
-}
-
-.glance-card[hidden] {
-  display: none;
-}
-
-.glance-card__title {
-  margin: 0 0 var(--space-3);
-  font-size: var(--text-base);
-  font-weight: var(--weight-semibold);
-  overflow-wrap: anywhere;
-}
-
-.glance-card__facts {
-  display: grid;
-  gap: var(--space-1);
-  margin: 0;
-  font-size: var(--text-sm);
-}
-
-.glance-card__facts > div {
-  display: grid;
-  grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
-  gap: var(--space-3);
-}
-
-.glance-card__facts dt {
-  color: var(--text-secondary);
-}
-
-.glance-card__facts dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.glance-card__text,
-.glance-card__note {
-  margin: var(--space-3) 0 0;
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-}
-
-.glance-card__note {
-  display: flex;
-  gap: var(--space-2);
-  align-items: flex-start;
-  color: var(--text-primary);
-}
-
-.glance-card__note svg {
-  flex: none;
-  width: 1rem;
-  height: 1rem;
-  margin-top: 0.15em;
-  color: var(--attention);
+.own-checks {
+  max-width: var(--measure);
 }
 
 /* --- По месяцам ---------------------------------------------------------------------------- */

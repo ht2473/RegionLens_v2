@@ -126,69 +126,24 @@
   {% endif %}
   </div>
 
-  {% if glance.looks %}
-  <section class="page-section" aria-labelledby="own-glance">
+  {% if checks %}
+  <section class="page-section" aria-labelledby="own-checks">
     <div class="page-section__head">
-      <h2 class="page-section__title" id="own-glance">{% translate "Первый взгляд" %}</h2>
+      <h2 class="page-section__title" id="own-checks">{% translate "Проверки" %}</h2>
     </div>
-    {% if glance.open_as %}
-      <nav class="own-open-as" aria-label="{% translate 'Открыть как' %}">
-        <span class="own-open-as__label">{% translate "Открыть как" %}:</span>
-        {% for view in glance.open_as %}
-          <a class="button button--sm button--secondary" href="{{ view.url }}"><svg aria-hidden="true"><use href="#icon-{{ view.icon }}"></use></svg>{{ view.title }}</a>
-        {% endfor %}
-      </nav>
-    {% endif %}
-    <ol class="glance-list" id="glance-list" data-more-list>
-      {% for look in glance.looks %}
-        {% with precision=look.series.record.precision %}
-        <li class="glance-card"{% if forloop.counter > 4 %} data-more-item{% endif %}>
-          <h3 class="glance-card__title"{% with lang=look.series.full_title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ look.series.full_title }}</h3>
-          {% if look.full_year %}
-            <dl class="glance-card__facts">
-              <div><dt>{% translate "годы" %}</dt><dd><span class="numeric">{{ look.first_year|year }}{% if look.last_year != look.first_year %}–{{ look.last_year|year }}{% endif %}</span>{% if look.full_year != look.last_year %}; {% blocktranslate trimmed with year=look.full_year|year %}полный — {{ year }}{% endblocktranslate %}{% endif %}</dd></div>
-              <div><dt>{% blocktranslate trimmed with year=look.full_year|year %}субъектов в {{ year }}{% endblocktranslate %}</dt><dd class="numeric">{{ look.regions }}</dd></div>
-              {% if look.highest %}
-                <div><dt>{% translate "больше всего" %}</dt><dd>{{ look.highest.0 }}: <span class="numeric">{{ look.highest.1|ru_number:precision }}</span></dd></div>
-                <div><dt>{% translate "меньше всего" %}</dt><dd>{{ look.lowest.0 }}: <span class="numeric">{{ look.lowest.1|ru_number:precision }}</span></dd></div>
-              {% endif %}
-              {% if look.gini is not None %}
-                <div><dt>{% translate "коэффициент Джини" %}</dt><dd class="numeric">{{ look.gini|ru_number:3 }}</dd></div>
-              {% endif %}
-              {% if look.moran is not None %}
-                <div><dt>{% translate "индекс Морана" %}</dt><dd><span class="numeric">{{ look.moran|ru_number:2 }}</span> — {% if look.moran_direction == "clustered" %}{% translate "соседние регионы похожи" %}{% elif look.moran_direction == "dispersed" %}{% translate "соседние регионы различаются" %}{% else %}{% translate "размещение неотличимо от случайного" %}{% endif %}</dd></div>
-              {% endif %}
-              {% if look.population is not None %}
-                <div><dt>{% translate "связь с численностью населения" %}</dt><dd><span class="numeric">{{ look.population|ru_number:2 }}</span>{% if not look.population_significant %} — {% translate "незначима" %}{% endif %}</dd></div>
-              {% endif %}
-              {% if look.country is not None %}
-                <div><dt>{% translate "Россия и сумма регионов" %}</dt><dd class="numeric">{{ look.country|ru_number:precision }} · {{ look.subjects_sum|ru_number:precision }}</dd></div>
-              {% endif %}
-            </dl>
-            {% if look.kind_note %}
-              <p class="glance-card__note"><svg aria-hidden="true"><use href="#icon-alert"></use></svg>{{ look.kind_note }}</p>
-            {% endif %}
-            {% if look.composition_text %}
-              <p class="glance-card__text">{{ look.composition_text }}</p>
-            {% endif %}
-            {% if look.missing_count %}
-              <p class="glance-card__text">
-                {% blocktranslate trimmed with year=look.last_year|year count=look.missing_count %}Субъектов без значений в {{ year }} году: {{ count }}{% endblocktranslate %}: {{ look.missing_last|join:", " }}{% if look.missing_count > look.missing_last|length %}…{% endif %}
-              </p>
-            {% endif %}
-          {% else %}
-            <p class="glance-card__text">{% translate "Значений по субъектам нет." %}</p>
-          {% endif %}
+    <ul class="compact-list own-checks" id="own-checks-list" data-more-list>
+      {% for look in checks %}
+        <li{% if forloop.counter > 4 %} data-more-item{% endif %}>
+          <b{% with lang=look.series.full_title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ look.series.full_title }}</b>.
+          {% if look.kind_note %}{{ look.kind_note }}{% endif %}
+          {% if look.composition_text %}{{ look.composition_text }}{% endif %}
+          {% if look.missing_count %}{% blocktranslate trimmed with year=look.last_year|year count=look.missing_count %}Субъектов без значений в {{ year }} году: {{ count }}{% endblocktranslate %}: {{ look.missing_last|join:", " }}{% if look.missing_count > look.missing_last|length %}…{% endif %}.{% endif %}
         </li>
-        {% endwith %}
       {% endfor %}
-    </ol>
-    {% if glance.hidden_count %}
-      <button type="button" class="button button--ghost button--sm" data-more-toggle aria-controls="glance-list" aria-expanded="true" hidden
-              data-more-label="{% blocktranslate trimmed with count=glance.hidden_count %}Ещё {{ count }}{% endblocktranslate %}" data-less-label="{% translate "Свернуть" %}">{% translate "Свернуть" %}</button>
-    {% endif %}
-    {% if glance.more %}
-      <p class="page-section__lead">{% blocktranslate trimmed with count=glance.more %}Ещё показателей: {{ count }} — их ряды ниже.{% endblocktranslate %}</p>
+    </ul>
+    {% if checks|length > 4 %}
+      <button type="button" class="button button--ghost button--sm" data-more-toggle aria-controls="own-checks-list" aria-expanded="true" hidden
+              data-more-label="{% blocktranslate trimmed with count=checks|length|add:'-4' %}Ещё {{ count }}{% endblocktranslate %}" data-less-label="{% translate "Свернуть" %}">{% translate "Свернуть" %}</button>
     {% endif %}
   </section>
   {% endif %}
