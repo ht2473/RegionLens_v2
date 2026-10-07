@@ -24,10 +24,10 @@
           <span class="understood__label">{% translate "Понято как" %}</span>
           {% for chip in chips %}
             <span class="understood__part">
-              <span class="understood__chip understood__chip--{{ chip.role }}">
+              <span class="chip{% if chip.role == 'kind' %} chip--accent{% endif %}">
                 {{ chip.label }}
                 {% if chip.remove %}
-                  <a class="understood__remove" href="{{ chip.remove }}"
+                  <a class="chip__remove" href="{{ chip.remove }}"
                      aria-label="{% blocktranslate trimmed with name=chip.label %}Убрать: {{ name }}{% endblocktranslate %}">×</a>
                 {% endif %}
               </span>

@@ -26,25 +26,27 @@ function enhanceFilters(root) {
     if (input.dataset.filterReady === "true") {
       return;
     }
-    const scope = document.querySelector(input.dataset.filterInput);
-    if (!scope) {
+    if (!document.querySelector(input.dataset.filterInput)) {
       return;
     }
     input.dataset.filterReady = "true";
 
-    const items = [...scope.querySelectorAll("[data-filter-item]")];
-    const groups = [...scope.querySelectorAll("[data-filter-group]")];
-    const empty = input.dataset.filterEmpty
-      ? document.querySelector(input.dataset.filterEmpty)
-      : null;
-    // Ввод раскрывает свёрнутый перечень.
-    const holder = scope.closest("details");
-
-    const haystacks = new Map(
-      items.map((item) => [item, normalize(item.dataset.filterText || item.textContent)])
-    );
-
+    // Перечень ищется при каждом вводе: его могут заменить фрагментом (панель исследования).
     function apply() {
+      const scope = document.querySelector(input.dataset.filterInput);
+      if (!scope) {
+        return;
+      }
+      const items = [...scope.querySelectorAll("[data-filter-item]")];
+      const groups = [...scope.querySelectorAll("[data-filter-group]")];
+      const empty = input.dataset.filterEmpty
+        ? document.querySelector(input.dataset.filterEmpty)
+        : null;
+      // Ввод раскрывает свёрнутый перечень.
+      const holder = scope.closest("details");
+      const haystacks = new Map(
+        items.map((item) => [item, normalize(item.dataset.filterText || item.textContent)])
+      );
       const query = normalize(input.value);
       let shown = 0;
 
@@ -65,6 +67,10 @@ function enhanceFilters(root) {
           (item) => !item.hidden
         );
         group.hidden = visible.length === 0;
+        // Свёрнутая группа с найденным раскрывается.
+        if (query && visible.length && group.tagName === "DETAILS") {
+          group.open = true;
+        }
         const counter = group.querySelector("[data-filter-count]");
         if (counter) {
           counter.textContent = String(visible.length);

@@ -828,10 +828,11 @@ button.main-nav__link {
     visibility: visible;
   }
 
-  /* Заголовок листа закреплён. */
+  /* Заголовок листа закреплён у самого края: сверху — на величину отступа листа,
+     иначе в полосе отступа видна прокрученная часть. */
   html[data-rail="sheet"] .filter-rail__head {
     position: sticky;
-    top: 0;
+    top: calc(-1 * var(--space-5));
     z-index: var(--z-base);
     display: flex;
     align-items: center;

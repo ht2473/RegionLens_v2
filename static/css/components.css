@@ -3836,4 +3836,115 @@ rl-combobox:defined > select {
   row-gap: 0;
 }
 
+
+/* --- Ответ числами: перечни лидеров, крупное число с ходом, строка сведений -------------
+   Ответы поиска и карточки исследования. */
+
+.answer__label {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.answer__columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+
+.answer-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.answer-list li {
+  max-width: none;
+}
+
+.answer-list .numeric {
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.answer__figure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-4) var(--space-8);
+}
+
+.answer__value {
+  margin: 0;
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  line-height: 1.05;
+  letter-spacing: var(--tracking-tight);
+}
+
+.answer__unit {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+.answer__spark {
+  width: 12rem;
+  height: 3rem;
+}
+
+.answer__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* --- Чип: выбранное значение со снятием «×» — разбор поиска, регионы исследования ----- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 1.75rem;
+  padding: 0 var(--space-3);
+  background-color: var(--surface-sunken);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.chip--accent {
+  background-color: var(--surface-accent-soft);
+}
+
+.chip__remove {
+  margin-right: calc(var(--space-1) * -1);
+  padding: 0 var(--space-1);
+  font-size: var(--text-base);
+  line-height: 1;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.chip__remove:hover {
+  color: var(--negative);
+  text-decoration: none;
+}
+
+/* Снятие чипа кнопкой формы: облик ссылки «×». */
+button.chip__remove {
+  min-height: 24px;
+  background: none;
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+
 }

@@ -119,7 +119,7 @@ class TestResultsPage:
         response = client.get(reverse("search:results"), {"q": "где самые высокие зарплаты"})
         body = response.content.decode()
         assert response.context["answer"]["kind"] == kinds.RANK
-        assert "understood__chip--kind" in body
+        assert "chip--accent" in body
         assert "answer-list" in body
 
     def test_removing_place_turns_value_into_rank(self, client: Client, warehouse: Any) -> None:
