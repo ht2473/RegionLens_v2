@@ -14,6 +14,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView
 
 from apps.core.navigation import Crumb
+from apps.core.throttle import allow
 from apps.core.views import BreadcrumbMixin
 from apps.search import answers, parse, results
 from apps.search.constants import EXAMPLES, KIND_LABELS
@@ -24,6 +25,8 @@ from apps.search.places import Place
 MIN_QUERY_LENGTH = 2
 # Сколько подсказок каждой группы в быстром переходе.
 SUGGEST_LIMIT = 4
+# Записей журнала промахов в час с адреса: перебор запросов журнал не засорит.
+MISSES_PER_HOUR = 60
 
 
 def _query(request: HttpRequest) -> str:
@@ -160,7 +163,11 @@ class SearchView(BreadcrumbMixin, TemplateView):
             chips=chips(reading, self.request.GET, names) if answer else [],
             found=answer is not None or any(groups.values()),
         )
-        if answer is None and "series" not in self.request.GET:
+        if (
+            answer is None
+            and "series" not in self.request.GET
+            and allow(self.request, "search-miss", limit=MISSES_PER_HOUR, window=3600)
+        ):
             SearchMiss.record(query, get_language() or "")
         return context
 

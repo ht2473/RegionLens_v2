@@ -148,6 +148,20 @@ class TestMisses:
         assert miss.text == "почему падает рождаемость"
         assert miss.language == "ru"
 
+    def test_misses_are_rate_limited(
+        self, client: Client, warehouse: Any, monkeypatch: Any
+    ) -> None:
+        """Перебор запросов с одного адреса журнал не засоряет."""
+        from django.core.cache import cache
+
+        from apps.search import views
+
+        cache.clear()
+        monkeypatch.setattr(views, "MISSES_PER_HOUR", 2)
+        for number in range(3):
+            client.get(reverse("search:results"), {"q": f"почему падает рождаемость {number}"})
+        assert SearchMiss.objects.count() == 2
+
     def test_answered_query_is_not_recorded(self, client: Client, warehouse: Any) -> None:
         """Найденный ответ в журнал не попадает."""
         client.get(reverse("search:results"), {"q": "где самые высокие зарплаты"})
