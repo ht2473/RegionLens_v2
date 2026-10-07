@@ -135,6 +135,35 @@ class TestUserText:
                 for cell in row:
                     assert cell.data_type != "f", (sheet.title, cell.coordinate, cell.value)
 
+    def test_documents_keep_names_as_text(self, client: Client, warehouse: Any) -> None:
+        # Разметка в названии сломала бы разбор абзаца PDF, формула — ячейку XLSX и CSV.
+        dataset = _built(client)
+        version = DatasetVersion.objects.get(pk=dataset.current_version_id)
+        record = version.series.first()
+        assert record is not None
+        key = f"u:{dataset.code}:{record.code}"
+        for kind in ("series", "ranking"):
+            for export_format in ("xlsx", "pdf"):
+                response = client.get(
+                    reverse("exports:document"),
+                    {"kind": kind, "series": key, "format": export_format},
+                )
+                assert response.status_code == 200, (kind, export_format, response.content[:300])
+                if export_format == "pdf":
+                    assert response.content.startswith(b"%PDF")
+                    continue
+                book = load_workbook(io.BytesIO(response.content))
+                for sheet in book.worksheets:
+                    for row in sheet.iter_rows():
+                        for cell in row:
+                            assert cell.data_type != "f", (kind, cell.coordinate, cell.value)
+        response = client.get(reverse("exports:data-csv"), {"kind": "series", "series": key})
+        assert response.status_code == 200
+        rows = csv.reader(io.StringIO(response.content.decode("utf-8-sig")))
+        cells = [cell for row in rows for cell in row]
+        assert f"'{FORMULA}" in cells or all(FORMULA not in cell for cell in cells)
+        assert not [cell for cell in cells if cell.startswith(("=", "+", "@"))]
+
 
 class TestRequests:
     def test_delete_needs_csrf(self, warehouse: Any) -> None:
