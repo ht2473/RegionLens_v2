@@ -21,19 +21,8 @@
       {% endblocktranslate %}
     </p>
 
-    {# Поиск ведёт в полный перечень: основной набор виден целиком и без поиска. #}
-    <form class="find-form" method="get" action="{% url 'catalog:indicator-list' %}" role="search">
-      <input type="hidden" name="view" value="all">
-      <label class="find-field">
-        <svg aria-hidden="true"><use href="#icon-search"></use></svg>
-        <span class="visually-hidden">{% translate "Поиск по всем рядам" %}</span>
-        <input type="search" name="q" autocomplete="off"
-               placeholder="{% blocktranslate trimmed with total=total_series|ru_number:0 %}Найти среди всех {{ total }} рядов{% endblocktranslate %}">
-      </label>
-      <button class="button button--primary find-form__submit" type="submit">{% translate "Найти" %}</button>
-    </form>
-    <p class="find-form__hint">
-      {% translate "Например: безработица, ВРП, Y477110005." %}
+    {% include "search/_field.html" with examples=search_examples %}
+    <p class="catalog__all">
       <a href="{% url 'catalog:indicator-list' %}?view=all">
         {% blocktranslate trimmed with total=total_series|ru_number:0 %}
           Полный перечень — {{ total }} рядов с отборами
@@ -51,22 +40,6 @@
         <p>{% translate "Страница заработает, когда администратор загрузит набор данных." %}</p>
       </div>
     </div>
-  {% endif %}
-
-  {% if questions %}
-    <section class="page-section catalog-questions" aria-labelledby="catalog-questions-title">
-      <div class="page-section__head">
-        <h2 class="page-section__title" id="catalog-questions-title">{% translate "С чего начать" %}</h2>
-        <p class="page-section__note">{% translate "Вопрос открывает рейтинг регионов по нужному показателю" %}</p>
-      </div>
-      <ul class="choice-list">
-        {% for row in questions %}
-          <li>
-            <a class="choice-chip" href="{% url 'rankings:index' %}?series={{ row.item.key }}">{{ row.item.question }}</a>
-          </li>
-        {% endfor %}
-      </ul>
-    </section>
   {% endif %}
 
   {# Оглавление тем закреплено под шапкой; текущую тему отмечает data-toc. #}

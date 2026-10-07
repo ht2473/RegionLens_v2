@@ -82,9 +82,9 @@ class TestPublicPages:
         assert page.locator("html").get_attribute("data-theme") == chosen
 
     def test_command_palette_searches(self, page: Page, site: Any) -> None:
-        """Поисковая строка открывается и принимает запрос."""
+        """Быстрый переход открывается и принимает запрос; на главной его заменяет поле поиска."""
         page.set_viewport_size({"width": 1600, "height": 900})
-        page.goto(site.url)
+        page.goto(f"{site.url}/ru/about/")
         page.locator(".palette-trigger").click()
 
         field = page.locator(".palette__input")

@@ -169,6 +169,22 @@ class TestHomePage:
             elif tile["change"]:
                 assert tile["change"].endswith("%")
 
+    def test_search_field_replaces_header_search(self, client: Client, warehouse: Any) -> None:
+        """Поиск главной — поле на первом экране с примерами; кнопки поиска в шапке нет."""
+        content = client.get(reverse("core:home")).content.decode("utf-8")
+        assert 'class="find-form"' in content
+        assert "find-form__hint" in content
+        assert "palette-trigger" not in content
+
+    def test_questions_show_my_place(self, warehouse: Any) -> None:
+        """Карточки «где больше» не повторяют карту и называют место моего региона."""
+        on_map = {item.key for item in showcase.live_series()}
+        cards = showcase.answered_questions("RU-TA")
+        assert 0 < len(cards) <= showcase.HOME_QUESTIONS
+        assert all(card["series"].key not in on_map for card in cards)
+        assert any(card["mine"] for card in cards)
+        assert not any(card["mine"] for card in showcase.answered_questions())
+
 
 class TestTerritoryCard:
     """Карточка региона во всплывающей панели."""

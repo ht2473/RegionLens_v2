@@ -33,6 +33,7 @@ from apps.core.showcase import country_tiles
 from apps.core.templatetags.formatting import ru_number
 from apps.core.views import BreadcrumbMixin
 from apps.maps.locator import locator_map
+from apps.search.constants import EXAMPLES as SEARCH_EXAMPLES
 from apps.warehouse.duckdb_client import WarehouseNotBuiltError
 from apps.warehouse.queries import featured_set, latest_values_matrix
 
@@ -344,7 +345,7 @@ def _themes_context(request: HttpRequest) -> dict[str, Any]:
         page_title=_("Показатели"),
         breadcrumbs=build_breadcrumbs(request, Crumb(title=_("Показатели"))),
         themes=themes,
-        questions=[row for row in rows_in_order if row["item"].question],
+        search_examples=SEARCH_EXAMPLES,
         featured_total=len(rows_in_order),
         total_series=Series.objects.count(),
     )

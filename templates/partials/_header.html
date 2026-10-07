@@ -69,12 +69,14 @@
       </a>
     {% endif %}
 
+    {% if not hide_header_search %}
     <button type="button" class="palette-trigger no-print"
             data-dialog-open="palette" aria-haspopup="dialog"
             aria-label="{% translate 'Поиск по показателям и регионам' %}">
       <svg aria-hidden="true" style="width: 15px; height: 15px"><use href="#icon-search"></use></svg>
       <span class="palette-trigger__label">{% translate "Поиск" %}</span>
     </button>
+    {% endif %}
 
     {# Другая языковая версия той же страницы (тег switch_language_url). #}
     {% get_available_languages as languages %}

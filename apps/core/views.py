@@ -20,6 +20,7 @@ from apps.catalog.indicator import series_descriptor
 from apps.catalog.models import SeriesBreak, Territory
 from apps.core import documents, showcase, structured_data
 from apps.core.navigation import SITE_SECTIONS, Crumb, build_breadcrumbs
+from apps.search.constants import EXAMPLES as SEARCH_EXAMPLES
 from apps.warehouse.duckdb_client import WarehouseNotBuiltError
 from apps.warehouse.queries import warehouse_summary
 
@@ -69,6 +70,9 @@ class HomeView(TemplateView):
         context["structured_data"] = structured_data.site(self.request)
         context["break_count"] = SeriesBreak.objects.count()
         context["live_map_id"] = showcase.LIVE_MAP_ID
+        # Первый экран ищет сам: поле поиска в шапке не повторяет его.
+        context["hide_header_search"] = True
+        context["search_examples"] = SEARCH_EXAMPLES
 
         try:
             item = showcase.resolve_live_series(self.request.GET.get("series"))
@@ -87,7 +91,7 @@ class HomeView(TemplateView):
             context["summary"] = warehouse_summary()
             fragment = self.request.headers.get("HX-Target") == showcase.LIVE_MAP_ID
             context["my_region_brief"] = None if fragment else _my_region_brief(self.request)
-            context["questions"] = showcase.answered_questions()
+            context["questions"] = showcase.answered_questions(region.code if region else None)
             context["tiles"] = showcase.country_tiles()
             context["warehouse_ready"] = True
         except WarehouseNotBuiltError as error:

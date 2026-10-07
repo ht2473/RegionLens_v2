@@ -315,7 +315,7 @@ class TestHeaderMenus:
         по затемнению закрывает окно, а фокус возвращается на кнопку поиска.
         """
         page.set_viewport_size({"width": 1600, "height": 900})
-        page.goto(site.url)
+        page.goto(f"{site.url}/ru/about/")
 
         page.click(".palette-trigger")
         page.wait_for_timeout(200)

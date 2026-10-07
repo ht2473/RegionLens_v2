@@ -123,7 +123,7 @@
   margin-bottom: 0;
 }
 
-.live-map__find {
+.live-map__search {
   grid-area: find;
 }
 
@@ -157,6 +157,7 @@
 
 /* Вопросы с готовым ответом. */
 .question-grid {
+  --parts: 5;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-5);
@@ -183,6 +184,19 @@
   border-color: var(--border-accent);
   text-decoration: none;
   color: var(--text-primary);
+}
+
+/* Вопрос — мелко над показателем; мой регион — строкой над низом карточки. */
+.question-card__question {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.question-card__mine {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
 .question-card__title {
@@ -255,8 +269,8 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4) var(--space-8);
-  margin-top: var(--space-8);
-  padding: var(--space-5) 0;
+  margin-bottom: var(--space-12);
+  padding: var(--space-3) 0;
   border-top: 1px solid var(--border-subtle);
   border-bottom: 1px solid var(--border-subtle);
 }
@@ -268,12 +282,13 @@
 
 .own-data-strip__title {
   margin: 0;
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   font-weight: var(--weight-semibold);
 }
 
 .own-data-strip__lead {
   margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
 }
 

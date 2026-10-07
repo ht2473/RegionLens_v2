@@ -74,38 +74,19 @@
     </header>
   {% endif %}
 
-  {# --- Свои данные ---------------------------------------------------------------------- #}
-  <section class="own-data-strip" aria-labelledby="home-own-data">
-    <div class="own-data-strip__text">
-      <h2 class="own-data-strip__title" id="home-own-data">{% translate "Своя таблица по регионам — на той же карте" %}</h2>
-      <p class="own-data-strip__lead">
-        {% translate "Таблица из Excel, CSV, архива или вставка из Word: регионы и годы узнаются сами, таблицу видите только вы." %}
-      </p>
-    </div>
-    <div class="own-data-strip__actions">
-      <a class="button button--primary" href="{% url 'userdata:upload' %}">
-        <svg aria-hidden="true"><use href="#icon-upload"></use></svg>
-        {% translate "Загрузить таблицу" %}
-      </a>
-      <form method="post" action="{% url 'userdata:example' %}">
-        {% csrf_token %}
-        <button class="button button--secondary" type="submit">{% translate "Попробовать на примере" %}</button>
-      </form>
-    </div>
-  </section>
-
-  {# --- Вопросы с готовым ответом ------------------------------------------------------ #}
+  {# --- Где больше, где меньше: показатель, вопрос над ним, первые три и мой регион --------- #}
   {% if questions %}
     <section class="page-section" aria-labelledby="home-questions">
       <div class="page-section__head">
-        <h2 class="page-section__title" id="home-questions">{% translate "С чего начать" %}</h2>
+        <h2 class="page-section__title" id="home-questions">{% translate "Где больше, где меньше" %}</h2>
         <a href="{% url 'catalog:indicator-list' %}">{% translate "Все основные показатели по темам" %}</a>
       </div>
       <ul class="question-grid card-row">
         {% for card in questions %}
           <li>
             <a class="question-card" href="{{ card.href }}">
-              <span class="question-card__title">{{ card.series.question }}</span>
+              <span class="question-card__question">{{ card.series.question }}</span>
+              <span class="question-card__title">{{ card.series.short_title }}</span>
               <ol class="question-card__answer">
                 {% for row in card.leaders %}
                   <li>
@@ -115,6 +96,7 @@
                   </li>
                 {% endfor %}
               </ol>
+              <span class="question-card__mine">{% if card.mine %}{% blocktranslate trimmed with place=card.mine %}Мой регион: {{ place }}{% endblocktranslate %}{% endif %}</span>
               <span class="question-card__foot">
                 <span>{{ card.series.unit_label }} · {{ card.year }}</span>
                 <span class="question-card__more">
@@ -188,6 +170,26 @@
       </p>
     </section>
   {% endif %}
+
+  {# --- Свои данные ---------------------------------------------------------------------- #}
+  <section class="own-data-strip" aria-labelledby="home-own-data">
+    <div class="own-data-strip__text">
+      <h2 class="own-data-strip__title" id="home-own-data">{% translate "Своя таблица по регионам — на той же карте" %}</h2>
+      <p class="own-data-strip__lead">
+        {% translate "Таблица из Excel, CSV, архива или вставка из Word: регионы и годы узнаются сами, таблицу видите только вы." %}
+      </p>
+    </div>
+    <div class="own-data-strip__actions">
+      <a class="button button--primary button--sm" href="{% url 'userdata:upload' %}">
+        <svg aria-hidden="true"><use href="#icon-upload"></use></svg>
+        {% translate "Загрузить таблицу" %}
+      </a>
+      <form method="post" action="{% url 'userdata:example' %}">
+        {% csrf_token %}
+        <button class="button button--secondary button--sm" type="submit">{% translate "Попробовать на примере" %}</button>
+      </form>
+    </div>
+  </section>
 
   {# --- Входы вглубь --------------------------------------------------------------------- #}
   <section class="page-section entry-grid card-row" aria-label="{% translate 'Дальше' %}">

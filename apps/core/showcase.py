@@ -52,6 +52,8 @@ FRAME_LEADERS = 5
 
 # Сколько регионов называет ответ на вопрос-вход.
 ANSWER_TOP = 3
+# Карточек «Где больше, где меньше» на главной.
+HOME_QUESTIONS = 6
 
 # Разрывы на шкале годов; перекройка округов на карте субъектов не видна.
 TIMELINE_BREAKS = tuple(kind for kind in BreakKind.values if kind != BreakKind.TERRITORY)
@@ -438,15 +440,20 @@ def _resolve_year(value: str | None, years: list[int]) -> int:
 # ---------------------------------------------------------------------------------------
 
 
-def answered_questions() -> list[dict[str, Any]]:
+def answered_questions(home_code: str | None = None) -> list[dict[str, Any]]:
     """
-    Вопросы-входы, не занятые живой картой, и первые три региона в ответе.
+    Вопросы-входы, не занятые живой картой: первые три региона и место моего региона.
 
     Все вопросы спрашивают о наибольшем значении, поэтому ответ — начало рейтинга.
     """
+    from apps.catalog.passport import build_passport
+
     on_map = {item.key for item in live_series()}
-    cards = []
+    positions = build_passport(home_code).by_key() if home_code else {}
+    cards: list[dict[str, Any]] = []
     for item in featured_series():
+        if len(cards) >= HOME_QUESTIONS:
+            break
         if not item.question_ru or item.key in on_map:
             continue
         years = ranked_years(item.key)
@@ -469,6 +476,7 @@ def answered_questions() -> list[dict[str, Any]]:
                     for row in leaders
                 ],
                 "href": reverse("rankings:index") + f"?series={item.key}&year={year}",
+                "mine": positions[item.key].place_text if item.key in positions else "",
             }
         )
     return cards

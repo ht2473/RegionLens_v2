@@ -30,7 +30,10 @@
     </p>
   </header>
 
-  {% include "core/partials/_live_find.html" %}
+  {# Поле первого экрана — общий поиск: регион, показатель или вопрос. #}
+  <div class="live-map__search">
+    {% include "search/_field.html" with examples=search_examples %}
+  </div>
 
   <div class="live-map__choices">
     <p class="live-map__label" id="live-map-choices">{% translate "Показать на карте" %}</p>

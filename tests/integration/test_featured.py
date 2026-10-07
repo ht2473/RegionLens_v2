@@ -248,7 +248,9 @@ class TestCatalogThemes:
         shown = {row["item"].key for block in themes for row in block["rows"]}
         assert shown == set(featured_keys)
         assert all(row["tile"] is not None for block in themes for row in block["rows"])
-        assert response.context["questions"]
+        # Вместо вопросов-чипов — поле поиска с примерами.
+        assert response.context["search_examples"]
+        assert 'class="find-form"' in response.content.decode()
 
     def test_tile_leads_to_the_indicator_page(
         self, client: Client, featured_keys: list[str]

@@ -8,8 +8,22 @@
 
 /* Шапка, поиск и оглавление — .page-head (layout.css), .find-form и .toc-pills (components.css). */
 
-.catalog-questions {
-  margin-bottom: var(--space-12);
+/* Ссылка на полный перечень под полем поиска. */
+.catalog__all {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-sm);
+}
+
+.catalog__all a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: var(--weight-semibold);
+}
+
+.catalog__all svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* --- Темы и плитки ----------------------------------------------------------------- */
@@ -84,11 +98,6 @@
 
 /* На телефоне плитка — строка: название, значение и изменение, ход справа. */
 @media (max-width: 560px) {
-  .catalog-questions .choice-chip {
-    min-height: 2rem;
-    font-size: var(--text-sm);
-  }
-
   .catalog-grid {
     gap: var(--space-2);
   }
