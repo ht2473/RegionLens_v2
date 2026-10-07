@@ -16,7 +16,7 @@ from django.urls import reverse
 from apps.catalog.constants import BreakKind
 from apps.catalog.models import Series, SeriesBreak, Territory
 from apps.catalog.passport import build_passport
-from apps.catalog.selectors import featured_group_title, series_options, series_options_version
+from apps.catalog.selectors import series_options, series_options_version
 from apps.exports.constants import ReportKind
 from apps.exports.reports import build_report
 from apps.warehouse.queries import featured_set, featured_snapshot, territory_positions
@@ -288,13 +288,14 @@ def seeded(db: None, reference_seed: None, settings: Any, tmp_path: Any) -> None
 
 
 class TestSeriesOptions:
-    """Список выбора ряда: основной набор первым."""
+    """Список выбора ряда: основной набор по темам первым."""
 
     def test_featured_group_comes_first(self, featured_keys: list[str]) -> None:
-        """Первая группа — основные показатели с короткими названиями, без повторов ниже."""
+        """Первая группа — тема основного набора с короткими названиями, без повторов ниже."""
         options = series_options()
         first = options[0]
-        assert first["title"] == featured_group_title()
+        assert first["theme"]
+        assert first["title"] in {theme.title for theme in featured_set().themes}
         titles = {item.key: item.short_title for item in featured_set().series}
         assert [item["title"] for item in first["items"]] == [
             titles[item["key"]] for item in first["items"]
@@ -308,18 +309,22 @@ class TestSeriesOptions:
         body = client.get(
             reverse("catalog:series-options"), {"v": series_options_version()}
         ).content.decode()
-        assert body.startswith(f'<optgroup label="{featured_group_title()}">')
+        assert body.startswith('<optgroup label="')
+        assert body.split(">", 1)[0].endswith("data-theme")
         assert "data-search=" in body
+        assert "data-hint=" in body
 
     def test_selected_featured_series_is_named_shortly(
         self, client: Client, featured_keys: list[str]
     ) -> None:
-        """Выбранный ряд набора назван коротко и стоит в группе основных показателей."""
+        """Выбранный ряд набора назван коротко и стоит в группе своей темы."""
         key = f"{synthetic.GRP_PER_CAPITA_CODE}:00"
         body = client.get(reverse("maps:choropleth"), {"series": key}).content.decode()
         select = re.search(r'<select[^>]*id="series-select".*?</select>', body, re.S)
         assert select is not None
-        assert f'label="{featured_group_title()}"' in select.group(0)
+        theme = featured_set().theme(featured_set().by_key()[key].theme)
+        assert theme is not None
+        assert f'label="{theme.title}"' in select.group(0)
         assert "ВРП на душу населения" in select.group(0)
 
     def test_version_follows_featured_file(self, featured_keys: list[str]) -> None:

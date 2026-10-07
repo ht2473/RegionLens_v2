@@ -3311,6 +3311,96 @@ rl-combobox:defined > select {
   font-weight: var(--weight-medium);
 }
 
+/* Широкая панель выбора показателя: слева недавние и темы, справа список с единицей,
+   годами и ходом по России. */
+.combobox__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.combobox__body > .combobox__list {
+  min-width: 0;
+}
+
+.combobox__nav {
+  display: flex;
+  flex: 0 0 11rem;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2);
+  border-right: 1px solid var(--border-subtle);
+  overflow-y: auto;
+}
+
+.combobox__nav[hidden] {
+  display: none;
+}
+
+.combobox__nav-item {
+  padding: var(--space-1) var(--space-2);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.combobox__nav-item:hover,
+.combobox__nav-item.is-current {
+  background-color: var(--surface-sunken);
+  color: var(--text-primary);
+}
+
+.combobox__nav-item.is-current {
+  font-weight: var(--weight-semibold);
+}
+
+.combobox__panel--wide .combobox__option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-3);
+}
+
+.combobox__name,
+.combobox__hint {
+  grid-column: 1;
+}
+
+.combobox__hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.combobox__spark {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  width: 4.5rem;
+  height: 1.5rem;
+}
+
+@media (max-width: 767px) {
+  .combobox__body {
+    flex-direction: column;
+  }
+
+  .combobox__nav {
+    flex: none;
+    flex-direction: row;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+    overflow-x: auto;
+  }
+
+  .combobox__nav-item {
+    white-space: nowrap;
+  }
+}
+
 .combobox__empty {
   padding: var(--space-4) var(--space-3);
   font-size: var(--text-xs);

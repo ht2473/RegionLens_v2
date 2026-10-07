@@ -35,7 +35,7 @@ def analysis_ready_series() -> QuerySet[Series]:
 
 
 # Редакция разметки перечня в адресе: браузер хранит перечень год.
-SERIES_OPTIONS_REVISION = 3
+SERIES_OPTIONS_REVISION = 4
 
 
 def series_options_version() -> str:
@@ -63,8 +63,9 @@ def featured_choice(series: Series) -> dict[str, Any]:
         }
     item = featured_set().by_key().get(series.key)
     if item is not None:
+        theme = featured_set().theme(item.theme)
         return {
-            "group": featured_group_title(),
+            "group": theme.title if theme else featured_group_title(),
             "title": item.short_title,
             "unnormalised": item.absolute,
         }
@@ -79,17 +80,34 @@ def featured_choice(series: Series) -> dict[str, Any]:
 
 
 def _featured_option(item: FeaturedSeries, series: Series) -> dict[str, Any]:
-    """Запись перечня для ряда основного набора."""
+    """Запись перечня для ряда основного набора: единица, годы, ход по России, синонимы."""
+    from apps.core.charts import sparkline_path
+    from apps.search.index import synonyms
+    from apps.warehouse.queries import series_statistics_timeline
+
     full_title = series.indicator.name
     if series.has_subsection and series.name:
         full_title = f"{full_title} {series.name}"
+    words = synonyms()["series"].get(item.key, {})
+    years = f"{series.first_year}–{series.last_year}" if series.first_year else ""
+    country = [row["country_value"] for row in series_statistics_timeline(item.key)]
     return {
         "key": series.key,
         "title": item.short_title,
         "subsection": "",
         "unnormalised": item.absolute,
-        # Ряд ищут и по словам сборника, которых нет в коротком названии.
-        "search": f"{series.indicator.section.name} {full_title}",
+        "hint": " · ".join(filter(None, [item.unit_label, years])),
+        "spark": sparkline_path(country),
+        # Ряд ищут и по словам сборника, и разговорными словами словаря поиска.
+        "search": " ".join(
+            [
+                series.indicator.section.name,
+                full_title,
+                item.question,
+                *words.get("ru", []),
+                *words.get("en", []),
+            ]
+        ),
     }
 
 
@@ -124,11 +142,18 @@ def series_options() -> list[dict[str, Any]]:
         )
 
     options = sorted(groups.values(), key=lambda item: item["title"])
-    main = [
-        _featured_option(item, ready[item.key]) for item in featured_series() if item.key in ready
+    # Основной набор — по темам, первыми; темы отмечены для перечня тем панели выбора.
+    themes = [
+        {
+            "title": theme.title,
+            "theme": True,
+            "items": [
+                _featured_option(item, ready[item.key]) for item in items if item.key in ready
+            ],
+        }
+        for theme, items in featured_set().grouped()
     ]
-    if main:
-        options.insert(0, {"title": featured_group_title(), "items": main})
+    options[:0] = [group for group in themes if group["items"]]
 
     # Раздел — и в самой записи: в свёрнутом виде групп нет, а отбор ищет и по разделу.
     for group in options:

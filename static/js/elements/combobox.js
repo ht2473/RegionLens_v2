@@ -1,14 +1,43 @@
 /* Поле выбора с поиском <rl-combobox> над select, который остаётся источником значения
    и работает без сценариев; определённый элемент прячет его правилом rl-combobox:defined > select.
+   Если в перечне есть темы (optgroup data-theme), панель широкая: слева недавние, темы
+   и остальные ряды, справа список с единицей, годами и ходом по России.
    Подписки на окно и документ снимаются, когда элемент уносят. */
 
-// Наименьшая ширина раскрытой панели: длинные названия рядов — в две строки.
+// Наименьшая ширина раскрытой панели: длинные названия рядов — в две строки;
+// с перечнем тем панель шире.
 const MIN_WIDTH = 420;
+const WIDE_WIDTH = 760;
+
+// Недавно выбранные ряды — в браузере, общие для всех полей выбора.
+const RECENT_KEY = "regionlens:recent-series";
+const RECENT_LIMIT = 6;
+
+/** Прочитать недавно выбранные ключи. */
+function recentKeys() {
+  try {
+    return JSON.parse(window.localStorage.getItem(RECENT_KEY) || "[]");
+  } catch (error) {
+    // Хранилище недоступно или испорчено — недавних нет.
+    return [];
+  }
+}
+
+/** Запомнить выбранный ключ первым. */
+function rememberKey(key) {
+  const keys = [key, ...recentKeys().filter((item) => item !== key)].slice(0, RECENT_LIMIT);
+  try {
+    window.localStorage.setItem(RECENT_KEY, JSON.stringify(keys));
+  } catch (error) {
+    /* Без хранилища недавние не запоминаются. */
+  }
+}
 
 // Отступ панели от края окна, наибольшая её высота и наименьшая высота,
 // при которой она ещё раскрывается вниз, а не вверх.
 const EDGE = 12;
 const MAX_HEIGHT = 420;
+const WIDE_HEIGHT = 520;
 const MIN_HEIGHT = 220;
 
 // Ширина, с которой рейль — колонка; ниже он лист, и панель не выносится (как в layout.css).
@@ -70,6 +99,8 @@ class Combobox extends HTMLElement {
       loading: data.loading || "Загрузка…",
       unnormalised: data.unnormalised || "абс.",
       unnormalisedHint: data.unnormalisedHint || "",
+      recent: data.recent || "Недавние",
+      rest: data.rest || "Остальные ряды",
     };
   }
 
@@ -102,7 +133,8 @@ class Combobox extends HTMLElement {
     panel.innerHTML =
       '<div class="combobox__search"><input type="search" autocomplete="off" spellcheck="false">' +
       '<span class="combobox__count" aria-live="polite"></span></div>' +
-      '<ul class="combobox__list" role="listbox" tabindex="-1"></ul>' +
+      '<div class="combobox__body"><nav class="combobox__nav" hidden></nav>' +
+      '<ul class="combobox__list" role="listbox" tabindex="-1"></ul></div>' +
       '<p class="combobox__empty" hidden></p>';
     this.appendChild(panel);
 
@@ -110,6 +142,7 @@ class Combobox extends HTMLElement {
     this.panel = panel;
     this.search = panel.querySelector("input");
     this.list = panel.querySelector(".combobox__list");
+    this.nav = panel.querySelector(".combobox__nav");
     this.empty = panel.querySelector(".combobox__empty");
     this.counter = panel.querySelector(".combobox__count");
     this.search.placeholder = strings.search;
@@ -128,68 +161,134 @@ class Combobox extends HTMLElement {
 
   /** Разложить пункты списка по содержимому select; повторяется после догрузки. */
   collect() {
-    const strings = this.strings;
     this.list.textContent = "";
+    this.nav.textContent = "";
     this.entries = [];
-    [...this.select.children].forEach((node) => {
-      const group = node.tagName === "OPTGROUP" ? node.label : "";
-      const options = node.tagName === "OPTGROUP" ? [...node.children] : [node];
+    this.sections = [];
+    const themed = this.select.querySelector("optgroup[data-theme]") !== null;
+    this.panel.classList.toggle("combobox__panel--wide", themed);
+    this.nav.hidden = !themed;
 
-      // Свой контейнер раздела — чтобы закреплённый заголовок уходил вместе с ним.
-      let container = this.list;
-      if (group) {
-        const section = document.createElement("li");
-        section.className = "combobox__section";
-        section.setAttribute("role", "group");
-        section.setAttribute("aria-label", group);
-
-        const heading = document.createElement("div");
-        heading.className = "combobox__group";
-        // Раздел уже назван меткой контейнера.
-        heading.setAttribute("aria-hidden", "true");
-        heading.textContent = group;
-        // Полное название усечённого заголовка — в подсказке.
-        heading.title = group;
-        section.appendChild(heading);
-
-        container = document.createElement("ul");
-        container.className = "combobox__items";
-        container.setAttribute("role", "presentation");
-        section.appendChild(container);
-
-        this.list.appendChild(section);
-        this.entries.push({ element: section, group: true, haystack: normalize(group) });
+    // Недавние — копиями пунктов перечня; при поиске раздел прячется, чтобы не было повторов.
+    if (themed) {
+      const byValue = new Map([...this.select.options].map((option) => [option.value, option]));
+      const recent = recentKeys()
+        .map((key) => byValue.get(key))
+        .filter(Boolean);
+      if (recent.length) {
+        this.addGroup(this.strings.recent, recent, { recent: true });
       }
+    }
 
-      options.forEach((option) => {
-        const item = document.createElement("li");
-        item.className = "combobox__option";
-        item.setAttribute("role", "option");
-        item.dataset.value = option.value;
-        item.textContent = option.textContent.trim();
-        item.title = option.textContent.trim();
-
-        // Пометка ненормированной величины — признак с сервера.
-        if (option.dataset.unnormalised === "1") {
-          const mark = document.createElement("span");
-          mark.className = "series-mark";
-          mark.textContent = strings.unnormalised;
-          mark.title = strings.unnormalisedHint;
-          item.appendChild(mark);
-        }
-
-        container.appendChild(item);
-        // Слова сборника для поиска ряда основного набора — атрибутом.
-        this.entries.push({
-          element: item,
-          option: option,
-          haystack: normalize(`${group} ${option.textContent} ${option.dataset.search || ""}`),
-          initials: initials(option.textContent),
-        });
+    let restNamed = false;
+    [...this.select.children].forEach((node) => {
+      if (node.tagName !== "OPTGROUP") {
+        this.addGroup("", [node], {});
+        return;
+      }
+      // Первая группа вне тем открывает «Остальные ряды» в перечне слева.
+      const rest = themed && !node.hasAttribute("data-theme") && !node.hasAttribute("data-own");
+      this.addGroup(node.label, [...node.children], {
+        nav: themed && (!rest || !restNamed),
+        navLabel: rest ? this.strings.rest : node.label,
       });
+      restNamed = restNamed || rest;
     });
 
     this.options = this.entries.filter((entry) => !entry.group);
+  }
+
+  /** Добавить раздел перечня и его пункт в перечне слева. */
+  addGroup(title, options, { recent = false, nav = false, navLabel = "" }) {
+    const strings = this.strings;
+    let container = this.list;
+    let section = null;
+    if (title) {
+      section = document.createElement("li");
+      section.className = "combobox__section";
+      section.setAttribute("role", "group");
+      section.setAttribute("aria-label", title);
+
+      const heading = document.createElement("div");
+      heading.className = "combobox__group";
+      // Раздел уже назван меткой контейнера.
+      heading.setAttribute("aria-hidden", "true");
+      heading.textContent = title;
+      // Полное название усечённого заголовка — в подсказке.
+      heading.title = title;
+      section.appendChild(heading);
+
+      container = document.createElement("ul");
+      container.className = "combobox__items";
+      container.setAttribute("role", "presentation");
+      section.appendChild(container);
+
+      this.list.appendChild(section);
+      this.entries.push({ element: section, group: true, recent, haystack: normalize(title) });
+    }
+
+    if (section && (nav || recent)) {
+      const link = document.createElement("button");
+      link.type = "button";
+      link.className = "combobox__nav-item";
+      link.textContent = recent ? title : navLabel;
+      link.addEventListener("click", () => {
+        this.list.scrollTop = section.offsetTop - this.list.offsetTop;
+      });
+      this.nav.appendChild(link);
+      this.sections.push({ section, link, recent });
+    }
+
+    options.forEach((option) => {
+      const item = document.createElement("li");
+      item.className = "combobox__option";
+      item.setAttribute("role", "option");
+      item.dataset.value = option.value;
+      item.title = option.textContent.trim();
+
+      const name = document.createElement("span");
+      name.className = "combobox__name";
+      name.textContent = option.textContent.trim();
+      item.appendChild(name);
+
+      // Пометка ненормированной величины — признак с сервера.
+      if (option.dataset.unnormalised === "1") {
+        const mark = document.createElement("span");
+        mark.className = "series-mark";
+        mark.textContent = strings.unnormalised;
+        mark.title = strings.unnormalisedHint;
+        name.appendChild(mark);
+      }
+      // Единица и годы — строкой ниже, ход по России — справа.
+      if (option.dataset.hint) {
+        const hint = document.createElement("span");
+        hint.className = "combobox__hint";
+        hint.textContent = option.dataset.hint;
+        item.appendChild(hint);
+      }
+      if (option.dataset.spark) {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("class", "sparkline combobox__spark");
+        svg.setAttribute("viewBox", "0 0 120 32");
+        svg.setAttribute("preserveAspectRatio", "none");
+        svg.setAttribute("aria-hidden", "true");
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("class", "sparkline__line");
+        path.setAttribute("d", option.dataset.spark);
+        svg.appendChild(path);
+        item.appendChild(svg);
+      }
+
+      container.appendChild(item);
+      // Слова сборника и синонимы для поиска ряда основного набора — атрибутом.
+      this.entries.push({
+        element: item,
+        option: option,
+        recent,
+        haystack: normalize(`${title} ${option.textContent} ${option.dataset.search || ""}`),
+        initials: initials(option.textContent),
+      });
+    });
   }
 
   /** Подключить обработчики кнопки, поиска, перечня и клавиатуры. */
@@ -205,6 +304,9 @@ class Combobox extends HTMLElement {
         this.choose(this.options.find((entry) => entry.element === item));
       }
     });
+
+    // Раздел, до которого прокручен список, отмечен в перечне слева.
+    this.list.addEventListener("scroll", () => this.markSection(), { passive: true });
 
     this.panel.addEventListener("keydown", (event) => {
       const rest = this.visible();
@@ -312,13 +414,26 @@ class Combobox extends HTMLElement {
     return this.options.filter((entry) => !entry.element.hidden);
   }
 
+  /** Отметить в перечне слева раздел, до которого прокручен список. */
+  markSection() {
+    const top = this.list.scrollTop + this.list.offsetTop + 8;
+    let current = null;
+    this.sections.forEach((entry) => {
+      if (!entry.section.hidden && entry.section.offsetTop <= top) {
+        current = entry;
+      }
+    });
+    this.sections.forEach((entry) => entry.link.classList.toggle("is-current", entry === current));
+  }
+
   filter() {
-    // Каждое слово запроса ищется отдельно: порядок слов не важен.
+    // Каждое слово запроса ищется отдельно: порядок слов не важен; недавние — только без запроса.
     const words = normalize(this.search.value).split(" ").filter(Boolean);
     this.options.forEach((entry) => {
       entry.element.hidden =
         words.length > 0 &&
-        !words.every((word) => entry.haystack.includes(word) || entry.initials.includes(word));
+        (entry.recent ||
+          !words.every((word) => entry.haystack.includes(word) || entry.initials.includes(word)));
     });
 
     // Заголовок раздела скрывается вместе со всеми его пунктами.
@@ -341,6 +456,9 @@ class Combobox extends HTMLElement {
       heading.element.hidden = shown === 0;
     }
 
+    this.sections.forEach((entry) => {
+      entry.link.hidden = entry.section.hidden;
+    });
     const rest = this.visible();
     const strings = this.strings;
     this.empty.hidden = rest.length > 0 || !this.loaded;
@@ -362,7 +480,8 @@ class Combobox extends HTMLElement {
 
     const box = this.trigger.getBoundingClientRect();
     const room = document.documentElement.clientWidth - 2 * EDGE;
-    const width = Math.min(Math.max(box.width, MIN_WIDTH), room);
+    const wide = this.panel.classList.contains("combobox__panel--wide");
+    const width = Math.min(Math.max(box.width, wide ? WIDE_WIDTH : MIN_WIDTH), room);
     const below = window.innerHeight - box.bottom - EDGE;
     const above = box.top - EDGE;
 
@@ -374,11 +493,11 @@ class Combobox extends HTMLElement {
     if (below < MIN_HEIGHT && above > below) {
       panel.style.top = "auto";
       panel.style.bottom = `${window.innerHeight - box.top + 4}px`;
-      panel.style.maxHeight = `${Math.min(MAX_HEIGHT, above)}px`;
+      panel.style.maxHeight = `${Math.min(wide ? WIDE_HEIGHT : MAX_HEIGHT, above)}px`;
     } else {
       panel.style.bottom = "auto";
       panel.style.top = `${box.bottom + 4}px`;
-      panel.style.maxHeight = `${Math.min(MAX_HEIGHT, below)}px`;
+      panel.style.maxHeight = `${Math.min(wide ? WIDE_HEIGHT : MAX_HEIGHT, below)}px`;
     }
   }
 
@@ -389,7 +508,8 @@ class Combobox extends HTMLElement {
     this.trigger.setAttribute("aria-expanded", "true");
     this.search.value = "";
     this.filter();
-    const chosen = this.options.find((entry) => entry.option.selected);
+    this.markSection();
+    const chosen = this.options.find((entry) => entry.option.selected && !entry.recent);
     this.highlight(chosen || this.visible()[0]);
     this.search.focus();
     this.load();
@@ -412,6 +532,7 @@ class Combobox extends HTMLElement {
     if (!entry) {
       return;
     }
+    rememberKey(entry.option.value);
     this.select.value = entry.option.value;
     this.showSelected();
     this.close();
