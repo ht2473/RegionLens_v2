@@ -1,0 +1,50 @@
+{% extends "dashboard/base.html" %}
+{% load i18n formatting %}
+
+{# Запросы без ответа: по ним пополняется словарь синонимов поиска. #}
+
+{% block admin_subtitle %}
+  <p class="page-head__lead">
+    {% blocktranslate trimmed with days=retention_days %}
+      Запросы, на которые поиск не нашёл ответа, за последние {{ days }} дней — без адреса
+      и учётной записи. Частые — повод дополнить словарь синонимов data/reference/search_synonyms.json.
+    {% endblocktranslate %}
+  </p>
+{% endblock %}
+
+{% block admin_content %}
+  {% if rows %}
+    <section>
+      <p class="text-muted text-small">
+        {% blocktranslate trimmed with total=total|ru_number:0 %}Всего записей: {{ total }}.{% endblocktranslate %}
+      </p>
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Запрос" %}</th>
+              <th scope="col">{% translate "Язык" %}</th>
+              <th scope="col" class="admin-table__numeric">{% translate "Раз" %}</th>
+              <th scope="col" class="admin-table__numeric">{% translate "Последний" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td><a href="{% url 'search:results' %}?q={{ row.folded|urlencode }}">{{ row.folded }}</a></td>
+                <td>{{ row.language }}</td>
+                <td class="admin-table__numeric">{{ row.count }}</td>
+                <td class="admin-table__numeric">{{ row.last|date:"d.m.Y H:i" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% else %}
+    <div class="empty-state">
+      <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
+      <p class="empty-state__title">{% translate "Запросов без ответа нет" %}</p>
+    </div>
+  {% endif %}
+{% endblock %}

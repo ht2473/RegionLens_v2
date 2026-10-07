@@ -373,13 +373,14 @@ class TestPanelPermissions:
     """Разделы панели по правам, второй фактор, назначение ролей."""
 
     def test_editor_sees_only_own_sections(self, client: Client, editor: User) -> None:
-        """Редактор: содержимое, обращения и посещения открыты, пользователи и данные — 403."""
+        """Редактор: содержимое, обращения, посещения и запросы без ответа; пользователи — 403."""
         login_with_code(client, editor)
         for name in (
             "dashboard:index",
             "dashboard:content",
             "dashboard:ticket-list",
             "dashboard:visits",
+            "dashboard:search",
         ):
             assert client.get(reverse(name)).status_code == 200, name
         for name in ("dashboard:user-list", "dashboard:data", "dashboard:sources"):
@@ -389,7 +390,7 @@ class TestPanelPermissions:
             str(item["code"])
             for item in client.get(reverse("dashboard:index")).context["admin_sections"]
         }
-        assert tabs == {"overview", "tickets", "content", "visits"}
+        assert tabs == {"overview", "tickets", "content", "visits", "search"}
 
     def test_panel_needs_second_factor(self, client: Client, make_user: Any) -> None:
         """С правом, но без входа по коду — страница его включения."""

@@ -23,6 +23,7 @@ SECTIONS: tuple[str, ...] = (
     "dashboard:user-list",
     "dashboard:data",
     "dashboard:quality",
+    "dashboard:search",
 )
 
 
@@ -43,6 +44,11 @@ def test_sections_open_for_administrator(
 def test_member_has_no_access(member_client: Client) -> None:
     """Обычному пользователю панель недоступна целиком."""
     assert member_client.get(reverse("dashboard:index")).status_code == 403
+
+
+def test_member_cannot_read_search_log(member_client: Client) -> None:
+    """Обычному пользователю журнал запросов закрыт."""
+    assert member_client.get(reverse("dashboard:search")).status_code == 403
 
 
 def test_guest_is_redirected_to_login(client: Client, db: None) -> None:

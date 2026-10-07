@@ -71,6 +71,7 @@ urlpatterns = [
         name="release",
     ),
     # --- Посещения ----------------------------------------------------------------------------
+    path("manage/search/", views.SearchLogView.as_view(), name="search"),
     path("manage/visits/", views.VisitsView.as_view(), name="visits"),
     path("manage/visits/days.csv", views.VisitsExportView.as_view(), name="visits-export"),
     # --- Обратная связь -----------------------------------------------------------------------

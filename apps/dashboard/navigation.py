@@ -79,6 +79,13 @@ ADMIN_SECTIONS: tuple[AdminSection, ...] = (
         permission=MANAGE_CONTENT,
     ),
     AdminSection(
+        code="search",
+        title=_("Поиск"),
+        url_name="dashboard:search",
+        hint=_("Запросы без ответа: по ним пополняется словарь синонимов поиска"),
+        permission=MANAGE_CONTENT,
+    ),
+    AdminSection(
         code="visits",
         title=_("Посещения"),
         url_name="dashboard:visits",

@@ -18,6 +18,7 @@ from .data import (
     QualityView,
 )
 from .overview import IndexView
+from .search import SearchLogView
 from .sources import CollectNowView, ReleaseDetailView, SourcesView
 from .tickets import TicketDetailView, TicketListView
 from .users import (
@@ -45,6 +46,7 @@ __all__ = [
     "MethodologySectionEditView",
     "QualityView",
     "ReleaseDetailView",
+    "SearchLogView",
     "SourcesView",
     "TicketDetailView",
     "TicketListView",
