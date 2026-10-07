@@ -601,6 +601,8 @@ def _recalculations(
                     **common,
                     "code": primary["code"] + PER_SUFFIXES[per],
                     "title": f"{primary['title']} {_per_title(per)}",
+                    # Единица — с основой пересчёта: «единиц на 100 000 жителей», а не «единиц».
+                    "unit": " ".join(part for part in (primary["unit"], _per_title(per)) if part),
                     "kind": indicators.RELATIVE,
                     "derived": per,
                 }
