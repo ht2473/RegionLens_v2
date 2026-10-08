@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n glossary %}
 {# Насколько различаются регионы: разрыв крайних десятых долей, Джини, вариация и ход разрыва. #}
 <div class="answer__figure study-card__answer">
   <p class="answer__value">
@@ -7,14 +7,14 @@
       <span class="answer__unit">{% translate "раза — верхние 10 % регионов к нижним" %}</span>
     {% else %}
       <span class="numeric">{{ card.gini }}</span>
-      <span class="answer__unit">{% translate "коэффициент Джини" %}</span>
+      <span class="answer__unit">{% term "gini" _("коэффициент Джини") %}</span>
     {% endif %}
   </p>
   {% include "search/answers/_spark.html" with spark=card.spark %}
 </div>
 <p class="answer__meta">
-  {% if card.decile and card.gini %}<span>{% translate "Джини" %} — <b class="numeric">{{ card.gini }}</b></span>{% endif %}
+  {% if card.decile and card.gini %}<span>{% term "gini" _("Джини") %} — <b class="numeric">{{ card.gini }}</b></span>{% endif %}
   {% if card.range %}<span>{% blocktranslate trimmed with ratio=card.range %}Наибольшее к наименьшему — {{ ratio }} раза{% endblocktranslate %}</span>{% endif %}
-  {% if card.variation %}<span>{% blocktranslate trimmed with value=card.variation %}Вариация — {{ value }} %{% endblocktranslate %}</span>{% endif %}
+  {% if card.variation %}<span>{% term "coefficient-of-variation" _("Вариация") %} — <span class="numeric">{{ card.variation }}</span> %</span>{% endif %}
   {% if card.spark and card.first_year %}<span>{% blocktranslate trimmed with since=card.first_year %}Линия — разрыв с {{ since }} года{% endblocktranslate %}</span>{% endif %}
 </p>

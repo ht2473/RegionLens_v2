@@ -15,7 +15,10 @@
   {% if panel.partner %}<input type="hidden" name="other" value="{{ panel.partner.key }}">{% endif %}
   {% for group in panel.groups %}
     <div class="study-actions__group">
-      <div class="study-actions__title">{{ group.title }}</div>
+      <div class="study-actions__title">
+        {{ group.title }}
+        {% if group.hint %}{% include "partials/_hint.html" with hint_id="hint-actions-"|add:group.code hint_text=group.hint hint_label=_("Как считается") %}{% endif %}
+      </div>
       {% if group.reason %}<p class="study-actions__reason study-actions__group-reason">{{ group.reason }}</p>{% endif %}
       {% if group.actions %}
         <ul class="study-actions__list">

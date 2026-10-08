@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n glossary %}
 {# Связь двух показателей: коэффициент Спирмена, теснота и облако точек регионов. #}
 <div class="answer__figure study-card__answer">
   <p class="answer__value">
@@ -9,7 +9,7 @@
 <p class="answer__meta">
   <span>{% blocktranslate trimmed with count=card.pairs %}регионов: {{ count }}{% endblocktranslate %}</span>
   <span>{% if card.significant %}{% translate "связь значима" %}{% else %}{% translate "связь незначима" %}{% endif %}</span>
-  <span>{% translate "коэффициент Спирмена" %}</span>
+  <span>{% term "correlation-coefficient" _("коэффициент Спирмена") %}</span>
 </p>
 {% with option_id=card.prefix|add:"-scatter" %}
   <rl-chart class="chart study-card__chart" data-options="{{ option_id }}"

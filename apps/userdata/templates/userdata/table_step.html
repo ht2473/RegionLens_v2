@@ -104,6 +104,8 @@
       <section class="question-card" aria-labelledby="unresolved-title">
         <h2 class="question-card__title" id="unresolved-title">
           {% blocktranslate trimmed with count=unresolved|length %}Подписи без территории: {{ count }}. Выберите территорию для каждой.{% endblocktranslate %}
+          {% translate "Подпись сравнивается со справочником сайта. Сокращения, латинские буквы в русских словах и слипшиеся слова исправляются. Узнаются разговорные и английские названия, коды ISO 3166-2 и ОКАТО. Подпись с опечаткой принимается, если почти совпадает с одним названием. Иначе сайт спрашивает, как здесь." as matching_hint %}
+          {% include "partials/_hint.html" with hint_id="hint-matching" hint_text=matching_hint hint_label=_("Как узнаются регионы") %}
         </h2>
         <ul class="unresolved-list">
           {% for label, match, count in unresolved %}

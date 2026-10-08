@@ -18,6 +18,7 @@ from uuid import UUID
 from django.http import HttpRequest
 from django.urls import reverse
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 
 from apps.warehouse import routing
 
@@ -45,6 +46,14 @@ RECOUNTS = (
     (DatasetSeries.Derived.REAL.value, False, True),
 )
 SUFFIXES = {**build.PER_SUFFIXES, **build.RECALC_SUFFIXES}
+# Как считаются пересчёты: справка у самого действия, а не в методике.
+RECOUNT_HINT = gettext_lazy(
+    "Пересчёт — новый ряд рядом с исходным с пометкой «расчёт RegionLens». На жителей значение "
+    "делится на среднегодовую численность. В ценах последнего года оно умножается на индексы "
+    "потребительских цен региона за следующие годы, при пропуске индекса не считается. "
+    "«Россия = 100» делит значение на значение России, доля берётся от суммы субъектов за год. "
+    "Темп считается к тому же периоду прошлого года, только у положительных значений."
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,6 +115,8 @@ class Group:
     actions: list[Action]
     # Группа недоступна целиком — одна причина вместо пунктов.
     reason: str = ""
+    # Как устроены действия группы — пояснение по нажатию «?».
+    hint: str = ""
 
 
 @dataclass(slots=True)
@@ -435,7 +446,7 @@ def _compute_group(entry: Entry, one_year: str) -> Group:
             )
         )
     found.append(Action(_("Формула"), href=entry.formula_url))
-    return Group(COMPUTE, title, found)
+    return Group(COMPUTE, title, found, hint=str(RECOUNT_HINT))
 
 
 def add(

@@ -1,9 +1,9 @@
-{% load i18n %}
+{% load i18n glossary %}
 {# Похожи ли соседи: глобальный индекс Морана и вывод правилом. #}
 <div class="answer__figure study-card__answer">
   <p class="answer__value">
     <span class="numeric">{{ card.value }}</span>
-    <span class="answer__unit">{% translate "индекс Морана" %}</span>
+    <span class="answer__unit">{% term "moran-index" _("индекс Морана") %}</span>
   </p>
 </div>
 <p class="answer__meta">
