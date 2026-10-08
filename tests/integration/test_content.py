@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 from django.test import Client
 from django.urls import reverse
@@ -144,6 +146,106 @@ def test_unpublished_section_is_not_shown(client: Client, section: MethodologySe
 
     response = client.get(reverse("content:methodology"))
     assert "Проверочный раздел" not in response.content.decode()
+
+
+def test_section_shows_mathml_and_limitations(client: Client, section: MethodologySection) -> None:
+    """
+    Формула выводится разметкой MathML с подписью, ограничения — списком.
+
+    Разметку правит и редактор в панели: на страницу попадает только белый список.
+    """
+    section.formula = 'Джини: <math display="block"><mi>G</mi><script>alert(1)</script></math>'
+    section.limitations = "Первое ограничение.\nВторое ограничение."
+    section.save()
+
+    body = client.get(reverse("content:methodology")).content.decode()
+
+    assert '<math display="block"><mi>G</mi></math>' in body
+    assert "alert(1)" not in body
+    assert "methodology__formula-label" in body
+    assert "<li>Первое ограничение.</li><li>Второе ограничение.</li>" in body
+
+
+def test_seed_retires_merged_sections(db: None) -> None:
+    """Разделы прежних редакций снимаются при наполнении: на странице их нет."""
+    from django.core.management import call_command
+
+    from apps.content.management.commands.seed_content import RETIRED_SECTIONS
+
+    old = MethodologySection.objects.create(code=RETIRED_SECTIONS[0])
+    old.set_current_language("ru")
+    old.title = "Прежний раздел"
+    old.save()
+
+    call_command("seed_content", verbosity=0)
+
+    assert not MethodologySection.objects.filter(code__in=RETIRED_SECTIONS).exists()
+
+
+def test_methodology_examples_use_current_data(client: Client, warehouse: Any) -> None:
+    """
+    Примеры к разделам считаются по нынешним данным склада.
+
+    Число в статичном тексте разошлось бы с сайтом после первой же новой сборки.
+    """
+    from django.core.management import call_command
+
+    call_command("seed_content", verbosity=0)
+    response = client.get(reverse("content:methodology"))
+    sections = {
+        section.code: section
+        for block in response.context["blocks"]
+        for section in block["sections"]
+    }
+
+    assert sections["inequality"].example is not None
+    assert "Джини" in sections["inequality"].example.lines[0]
+    assert sections["map-classes"].example is not None
+    assert "Пример" in response.content.decode()
+
+
+def test_methodology_without_warehouse_has_no_examples(client: Client, section: Any) -> None:
+    """Без склада страница открывается, примеров у разделов нет."""
+    response = client.get(reverse("content:methodology"))
+
+    assert response.status_code == 200
+    assert all(
+        item.example is None for block in response.context["blocks"] for item in block["sections"]
+    )
+
+
+# ---------------------------------------------------------------------------------------
+# Термины в интерфейсе
+# ---------------------------------------------------------------------------------------
+
+
+def test_term_tag_shows_definition_by_click(rf: Any, term: GlossaryTerm) -> None:
+    """Термин — кнопка с определением из глоссария во всплывающей панели и ссылкой."""
+    from django.template import Context, Template
+
+    rendered = Template(
+        '{% load glossary %}{% term "test-term" %}, {% term "test-term" "D" %}'
+    ).render(Context({"request": rf.get("/")}))
+
+    assert rendered.count('class="term__name"') == 2
+    assert ">Дисперсия</button>" in rendered
+    assert ">D</button>" in rendered
+    assert "Мера разброса значений" in rendered
+    assert f"#{term.anchor}" in rendered
+    assert "</span></span>, " in rendered
+
+
+def test_unknown_or_hidden_term_is_plain_text(rf: Any, term: GlossaryTerm) -> None:
+    """Термина нет или он снят с показа — остаётся подпись без кнопки."""
+    from django.template import Context, Template
+
+    term.is_published = False
+    term.save(update_fields=["is_published"])
+    rendered = Template(
+        '{% load glossary %}{% term "test-term" "Дисперсия" %}|{% term "nope" %}'
+    ).render(Context({"request": rf.get("/")}))
+
+    assert rendered == "Дисперсия|nope"
 
 
 # ---------------------------------------------------------------------------------------

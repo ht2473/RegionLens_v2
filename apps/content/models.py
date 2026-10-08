@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.db import models
 from django.urls import NoReverseMatch, reverse
@@ -55,7 +55,8 @@ class MethodologySection(  # type: ignore[django-manager-missing]
     TranslatableModel, OriginalLanguageMixin, OrderedModel, TimeStampedModel
 ):
     """
-    Раздел страницы «Методика»: формула, условия применимости и ограничения метода.
+    Раздел страницы «Методика»: что показывает метод, формула, ограничения, изложение
+    и литература; пример на нынешних данных строится кодом (``content/examples.py``).
 
     Связан с инструментом анализа именем маршрута: ссылки ведут в обе стороны.
     """
@@ -87,6 +88,9 @@ class MethodologySection(  # type: ignore[django-manager-missing]
     )
     is_published = models.BooleanField("показывать на сайте", default=True, db_index=True)
 
+    # Пример на нынешних данных: ставит страница методики (content/examples.py), не поле.
+    example: Any = None
+
     translations = TranslatedFields(
         title=models.CharField("заголовок", max_length=200),
         summary=models.CharField(
@@ -95,17 +99,24 @@ class MethodologySection(  # type: ignore[django-manager-missing]
             blank=True,
             help_text="Одно предложение о том, что даёт метод",
         ),
-        # Переводится: в записи формулы есть слова («доля = число регионов …»).
-        formula=models.CharField(
+        # Переводится: в записи формулы есть слова («пар в допуске», подписи вариантов).
+        formula=models.TextField(
             "формула",
-            max_length=300,
             blank=True,
-            help_text="Запись формулы в текстовом виде; показывается моноширинным шрифтом",
+            help_text=(
+                "Строка — одна формула: подпись и запись MathML (<math>…</math>); "
+                "строка без MathML показывается моноширинным шрифтом"
+            ),
+        ),
+        limitations=models.TextField(
+            "ограничения",
+            blank=True,
+            help_text="Два-три ограничения метода, по одному предложению в строке",
         ),
         body=models.TextField(
             "изложение",
             blank=True,
-            help_text="Обозначения, условия применимости, ограничения метода",
+            help_text="Обозначения и условия применимости, до 120 слов",
         ),
     )
 
@@ -127,6 +138,12 @@ class MethodologySection(  # type: ignore[django-manager-missing]
             (reference, "ru" if CYRILLIC.search(reference) else "en")
             for reference in self.references or []
         ]
+
+    @property
+    def limitation_list(self) -> list[str]:
+        """Ограничения метода по одному."""
+        text = self.safe_translation_getter("limitations", default="") or ""
+        return [line.strip() for line in text.splitlines() if line.strip()]
 
     @property
     def anchor(self) -> str:

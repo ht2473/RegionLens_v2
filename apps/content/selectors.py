@@ -3,15 +3,27 @@
 from __future__ import annotations
 
 from collections import OrderedDict
+from dataclasses import dataclass
+from functools import lru_cache
 from typing import Any
 
-from django.db.models import QuerySet
+from django.db.models import Max, QuerySet
+from django.http import HttpRequest
+from django.urls import reverse
 from django.utils.translation import get_language
 
 from apps.core.search import search_q
 
 from .constants import EN_ALPHABET, RU_ALPHABET, MethodologyBlock
 from .models import GlossaryTerm, MethodologySection
+
+
+def content_stamp() -> tuple[str, str]:
+    """Отпечаток содержимого — время последней правки терминов и разделов методики."""
+    glossary = GlossaryTerm.objects.aggregate(stamp=Max("updated_at"))["stamp"]
+    sections = MethodologySection.objects.aggregate(stamp=Max("updated_at"))["stamp"]
+    return str(glossary), str(sections)
+
 
 # ---------------------------------------------------------------------------------------
 # Методология
@@ -94,6 +106,51 @@ def terms_by_letter(query: str = "", category: str = "") -> list[dict[str, Any]]
         grouped.setdefault(term.letter, []).append(term)
 
     return [{"letter": letter, "terms": items} for letter, items in grouped.items()]
+
+
+@dataclass(frozen=True, slots=True)
+class TermCard:
+    """Термин для подсказки в интерфейсе: название, краткое определение и ссылки."""
+
+    slug: str
+    term: str
+    short: str
+    glossary_url: str
+    methodology_url: str
+
+
+def term_cards(request: HttpRequest | None = None) -> dict[str, TermCard]:
+    """
+    Опубликованные термины для подсказок на текущем языке.
+
+    Отпечаток содержимого спрашивается один раз на запрос, сами карточки собираются заново
+    только после правки глоссария или методики.
+    """
+    cards: dict[str, TermCard] | None = getattr(request, "_term_cards", None)
+    if cards is None:
+        cards = _term_cards(content_stamp(), get_language() or "ru")
+        if request is not None:
+            request._term_cards = cards  # type: ignore[attr-defined]
+    return cards
+
+
+@lru_cache(maxsize=4)
+def _term_cards(stamp: tuple[str, str], language: str) -> dict[str, TermCard]:  # noqa: ARG001
+    glossary = reverse("content:glossary")
+    methodology = reverse("content:methodology")
+    cards = {}
+    for term in published_terms():
+        section = term.methodology_section
+        cards[term.slug] = TermCard(
+            slug=term.slug,
+            term=term.safe_translation_getter("term", any_language=True) or term.slug,
+            short=term.safe_translation_getter("short_definition", any_language=True) or "",
+            glossary_url=f"{glossary}#{term.anchor}",
+            methodology_url=(
+                f"{methodology}#{section.anchor}" if section and section.is_published else ""
+            ),
+        )
+    return cards
 
 
 def alphabet_index(groups: list[dict[str, Any]]) -> list[dict[str, Any]]:

@@ -136,8 +136,18 @@
   margin-top: var(--space-8);
 }
 
+/* Заголовок раздела слева, ссылка на инструмент — справа на его линии. */
+.methodology__section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
 .methodology__section-title {
-  margin: 0 0 var(--space-3);
+  margin: 0;
   font-size: var(--text-xl);
   font-weight: var(--weight-bold);
   line-height: var(--leading-tight);
@@ -152,17 +162,83 @@
   color: var(--text-secondary);
 }
 
-.methodology__formula {
+/* Формулы MathML: подпись варианта слева, запись справа; длинная прокручивается сама. */
+.methodology__formulas {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+  align-items: baseline;
   margin: var(--space-4) 0;
   padding: var(--space-3) var(--space-4);
   background-color: var(--surface-sunken);
   border-left: 3px solid var(--accent);
   border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+
+.methodology__formula {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: baseline;
+}
+
+.methodology__formula > math,
+.methodology__formula > code {
+  grid-column: 2;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.methodology__formula > :only-child {
+  grid-column: 1 / -1;
+}
+
+/* Формула — у левого края своей колонки, а не посередине, как блочная запись по умолчанию. */
+.methodology__formula > math {
+  justify-self: start;
+  font-family: math;
+  font-size: 1.15em;
+}
+
+.methodology__formula > code {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
-  color: var(--text-primary);
-  overflow-x: auto;
   white-space: pre-wrap;
+}
+
+.methodology__formula-label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* Пример, ограничения и литература — мелким текстом с подписью. */
+.methodology__aside-title {
+  margin-bottom: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.methodology__example,
+.methodology__limits {
+  margin-top: var(--space-4);
+}
+
+.methodology__example ul,
+.methodology__limits ul {
+  margin: 0;
+  padding-left: var(--space-5);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+.methodology__example ul {
+  list-style: none;
+  padding-left: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Строка блока под его заголовком: где перечень изданий. */
@@ -180,9 +256,9 @@
   text-decoration: underline;
 }
 
-/* Изложение раздела свёрнуто на любой ширине: суть и формула видны без него. */
+/* Изложение и литература свёрнуты на любой ширине: суть, формула и пример видны без них. */
 .methodology__details {
-  margin-top: var(--space-4);
+  margin-top: var(--space-2);
 }
 
 .methodology__details > summary {
@@ -216,14 +292,12 @@
 }
 
 .methodology__tool {
-  margin: var(--space-4) 0 0;
-}
-
-.methodology__tool a {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
+  font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
+  white-space: nowrap;
 }
 
 .methodology__tool svg {
@@ -232,14 +306,8 @@
 }
 
 .methodology__references {
-  margin-top: var(--space-5);
-}
-
-.methodology__references-title {
-  margin-bottom: var(--space-2);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--text-muted);
+  max-width: var(--measure);
+  margin-top: var(--space-4);
 }
 
 .methodology__references ol {
@@ -1044,9 +1112,17 @@ a.glossary__letter:hover {
     margin-bottom: var(--space-1);
   }
 
-  .methodology__tool {
-    margin-top: var(--space-1);
+  /* Подпись варианта формулы — над записью. */
+  .methodology__formulas {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--space-3);
   }
+
+  .methodology__formula > math,
+  .methodology__formula > code {
+    grid-column: 1;
+  }
+
 }
 
 @media (max-width: 1023px) {

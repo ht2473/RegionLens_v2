@@ -899,6 +899,52 @@ a.leader-list__name:hover {
   display: block;
 }
 
+/* --- Термин: определение из глоссария по нажатию (partials/_term.html) ----------------------- */
+
+.term__name {
+  display: inline;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px dotted currentcolor;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: help;
+}
+
+.term__name:hover,
+.term__name:focus-visible {
+  color: var(--text-accent);
+}
+
+.menu-popover.term__panel {
+  width: min(22rem, calc(100vw - 2 * var(--space-4)));
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text-secondary);
+  text-align: left;
+  white-space: normal;
+}
+
+.menu-popover.term__panel:popover-open {
+  display: block;
+}
+
+.term__title {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.term__links {
+  display: block;
+  margin-top: var(--space-2);
+}
+
 .field > .field__hint {
   margin-top: 0;
 }

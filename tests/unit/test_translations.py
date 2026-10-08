@@ -177,7 +177,13 @@ class TestContent:
             item["code"]
             for item in METHODOLOGY
             if document["MethodologySection"][item["code"]].get("source")
-            != source_hash(item["title"], item["summary"], item.get("formula", ""), item["body"])
+            != source_hash(
+                item["title"],
+                item["summary"],
+                item.get("formula", ""),
+                item.get("limitations", ""),
+                item["body"],
+            )
         ]
         stale += [
             item["slug"]
@@ -195,7 +201,7 @@ class TestContent:
         pairs = []
         for item in METHODOLOGY:
             english = document["MethodologySection"][item["code"]]
-            for field in ("title", "summary", "formula", "body"):
+            for field in ("title", "summary", "formula", "limitations", "body"):
                 if item.get(field):
                     pairs.append((f"{item['code']}.{field}", item[field], english[field]))
         for item in GLOSSARY:

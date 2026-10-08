@@ -1,0 +1,4 @@
+{% load i18n %}{% comment %}
+  Термин в интерфейсе (тег term из content/templatetags/glossary.py): подпись — кнопка,
+  по нажатию — краткое определение из глоссария во всплывающей панели браузера.
+{% endcomment %}<span class="term"><button type="button" class="term__name" popovertarget="{{ panel_id }}">{{ label }}</button><span class="menu-popover term__panel" id="{{ panel_id }}" popover><span class="term__title">{{ card.term }}</span> {{ card.short }} <span class="term__links"><a href="{{ card.glossary_url }}">{% translate "В глоссарии" %}</a>{% if card.methodology_url %} · <a href="{{ card.methodology_url }}">{% translate "Как это считается" %}</a>{% endif %}</span></span></span>

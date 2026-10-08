@@ -1,10 +1,12 @@
 {% extends "base.html" %}
-{% load i18n static %}
+{% load i18n static glossary %}
 
 {% comment %}
-  «Методика»: оглавление по блокам и разделы. Суть и формула раздела видны сразу, изложение
-  свёрнуто (details data-fold: static/js/ui/fold.js раскрывает его при переходе по якорю);
-  на телефоне свёрнуто и оглавление (data-fold-narrow).
+  «Методика»: оглавление по блокам и разделы. Раздел: что показывает метод, формула MathML,
+  пример на нынешних данных (content/examples.py), ограничения, свёрнутые изложение и литература
+  (details data-fold: static/js/ui/fold.js раскрывает их при переходе по якорю). Ссылка
+  на инструмент — на линии заголовка.
+  На телефоне свёрнуто и оглавление (data-fold-narrow).
 {% endcomment %}
 
 {% block meta_description %}{% translate "Формулы и правила, по которым RegionLens выполняет расчёты: подготовка данных, нормализация, взвешивание, статистические методы, неравенство и пространственный анализ." %}{% endblock %}
@@ -63,15 +65,32 @@
 
             {% for section in block.sections %}
               <article class="methodology__section" id="{{ section.anchor }}">
-                <h3 class="methodology__section-title">{{ section.title }}</h3>
+                <div class="methodology__section-head">
+                  <h3 class="methodology__section-title">{{ section.title }}</h3>
+                  {% if section.tool_url %}
+                    <a class="methodology__tool" href="{% if section.example.url %}{{ section.example.url }}{% else %}{{ section.tool_url }}{% endif %}">
+                      {% translate "Открыть инструмент" %}
+                      <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+                    </a>
+                  {% endif %}
+                </div>
 
                 {% if section.summary %}
                   <p class="methodology__summary">{{ section.summary }}</p>
                 {% endif %}
 
-                {% if section.formula %}
-                  <pre class="methodology__formula" aria-label="{% translate 'Формула' %}">{{ section.formula }}</pre>
-                {% endif %}
+                {% with lines=section.formula|formula_lines %}
+                  {% if lines %}
+                    <div class="methodology__formulas" role="group" aria-label="{% translate 'Формула' %}">
+                      {% for line in lines %}
+                        <div class="methodology__formula">
+                          {% if line.label %}<span class="methodology__formula-label">{{ line.label }}</span>{% endif %}
+                          {% if line.math %}{{ line.math }}{% else %}<code>{{ line.text }}</code>{% endif %}
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endwith %}
 
                 {% if section.shown_in_original %}
                   <p class="methodology__note">
@@ -79,32 +98,36 @@
                   </p>
                 {% endif %}
 
-                {% if section.body %}
-                  <details class="methodology__details" data-fold>
-                    <summary>
-                      {% translate "Подробнее" %}
-                      <svg class="fold__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
-                    </summary>
-                    <div class="prose">{{ section.body|linebreaks }}</div>
-                  </details>
-                {% endif %}
-
-                {% if section.references %}
-                  <div class="methodology__references">
-                    <div class="methodology__references-title">{% translate "Литература" %}</div>
-                    <ol>
-                      {% for reference, lang in section.references_with_lang %}<li lang="{{ lang }}">{{ reference }}</li>{% endfor %}
-                    </ol>
+                {% if section.example %}
+                  <div class="methodology__example">
+                    <div class="methodology__aside-title">{% translate "Пример" %} · {{ section.example.subject }}</div>
+                    <ul>{% for line in section.example.lines %}<li>{{ line }}</li>{% endfor %}</ul>
                   </div>
                 {% endif %}
 
-                {% if section.tool_url %}
-                  <p class="methodology__tool">
-                    <a href="{{ section.tool_url }}">
-                      {% translate "Открыть инструмент" %}
-                      <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
-                    </a>
-                  </p>
+                {% if section.limitation_list %}
+                  <div class="methodology__limits">
+                    <div class="methodology__aside-title">{% translate "Ограничения" %}</div>
+                    <ul>{% for line in section.limitation_list %}<li>{{ line }}</li>{% endfor %}</ul>
+                  </div>
+                {% endif %}
+
+                {% if section.body %}
+                  <details class="methodology__details" data-fold>
+                    <summary>
+                      {% if section.references %}{% translate "Подробнее и литература" %}{% else %}{% translate "Подробнее" %}{% endif %}
+                      <svg class="fold__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
+                    </summary>
+                    <div class="prose">{{ section.body|linebreaks }}</div>
+                    {% if section.references %}
+                      <div class="methodology__references">
+                        <div class="methodology__aside-title">{% translate "Литература" %}</div>
+                        <ol>
+                          {% for reference, lang in section.references_with_lang %}<li lang="{{ lang }}">{{ reference }}</li>{% endfor %}
+                        </ol>
+                      </div>
+                    {% endif %}
+                  </details>
                 {% endif %}
               </article>
             {% endfor %}

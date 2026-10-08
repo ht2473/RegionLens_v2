@@ -60,12 +60,14 @@ class MethodologySectionForm(TranslatableModelForm):
             "is_published",
             "title",
             "summary",
+            "limitations",
             "body",
         ]
         widgets = {
             "summary": forms.Textarea(attrs={"rows": 2}),
-            "body": forms.Textarea(attrs={"rows": 12}),
-            "formula": forms.TextInput(attrs={"class": "input--mono"}),
+            "limitations": forms.Textarea(attrs={"rows": 3}),
+            "body": forms.Textarea(attrs={"rows": 8}),
+            "formula": forms.Textarea(attrs={"rows": 4, "class": "input--mono"}),
         }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

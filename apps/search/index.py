@@ -17,7 +17,6 @@ from functools import cache, lru_cache
 from typing import Any
 
 from django.conf import settings
-from django.db.models import Max
 
 from apps.search.text import same_stem, stems
 
@@ -214,17 +213,10 @@ def _catalog_index(version: str) -> Index:  # noqa: ARG001 - отпечаток 
     return index
 
 
-def content_stamp() -> tuple[str, str]:
-    """Отпечаток глоссария и методики: указатели строятся заново после правки в панели."""
-    from apps.content.models import GlossaryTerm, MethodologySection
-
-    glossary = GlossaryTerm.objects.aggregate(stamp=Max("updated_at"))["stamp"]
-    sections = MethodologySection.objects.aggregate(stamp=Max("updated_at"))["stamp"]
-    return str(glossary), str(sections)
-
-
 def glossary_index() -> Index:
     """Указатель терминов глоссария: термин, синонимы, краткое определение."""
+    from apps.content.selectors import content_stamp
+
     return _glossary_index(content_stamp()[0])
 
 
@@ -251,6 +243,8 @@ def _glossary_index(stamp: str) -> Index:  # noqa: ARG001 - отпечаток �
 
 def methodology_index() -> Index:
     """Указатель разделов методики: заголовок, краткое содержание."""
+    from apps.content.selectors import content_stamp
+
     return _methodology_index(content_stamp()[1])
 
 

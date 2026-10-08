@@ -23,7 +23,7 @@ DEFAULT_PATH = "content_en.json"
 
 # Модель, поле её устойчивого идентификатора и переводимые поля.
 TARGETS: tuple[tuple[type[models.Model], str, tuple[str, ...]], ...] = (
-    (MethodologySection, "code", ("title", "summary", "formula", "body")),
+    (MethodologySection, "code", ("title", "summary", "formula", "limitations", "body")),
     (GlossaryTerm, "slug", ("term", "short_definition", "definition", "synonyms")),
 )
 

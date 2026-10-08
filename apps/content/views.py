@@ -17,6 +17,7 @@ from apps.core.views import BreadcrumbMixin
 
 from . import selectors
 from .constants import GlossaryCategory
+from .examples import examples_for
 
 
 class MethodologyView(BreadcrumbMixin, TemplateView):
@@ -29,10 +30,15 @@ class MethodologyView(BreadcrumbMixin, TemplateView):
         return (Crumb(title=_("Методика")),)
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Собрать разделы методологии, сгруппированные по блокам."""
+        """Собрать разделы методологии по блокам с примерами на нынешних данных."""
         context = super().get_context_data(**kwargs)
+        blocks = selectors.methodology_blocks()
+        examples = examples_for(self.request)
+        for block in blocks:
+            for section in block["sections"]:
+                section.example = examples.get(section.code)
         context["page_title"] = _("Методика расчётов")
-        context["blocks"] = selectors.methodology_blocks()
+        context["blocks"] = blocks
         return context
 
 
