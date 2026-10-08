@@ -7,9 +7,7 @@
                  data-image-title="{{ card.title }}"
                  data-image-subtitle="{% if year %}{{ year|stringformat:'d' }}{% endif %}{% if unit %} · {{ unit }}{% endif %}"
                  data-image-source="{{ card.source }}">
-    {% if mode == "small" %}
-      {% include "maps/partials/_multiples.html" %}
-    {% elif geo_map %}
+    {% if geo_map %}
       {% include "maps/partials/_geo_map.html" %}
     {% else %}
       {% with tile_pattern=card.prefix|add:"-tile" %}

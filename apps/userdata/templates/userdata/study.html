@@ -150,19 +150,22 @@
             </section>
           {% else %}
             <article class="study-card{% if block.wide %} study-card--wide{% endif %}{% if block.id == added %} is-new{% endif %}"
-                     id="block-{{ block.id }}" data-block="{{ block.id }}">
+                     id="block-{{ block.id }}" data-block="{{ block.id }}"{% if owner and block.primary_key %} data-series="{{ block.primary_key }}"{% endif %}>
               <div class="study-card__slot" hx-get="{{ block.card_url }}" hx-trigger="load" hx-swap="innerHTML">
                 <p class="kicker study-card__kicker">{{ block.target_title }}</p>
                 <p class="study-card__waiting">{% translate "Строится…" %}</p>
               </div>
-              {% if owner %}{% include "userdata/_study_card_menu.html" %}{% endif %}
+              {% if owner %}
+                {% include "userdata/_study_card_menu.html" %}
+                {% if block.primary_key %}<div class="study-card__drop" data-card-drop aria-hidden="true">{% translate "Сравнить с показателем карточки" %}</div>{% endif %}
+              {% endif %}
             </article>
           {% endif %}
         {% endfor %}
       </div>
 
       {% if owner %}
-        {# Ряд, перетащенный из панели: карта ряда в место броска (study.js). #}
+        {# Ряд, перетащенный из панели: карта ряда в место броска, на карточку — сравнение с её рядом (study.js). #}
         <form id="study-drop" method="post" action="{% url 'userdata:study-edit' study.public_id %}" hidden
               hx-post="{% url 'userdata:study-edit' study.public_id %}" hx-target="#study-cards"
               hx-select=".study-cards > .is-new" hx-swap="beforeend"
@@ -171,6 +174,7 @@
           <input type="hidden" name="action" value="add">
           <input type="hidden" name="do" value="view:map">
           <input type="hidden" name="series" value="">
+          <input type="hidden" name="other" value="">
           <input type="hidden" name="at" value="">
         </form>
         <details class="study-add-note no-print">

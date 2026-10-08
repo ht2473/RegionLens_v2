@@ -42,9 +42,25 @@ NOTE_LENGTH = 500
 CANVAS_TARGETS = ("map", "compare", "rankings", "distribution", "table")
 # Виды во всю ширину поля по умолчанию: карте и линиям тесно в половине.
 WIDE_TARGETS = ("map", "compare")
-# Вопросы карточек-ответов о ряде; у связи — о двух рядах.
-QUESTIONS = ("leaders", "change", "spread", "neighbours", "related")
-PAIR_QUESTIONS = ("relation",)
+# Вопросы карточек-ответов о ряде; у связи и сравнения — о двух рядах.
+QUESTIONS = (
+    "leaders",
+    "mine",
+    "change",
+    "growth",
+    "districts",
+    "heat",
+    "multiples",
+    "spread",
+    "neighbours",
+    "related",
+)
+PAIR_QUESTIONS = ("relation", "comparison")
+# Ответы во всю ширину поля по умолчанию: тепловой таблице, малым графикам и сравнению
+# тесно в половине.
+WIDE_ANSWERS = ("heat", "multiples", "comparison")
+# Шкала малых графиков: общая для всех клеток или своя у каждой.
+MULTIPLES_SCALES = ("common", "own")
 
 
 class StudyError(Exception):
@@ -175,11 +191,11 @@ def add_answer(study: Study, question: str, series_key: str, other: str = "") ->
         "series": series_key,
         "title": "",
         "note": "",
-        "wide": False,
+        "wide": question in WIDE_ANSWERS,
     }
     if question in PAIR_QUESTIONS:
         if not other or other == series_key:
-            raise StudyError(_("Для связи нужен второй показатель."))
+            raise StudyError(_("Нужен второй показатель."))
         block["other"] = other
     elif question not in QUESTIONS:
         raise StudyError(_("Такой карточки нет."))
@@ -204,7 +220,10 @@ def _append(study: Study, block: dict[str, Any]) -> dict[str, Any]:
 
 
 def change(study: Study, block_id: str, **fields: str) -> bool:
-    """Изменить текст заметки, название или пояснение карточки; вернуть, нашёлся ли блок."""
+    """
+    Изменить текст заметки, название или пояснение карточки, шкалу малых графиков; вернуть,
+    нашёлся ли блок.
+    """
     limits = {"text": TEXT_LENGTH, "title": TITLE_LENGTH, "note": NOTE_LENGTH}
     blocks = blocks_of(study)
     for block in blocks:
@@ -213,6 +232,12 @@ def change(study: Study, block_id: str, **fields: str) -> bool:
         for name, value in fields.items():
             if name in limits and (name == "text") == (block["kind"] == TEXT):
                 block[name] = str(value).strip()[: limits[name]]
+            elif (
+                name == "scale"
+                and block.get("question") == "multiples"
+                and value in MULTIPLES_SCALES
+            ):
+                block["scale"] = value
         _save(study, blocks)
         return True
     return False

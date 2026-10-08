@@ -1,8 +1,9 @@
 {% load i18n %}
 {% comment %}
-  Меню карточки или заметки: развернуть, ширина, выше и ниже, убрать; название и пояснение
-  карточки (текст заметки — на месте). Перетаскивание — за ручку; то же без мыши — «Выше»
-  и «Ниже». Со сценарием ширина и порядок меняются на месте (study.js), без него — формой.
+  Меню карточки или заметки: развернуть, ширина, сравнить с другим показателем, выше и ниже,
+  убрать; название и пояснение карточки (текст заметки — на месте). Перетаскивание — за ручку;
+  то же без мыши — «Выше» и «Ниже», сравнение — выбором второго показателя в панели. Со
+  сценарием ширина и порядок меняются на месте (study.js), без него — формой.
 {% endcomment %}
 <div class="study-card-menu no-print">
   <button type="button" class="icon-button study-card-menu__grip" data-grip hidden
@@ -28,6 +29,13 @@
           <svg aria-hidden="true"><use href="#icon-width"></use></svg>
           <span data-wide-label="{% translate 'В половину ширины' %}" data-narrow-label="{% translate 'Во всю ширину' %}">{% if block.wide %}{% translate "В половину ширины" %}{% else %}{% translate "Во всю ширину" %}{% endif %}</span>
         </button>
+      {% endif %}
+      {% if block.primary_key %}
+        <a class="menu-item" href="?series={{ block.primary_key|urlencode }}&amp;pick=1#study-sources"
+           hx-get="?series={{ block.primary_key|urlencode }}&amp;pick=1" hx-target="#study-sources"
+           hx-select="#study-sources" hx-swap="outerHTML" hx-push-url="true" data-pick-partner>
+          <svg aria-hidden="true"><use href="#icon-compare"></use></svg>{% translate "Сравнить с другим показателем" %}
+        </a>
       {% endif %}
       <button class="menu-item" type="submit" name="action" value="up">
         <svg aria-hidden="true"><use href="#icon-arrow-up"></use></svg>{% translate "Выше" %}

@@ -14,7 +14,7 @@ from apps.catalog.constants import ValueQuality
 
 from ..duckdb_client import fetch_dicts, fetch_one, placeholders
 from ..routing import by_key, by_keys
-from .common import LEVEL_REGION, MIN_YEAR_COVERAGE, by_generation
+from .common import LEVEL_DISTRICT, LEVEL_REGION, MIN_YEAR_COVERAGE, by_generation
 
 # Субъекты без составных территорий, иначе входящие в них учитывались бы дважды.
 REGION_CONDITION = "territory_level = ? AND NOT is_aggregate"
@@ -158,6 +158,54 @@ def paired_years(series_key: str, first_year: int, last_year: int) -> list[dict[
         """,  # noqa: S608 - условие собрано из констант модуля, значения переданы параметрами
         [first_year, last_year, series_key, LEVEL_REGION, first_year, last_year],
     )
+
+
+@by_key()
+@by_generation("district_totals")
+def district_totals(series_key: str, year: int) -> dict[str, dict[str, Any]]:
+    """
+    Сводка ряда за год по федеральным округам: значение округа, если оно есть в данных,
+    и субъекты округа со значениями — число, сумма, медиана, наименьшее и наибольшее.
+    """
+    rows = fetch_dicts(
+        f"""
+        SELECT district_code, count(*) AS regions, sum(value) AS total,
+               median(value) AS median, min(value) AS low, max(value) AS high
+        FROM fact_observation
+        WHERE series_key = ? AND year = ? AND {REGION_CONDITION}
+          AND value IS NOT NULL AND district_code IS NOT NULL
+        GROUP BY district_code
+        ORDER BY district_code
+        """,  # noqa: S608 - условие собрано из констант модуля, значения переданы параметрами
+        [series_key, year, LEVEL_REGION],
+    )
+    found: dict[str, dict[str, Any]] = {
+        str(row["district_code"]): {
+            "regions": int(row["regions"]),
+            "total": float(row["total"]),
+            "median": float(row["median"]),
+            "low": float(row["low"]),
+            "high": float(row["high"]),
+            "value": None,
+        }
+        for row in rows
+    }
+    own = fetch_dicts(
+        """
+        SELECT territory_code, value
+        FROM fact_observation
+        WHERE series_key = ? AND year = ? AND territory_level = ? AND value IS NOT NULL
+        ORDER BY territory_code
+        """,
+        [series_key, year, LEVEL_DISTRICT],
+    )
+    for row in own:
+        entry = found.setdefault(
+            str(row["territory_code"]),
+            {"regions": 0, "total": None, "median": None, "low": None, "high": None},
+        )
+        entry["value"] = float(row["value"])
+    return found
 
 
 @by_generation("region_directory")

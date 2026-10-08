@@ -151,12 +151,23 @@ def _study(client: Client, keys: list[str], site_key: str) -> Any:
             },
         )
     edit = reverse("userdata:study-edit", args=[study.public_id])
-    for question in ("leaders", "change", "spread", "neighbours", "related"):
+    for question in (
+        "leaders",
+        "mine",
+        "change",
+        "growth",
+        "districts",
+        "heat",
+        "spread",
+        "neighbours",
+        "related",
+    ):
         client.post(edit, {"action": "add", "do": f"answer:{question}", "series": keys[0]})
-    client.post(
-        edit,
-        {"action": "add", "do": "answer:relation", "series": keys[0], "other": site_key},
-    )
+    for question in ("relation", "comparison"):
+        client.post(
+            edit,
+            {"action": "add", "do": f"answer:{question}", "series": keys[0], "other": site_key},
+        )
     client.post(edit, {"action": "add-text", "text": NOTE})
     study.refresh_from_db()
     card = next(block for block in study.blocks if block["kind"] == "view")
@@ -243,6 +254,12 @@ def test_hostile_names_stay_text(
     urls = [
         f"{base}{reverse('userdata:index')}",
         f"{base}{reverse('userdata:dataset', args=[dataset.public_id])}",
+        *(
+            f"{base}{reverse('userdata:dataset', args=[dataset.public_id])}?tab={tab}"
+            for tab in ("checks", "file", "access")
+        ),
+        f"{base}{reverse('userdata:table', args=[dataset.public_id])}",
+        f"{base}{reverse('userdata:series', args=[dataset.public_id])}",
         f"{base}{reverse('userdata:related', args=[dataset.public_id])}?{one}",
         f"{base}{reverse('userdata:formula-new', args=[dataset.public_id])}",
         *(

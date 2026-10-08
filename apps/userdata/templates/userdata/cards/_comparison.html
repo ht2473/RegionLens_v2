@@ -1,0 +1,40 @@
+{% load i18n formatting %}
+{# Сравнение двух показателей: линии по годам для одной территории, связь по регионам и где места расходятся. #}
+{% if card.chart %}
+  <p class="study-card__muted">
+    {% if card.is_country %}{% translate "Россия" %}{% else %}{{ card.focus_name }}{% endif %}{% if card.base_year %} · {% blocktranslate trimmed with year=card.base_year %}{{ year }} год = 100{% endblocktranslate %}{% endif %}
+  </p>
+  <ul class="line-legend" aria-label="{% translate 'Линии' %}">
+    {% for title in card.titles %}<li class="line-legend__item" data-line="{{ forloop.counter }}">{{ title }}</li>{% endfor %}
+  </ul>
+  {% with option_id=card.prefix|add:"-lines" %}
+    <rl-chart class="chart study-card__chart" data-options="{{ option_id }}"
+              data-image-title="{{ card.title }}" data-image-source="{{ card.source }}"></rl-chart>
+    {{ card.chart|json_script:option_id }}
+  {% endwith %}
+{% endif %}
+{% if card.coefficient %}
+  <div class="answer__columns study-card__answer">
+    <div class="answer__figure">
+      <p class="answer__value">
+        <span class="numeric">{{ card.coefficient }}</span>
+        <span class="answer__unit">{{ card.strength }}, {% if card.direct %}{% translate "прямая" %}{% else %}{% translate "обратная" %}{% endif %}</span>
+      </p>
+      <p class="answer__meta">
+        <span>{% blocktranslate trimmed with year=card.year count=card.pairs %}Связь по регионам за {{ year }} год, регионов: {{ count }}{% endblocktranslate %}</span>
+        <span>{% if card.significant %}{% translate "связь значима" %}{% else %}{% translate "связь незначима" %}{% endif %}</span>
+      </p>
+    </div>
+    {% if card.apart %}
+      <div>
+        <h3 class="answer__label">{% translate "Места расходятся сильнее всего" %}</h3>
+        <p class="study-card__muted">{% translate "место по первому показателю / по второму" %}</p>
+        <ul class="answer-list answer-list--plain">
+          {% for row in card.apart %}
+            <li data-territory="{{ row.code }}"><span>{{ row.name }}</span> <span class="numeric">{{ row.first }} / {{ row.second }}</span></li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+{% endif %}

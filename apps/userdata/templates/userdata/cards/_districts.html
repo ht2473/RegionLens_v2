@@ -1,0 +1,28 @@
+{% load i18n formatting %}
+{# Итоги по округам: значение округа из данных, сумма или медиана его субъектов; мой округ отмечен. #}
+<ul class="district-bars study-card__answer">
+  {% for row in card.rows %}
+    <li class="district-bars__row{% if row.mine %} is-mine{% endif %}">
+      <span class="district-bars__name">{{ row.name }}</span>
+      <span class="district-bars__track" aria-hidden="true">
+        {% if card.basis == "median" %}
+          <span class="district-bars__range" style="--from: {{ row.from }}; --to: {{ row.to }}"></span>
+          <span class="district-bars__dot" style="--at: {{ row.at }}"></span>
+        {% elif row.bar %}
+          <span class="district-bars__bar" style="--share: {{ row.bar }}"></span>
+        {% endif %}
+      </span>
+      <span class="district-bars__value numeric">{{ row.value }}</span>
+      {% if row.share or card.basis == "sum" and row.regions < row.members %}
+        <span class="district-bars__note">
+          {% if row.share %}{{ row.share|percent:1 }}{% endif %}{% if card.basis == "sum" and row.regions < row.members %}{% if row.share %} · {% endif %}{% blocktranslate trimmed with count=row.regions total=row.members %}по {{ count }} из {{ total }} субъектов{% endblocktranslate %}{% endif %}
+        </span>
+      {% endif %}
+    </li>
+  {% endfor %}
+</ul>
+<p class="answer__meta">
+  <span>
+    {% if card.basis == "data" %}{% translate "Значения округов — из данных" %}{% elif card.basis == "sum" %}{% translate "Сумма субъектов округа и её доля в сумме всех округов" %}{% else %}{% translate "Медиана субъектов округа; черта — от наименьшего до наибольшего" %}{% endif %}
+  </span>
+</p>

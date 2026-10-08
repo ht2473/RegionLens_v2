@@ -1,0 +1,31 @@
+{% load i18n formatting %}
+{# Мой регион: значение, место среди регионов и в округе, к России или доля в сумме, соседи по рейтингу, ход. #}
+<div class="answer__figure study-card__answer">
+  <p class="answer__value">
+    <span class="numeric">{{ card.value }}</span>
+    <span class="answer__unit">{{ card.name }}</span>
+  </p>
+  {% include "search/answers/_spark.html" with spark=card.spark %}
+</div>
+<p class="answer__meta">
+  <span>{% blocktranslate trimmed with place=card.place count=card.count %}{{ place }}-е место из {{ count }}{% endblocktranslate %}</span>
+  {% if card.district_name %}
+    <span>{% blocktranslate trimmed with place=card.district_place count=card.district_count %}в своём округе — {{ place }}-е из {{ count }}{% endblocktranslate %}</span>
+  {% endif %}
+  {% if card.ratio %}
+    <span>{% translate "к России" %} — <b class="numeric">×{{ card.ratio|ru_number:2 }}</b></span>
+  {% elif card.share %}
+    <span>{% translate "доля в сумме регионов" %} — <b class="numeric">{{ card.share|percent:1 }}</b></span>
+  {% endif %}
+  {% if card.change %}
+    <span>{% blocktranslate trimmed with since=card.since change=card.change %}С {{ since }} года — {{ change }}{% endblocktranslate %}</span>
+  {% endif %}
+</p>
+<div>
+  <h3 class="answer__label">{% translate "Рядом в рейтинге" %}</h3>
+  <ol class="answer-list">
+    {% for row in card.around %}
+      <li value="{{ row.place }}" data-territory="{{ row.code }}"><span>{{ row.name }}</span> <span class="numeric">{{ row.value }}</span></li>
+    {% endfor %}
+  </ol>
+</div>

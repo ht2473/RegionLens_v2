@@ -4,7 +4,8 @@
 Панель — источники исследования: свои таблицы (ряды по показателям) и ряды сайта, стоящие
 на карточках или выбранные в панели. Действие ставит карточку на поле: вид, ответ числами
 или пересчёт ряда своей таблицы — таблица пересобирается с новым рядом, на поле встаёт его
-карта. Недоступное — серым и с причиной. Второй показатель выбирается для связи двух рядов.
+карта. Недоступное — серым и с причиной. Второй показатель — для связи и сравнения двух
+рядов: ряд с карточки поля, похожий официальный показатель или выбранный в панели.
 """
 
 from __future__ import annotations
@@ -25,8 +26,12 @@ from .models import DatasetSeries, DatasetVersion, Study
 from .series import FEW_REGIONS, UserSeries
 
 BUILD, COMPUTE, LEARN, PAIR = "build", "compute", "learn", "pair"
-# Значение кнопки формы: что поставить на поле.
+# Значение кнопки формы: что поставить на поле; у сравнения — с каким рядом.
 VIEW_PREFIX, ANSWER_PREFIX, COMPUTE_PREFIX = "view:", "answer:", "compute:"
+COMPARE_PREFIX = "compare:"
+# Сколько рядов поля и похожих официальных показателей предлагать для сравнения.
+FIELD_PARTNERS = 3
+OFFICIAL_PARTNERS = 2
 # Ряды, от которых считаются пересчёты: из таблицы и свёртки.
 PRIMARY = ("", DatasetSeries.Derived.SLICE_SUM.value, DatasetSeries.Derived.MONTHS.value)
 # Пересчёты в меню по порядку: код, подпись, только для сумм, только для денег.
@@ -68,6 +73,15 @@ class Entry:
         if self.first_year is None or self.last_year is None:
             return 0
         return self.last_year - self.first_year + 1
+
+
+@dataclass(frozen=True, slots=True)
+class Partner:
+    """Второй показатель, предложенный для сравнения: ключ и короткое название."""
+
+    key: str
+    title: str
+    official: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -122,7 +136,7 @@ def panel(
     второй ряд для связи, ``picking`` — второй ряд выбирается сейчас.
     """
     used = {key for block in studies.blocks_of(study) for key in studies.series_keys(block)}
-    tables = _tables(request, used | {selected, other})
+    tables = _tables(request, used | {selected, other}, study)
     site_keys = {key for key in used if not routing.is_user_key(key)}
     site_keys |= {key for key in (selected, other) if key and not routing.is_user_key(key)}
     site = [entry for entry in (_site_entry(key) for key in sorted(site_keys)) if entry]
@@ -134,19 +148,88 @@ def panel(
     } | {entry.key: entry for entry in site}
     chosen = everything.get(selected)
     partner = everything.get(other) if chosen and other != selected else None
+    groups: list[Group] = []
+    if chosen:
+        from apps.accounts.region import my_region
+
+        partners = _partners(study, chosen, everything)
+        groups = actions(
+            chosen, partner, partners=partners, region_known=my_region(request) is not None
+        )
     return {
         "tables": tables,
         "site": site,
         "chosen": chosen,
         "partner": partner,
         "picking": bool(chosen) and picking and partner is None,
-        "groups": actions(chosen, partner) if chosen else [],
+        "groups": groups,
         "used": used,
     }
 
 
-def _tables(request: HttpRequest, wanted: set[str]) -> list[Source]:
-    """Свои собранные таблицы: показатели и их ряды со значениями."""
+def _partners(study: Study, chosen: Entry, everything: dict[str, Entry]) -> list[Partner]:
+    """
+    С чем сравнить выбранный ряд: ряды карточек поля (первые по порядку) и — у своего
+    ряда — официальные показатели основного набора с похожим названием.
+    """
+    found: dict[str, Partner] = {}
+    for block in studies.blocks_of(study):
+        keys = studies.series_keys(block)
+        key = keys[0] if keys else ""
+        entry = everything.get(key)
+        if entry is None or key in found or _same_base(key, chosen.key):
+            continue
+        found[key] = Partner(key, entry.title, official=not entry.is_user)
+        if len(found) >= FIELD_PARTNERS:
+            break
+    if chosen.is_user:
+        for item in similar_official(chosen.title)[:OFFICIAL_PARTNERS]:
+            if item.key not in found:
+                found[item.key] = Partner(item.key, item.short_title, official=True)
+    return list(found.values())
+
+
+def _same_base(first: str, second: str) -> bool:
+    """
+    Один ряд таблицы или его пересчёт: сравнивать их незачем. Код пересчёта — код ряда
+    с суффиксом через дефис.
+    """
+    if first == second:
+        return True
+    if not (routing.is_user_key(first) and routing.is_user_key(second)):
+        return False
+    one, other = (key.removeprefix(routing.USER_PREFIX).split(":", 1) for key in (first, second))
+    return one[0] == other[0] and one[1].split("-")[0] == other[1].split("-")[0]
+
+
+def similar_official(title: str) -> list[Any]:
+    """
+    Показатели основного набора с похожим названием — тем же разбором, что у поиска
+    вопросом: хотя бы половина значимых слов названия и оценка не случайная.
+    """
+    from apps.search.index import series_index
+    from apps.search.parse import MIN_COVERAGE, MIN_SCORE
+    from apps.search.text import stems
+    from apps.warehouse.queries import featured_set
+
+    words = stems(title)
+    if not words:
+        return []
+    by_key = featured_set().by_key()
+    return [
+        by_key[hit.key]
+        for hit in series_index().search(words, limit=OFFICIAL_PARTNERS + 1)
+        if hit.key in by_key
+        and hit.score >= MIN_SCORE
+        and len(hit.matched) / len(set(words)) >= MIN_COVERAGE
+    ]
+
+
+def _tables(request: HttpRequest, wanted: set[str], study: Study) -> list[Source]:
+    """
+    Свои собранные таблицы: показатели и их ряды со значениями; формула, открытая отсюда,
+    вернётся в исследование.
+    """
     found = []
     datasets = access.owned(request).select_related("current_version")
     for dataset in datasets:
@@ -190,7 +273,8 @@ def _tables(request: HttpRequest, wanted: set[str]) -> list[Source]:
                 is_money=record.indicator in money,
                 derived=record.derived if record.derived not in PRIMARY else "",
                 recounts=recounts.get(record.code, {}),
-                formula_url=reverse("userdata:formula-new", args=[dataset.public_id]),
+                formula_url=f"{reverse('userdata:formula-new', args=[dataset.public_id])}?"
+                f"{urlencode({'study': study.public_id})}",
                 related_url=f"{reverse('userdata:related', args=[dataset.public_id])}?"
                 f"{urlencode({'series': item.key})}",
             )
@@ -232,8 +316,17 @@ def _site_entry(key: str) -> Entry | None:
     )
 
 
-def actions(entry: Entry, partner: Entry | None = None) -> list[Group]:
-    """Что можно сделать с рядом: построить, посчитать, узнать; недоступное — с причиной."""
+def actions(
+    entry: Entry,
+    partner: Entry | None = None,
+    *,
+    partners: list[Partner] | None = None,
+    region_known: bool = True,
+) -> list[Group]:
+    """
+    Что можно сделать с рядом: построить, посчитать, узнать, сравнить с другим показателем;
+    недоступное — с причиной. ``partners`` — что предложить для сравнения без выбора.
+    """
     one_year = _("у показателя один год") if entry.years < 2 else ""  # noqa: PLR2004
     few = (
         _("нужны значения хотя бы по %(count)s регионам") % {"count": FEW_REGIONS}
@@ -246,10 +339,20 @@ def actions(entry: Entry, partner: Entry | None = None) -> list[Group]:
         Action(_("Рейтинг"), "ranking", value=f"{VIEW_PREFIX}rankings"),
         Action(_("Распределение"), "distribution", value=f"{VIEW_PREFIX}distribution"),
         Action(_("Таблица"), "table", value=f"{VIEW_PREFIX}table"),
+        Action(_("Тепловая таблица"), "heat", value=f"{ANSWER_PREFIX}heat", reason=one_year),
+        Action(_("Малые графики"), "multiples", value=f"{ANSWER_PREFIX}multiples", reason=one_year),
     ]
     learn = [
         Action(_("Лидеры и отстающие"), "ranking", value=f"{ANSWER_PREFIX}leaders"),
+        Action(
+            _("Мой регион"),
+            "map-pin",
+            value=f"{ANSWER_PREFIX}mine",
+            reason="" if region_known else _("мой регион не выбран — выберите его в шапке"),
+        ),
         Action(_("Как изменился"), "dynamics", value=f"{ANSWER_PREFIX}change", reason=one_year),
+        Action(_("Кто вырос сильнее"), "growth", value=f"{ANSWER_PREFIX}growth", reason=one_year),
+        Action(_("Итоги по округам"), "districts", value=f"{ANSWER_PREFIX}districts"),
         Action(
             _("Насколько различаются регионы"),
             "inequality",
@@ -270,21 +373,34 @@ def actions(entry: Entry, partner: Entry | None = None) -> list[Group]:
                 PAIR,
                 _("Вместе с «%(title)s»") % {"title": partner.title},
                 [
+                    Action(_("Сравнение"), "compare", value=f"{ANSWER_PREFIX}comparison"),
                     Action(
                         _("Связь и облако точек"),
                         "correlation",
                         value=f"{ANSWER_PREFIX}relation",
                         reason=few,
-                    )
+                    ),
                 ],
             )
         )
     else:
+        offered = [
+            Action(
+                _("Сравнить с «%(title)s»") % {"title": item.title},
+                "compare",
+                value=f"{COMPARE_PREFIX}{item.key}",
+                hint=_("официальный показатель") if item.official and entry.is_user else "",
+            )
+            for item in partners or []
+        ]
         groups.append(
             Group(
                 PAIR,
                 _("С другим показателем"),
-                [Action(_("Выбрать второй показатель"), "compare", href=_pick_url(entry.key))],
+                [
+                    *offered,
+                    Action(_("Выбрать второй показатель"), "compare", href=_pick_url(entry.key)),
+                ],
             )
         )
     return groups
@@ -331,6 +447,9 @@ def add(
         return studies.add_view(study, target, urlencode({"series": series_key}))
     if value.startswith(ANSWER_PREFIX):
         return studies.add_answer(study, value.removeprefix(ANSWER_PREFIX), series_key, other)
+    if value.startswith(COMPARE_PREFIX):
+        partner = value.removeprefix(COMPARE_PREFIX)
+        return studies.add_answer(study, "comparison", series_key, partner)
     if value.startswith(COMPUTE_PREFIX):
         key = compute(request, series_key, value.removeprefix(COMPUTE_PREFIX))
         return studies.add_view(study, "map", urlencode({"series": key}))

@@ -1,0 +1,49 @@
+{% load i18n formatting %}
+{% comment %}
+  Малые графики: регионы по федеральным округам, в клетке — полное название, ход за годы
+  и значение последнего года. Шкала — общая или своя у каждой клетки; владелец меняет её
+  здесь же (со сценарием — пересобирается только карточка).
+{% endcomment %}
+<div class="multiples-head">
+  <p class="multiples-head__years numeric">{{ card.first_year|year }}–{{ card.year|year }}{% if card.scale == "common" %} · {% blocktranslate trimmed with low=card.low high=card.high %}шкала от {{ low }} до {{ high }}{% endblocktranslate %}{% endif %}</p>
+  {% if owner %}
+    <form method="post" action="{% url 'userdata:study-edit' study.public_id %}" class="multiples-head__scale no-print"
+          hx-post="{% url 'userdata:study-edit' study.public_id %}"
+          hx-target="closest .study-card__slot" hx-select="#block-{{ card.block.id }} .study-card__slot"
+          hx-swap="outerHTML">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="change">
+      <input type="hidden" name="block" value="{{ card.block.id }}">
+      <div class="segmented" role="group" aria-label="{% translate 'Шкала малых графиков' %}">
+        <button type="submit" class="segmented__option{% if card.scale == 'common' %} is-active{% endif %}"
+                name="scale" value="common" aria-pressed="{% if card.scale == 'common' %}true{% else %}false{% endif %}">
+          {% translate "общая шкала" %}
+        </button>
+        <button type="submit" class="segmented__option{% if card.scale == 'own' %} is-active{% endif %}"
+                name="scale" value="own" aria-pressed="{% if card.scale == 'own' %}true{% else %}false{% endif %}">
+          {% translate "своя у каждого" %}
+        </button>
+      </div>
+      {% translate "Общая шкала: высота линии сравнима между регионами. Своя: в каждой клетке линия от наименьшего до наибольшего значения этого региона — виден ход, но не уровень." as scale_hint %}
+      {% include "partials/_hint.html" with hint_id="hint-multiples-"|add:card.block.id hint_text=scale_hint hint_label=_("Чем различаются шкалы") %}
+    </form>
+  {% endif %}
+</div>
+
+{% for group in card.groups %}
+  <section class="multiples-group" aria-label="{{ group.name|default:_('вне округов') }}">
+    <h3 class="multiples-group__title">{{ group.name|default:_("вне округов") }}</h3>
+    <ul class="multiples-grid">
+      {% for cell in group.cells %}
+        <li class="multiples-cell{% if cell.mine %} is-mine{% endif %}" data-territory="{{ cell.code }}">
+          <span class="multiples-cell__name">{{ cell.name }}{% if cell.mine %} <span class="visually-hidden">— {% translate "мой регион" %}</span>{% endif %}</span>
+          <svg class="multiples-cell__line" viewBox="0 0 {{ card.width }} {{ card.height }}" preserveAspectRatio="none" aria-hidden="true">
+            <path d="{{ cell.path }}"></path>
+            {% if cell.end_x %}<path class="multiples-cell__dot" d="M{{ cell.end_x }} {{ cell.end_y }}h0"></path>{% endif %}
+          </svg>
+          <span class="multiples-cell__value numeric">{{ cell.value|default:"—" }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endfor %}

@@ -139,6 +139,9 @@ class StudyView(BreadcrumbMixin, TemplateView):
                 url = reverse("userdata:study-card", args=[study.public_id, block["id"]])
                 block["card_url"] = f"{url}?{common}"
                 block["target_title"] = study_cards.kind_title(block)
+                # Ряд карточки: брошенный на неё ряд сравнивается с ним.
+                keys = studies.series_keys(block)
+                block["primary_key"] = keys[0] if keys else ""
         context.update(
             page_title=study.title,
             study=study,
@@ -360,7 +363,9 @@ def _edit_block(study: Study, action: str, block_id: str, data: QueryDict) -> st
     if action == "resize":
         studies.resize(study, block_id)
     elif action == "change":
-        fields = {name: data.get(name, "") for name in ("text", "title", "note") if name in data}
+        fields = {
+            name: data.get(name, "") for name in ("text", "title", "note", "scale") if name in data
+        }
         studies.change(study, block_id, **fields)
     elif action in {"up", "down"}:
         studies.move(study, block_id, -1 if action == "up" else 1)

@@ -334,6 +334,133 @@ class TestLab:
             marker = markers.get(block["question"], "rl-chart")
             assert marker in card.text or "study-card__empty" in card.text, block["question"]
 
+    def test_new_answers_render(self, member_client: Client, member: Any, warehouse: Any) -> None:
+        from apps.catalog.models import Series, Territory
+
+        dataset = _built(member_client, "crime_wide.csv")
+        key = _key(dataset, _first(dataset))
+        site = Series.objects.exclude(key__startswith="u:").order_by("key").first()
+        assert site is not None
+        study = _study(member_client)
+        markers = {
+            "heat": "heat-table",
+            "districts": "district-bars",
+            "growth": "Изменение с",
+            "mine": "Мой регион не выбран",
+        }
+        for question in markers:
+            _edit(member_client, study, action="add", do=f"answer:{question}", series=key)
+        _edit(member_client, study, action="add", do=f"compare:{site.key}", series=key)
+        study.refresh_from_db()
+        blocks = studies.blocks_of(study)
+        assert [block["question"] for block in blocks] == [*markers, "comparison"]
+        # Тепловая таблица и сравнение — во всю ширину поля.
+        assert [block["wide"] for block in blocks] == [True, False, False, False, True]
+        for block in blocks:
+            card = _card(member_client, study, block)
+            assert card.status_code == 200
+            marker = markers.get(block["question"], "Сравнение двух показателей")
+            assert marker in card.text, block["question"]
+        # Мой регион выбран — его место среди регионов и соседи по рейтингу.
+        member.region = Territory.objects.comparable().order_by("code").first()
+        member.save(update_fields=["region"])
+        mine = next(block for block in blocks if block["question"] == "mine")
+        card = _card(member_client, study, mine)
+        assert "Рядом в рейтинге" in card.text or "значения по моему региону нет" in card.text
+
+    def test_small_multiples_by_districts(self, member_client: Client, warehouse: Any) -> None:
+        """
+        Малые графики: клетки по округам с полными названиями, во всю ширину поля;
+        шкала — общая, по выбору своя у каждой клетки, и выбор хранится в карточке.
+        """
+        dataset = _built(member_client, "crime_wide.csv")
+        key = _key(dataset, _first(dataset))
+        study = _study(member_client)
+        page = member_client.get(reverse("userdata:study", args=[study.public_id]), {"series": key})
+        assert 'value="answer:multiples"' in page.text
+        _edit(member_client, study, action="add", do="answer:multiples", series=key)
+        study.refresh_from_db()
+        block = studies.blocks_of(study)[0]
+        assert block["question"] == "multiples"
+        assert block["wide"] is True
+
+        card = _card(member_client, study, block)
+        assert card.status_code == 200
+        assert "multiples-cell" in card.text
+        assert "федеральный округ" in card.text
+        assert 'value="common" aria-pressed="true"' in card.text
+
+        _edit(member_client, study, action="change", block=block["id"], scale="own")
+        study.refresh_from_db()
+        block = studies.blocks_of(study)[0]
+        assert block["scale"] == "own"
+        assert 'value="own" aria-pressed="true"' in _card(member_client, study, block).text
+
+        # Чужое значение шкалы не принимается.
+        _edit(member_client, study, action="change", block=block["id"], scale="<b>")
+        study.refresh_from_db()
+        assert studies.blocks_of(study)[0]["scale"] == "own"
+
+    def test_partners_offered_for_comparison(self, member_client: Client, warehouse: Any) -> None:
+        dataset = _built(member_client, "crime_wide.csv")
+        records = list(dataset.current_version.series.filter(derived="").order_by("order"))
+        # Два разных показателя: пересчёт того же ряда к сравнению не предлагается.
+        first = next(record for record in records if record.indicator == records[0].indicator)
+        second = next(record for record in records if record.indicator != first.indicator)
+        first, second = _key(dataset, first), _key(dataset, second)
+        study = _study(member_client)
+        _edit(member_client, study, action="add", do="view:map", series=second)
+        page = member_client.get(
+            reverse("userdata:study", args=[study.public_id]), {"series": first}
+        )
+        # Ряд карточки поля — сразу «Сравнить с …»; второй показатель можно и выбрать.
+        assert f'value="compare:{second}"' in page.text
+        assert "Выбрать второй показатель" in page.text
+        picked = member_client.get(
+            reverse("userdata:study", args=[study.public_id]), {"series": first, "with": second}
+        )
+        assert 'value="answer:comparison"' in picked.text
+        assert 'value="answer:relation"' in picked.text
+        # Окно выбора ряда сайта при выборе второго показателя ставит его вторым.
+        pick = member_client.get(
+            reverse("userdata:study", args=[study.public_id]), {"series": first, "pick": "1"}
+        )
+        picker = pick.text[pick.text.index('id="study-site-picker"') :]
+        assert 'name="with"' in picker
+        assert pick.text.index('id="study-site-picker"') < pick.text.index("</aside>")
+
+    def test_drop_on_card_compares(self, member_client: Client, warehouse: Any) -> None:
+        from apps.catalog.models import Series
+
+        dataset = _built(member_client)
+        key = _key(dataset, _first(dataset))
+        site = Series.objects.exclude(key__startswith="u:").order_by("key").first()
+        assert site is not None
+        study = _study(member_client)
+        _edit(member_client, study, action="add", do="view:map", series=key)
+        _edit(member_client, study, action="add-text", text="Заметка")
+        # Брошенный на карточку ряд — сравнение следом за ней.
+        _edit(
+            member_client,
+            study,
+            action="add",
+            do="answer:comparison",
+            series=key,
+            other=site.key,
+            at="1",
+        )
+        study.refresh_from_db()
+        blocks = studies.blocks_of(study)
+        assert [block.get("question") or block["kind"] for block in blocks] == [
+            "view",
+            "comparison",
+            "text",
+        ]
+        assert blocks[1]["other"] == site.key
+        page = member_client.get(reverse("userdata:study", args=[study.public_id]))
+        assert f'data-series="{key}"' in page.text
+        assert "data-card-drop" in page.text
+
     def test_relation_needs_second_series(self, member_client: Client, warehouse: Any) -> None:
         dataset = _built(member_client)
         key = _key(dataset, _first(dataset))

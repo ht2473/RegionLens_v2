@@ -1,10 +1,15 @@
-/* Поле исследования: перетаскивание карточек и рядов панели (SortableJS), те же действия
-   без мыши — меню «Выше» и «Ниже», ширина и порядок на месте, название и заметка правятся
-   на месте, «Развернуть» во весь экран, мой регион своим цветом во всех карточках.
+/* Поле исследования: перетаскивание карточек и рядов панели (SortableJS) — ряд на поле
+   встаёт картой, на карточку — сравнением с её рядом; те же действия без мыши — меню
+   «Выше» и «Ниже», «Сравнить с …» в «Что сделать»; ширина и порядок на месте, название
+   и заметка правятся на месте, «Развернуть» во весь экран, мой регион своим цветом.
    Без сценариев все действия — формы с переходом обратно на страницу. */
 
 const STATUS_DELAY = 2500;
 const MINE_CLASS = "is-mine";
+// Пока ряд тянут из панели, у карточек видно место броска.
+const DRAGGING_CLASS = "study-dragging";
+// Ширина, ниже которой панель — лист (как в layout.css и sheet.js).
+const SHEET_WIDTH = "(max-width: 767px)";
 
 /** Корень страницы исследования; адрес правки есть только у владельца. */
 const root = () => document.querySelector("[data-study]");
@@ -112,6 +117,7 @@ function bindSortable() {
     });
   }
   // Ряды панели — источник: перетаскивается копия, сама строка остаётся на месте.
+  // Пока ряд тянут, у карточек видно место броска «Сравнить».
   document.querySelectorAll("[data-drag-source]").forEach((list) => {
     if (list.dataset.sortableReady) {
       return;
@@ -123,20 +129,58 @@ function bindSortable() {
       draggable: "[data-series]",
       delay: 200,
       delayOnTouchOnly: true,
+      onStart: () => root()?.classList.add(DRAGGING_CLASS),
+      onEnd: () => root()?.classList.remove(DRAGGING_CLASS),
+    });
+  });
+  // Ряд, брошенный на середину карточки, — сравнение с её рядом.
+  field.querySelectorAll("[data-card-drop]").forEach((zone) => {
+    if (zone.dataset.sortableReady) {
+      return;
+    }
+    zone.dataset.sortableReady = "true";
+    Sortable.create(zone, {
+      group: { name: "study", pull: false, put: true },
+      sort: false,
+      onAdd: (event) => {
+        const key = event.item.dataset.series;
+        event.item.remove();
+        const card = zone.closest(".study-card");
+        if (key && card) {
+          compareDrop(card, key);
+        }
+      },
     });
   });
 }
 
-/** Ряд, брошенный на поле: карта ряда в место броска. */
-function drop(key, at) {
+/** Отправить форму броска: что поставить, какие ряды и куда. */
+function submitDrop(values, at) {
   const form = document.getElementById("study-drop");
   if (!form) {
     return;
   }
-  form.elements.series.value = key;
+  Object.entries(values).forEach(([name, value]) => {
+    form.elements[name].value = value;
+  });
   form.elements.at.value = at;
   form.dataset.at = at;
   form.requestSubmit();
+}
+
+/** Ряд, брошенный на поле: карта ряда в место броска. */
+function drop(key, at) {
+  submitDrop({ do: "view:map", series: key, other: "" }, at);
+}
+
+/** Ряд, брошенный на карточку: сравнение с рядом карточки — следом за ней. */
+function compareDrop(card, key) {
+  const own = card.dataset.series;
+  if (!own || own === key) {
+    return;
+  }
+  const at = String([...cards().children].indexOf(card) + 1);
+  submitDrop({ do: "answer:comparison", series: own, other: key }, at);
 }
 
 /** Новая карточка пришла в конец поля: поставить в место броска и показать. */
@@ -340,6 +384,21 @@ function onPickerToggle(event) {
   import("../elements/combobox.js").catch(() => {});
 }
 
+/* --- «Сравнить с другим показателем» из меню карточки: выбор второго — в панели ---------- */
+
+function onPickPartner(event) {
+  const link = event.target.closest("[data-pick-partner]");
+  if (!link) {
+    return;
+  }
+  link.closest("[popover]")?.hidePopover();
+  // На телефоне панель — лист: открыть его, чтобы выбор второго показателя было видно.
+  const panel = document.getElementById("study-panel");
+  if (panel && !panel.classList.contains("is-open") && window.matchMedia(SHEET_WIDTH).matches) {
+    document.querySelector("[data-rail-open][aria-controls='study-panel']")?.click();
+  }
+}
+
 /* --- Новая ссылка показывается сразу ------------------------------------------------------ */
 
 function openNewShare() {
@@ -359,6 +418,7 @@ export function init() {
   document.addEventListener("submit", onChangeSubmit);
   document.addEventListener("click", onExpand);
   document.addEventListener("click", onInplace);
+  document.addEventListener("click", onPickPartner);
   document.addEventListener("beforetoggle", onPickerToggle, true);
   document.addEventListener("fullscreenchange", refit);
   document.body.addEventListener("htmx:afterSwap", (event) => {

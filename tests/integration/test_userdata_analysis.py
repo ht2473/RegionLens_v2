@@ -73,7 +73,7 @@ class TestTools:
             assert f'value="{own}"' in page.text, name
         correlation = client.get(reverse("analytics:correlation"), {"series": [own, official]})
         assert correlation.context["matrix"]["size"] == 2
-        assert f"/own-data/{dataset.public_id}/#series-" in correlation.text
+        assert f"/own-data/{dataset.public_id}/?show=" in correlation.text
         # Направленность из описания таблицы: ряд входит в индекс.
         index = client.get(
             reverse("analytics:index-builder"),
@@ -242,7 +242,7 @@ class TestGlance:
 
     def test_relative_described_as_sum(self, client: Client, warehouse: Any) -> None:
         dataset = self._shares(client, indicators.SUM)
-        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
+        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]), {"tab": "checks"})
         look = self._looks(dataset)[0]
         assert look.data_kind == "relative"
         assert look.regions >= 80
@@ -270,14 +270,14 @@ class TestGlance:
         look = self._looks(dataset)[0]
         assert look.data_kind == "relative"
         assert look.kind_note
-        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
+        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]), {"tab": "checks"})
         assert [item.series.key for item in page.context["checks"]] == [look.series.key]
 
     def test_sum_described_as_relative(self, client: Client, warehouse: Any) -> None:
         dataset = upload(client, "crime_wide.csv")
         describe(client, dataset)
         build(client, dataset, kind=indicators.RELATIVE)
-        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
+        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]), {"tab": "checks"})
         looks = self._looks(dataset)
         assert len(looks) == 2
         assert all(look.data_kind == "sum" for look in looks)
@@ -289,7 +289,7 @@ class TestGlance:
         look = self._looks(dataset)[0]
         assert look.data_kind == "relative"
         assert not look.kind_note
-        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
+        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]), {"tab": "checks"})
         assert page.context["checks"] == []
 
 

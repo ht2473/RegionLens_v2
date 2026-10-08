@@ -176,10 +176,12 @@ def _answer(
             partner = describe_subject(other)
             if partner is None:
                 raise Http404
-            built = answers.relation(answers.Asked(request, state, subject), other, partner)
+            built = getattr(answers, question)(
+                answers.Asked(request, state, subject), other, partner
+            )
             title = f"{subject.title} — {partner.title}"
         else:
-            built = getattr(answers, question)(answers.Asked(request, state, subject))
+            built = getattr(answers, question)(answers.Asked(request, state, subject, block))
             title = subject.title
     except Http404, WarehouseNotBuiltError:
         card.update(template="userdata/cards/_missing.html", title=block.get("title", ""))
@@ -196,7 +198,7 @@ def _answer(
         built,
         template=f"userdata/cards/_{question}.html",
         title=block.get("title") or title,
-        unit=subject.unit,
+        unit=built.get("unit", subject.unit),
         source=series_source(state.series.key, built.get("year") or state.year),
     )
     return card

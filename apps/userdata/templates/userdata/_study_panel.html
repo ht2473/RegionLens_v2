@@ -2,8 +2,9 @@
 {% comment %}
   Панель «Данные» исследования: свои таблицы — показатели и их ряды, ряды сайта; у выбранного
   ряда — «Что сделать». Выбор ряда меняет только перечень (#study-sources): лист на телефоне
-  остаётся открытым. Ряды перетаскиваются на поле (study.js). На телефоне — нижний лист.
-  Выбор ряда сайта — в отдельном окне; перечень рядов грузится, когда окно открыто.
+  остаётся открытым. Ряды перетаскиваются на поле и на карточки (study.js). На телефоне —
+  нижний лист. Выбор ряда сайта — в отдельном окне; перечень рядов грузится, когда окно
+  открыто.
 {% endcomment %}
 <aside class="filter-rail study-panel" id="study-panel" aria-label="{% translate 'Данные исследования' %}">
   {% translate "Данные" as sheet_title %}
@@ -69,25 +70,26 @@
         {% translate "Показатель сайта" %}
       </button>
     </div>
+
+    {# Окно выбора — внутри перечня: при выборе второго показателя оно приходит вместе с ним. #}
+    <div class="menu-popover study-site-picker" id="study-site-picker" popover role="dialog"
+         aria-label="{% translate 'Показатель сайта' %}">
+      <form method="get" data-autosubmit>
+        {% if panel.picking %}<input type="hidden" name="series" value="{{ panel.chosen.key }}">{% endif %}
+        <div data-picker-slot></div>
+      </form>
+      <template id="study-site-picker-content">
+        {% translate "Показатель сайта" as select_label %}
+        {% translate "выберите ряд" as select_empty %}
+        {% if panel.picking %}
+          {% include "partials/_series_select.html" with select_label=select_label select_empty=select_empty select_name="with" %}
+        {% else %}
+          {% include "partials/_series_select.html" with select_label=select_label select_empty=select_empty %}
+        {% endif %}
+      </template>
+      <noscript>
+        <p class="field__hint">{% translate "Ряд сайта добавляется и со страницы его карты: «Сохранить» → «В исследование»." %}</p>
+      </noscript>
+    </div>
   </div>
 </aside>
-
-<div class="menu-popover study-site-picker" id="study-site-picker" popover role="dialog"
-     aria-label="{% translate 'Показатель сайта' %}">
-  <form method="get" data-autosubmit>
-    {% if panel.picking %}<input type="hidden" name="series" value="{{ panel.chosen.key }}">{% endif %}
-    <div data-picker-slot></div>
-  </form>
-  <template id="study-site-picker-content">
-    {% translate "Показатель сайта" as select_label %}
-    {% translate "выберите ряд" as select_empty %}
-    {% if panel.picking %}
-      {% include "partials/_series_select.html" with select_label=select_label select_empty=select_empty select_name="with" %}
-    {% else %}
-      {% include "partials/_series_select.html" with select_label=select_label select_empty=select_empty %}
-    {% endif %}
-  </template>
-  <noscript>
-    <p class="field__hint">{% translate "Ряд сайта добавляется и со страницы его карты: «Сохранить» → «В исследование»." %}</p>
-  </noscript>
-</div>

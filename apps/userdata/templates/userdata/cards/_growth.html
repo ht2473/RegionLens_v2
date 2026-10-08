@@ -1,0 +1,27 @@
+{% load i18n %}
+{# Кто вырос сильнее: регионы с наибольшим и наименьшим изменением между двумя годами, Россия и мой регион. #}
+<div class="answer__columns study-card__answer">
+  <div>
+    <h3 class="answer__label">{% translate "Больше всего" %}</h3>
+    <ol class="answer-list">
+      {% for row in card.top %}
+        <li value="{{ row.place }}" data-territory="{{ row.code }}"><span>{{ row.name }}</span> <span class="numeric">{{ row.change }}</span></li>
+      {% endfor %}
+    </ol>
+  </div>
+  <div>
+    <h3 class="answer__label">{% translate "Меньше всего" %}</h3>
+    <ol class="answer-list">
+      {% for row in card.bottom %}
+        <li value="{{ row.place }}" data-territory="{{ row.code }}"><span>{{ row.name }}</span> <span class="numeric">{{ row.change }}</span></li>
+      {% endfor %}
+    </ol>
+  </div>
+</div>
+<p class="answer__meta">
+  <span>{% blocktranslate trimmed with since=card.since year=card.year measure=card.measure %}Изменение с {{ since }} по {{ year }} год, {{ measure }}{% endblocktranslate %}</span>
+  {% if card.country %}<span>{% translate "По России" %} — <b class="numeric">{{ card.country }}</b></span>{% endif %}
+  {% if card.mine %}
+    <span>{% blocktranslate trimmed with name=card.mine.name place=card.mine.place count=card.count change=card.mine.change %}Мой регион, {{ name }}: {{ place }}-е из {{ count }} ({{ change }}){% endblocktranslate %}</span>
+  {% endif %}
+</p>

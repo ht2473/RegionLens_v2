@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from .analysis import (
     district_directory,
+    district_totals,
     edition_activity,
     hidden_counts,
     largest_revisions,
@@ -99,6 +100,7 @@ __all__ = [
     "covered_years",
     "district_directory",
     "district_summary",
+    "district_totals",
     "edition_activity",
     "featured_series",
     "featured_set",

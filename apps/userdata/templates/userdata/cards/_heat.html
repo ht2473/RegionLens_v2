@@ -1,0 +1,33 @@
+{% load i18n formatting %}
+{# Тепловая таблица: регионы × годы, цвет — ступень общей шкалы; Россия — без цвета; мой регион отмечен. #}
+<div class="data-table-wrapper heat-table-wrapper study-card__table" tabindex="0"
+     aria-label="{% translate 'Значения по годам — прокрутка' %}">
+  <table class="heat-table">
+    <caption class="visually-hidden">{% blocktranslate trimmed with title=card.title %}Значения по годам: {{ title }}{% endblocktranslate %}</caption>
+    <thead>
+      <tr>
+        <th scope="col">{% translate "Регион" %}</th>
+        {% for year in card.years %}<th scope="col" class="numeric">{{ year|year }}</th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% if card.has_country %}
+        <tr class="heat-table__country">
+          <th scope="row">{% translate "Россия" %}</th>
+          {% for value in card.country %}<td class="numeric">{{ value|default:"—" }}</td>{% endfor %}
+        </tr>
+      {% endif %}
+      {% for row in card.rows %}
+        <tr data-territory="{{ row.code }}">
+          <th scope="row">{{ row.name }}</th>
+          {% for cell in row.cells %}<td class="numeric{% if cell.light %} is-light{% endif %}"{% if cell.step %} data-step="{{ cell.step }}"{% endif %}>{{ cell.value|default:"—" }}</td>{% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<ol class="scale-legend" aria-label="{% translate 'Шкала цвета' %}">
+  {% for item in card.legend %}
+    <li class="scale-legend__step"><span class="scale-legend__swatch" data-step="{{ item.step }}" aria-hidden="true"></span><span class="numeric">{{ item.lower }}–{{ item.upper }}</span></li>
+  {% endfor %}
+</ol>
