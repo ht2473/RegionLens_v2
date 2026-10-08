@@ -119,17 +119,20 @@ class TestFormulas:
         }
         checked = client.post(_formula_url(accidents), {**data, "action": "check"})
         assert checked.status_code == 200
-        assert "Проверка по нынешним данным" in checked.text
+        # Предпросмотр: малая карта и сколько субъектов посчитано.
+        assert "Посчитано для" in checked.text
+        assert "geo-map" in checked.text
         assert "Субъектов с делением на ноль: 1" in checked.text
         assert not formula_store.definitions(version_of(accidents))
 
         saved = client.post(_formula_url(accidents), {**data, "action": "save"})
         assert saved.status_code == 302
+        # Сохранённая формула — выбранной на странице таблицы.
         location = urlparse(saved["Location"])
-        assert location.path == reverse("maps:choropleth")
-        key = parse_qs(location.query)["series"][0]
+        assert location.path == reverse("userdata:dataset", args=[accidents.public_id])
         definition = formula_store.definitions(version_of(accidents))[0]
-        assert key == f"u:{accidents.code}:{definition.code}"
+        assert parse_qs(location.query)["show"] == [definition.code]
+        key = f"u:{accidents.code}:{definition.code}"
         assert (
             definition.expression == f"{{{_first_key(accidents)}}} / {{{_first_key(cars)}}} * 1000"
         )
@@ -140,7 +143,7 @@ class TestFormulas:
         # Деление на ноль — пусто, причина — на странице таблицы.
         assert (_regions()[0].code, 2022) not in values
         assert client.get(reverse("maps:choropleth"), {"series": key}).status_code == 200
-        about = client.get(reverse("userdata:dataset", args=[accidents.public_id]))
+        about = client.get(saved["Location"])
         assert "ДТП на 1 000 автомобилей" in about.text
         assert "[Автомобили: Автомобили]" in about.text
         assert "Субъектов с делением на ноль: 1" in about.text
@@ -169,7 +172,7 @@ class TestFormulas:
         # Таблица удалена — формула остаётся без значений, с причиной.
         client.post(reverse("userdata:delete", args=[cars.public_id]), {"confirm": "1"})
         assert not _values(accidents, key)
-        about = client.get(reverse("userdata:dataset", args=[accidents.public_id]))
+        about = client.get(saved["Location"])
         assert "Нет значений показателей" in about.text
 
     def test_official_series_and_functions(self, client: Client, warehouse: Any) -> None:

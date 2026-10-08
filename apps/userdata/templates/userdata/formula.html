@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 {% load i18n static formatting userdata series_picker %}
 
-{# Показатель по формуле: название, формула со вставкой показателей, проверка и сохранение. #}
+{% comment %}
+  Показатель по формуле: шаблон («A на 1 000 B» и др.) с рядами A и B или своя формула;
+  показатели нажатием или перетаскиванием встают в A, B или в формулу (formula.js). Справа —
+  предпросмотр по нынешним данным: малая карта и «посчитано для N из 85»; со сценарием
+  он обновляется сам, без сценария — кнопкой «Проверить». Шаблон или своя формула
+  переключаются без сценариев (:has в оформлении).
+{% endcomment %}
 
 {% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
@@ -17,76 +23,138 @@
     <p class="kicker"><span{% with lang=dataset.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.title }}</span> · <span class="own-private">{% visibility dataset %}</span></p>
     <h1 class="page-head__title">{% if existing %}{% translate "Показатель по формуле" %}{% else %}{% translate "Новый показатель по формуле" %}{% endif %}</h1>
     <p class="page-head__lead">
-      {% blocktranslate trimmed %}
-        Новый ряд из показателей этой таблицы, других ваших таблиц и официальных рядов
-        сайта. Формула пересчитывается при каждой сборке таблицы.
-      {% endblocktranslate %}
+      {% translate "Из показателей этой и других ваших таблиц и официальных рядов сайта. Пересчитывается при каждой сборке таблицы." %}
     </p>
   </header>
 
-  {% if error %}
-    <div class="callout callout--danger form-errors" role="alert" tabindex="-1" data-error-summary>
-      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
-      <div>
-        <div class="callout__title">{% translate "Формулу не посчитать" %}</div>
-        <p><a href="#formula-expression">{{ error }}</a></p>
-      </div>
-    </div>
-  {% endif %}
+  <div class="formula-layout">
+    <form method="post" class="stack formula-form" id="formula-form" novalidate
+          hx-post="{{ request.path }}" hx-target="#formula-preview" hx-select="#formula-preview"
+          hx-swap="outerHTML" hx-sync="this:replace"
+          hx-trigger="change delay:300ms, input changed delay:700ms from:#formula-expression">
+      {% csrf_token %}
+      {% if study %}<input type="hidden" name="study" value="{{ study.public_id }}">{% endif %}
 
-  <form method="post" class="stack formula-form" novalidate>
-    {% csrf_token %}
-
-    <div class="question-card formula-form__fields">
       <div class="field">
         <label class="field__label" for="formula-title">{% translate "Название" %}</label>
-        <input class="input" id="formula-title" name="title" value="{{ values.title }}" maxlength="300" required>
+        <input class="input" id="formula-title" name="title" value="{{ values.title }}" maxlength="300"
+               placeholder="{% translate 'по шаблону, если не задать' %}">
       </div>
 
-      <div class="field">
-        <label class="field__label" for="formula-expression">{% translate "Формула" %}</label>
-        <textarea class="textarea formula-form__expression" id="formula-expression" name="expression" rows="3" maxlength="{{ max_length }}" spellcheck="false" placeholder="{{ example }}" aria-describedby="formula-hint"{% if error %} aria-invalid="true"{% endif %}>{{ values.expression }}</textarea>
-        <span class="field__hint" id="formula-hint">
-          {% translate "Показатели — в квадратных скобках, как в перечне ниже. Действия: + − * / ^ и скобки, дробная часть — через точку." %}
-        </span>
+      <fieldset class="field formula-templates">
+        <legend class="field__label">{% translate "Как считать" %}</legend>
+        <div class="segmented formula-templates__options" role="group">
+          {% for code, label in templates %}
+            <label class="segmented__option">
+              <input type="radio" name="template" value="{{ code }}"{% if values.template == code %} checked{% endif %}>
+              <span>{{ label }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <div class="formula-slots" data-formula-slots>
+        {% for name, letter, chosen in slots %}
+          <div class="formula-slot" data-slot="{{ name }}">
+            <label class="formula-slot__letter" for="formula-{{ name }}">{{ letter }}</label>
+            <select class="select formula-slot__select" id="formula-{{ name }}" name="{{ name }}">
+              <option value="">{% translate "выберите или перетащите показатель" %}</option>
+              {% for option in extra_options %}
+                <option value="{{ option.key }}" data-label="{{ option.label }}"{% if chosen == option.key %} selected{% endif %}>{{ option.label }}</option>
+              {% endfor %}
+              {% for group in insert_groups %}
+                <optgroup label="{{ group.title }}">
+                  {% for item in group.items %}<option value="{{ item.key }}" data-label="{{ item.label }}"{% if chosen == item.key %} selected{% endif %}{% if item.lang %} lang="{{ item.lang }}"{% endif %}>{{ item.title }}</option>{% endfor %}
+                </optgroup>
+              {% endfor %}
+            </select>
+          </div>
+          {% if forloop.first %}
+            <p class="formula-slots__operator" aria-hidden="true">
+              <span data-operator="per1000">{% translate "на 1 000" %}</span>
+              <span data-operator="diff">−</span>
+              <span data-operator="ratio">/</span>
+              <span data-operator="share">{% translate "доля в" %}</span>
+            </p>
+          {% endif %}
+        {% endfor %}
       </div>
 
-      <div class="field">
-        <label class="field__label" id="formula-insert-label" for="formula-insert">{% translate "Вставить показатель" %}</label>
-        <rl-combobox class="combobox"
-                     data-source="{% series_options_url %}"
-                     data-loading="{% translate 'Загрузка перечня…' %}"
-                     data-search="{% translate 'Поиск по названию или разделу' %}"
-                     data-empty="{% translate 'Ничего не найдено' %}"
-                     data-placeholder="{% translate 'Выберите показатель' %}"
-                     data-found="{% translate 'найдено' %}"
-                     data-total="{% translate 'всего' %}"
-                     data-unnormalised="{% translate 'абс.' %}"
-                     data-unnormalised-hint="{% translate 'Величина не приведена к численности населения или иной основе' %}">
-          <select class="select" id="formula-insert" data-formula-insert="formula-expression">
-            <option value="">{% translate "Выберите показатель" %}</option>
-            {% for group in insert_groups %}<optgroup label="{{ group.title }}" data-own>{% for item in group.items %}<option value="{{ item.key }}" data-label="{{ item.label }}" data-search="{{ item.search }}"{% if item.lang %} lang="{{ item.lang }}"{% endif %}>{{ item.title }}</option>{% endfor %}</optgroup>{% endfor %}
-          </select>
-        </rl-combobox>
-        <span class="field__hint">{% translate "Свои таблицы — сверху, затем официальные ряды сайта. Показатель встаёт туда, где стоит курсор." %}</span>
+      <div class="formula-free">
+        <div class="field">
+          <label class="field__label" for="formula-expression">{% translate "Формула" %}</label>
+          <textarea class="textarea formula-form__expression" id="formula-expression" name="expression" rows="3" maxlength="{{ max_length }}" spellcheck="false" placeholder="{{ example }}" aria-describedby="formula-hint"{% if error %} aria-invalid="true"{% endif %}>{{ values.expression }}</textarea>
+          <span class="field__hint" id="formula-hint">
+            {% translate "Показатели — в квадратных скобках. Действия: + − * / ^ и скобки, дробная часть — через точку." %}
+          </span>
+        </div>
+        <details class="formula-form__functions">
+          <summary>{% translate "Функции" %}</summary>
+          <dl class="definition-list definition-list--compact">
+            <dt><code>AGO([X]; 1)</code></dt>
+            <dd>{% translate "значение того же региона годом раньше; вторым аргументом — на сколько лет" %}</dd>
+            <dt><code>RANK([X])</code></dt>
+            <dd>{% translate "место среди субъектов за год, 1 — наибольшее значение" %}</dd>
+            <dt><code>ROUND([X]; 2)</code></dt>
+            <dd>{% translate "округление до числа знаков после запятой" %}</dd>
+            <dt><code>MIN([X]; [Y])</code>, <code>MAX([X]; [Y])</code></dt>
+            <dd>{% translate "наименьшее и наибольшее из значений" %}</dd>
+            <dt><code>ABS</code>, <code>LN</code>, <code>LOG10</code>, <code>SQRT</code>, <code>EXP</code></dt>
+            <dd>{% translate "модуль, натуральный и десятичный логарифм, корень, экспонента" %}</dd>
+          </dl>
+          <p class="field__hint">{% translate "Аргументы — через точку с запятой или запятую. Русские имена тоже понимаются: ОКРУГЛ, МИН, МАКС, РАНГ, НАЗАД, КОРЕНЬ. Деление на ноль и логарифм неположительного числа дают пустое значение." %}</p>
+        </details>
       </div>
 
-      <details class="formula-form__functions">
-        <summary>{% translate "Функции" %}</summary>
-        <dl class="definition-list definition-list--compact">
-          <dt><code>AGO([X]; 1)</code></dt>
-          <dd>{% translate "значение того же региона годом раньше; вторым аргументом — на сколько лет" %}</dd>
-          <dt><code>RANK([X])</code></dt>
-          <dd>{% translate "место среди субъектов за год, 1 — наибольшее значение" %}</dd>
-          <dt><code>ROUND([X]; 2)</code></dt>
-          <dd>{% translate "округление до числа знаков после запятой" %}</dd>
-          <dt><code>MIN([X]; [Y])</code>, <code>MAX([X]; [Y])</code></dt>
-          <dd>{% translate "наименьшее и наибольшее из значений" %}</dd>
-          <dt><code>ABS</code>, <code>LN</code>, <code>LOG10</code>, <code>SQRT</code>, <code>EXP</code></dt>
-          <dd>{% translate "модуль, натуральный и десятичный логарифм, корень, экспонента" %}</dd>
-        </dl>
-        <p class="field__hint">{% translate "Аргументы — через точку с запятой или запятую. Русские имена тоже понимаются: ОКРУГЛ, МИН, МАКС, РАНГ, НАЗАД, КОРЕНЬ. Деление на ноль и логарифм неположительного числа дают пустое значение." %}</p>
-      </details>
+      <section class="formula-palette" aria-labelledby="formula-palette-title">
+        <h2 class="field__label" id="formula-palette-title">{% translate "Показатели" %}</h2>
+        <label class="filter-field formula-palette__filter">
+          <svg aria-hidden="true"><use href="#icon-filter"></use></svg>
+          <span class="visually-hidden">{% translate "Отобрать показатель" %}</span>
+          <input type="search" autocomplete="off" data-filter-input="#formula-palette-items"
+                 data-filter-empty="#formula-palette-empty" placeholder="{% translate 'Отобрать показатель' %}">
+        </label>
+        <p class="field__hint" id="formula-palette-empty" hidden>{% translate "Ничего не найдено" %}</p>
+        <div id="formula-palette-items">
+        {% for group in insert_groups %}
+          {% if group.items.0.this %}
+            <ul class="formula-chips" role="list" data-filter-group>
+              {% for item in group.items %}
+                <li data-filter-item data-filter-text="{{ item.title }}"><button type="button" class="formula-chip" draggable="true" data-formula-chip
+                            data-key="{{ item.key }}" data-label="{{ item.label }}"{% if item.lang %} lang="{{ item.lang }}"{% endif %}>{{ item.title }}</button></li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <details class="formula-palette__group" data-filter-group>
+              <summary>{{ group.title }}</summary>
+              <ul class="formula-chips" role="list">
+                {% for item in group.items %}
+                  <li data-filter-item data-filter-text="{{ item.title }}"><button type="button" class="formula-chip" draggable="true" data-formula-chip
+                              data-key="{{ item.key }}" data-label="{{ item.label }}"{% if item.lang %} lang="{{ item.lang }}"{% endif %}>{{ item.title }}</button></li>
+                {% endfor %}
+              </ul>
+            </details>
+          {% endif %}
+        {% endfor %}
+        </div>
+        <div class="field formula-palette__site">
+          <label class="field__label" id="formula-insert-label" for="formula-insert">{% translate "Показатель сайта" %}</label>
+          <rl-combobox class="combobox"
+                       data-source="{% series_options_url %}"
+                       data-loading="{% translate 'Загрузка перечня…' %}"
+                       data-search="{% translate 'Поиск по названию или разделу' %}"
+                       data-empty="{% translate 'Ничего не найдено' %}"
+                       data-placeholder="{% translate 'Выберите показатель' %}"
+                       data-found="{% translate 'найдено' %}"
+                       data-total="{% translate 'всего' %}"
+                       data-unnormalised="{% translate 'абс.' %}"
+                       data-unnormalised-hint="{% translate 'Величина не приведена к численности населения или иной основе' %}">
+            <select class="select" id="formula-insert" data-formula-insert="formula-expression">
+              <option value="">{% translate "Выберите показатель" %}</option>
+            </select>
+          </rl-combobox>
+        </div>
+      </section>
 
       <div class="formula-form__meta">
         <div class="field">
@@ -108,18 +176,45 @@
           </select>
         </div>
       </div>
-    </div>
 
-    {% if checked %}
-      <section class="question-card formula-check" aria-labelledby="formula-check-title" role="status">
-        <h2 class="question-card__title" id="formula-check-title">{% translate "Проверка по нынешним данным" %}</h2>
-        <dl class="figure-list figure-list--row">
-          <div><dt>{% translate "значений" %}</dt><dd class="numeric">{{ checked.outcome.rows|length|ru_number:0 }}</dd></div>
-          <div><dt>{% translate "субъектов" %}</dt><dd class="numeric">{{ checked.outcome.regions }}</dd></div>
-          {% if checked.outcome.years %}
-            <div><dt>{% translate "годы" %}</dt><dd class="numeric">{{ checked.outcome.years.0|year }}{% if checked.outcome.years.1 != checked.outcome.years.0 %}–{{ checked.outcome.years.1|year }}{% endif %}</dd></div>
+      <div class="form-sheet__actions">
+        <button class="button button--primary" type="submit" name="action" value="save">
+          {% if study %}{% translate "Сохранить и показать в исследовании" %}{% else %}{% translate "Сохранить" %}{% endif %}
+        </button>
+        <button class="button button--secondary formula-form__check" type="submit" name="action" value="check">{% translate "Проверить" %}</button>
+        {% if study %}
+          <a class="button button--ghost" href="{% url 'userdata:study' study.public_id %}">{% translate "К исследованию" %}</a>
+        {% else %}
+          <a class="button button--ghost" href="{% url 'userdata:dataset' dataset.public_id %}">{% translate "К таблице" %}</a>
+        {% endif %}
+      </div>
+    </form>
+
+    <aside class="formula-preview" id="formula-preview" aria-live="polite" aria-labelledby="formula-preview-title"{% if not error and not preview %} hidden{% endif %}>
+      <h2 class="formula-preview__title" id="formula-preview-title">{% translate "Предпросмотр" %}</h2>
+      {% if error %}
+        <div class="callout callout--danger" role="alert">
+          <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+          <div>
+            <div class="callout__title">{% translate "Формулу не посчитать" %}</div>
+            <p>{{ error }}</p>
+          </div>
+        </div>
+      {% elif preview %}
+        <p class="formula-preview__count">
+          {% blocktranslate trimmed with count=preview.count total=preview.total %}Посчитано для <b class="numeric">{{ count }}</b> из {{ total }}{% endblocktranslate %}{% if preview.year %} · <span class="numeric">{{ preview.year|year }}</span>{% endif %}{% if checked.outcome.years and checked.outcome.years.0 != checked.outcome.years.1 %} · {% blocktranslate trimmed with first=checked.outcome.years.0 last=checked.outcome.years.1 %}годы {{ first }}–{{ last }}{% endblocktranslate %}{% endif %}
+        </p>
+        {% if preview.geo_map %}
+          {% translate "Предпросмотр формулы" as geo_caption %}
+          {% include "maps/partials/_geo_map.html" with geo_map=preview.geo_map plain=True %}
+          {% if preview.legend %}
+            <ol class="scale-legend" aria-label="{% translate 'Шкала цвета' %}">
+              {% for item in preview.legend %}
+                <li class="scale-legend__step"><span class="scale-legend__swatch" data-step="{{ item.step }}" aria-hidden="true"></span><span class="numeric">{{ item.lower }}–{{ item.upper }}</span></li>
+              {% endfor %}
+            </ol>
           {% endif %}
-        </dl>
+        {% endif %}
         <ul class="compact-list formula-check__sources">
           {% for title, source in checked.sources %}
             <li><span{% with lang=title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ title }}</span> — <span class="text-secondary"{% with lang=source|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ source }}</span></li>
@@ -131,15 +226,9 @@
             <div>{{ warning }}</div>
           </div>
         {% endfor %}
-      </section>
-    {% endif %}
-
-    <div class="form-sheet__actions">
-      <button class="button button--secondary" type="submit" name="action" value="check">{% translate "Проверить" %}</button>
-      <button class="button button--primary" type="submit" name="action" value="save">{% translate "Сохранить и открыть на карте" %}</button>
-      <a class="button button--ghost" href="{% url 'userdata:dataset' dataset.public_id %}">{% translate "К таблице" %}</a>
-    </div>
-  </form>
+      {% endif %}
+    </aside>
+  </div>
 
   {% if existing %}
     <form method="post" class="own-delete">

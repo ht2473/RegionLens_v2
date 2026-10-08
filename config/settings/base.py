@@ -474,6 +474,8 @@ USERDATA_MAX_STUDIES = env.int("USERDATA_MAX_STUDIES", default=20)
 USERDATA_GUEST_MAX_STUDIES = env.int("USERDATA_GUEST_MAX_STUDIES", default=3)
 USERDATA_STUDY_BLOCKS = env.int("USERDATA_STUDY_BLOCKS", default=40)
 USERDATA_STUDY_EDITS = env.int("USERDATA_STUDY_EDITS", default=300)
+# Предпросмотров формулы за 10 минут с учётной записи или адреса: формула считается заново.
+USERDATA_FORMULA_PREVIEWS = env.int("USERDATA_FORMULA_PREVIEWS", default=120)
 
 # ---------------------------------------------------------------------------------------
 # Программный интерфейс REST: только чтение, без ключей, предел по адресу клиента
