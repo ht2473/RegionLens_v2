@@ -1,5 +1,5 @@
 """
-Динамика рабочей поверхности: линии ряда, профиль и таблица различий территорий.
+Динамика рабочей поверхности: линии ряда, профиль строками точек и таблица различий территорий.
 
 У графика два основания — значения и приведение к базовому году. Разрывы отмечены
 на графике, а отрезок после последнего можно показать отдельно (параметр адреса).
@@ -16,7 +16,9 @@ from apps.catalog.constants import BreakKind
 from apps.catalog.indicator import describe_series
 from apps.catalog.models import Series, SeriesBreak, Territory
 from apps.catalog.selectors import default_territories
-from apps.core.charts import radar_option, timeline_option
+from apps.core import chart_layout as layout
+from apps.core.charts import timeline_option
+from apps.surface.findings import timeline_finding
 from apps.surface.state import SurfaceState, build_query
 from apps.warehouse.queries import (
     COUNTRY_CODE,
@@ -25,8 +27,8 @@ from apps.warehouse.queries import (
     series_timeline_multi,
 )
 
-# Число показателей на лепестковой диаграмме: больше десяти осей неразличимы.
-RADAR_LIMIT = 9
+# Число ключевых показателей в профиле и таблице различий.
+PROFILE_LIMIT = 9
 
 # Основания построения графика динамики.
 BASIS_VALUE = "value"
@@ -68,6 +70,10 @@ def build(request: HttpRequest, state: SurfaceState) -> dict[str, Any]:
         "compared": territories,
         # Подставленный набор — не выбор пользователя; об этом сказано на холсте.
         "compared_by_default": not state.territories and bool(territories),
+        "view_summary": [
+            BASES[basis],
+            *([_("сопоставимый отрезок")] if span == SPAN_COMPARABLE else []),
+        ],
     }
     if not territories:
         return context
@@ -90,42 +96,50 @@ def _territories(request: HttpRequest, state: SurfaceState) -> list[Territory]:
 
 
 def _profile_context(territories: list[Territory]) -> dict[str, Any]:
-    """Собрать профиль территорий: положение в рейтинге с учётом направленности, 0–100."""
-    items = list(featured_series())[:RADAR_LIMIT]
+    """
+    Собрать профиль территорий: строка на показатель, точка территории — её положение среди
+    регионов с учётом направленности (слева хуже всех, справа лучше всех). Цвет точки —
+    цвет линии территории на графике динамики.
+    """
+    items = list(featured_series())[:PROFILE_LIMIT]
     keys = [item.key for item in items]
     codes = [territory.code for territory in territories]
     matrix = latest_values_matrix(keys, [*codes, COUNTRY_CODE])
 
     rows: list[dict[str, Any]] = []
-    indicators: list[dict[str, Any]] = []
-    entries: list[dict[str, Any]] = []
+    dots: list[dict[str, Any]] = []
 
     for item in items:
         country = matrix.get((item.key, COUNTRY_CODE))
         cells = []
-        has_positions = False
-        for territory in territories:
+        placed = []
+        for index, territory in enumerate(territories):
             cell = matrix.get((item.key, territory.code))
             position = _position(cell, item.polarity)
-            has_positions = has_positions or position is not None
             cells.append({"territory": territory, "cell": cell, "position": position})
+            if position is not None:
+                placed.append(
+                    {
+                        "code": territory.code,
+                        "name": territory.name,
+                        # Строкой: дробь шаблон записал бы с запятой.
+                        "at": f"{position / 100:.3f}",
+                        "colour": layout.palette_colour(index),
+                        "better": round(position),
+                    }
+                )
 
         rows.append({"series": item, "cells": cells, "country": country})
-        if has_positions:
-            indicators.append({"name": item.short_title, "max": 100})
-
-    for territory in territories:
-        values = []
-        for item in items:
-            cell = matrix.get((item.key, territory.code))
-            position = _position(cell, item.polarity)
-            if any(indicator["name"] == item.short_title for indicator in indicators):
-                values.append(round(position, 1) if position is not None else None)
-        entries.append({"name": territory.name, "value": values})
+        if placed:
+            dots.append({"series": item, "dots": placed})
 
     return {
         "profile_rows": rows,
-        "radar_option": radar_option(indicators, entries) if indicators else None,
+        "profile_dots": dots,
+        "profile_legend": [
+            {"code": territory.code, "name": territory.name, "colour": layout.palette_colour(index)}
+            for index, territory in enumerate(territories)
+        ],
     }
 
 
@@ -184,7 +198,10 @@ def _timeline_context(
     lines.append(country_line)
 
     # Единица — из описания ряда: ``series.unit`` врёт у 642 рядов.
-    unit = describe_series(series).unit_label
+    item = describe_series(series)
+    unit = item.unit_label
+    # Вывод — по значениям, до приведения к базовому году.
+    finding = timeline_finding(years, lines, item)
     base_year = _base_year(years, lines) if basis == BASIS_INDEX else None
     if base_year is not None:
         lines = [_rebased(line, years, base_year) for line in lines]
@@ -204,6 +221,7 @@ def _timeline_context(
             years, lines, unit=unit, breaks=marks, year_mark=year_mark
         ),
         "timeline_years": years,
+        "finding": finding,
         "timeline_base_year": base_year,
         # Приведение просили, но общего базового года нет.
         "timeline_base_missing": basis == BASIS_INDEX and base_year is None,

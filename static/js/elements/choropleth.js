@@ -282,7 +282,7 @@ class Choropleth extends HTMLElement {
 
   /** Поставить кнопки сохранения картинкой PNG и SVG в угол карты. */
   addSaveControl() {
-    const map = this.querySelector("[data-geo-map], svg.tile-map, svg.multiples");
+    const map = this.querySelector("[data-geo-map], svg.tile-map");
     if (!map || !document.body.dataset.imageSave || map.parentNode.querySelector(".chart-save")) {
       return;
     }

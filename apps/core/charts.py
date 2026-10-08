@@ -23,6 +23,20 @@ CORRIDOR_COLOUR = "var(--accent-quiet)"
 # Цвет спокойной отметки на оси времени: год, выбранный на рабочей поверхности.
 MARK_COLOUR = "var(--text-muted)"
 
+# Облако точек: сколько крайних точек подписывать по каждой оси с каждой стороны.
+EXTREME_LABELS = 3
+
+# Полоса точек: размер точки и выбранной, поле сверху под подписи отметок, цвет точки
+# без класса шкалы.
+STRIP_POINT = 9
+STRIP_SELECTED = 13
+STRIP_TOP = 36
+STRIP_NO_CLASS = "var(--text-muted)"
+
+# Линии окружения на графике мест — серые; линия под указателем — цвета акцента.
+CONTEXT_COLOUR = "var(--border-strong)"
+HOVER_COLOUR = "var(--text-accent)"
+
 # Длина ряда, начиная с которой точки на линии не показываются: на ширине карточки
 # точки в 5 px сливаются в полосу уже на полутора десятках лет.
 MAX_POINT_MARKERS = 12
@@ -240,39 +254,95 @@ def sparkline_path(values: list[float | None]) -> dict[str, Any] | None:
 # ---------------------------------------------------------------------------------------
 
 
-def histogram_option(
-    categories: list[str],
-    layers: list[dict[str, Any]],
+def strip_option(
+    points: list[dict[str, Any]],
     *,
+    marks: list[dict[str, Any]],
     unit: str = "",
 ) -> dict[str, Any]:
     """
-    Построить гистограмму распределения, разобранную по классам шкалы.
+    Полоса точек: точка — регион, по горизонтали — значение. Сдвиг по вертикали, чтобы
+    точки не перекрывались, считает браузер по ширине холста (служебный раздел ``swarm``).
 
-    Столбец складывается из долей классов: интервал гистограммы бывает шире класса.
+    Точка — ``{"name", "value", "colour", "tooltip"}`` с необязательными ``selected``
+    и ``label`` (подпись выбранной); отметка — ``{"value", "label", "strong"}``: медиана,
+    квартили, Россия. Подсказка — готовым текстом с экранированными названиями.
     """
+    data: list[dict[str, Any]] = []
+    for point in points:
+        item: dict[str, Any] = {
+            "name": point["name"],
+            "value": [point["value"], 0],
+            "itemStyle": {"color": point["colour"] or STRIP_NO_CLASS},
+            "tooltip": {"formatter": point["tooltip"]},
+        }
+        if point.get("selected"):
+            item["symbolSize"] = STRIP_SELECTED
+            item["itemStyle"].update(borderColor="var(--text-primary)", borderWidth=2)
+            item["label"] = {
+                "show": True,
+                "formatter": point.get("label") or point["name"],
+                "position": "top",
+                "distance": 4,
+                "fontSize": 11,
+                "fontWeight": "bold",
+                "color": "var(--text-primary)",
+                "textBorderWidth": 0,
+            }
+            # Выбранные — поверх соседей.
+            item["z"] = 3
+        data.append(item)
+
     return {
-        "grid": layout.grid(axis_name=bool(unit)),
-        "legend": layout.legend(show=False),
-        # Подсказка по доле: перечень по всему столбцу состоял бы из нулей.
-        "tooltip": {"trigger": "item", "formatter": "{a}<br>{c}"},
+        "grid": {**layout.grid(bottom_name=bool(unit), right=24), "top": STRIP_TOP},
+        "tooltip": {"trigger": "item"},
         "xAxis": {
-            "type": "category",
-            "data": categories,
-            "axisLabel": {"fontSize": 11, "hideOverlap": True},
+            "type": "value",
+            "scale": True,
+            "splitLine": {"lineStyle": {"type": "dashed"}},
+            # На узком холсте подписи делений сходятся: лишние прячутся.
+            "axisLabel": {"hideOverlap": True},
+            **(layout.bottom_axis_name(unit) if unit else {}),
         },
-        "yAxis": layout.value_axis(unit, scale=False, minInterval=1),
+        "yAxis": {"type": "value", "show": False, "min": -1, "max": 1},
         "series": [
             {
-                "name": layer["name"],
-                "type": "bar",
-                "stack": "bins",
-                "data": layer["values"],
-                "itemStyle": {"color": layer["colour"]},
-                "barCategoryGap": "12%",
+                "type": "scatter",
+                "symbolSize": STRIP_POINT,
+                "data": data,
+                "labelLayout": {"hideOverlap": True},
+                "emphasis": {"scale": 1.4},
+                "markLine": {
+                    "symbol": "none",
+                    "silent": True,
+                    "data": [
+                        {
+                            "xAxis": mark["value"],
+                            "name": mark["label"],
+                            "lineStyle": {
+                                "color": BREAK_COLOUR if mark.get("strong") else MARK_COLOUR,
+                                "type": "solid" if mark.get("strong") else "dashed",
+                                "width": 1,
+                            },
+                            "label": {
+                                "color": BREAK_COLOUR if mark.get("strong") else MARK_COLOUR,
+                                # Подпись России — выше подписи медианы: рядом они не сходятся.
+                                "distance": 17 if mark.get("strong") else 4,
+                            },
+                        }
+                        for mark in marks
+                    ],
+                    "label": {
+                        "show": True,
+                        "formatter": "{b}",
+                        "position": "end",
+                        "distance": 4,
+                        "fontSize": 10,
+                    },
+                },
             }
-            for layer in layers
         ],
+        "swarm": {"series": 0},
     }
 
 
@@ -282,35 +352,58 @@ def bump_option(
     *,
     max_rank: int,
 ) -> dict[str, Any]:
-    """Построить график движения позиций в рейтинге: первое место вверху."""
-    series: list[dict[str, Any]] = []
-    for index, line in enumerate(lines):
-        primary = bool(line.get("primary"))
-        muted = bool(line.get("muted"))
-        entry: dict[str, Any] = {
-            "name": line["name"],
+    """
+    Места в рейтинге по годам: первое место вверху. Все линии серые; цветные и подписанные —
+    выделенные (``primary``) и та, что под указателем. Линия — ``{"name", "values"}``
+    с необязательными ``label`` (подпись у конца), ``code`` и ``primary``.
+
+    Оформление серых линий одинаково у всех 85 — оно приходит одним образцом
+    (``seriesTemplate``), а у ряда — только имя, значения и подпись.
+    """
+
+    def styled(colour: str, ink: str, *, primary: bool) -> dict[str, Any]:
+        label = layout.end_label(primary=primary, colour=ink)
+        label["show"] = primary
+        hover = colour if primary else HOVER_COLOUR
+        return {
             "type": "line",
-            "data": line["values"],
             "symbol": "circle",
-            "symbolSize": 6,
+            "symbolSize": 6 if primary else 3,
+            "showSymbol": primary,
             "connectNulls": False,
-            "itemStyle": {"color": layout.palette_colour(index)},
-            "endLabel": layout.end_label(
-                primary=primary, muted=muted, colour=layout.palette_ink(index)
-            ),
+            "lineStyle": {"color": colour, "width": PRIMARY_WIDTH if primary else 1},
+            "itemStyle": {"color": colour},
+            "endLabel": label,
             "labelLayout": {"moveOverlap": "shiftY"},
-            "emphasis": {"focus": "series"},
+            # Под указателем серая линия получает цвет и подпись, остальные бледнеют.
+            "emphasis": {
+                "focus": "series",
+                "lineStyle": {"color": hover, "width": PRIMARY_WIDTH},
+                "itemStyle": {"color": hover},
+                "endLabel": {"show": True},
+            },
             "blur": layout.blur(),
             "triggerLineEvent": True,
+            # Выделенные — поверх серых.
+            "z": 5 if primary else 2,
         }
-        entry["lineStyle"] = {"color": layout.palette_colour(index)}
-        if primary:
-            entry["lineStyle"]["width"] = PRIMARY_WIDTH
-            # Выделенная линия — поверх окружения.
-            entry["z"] = 5
-        if muted:
-            entry["lineStyle"]["opacity"] = layout.MUTED_OPACITY
-            entry["itemStyle"] = {"opacity": layout.MUTED_OPACITY}
+
+    series: list[dict[str, Any]] = []
+    colour_index = 0
+    for line in lines:
+        entry: dict[str, Any] = {"name": line["name"], "data": line["values"]}
+        if line.get("primary"):
+            entry.update(
+                styled(
+                    layout.palette_colour(colour_index),
+                    layout.palette_ink(colour_index),
+                    primary=True,
+                )
+            )
+            colour_index += 1
+        else:
+            entry["seriesTemplate"] = True
+        entry.setdefault("endLabel", {})["formatter"] = line.get("label") or line["name"]
         series.append(entry)
 
     return {
@@ -326,6 +419,8 @@ def bump_option(
             minInterval=1,
         ),
         "series": series,
+        # Образец оформления серых линий (chart-options.js раскладывает его по рядам).
+        "seriesTemplate": styled(CONTEXT_COLOUR, HOVER_COLOUR, primary=False),
         **_territory_links(lines),
     }
 
@@ -406,37 +501,15 @@ def dumbbell_option(
     }
 
 
-def radar_option(
-    indicators: list[dict[str, Any]],
-    entries: list[dict[str, Any]],
-) -> dict[str, Any]:
-    """
-    Построить лепестковую диаграмму профиля территорий.
-
-    Оси нормированы долей от размаха по сравниваемым: 100 — лучшее значение среди них.
-    """
-    return {
-        "tooltip": {"trigger": "item"},
-        "legend": layout.legend(),
-        "radar": {
-            "indicator": indicators,
-            "radius": "62%",
-            "center": ["50%", "58%"],
-            "axisName": {"fontSize": 10, "color": "var(--text-secondary)"},
-            "splitLine": {"lineStyle": {"color": "var(--border-subtle)"}},
-            "splitArea": {"show": False},
-            "axisLine": {"lineStyle": {"color": "var(--border-subtle)"}},
-        },
-        "series": [
-            {
-                "type": "radar",
-                "data": entries,
-                "symbolSize": 4,
-                "areaStyle": {"opacity": 0.08},
-                "lineStyle": {"width": 2},
-            }
-        ],
-    }
+def extreme_codes(points: list[dict[str, Any]], count: int = EXTREME_LABELS) -> set[str]:
+    """Коды крайних точек облака: наибольшие и наименьшие по каждой оси."""
+    chosen: set[str] = set()
+    for axis in ("x", "y"):
+        ordered = sorted(points, key=lambda point: point[axis])
+        for point in ordered[:count] + ordered[-count:]:
+            if point.get("code"):
+                chosen.add(point["code"])
+    return chosen
 
 
 def scatter_option(
@@ -444,11 +517,23 @@ def scatter_option(
     *,
     x_name: str = "",
     y_name: str = "",
+    labels: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    """Построить диаграмму рассеяния сопоставления двух рядов."""
+    """
+    Построить диаграмму рассеяния сопоставления двух рядов; ``labels`` — подписи крайних
+    точек по коду территории.
+    """
     horizontal_axis: dict[str, Any] = {"type": "value", "scale": True}
     if x_name:
         horizontal_axis.update(layout.bottom_axis_name(x_name))
+    extremes = extreme_codes(points) if labels else set()
+
+    def item(point: dict[str, Any]) -> dict[str, Any]:
+        entry: dict[str, Any] = {"name": point["name"], "value": [point["x"], point["y"]]}
+        label = (labels or {}).get(point.get("code", ""), "")
+        if label and point.get("code") in extremes:
+            entry["label"] = {"show": True, "formatter": label}
+        return entry
 
     return {
         "grid": layout.grid(axis_name=bool(y_name), bottom_name=bool(x_name), right=24),
@@ -459,9 +544,16 @@ def scatter_option(
             {
                 "type": "scatter",
                 "symbolSize": 8,
-                "data": [
-                    {"name": point["name"], "value": [point["x"], point["y"]]} for point in points
-                ],
+                "data": [item(point) for point in points],
+                "label": {
+                    "show": False,
+                    "position": "right",
+                    "distance": 3,
+                    "fontSize": 10,
+                    "color": "var(--text-secondary)",
+                    "textBorderWidth": 0,
+                },
+                "labelLayout": {"hideOverlap": True},
             }
         ],
     }

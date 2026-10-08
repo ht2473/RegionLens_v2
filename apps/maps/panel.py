@@ -1,6 +1,5 @@
 """
-Картограмма рабочей поверхности: географическая (:mod:`apps.maps.cartogram`), плиточная
-или малые графики по плиточной раскладке (:mod:`apps.maps.multiples`).
+Картограмма рабочей поверхности: географическая (:mod:`apps.maps.cartogram`) или плиточная.
 
 Разбиение по классам шкалы (:func:`build_values`) — общее с представлением распределения.
 """
@@ -16,8 +15,9 @@ from django.utils.translation import gettext_lazy as _
 from apps.catalog.indicator import describe_series
 from apps.catalog.models import Territory
 from apps.core.templatetags.formatting import position_share, ru_number
+from apps.surface.findings import map_finding
 from apps.surface.state import SurfaceState
-from apps.warehouse.queries import region_panel, series_values_by_territory
+from apps.warehouse.queries import series_values_by_territory
 
 from .boundaries import boundaries_available, boundaries_meta
 from .cartogram import DEFINITION_PREFIX, build_map
@@ -25,6 +25,7 @@ from .classification import (
     DEFAULT_CLASSES,
     DEFAULT_METHOD,
     MAX_CLASSES,
+    METHOD_TERMS,
     METHODS,
     MIN_CLASSES,
     classify,
@@ -33,14 +34,12 @@ from .classification import (
     histogram,
     sequential_palette,
 )
-from .multiples import build_multiples
 from .tiles import tile_grid, tile_position
 
-# Режимы отображения карты: география, плитки и малые графики по плиточной раскладке.
+# Режимы отображения карты: география и плитки.
 MODE_GEOGRAPHIC = "geo"
 MODE_TILES = "tiles"
-MODE_SMALL = "small"
-MODES = (MODE_GEOGRAPHIC, MODE_TILES, MODE_SMALL)
+MODES = (MODE_GEOGRAPHIC, MODE_TILES)
 
 # Число территорий в списках лидеров и аутсайдеров под картой.
 LEADERS_LIMIT = 5
@@ -59,6 +58,10 @@ def build(
         "mode": _resolve_mode(request.GET.get("mode")),
     }
     context.update(build_values(request, state))
+    context["view_summary"] = [
+        *context["scale_summary"],
+        _("география") if context["mode"] == MODE_GEOGRAPHIC else _("плитки"),
+    ]
     if state.series is None or state.year is None:
         return context
 
@@ -81,12 +84,13 @@ def build(
                 else None
             ),
             "geo_caption": _("Картограмма: %(title)s") % {"title": series.full_title},
-            "multiples": (
-                build_multiples(rows, region_panel(series.key), state.year)
-                if mode == MODE_SMALL
-                else None
+            "finding": map_finding(
+                rows,
+                item,
+                [context["period_start"], context["period_end"]]
+                if context["compare_year"]
+                else None,
             ),
-            "multiples_caption": _("Малые графики: %(title)s") % {"title": series.full_title},
         }
     )
     return context
@@ -153,6 +157,8 @@ def build_values(request: HttpRequest, state: SurfaceState) -> dict[str, Any]:
             "method": method,
             "class_count": class_count,
             "compare_year": None,
+            "scale_options": _scale_options([], class_count),
+            "scale_summary": _scale_summary(method, class_count, None),
         }
 
     compare_year = _resolve_compare_year(request.GET.get("compare"), state.years, state.year)
@@ -205,7 +211,44 @@ def build_values(request: HttpRequest, state: SurfaceState) -> dict[str, Any]:
         "palette": palette,
         "histogram": histogram(values),
         "no_data_count": sum(1 for row in rows if row["mapped"] is None),
+        # Образец способа — на уровнях года; у изменений шкала одна, симметричная.
+        "scale_options": _scale_options([] if compare_year else values, class_count),
+        "scale_summary": _scale_summary(method, class_count, period),
     }
+
+
+def _scale_options(values: list[float], class_count: int) -> list[dict[str, Any]]:
+    """
+    Способы разбиения для «Настроить вид»: подпись словами, термин и образец — доли размаха
+    значений года, занятые классами этого способа (строками: дробь шаблон записал бы с запятой).
+    """
+    low, high = (min(values), max(values)) if values else (0.0, 0.0)
+    options = []
+    for code, title in METHODS.items():
+        sample: list[dict[str, str]] = []
+        result = classify(values, method=code, class_count=class_count) if high > low else None
+        if result is not None:
+            palette = sequential_palette(result.class_count)
+            edges = [min(max(edge, low), high) for edge in result.breaks]
+            sample = [
+                {
+                    "grow": f"{(edges[index + 1] - edges[index]) / (high - low):.4f}",
+                    "colour": palette[index],
+                }
+                for index in range(result.class_count)
+            ]
+        options.append({"code": code, "title": title, "term": METHOD_TERMS[code], "sample": sample})
+    return options
+
+
+def _scale_summary(method: str, class_count: int, period: list[int] | None) -> list[Any]:
+    """Как построена шкала — словами для строки «Настроить вид»."""
+    if period:
+        return [_("изменение с %(start)s по %(end)s год") % {"start": period[0], "end": period[1]}]
+    summary: list[Any] = [METHODS[method]]
+    if class_count:
+        summary.append(_("классов: %(count)s") % {"count": class_count})
+    return summary
 
 
 def _resolve_mode(value: str | None) -> str:

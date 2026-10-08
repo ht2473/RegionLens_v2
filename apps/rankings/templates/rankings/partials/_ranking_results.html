@@ -1,5 +1,5 @@
 {% load i18n formatting %}
-{# Представление «рейтинг»: наибольшее движение, график позиций и полная таблица. #}
+{# Представление «рейтинг»: наибольшее движение, места по годам и полная таблица. #}
 
 {% if not series or not rows %}
   <div class="empty-state">
@@ -80,29 +80,24 @@
     </div>
   {% endif %}
 
-  {# --- График движения позиций ---------------------------------------------------------- #}
+  {# --- Места по годам: все линии серые, цветные — отмеченные и мой регион ------------------- #}
   {% if bump_option %}
     <div class="chart-frame">
       <div class="chart-frame__header">
         <div>
-          <div class="chart-frame__title">{% translate "Движение позиций верхней части рейтинга" %}</div>
+          <div class="chart-frame__title">{% translate "Места по годам" %}</div>
           <div class="chart-frame__subtitle">
             {% translate "Первое место — вверху" %} ·
             {{ ranking_years.0|year }}–{{ ranking_years|last|year }}
+            {% if not bump_marked %}· {% translate "наведите на линию, чтобы выделить регион" %}{% endif %}
+            {% translate "Обрыв линии — в этом году региона нет в рейтинге: значения по нему в источнике нет." as bump_hint %}
+            {% include "partials/_hint.html" with hint_id="hint-bump" hint_text=bump_hint hint_label=_("Что значит обрыв линии") %}
           </div>
         </div>
       </div>
+      {% if finding %}<p class="chart-frame__finding">{{ finding }}</p>{% endif %}
       <rl-chart class="chart chart--tall" data-options="ranking-bump-option"></rl-chart>
       {{ bump_option|json_script:"ranking-bump-option" }}
-      <div class="chart-frame__footer">
-        {% blocktranslate trimmed %}
-          Обрыв линии означает, что в этом году субъект не участвовал в ранжировании:
-          значения по нему в источнике нет.
-        {% endblocktranslate %}
-        {% if selected_codes %}
-          · {% translate "выбранные территории показаны сплошной линией, даже если не входят в верхнюю часть" %}
-        {% endif %}
-      </div>
     </div>
   {% endif %}
 
@@ -115,17 +110,13 @@
           <div class="chart-frame__subtitle">
             {{ period_start|year }} → {{ period_end|year }} ·
             {% blocktranslate trimmed with count=dumbbell_edge %}первые и последние {{ count }} мест{% endblocktranslate %}{% if selected_codes %} {% translate "и отмеченные территории" %}{% endif %}
+            {% translate "Серая точка — значение года сравнения, цветная — года рейтинга; длина отрезка — насколько изменилось значение. Год сравнения — в «Настроить вид»." as dumbbell_hint %}
+            {% include "partials/_hint.html" with hint_id="hint-dumbbell" hint_text=dumbbell_hint hint_label=_("Как читать «Было — стало»") %}
           </div>
         </div>
       </div>
       <rl-chart class="chart chart--tall" data-options="ranking-dumbbell-option"></rl-chart>
       {{ dumbbell_option|json_script:"ranking-dumbbell-option" }}
-      <div class="chart-frame__footer">
-        {% blocktranslate trimmed %}
-          Серая точка — значение года сравнения, цветная — года рейтинга; длина отрезка —
-          насколько изменилось значение. Год сравнения выбирается в панели.
-        {% endblocktranslate %}
-      </div>
     </div>
   {% endif %}
 
@@ -140,6 +131,8 @@
           {% blocktranslate trimmed with cv=statistics.coef_variation|percent decile=statistics.decile_ratio|ru_number:1 %}
             коэффициент вариации — {{ cv }}, децильный — {{ decile }}
           {% endblocktranslate %}
+          {% translate "Чем выше коэффициент вариации и децильный коэффициент, тем сильнее различаются регионы: между соседними местами может лежать и двукратная разница, и доли процента." as spread_hint %}
+          {% include "partials/_hint.html" with hint_id="hint-ranking-spread" hint_text=spread_hint hint_label=_("Что значат коэффициенты") %}
         </span>
       {% endif %}
     </div>
@@ -177,17 +170,20 @@
         </thead>
         <tbody>
           {% for row in rows %}
-            <tr data-territory="{{ row.territory_code }}"{% if row.selected %} class="is-selected"{% endif %}>
+            <tr data-territory="{{ row.territory_code }}"{% if row.selected or row.mine %} class="{% if row.selected %}is-selected{% endif %}{% if row.mine %} is-mine{% endif %}"{% endif %}>
               <td class="is-numeric data-table__rank">
                 {% if ascending %}{{ row.rank_asc }}{% else %}{{ row.rank_desc }}{% endif %}
               </td>
               <td>
                 <a href="{% url 'catalog:territory-detail' slug=row.slug %}">{{ row.name }}</a>
+                {% if row.mine %}<span class="mine-mark">{% translate "мой регион" %}</span>{% endif %}
               </td>
               <td class="text-secondary text-small">
                 {{ row.district_name|default:"—" }}
               </td>
-              <td class="is-numeric">{{ row.value|ru_number:precision }}</td>
+              <td class="is-numeric value-cell">
+                <span class="value-cell__number">{{ row.value|ru_number:precision }}</span>{% if row.bar %}<span class="value-cell__bar" style="--share: {{ row.bar }}" aria-hidden="true"></span>{% endif %}
+              </td>
               <td class="is-numeric text-secondary">
                 {% if row.ratio_to_country %}×{{ row.ratio_to_country|ru_number:2 }}{% else %}—{% endif %}
               </td>
@@ -219,15 +215,6 @@
       </table>
     </div>
 
-    {% if statistics %}
-      <p class="surface-block__footnote">
-        {% blocktranslate trimmed %}
-          Чем выше коэффициент вариации и децильный коэффициент, тем сильнее различаются
-          регионы: между соседними местами может лежать и двукратная разница, и доли
-          процента.
-        {% endblocktranslate %}
-      </p>
-    {% endif %}
   </section>
 
 {% endif %}

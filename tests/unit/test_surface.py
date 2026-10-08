@@ -1,17 +1,25 @@
 """
 Проверки описаний представлений: перенос параметров между ними, ссылка на вид,
-значения для гистограммы.
+полоса точек распределения и строки вывода под графиками.
 """
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 from django.test import RequestFactory
 
-from apps.core.charts import histogram_option
+from apps.core.charts import STRIP_NO_CLASS, strip_option
 from apps.exports.constants import REPORT_KINDS_BY_CODE, ReportKind
+from apps.surface.findings import (
+    distribution_finding,
+    map_finding,
+    ranking_finding,
+    relation_finding,
+    timeline_finding,
+)
 from apps.surface.panels import (
     PANEL_COMPARE,
     PANEL_DISTRIBUTION,
@@ -104,105 +112,148 @@ class TestPanelUrls:
         assert [tab["code"] for tab in tabs if tab["active"]] == [PANEL_RANKINGS]
 
 
-class TestHistogramLayers:
-    """Разбор гистограммы распределения по классам шкалы."""
-
-    @staticmethod
-    def bins(count: int, low: float, width: float) -> list[dict[str, float]]:
-        """Собрать описания интервалов гистограммы."""
-        return [
-            {"lower": low + width * index, "upper": low + width * (index + 1)}
-            for index in range(count)
-        ]
-
-    @staticmethod
-    def row(value: float | None, class_index: int | None) -> dict[str, Any]:
-        """Собрать строку наблюдения."""
-        return {"mapped": value, "class_index": class_index}
-
-    def test_every_observation_is_counted_once(self) -> None:
-        """
-        Ни одно значение не теряется и не считается дважды.
-
-        Потерянный при разборе субъект означал бы, что гистограмма показывает
-        не то распределение, которое закрашено на карте.
-        """
-        from apps.surface.builders import _layer_counts
-
-        rows = [self.row(value, value // 10) for value in (0, 5, 12, 19, 25, 39)]
-        counts = _layer_counts(self.bins(4, 0, 10), rows, 4)
-        assert sum(sum(layer) for layer in counts) == len(rows)
-
-    def test_value_lands_in_its_own_class(self) -> None:
-        """Значение попадает в долю своего класса, а не соседнего."""
-        from apps.surface.builders import _layer_counts
-
-        counts = _layer_counts(self.bins(2, 0, 10), [self.row(15, 1)], 2)
-        assert counts[1] == [0, 1]
-        assert counts[0] == [0, 0]
-
-    def test_largest_value_stays_in_the_last_bin(self) -> None:
-        """
-        Наибольшее значение остаётся в последнем интервале.
-
-        Верхняя граница последнего интервала совпадает с максимумом, и без особого
-        правила он оказался бы за пределами гистограммы.
-        """
-        from apps.surface.builders import _layer_counts
-
-        counts = _layer_counts(self.bins(2, 0, 10), [self.row(20, 0)], 1)
-        assert counts[0] == [0, 1]
-
-    def test_missing_values_are_skipped(self) -> None:
-        """Пропуск в гистограмму не попадает: у него нет ни значения, ни класса."""
-        from apps.surface.builders import _layer_counts
-
-        counts = _layer_counts(self.bins(2, 0, 10), [self.row(None, None)], 1)
-        assert sum(counts[0]) == 0
-
-
-class TestHistogramOption:
-    """Настройки гистограммы распределения."""
+class TestStripOption:
+    """Полоса точек распределения: точка — регион."""
 
     @staticmethod
     def option() -> dict[str, Any]:
-        """Собрать гистограмму из двух долей."""
-        return histogram_option(
-            ["0", "10"],
+        """Собрать полосу из двух регионов с медианой и Россией."""
+        return strip_option(
             [
-                {"name": "0 — 10", "values": [3, 0], "colour": "var(--scale-seq-1)"},
-                {"name": "10 — 20", "values": [0, 2], "colour": "var(--scale-seq-5)"},
+                {
+                    "name": "Москва",
+                    "label": "МСК",
+                    "value": 180.0,
+                    "colour": "var(--scale-seq-5)",
+                    "selected": True,
+                    "tooltip": "<strong>Москва</strong><br>180",
+                },
+                {"name": "Тула", "label": "ТУЛ", "value": 60.0, "colour": "", "tooltip": "Тула"},
             ],
-            unit="субъектов",
+            marks=[
+                {"value": 75.0, "label": "медиана"},
+                {"value": 100.0, "label": "Россия", "strong": True},
+            ],
+            unit="руб.",
         )
 
-    def test_layers_are_stacked(self) -> None:
+    def test_layout_is_left_to_the_browser(self) -> None:
         """
-        Доли складываются в один столбец.
+        Сдвиг точек считает браузер: он знает ширину холста.
 
-        Интервал гистограммы шире класса шкалы у нижнего края распределения,
-        и рядом стоящие доли читались бы как отдельные интервалы.
+        Разложенная на сервере полоса на телефоне слипалась бы — точка там шире шага.
         """
         option = self.option()
-        assert {entry["stack"] for entry in option["series"]} == {"bins"}
+        assert option["swarm"] == {"series": 0}
+        assert option["yAxis"]["show"] is False
+        assert all(item["value"][1] == 0 for item in option["series"][0]["data"])
 
-    def test_colours_are_kept_as_tokens(self) -> None:
-        """Цвет передаётся именем переменной оформления, а не значением."""
-        option = self.option()
-        colours = [entry["itemStyle"]["color"] for entry in option["series"]]
-        assert all(colour.startswith("var(--") for colour in colours)
+    def test_selected_region_is_larger_and_labelled(self) -> None:
+        """Отмеченный регион крупнее соседей и подписан сокращением."""
+        chosen, other = self.option()["series"][0]["data"]
+        assert chosen["symbolSize"] > self.option()["series"][0]["symbolSize"]
+        assert chosen["label"]["formatter"] == "МСК"
+        assert "label" not in other
 
-    def test_legend_is_off(self) -> None:
-        """
-        Легенды нет: соответствие цветов классам показывает легенда карты.
+    def test_point_without_class_is_muted(self) -> None:
+        """Точка без класса шкалы — нейтральным цветом, а не первым цветом палитры."""
+        assert self.option()["series"][0]["data"][1]["itemStyle"]["color"] == STRIP_NO_CLASS
 
-        Перечень из пяти диапазонов над гистограммой повторял бы подписи оси.
-        """
-        assert self.option()["legend"]["show"] is False
+    def test_country_mark_is_stronger(self) -> None:
+        """Россия отмечена сплошной линией, медиана — пунктиром."""
+        marks = self.option()["series"][0]["markLine"]["data"]
+        assert marks[0]["lineStyle"]["type"] == "dashed"
+        assert marks[1]["lineStyle"]["type"] == "solid"
 
-    def test_axis_counts_whole_regions(self) -> None:
-        """Деления оси целые: половины субъекта не бывает."""
-        assert self.option()["yAxis"]["minInterval"] == 1
+
+def item(**fields: Any) -> SimpleNamespace:
+    """Описание ряда для выводов: доля, точность, единица, складываемость."""
+    defaults = {"is_percentage": False, "precision": 0, "unit_label": "руб.", "absolute": False}
+    return SimpleNamespace(**{**defaults, **fields})
+
+
+def region(name: str, value: float | None, rank: int | None) -> dict[str, Any]:
+    """Строка карты для выводов."""
+    return {"name": name, "value": value, "mapped": value, "rank_desc": rank}
+
+
+class TestFindings:
+    """Строка вывода под графиком — по правилам, с числами из данных."""
+
+    def test_map_names_the_extremes_and_the_gap(self) -> None:
+        """Карта: где больше и меньше всего и во сколько раз."""
+        rows = [region("Москва", 300.0, 1), region("Тула", 150.0, 2), region("Тыва", 100.0, 3)]
+        text = map_finding(rows, item(), None)
+        assert "Москва" in text and "Тыва" in text
+        assert "в 3 раза" in text
+
+    def test_percentages_differ_in_points(self) -> None:
+        """У процентов разница — в пунктах: кратность долей вводила бы в заблуждение."""
+        rows = [region("Тыва", 30.0, 1), region("Москва", 5.5, 2)]
+        assert "24,5 п. п." in map_finding(rows, item(is_percentage=True, precision=1), None)
+
+    def test_change_map_counts_regions_that_grew(self) -> None:
+        """Сравнение лет: у скольких регионов рост и где он наибольший."""
+        rows = [region("Москва", 10.0, None), region("Тула", -2.0, None), region("Тыва", 4.0, None)]
+        text = map_finding(rows, item(), [2015, 2025])
+        assert "у 2 из 3 регионов" in text
+        assert "Москва" in text
+
+    def test_distribution_compares_with_the_country(self) -> None:
+        """Распределение: середина регионов и сколько из них ниже России."""
+        rows = [region(name, value, None) for name, value in (("А", 1.0), ("Б", 2.0), ("В", 9.0))]
+        statistics = {"p25_value": 1.5, "p75_value": 5.0, "median_value": 2.0, "country_value": 3.0}
+        text = distribution_finding(rows, statistics, item())
+        assert "от 2 до 5 руб." in text
+        assert "у 2 из 3" in text
+
+    def test_additive_value_is_not_compared_with_the_sum(self) -> None:
+        """У складываемой величины значение России — сумма, с регионами её не сравнивают."""
+        rows = [region(name, value, None) for name, value in (("А", 1.0), ("Б", 2.0), ("В", 9.0))]
+        statistics = {
+            "p25_value": 1.5,
+            "p75_value": 5.0,
+            "median_value": 2.0,
+            "country_value": 12.0,
+        }
+        text = distribution_finding(rows, statistics, item(absolute=True))
+        assert "России" not in text
+        assert "в 4,5 раза больше середины" in text
+
+    def test_ranking_names_the_largest_moves(self) -> None:
+        """Рейтинг: наибольший подъём и падение — со знаком, без согласования по роду."""
+        movers = {
+            "risen": [{"name": "Воронежская область", "movement": 11}],
+            "fallen": [{"name": "Кузбасс", "movement": -6}],
+        }
+        text = ranking_finding(movers, [2024, 2025])
+        assert "Воронежская область (+11)" in text
+        assert "Кузбасс (−6)" in text
+        assert ranking_finding(movers, None) == ""
+
+    def test_timeline_uses_years_known_to_every_line(self) -> None:
+        """Динамика: изменение — за годы, в которых значения есть у всех линий."""
+        lines = [
+            {"name": "Тула", "values": [None, 10.0, 30.0]},
+            {"name": "Тыва", "values": [5.0, 10.0, 12.0]},
+            {"name": "Россия", "values": [1.0, 10.0, 20.0], "country": True},
+        ]
+        text = timeline_finding([2020, 2021, 2022], lines, item())
+        assert text.startswith("С 2021 по 2022 год")
+        assert "Тула — рост в 3 раза" in text
+        assert "Россия — рост в 2 раза" in text
+
+    def test_unconfirmed_relation_says_so(self) -> None:
+        """Связь, не отличимая от нуля, направления не получает."""
+        pair = SimpleNamespace(
+            is_available=True, coefficient=-0.1, is_significant=False, strength="слабая"
+        )
+        text = relation_finding("Зарплата", "Бедность", pair)
+        assert "нельзя сказать" in text
+        confirmed = SimpleNamespace(
+            is_available=True, coefficient=-0.44, is_significant=True, strength="умеренная"
+        )
+        assert "меньше «Бедность»" in relation_finding("Зарплата", "Бедность", confirmed)
 
 
 class TestViewQuery:

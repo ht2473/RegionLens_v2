@@ -9,6 +9,7 @@
           {% translate "Изменение значения" %}
         {% else %}
           {{ classification.method_label|capfirst }}
+          <span class="map-legend__term">({{ classification.method_term }})</span>
         {% endif %}
         · {% translate "классов" %}: {{ classification.class_count }}
       </span>

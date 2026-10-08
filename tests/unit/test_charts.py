@@ -69,7 +69,7 @@ class TestEndLabels:
 
     def test_ranking_movement_is_labelled_too(self) -> None:
         """График движения позиций подписывается тем же способом."""
-        option = bump_option(YEARS, [line("Москва", [1, 1, 2, 2])], max_rank=85)
+        option = bump_option(YEARS, [line("Москва", [1, 1, 2, 2], primary=True)], max_rank=85)
         assert option["legend"]["show"] is False
         assert option["series"][0]["endLabel"]["show"] is True
 
@@ -256,37 +256,49 @@ class TestChosenYear:
 
 
 class TestBumpHighlight:
-    """Выделенная линия на графике движения позиций."""
+    """Места по годам: все линии серые, цветные — выделенные."""
 
     LINES = [
-        line("МСК", [1, 1, 2, 1], primary=True),
-        line("СПБ", [2, 2, 1, 2], muted=True),
+        line("Москва", [1, 1, 2, 1], label="МСК", primary=True),
+        line("Санкт-Петербург", [2, 2, 1, 2], label="СПБ"),
     ]
 
-    def test_selected_line_is_thicker_and_on_top(self) -> None:
+    def test_selected_line_is_coloured_thicker_and_on_top(self) -> None:
         """
-        Выбранная территория выделена и нарисована поверх остальных.
+        Выбранная территория — цветом, толще и поверх остальных.
 
-        Линии рейтинга пересекаются чаще прочих, и под приглушённой соседкой
-        выделенная терялась бы на половине длины.
+        Линии рейтинга пересекаются чаще прочих, и среди 85 серых выделенная терялась бы.
         """
         option = bump_option(YEARS, self.LINES, max_rank=8)
-        primary = option["series"][0]
-        assert primary["lineStyle"]["width"] > 1
-        assert primary["z"] > 1
+        primary, other = option["series"][0], option["seriesTemplate"]
+        assert primary["lineStyle"]["color"] == layout.palette_colour(0)
+        assert primary["lineStyle"]["width"] > other["lineStyle"]["width"]
+        assert primary["z"] > other["z"]
 
-    def test_surroundings_are_dimmed(self) -> None:
-        """Окружение приглушено — и линия, и её точки."""
+    def test_surroundings_are_grey_until_pointed_at(self) -> None:
+        """
+        Окружение серое; под указателем линия получает цвет и подпись. Оформление серых —
+        одним образцом: у ряда только имя, значения и подпись (85 повторов раздували страницу).
+        """
         option = bump_option(YEARS, self.LINES, max_rank=8)
-        muted = option["series"][1]
-        assert muted["lineStyle"]["opacity"] == layout.MUTED_OPACITY
-        assert muted["itemStyle"]["opacity"] == layout.MUTED_OPACITY
+        other, template = option["series"][1], option["seriesTemplate"]
+        assert other == {
+            "name": "Санкт-Петербург",
+            "data": [2, 2, 1, 2],
+            "seriesTemplate": True,
+            "endLabel": {"formatter": "СПБ"},
+        }
+        assert template["lineStyle"]["color"] == "var(--border-strong)"
+        assert template["endLabel"]["show"] is False
+        assert template["emphasis"]["lineStyle"]["color"] != template["lineStyle"]["color"]
+        assert template["emphasis"]["endLabel"]["show"] is True
 
-    def test_labels_follow_the_highlight(self) -> None:
-        """Подпись следует за линией: иначе выделение читалось бы только на самой линии."""
-        option = bump_option(YEARS, self.LINES, max_rank=8)
-        assert option["series"][0]["endLabel"]["fontWeight"] == "bold"
-        assert option["series"][1]["endLabel"]["opacity"] < 1
+    def test_line_is_named_in_full_and_labelled_short(self) -> None:
+        """В подсказке — полное название, у конца линии — сокращение."""
+        primary = bump_option(YEARS, self.LINES, max_rank=8)["series"][0]
+        assert primary["name"] == "Москва"
+        assert primary["endLabel"]["formatter"] == "МСК"
+        assert primary["endLabel"]["fontWeight"] == "bold"
 
 
 class TestRebasing:
@@ -328,71 +340,62 @@ class TestRebasing:
 
 
 class TestCorrelationMatrix:
-    """Матрица парных связей."""
+    """Матрица парных связей — нижний треугольник."""
 
-    LABELS = [
-        "Валовой региональный продукт на душу населения",
-        "Численность населения с денежными доходами ниже границы бедности",
-        "Численность населения",
-    ]
+    LABELS = ["ВРП на душу населения", "Уровень бедности", "Численность населения"]
+    KEYS = ["a:00", "b:00", "c:00"]
 
     def cells(self) -> list[dict[str, object]]:
-        """Собрать ячейки матрицы: диагональ, одна связь и один пропуск."""
+        """Ячейки нижнего треугольника: значимая связь, незначимая и не рассчитанная."""
         return [
-            {"x": 0, "y": 0, "value": 1.0},
-            {"x": 1, "y": 0, "value": -0.68},
-            {"x": 2, "y": 0, "value": None},
+            {"x": 0, "y": 1, "value": -0.68, "significant": True},
+            {"x": 0, "y": 2, "value": 0.12, "significant": False},
+            {"x": 1, "y": 2, "value": None, "significant": False},
         ]
 
-    def test_axes_carry_numbers_rather_than_names(self) -> None:
-        """
-        По осям отложены номера показателей.
+    def option(self) -> dict[str, object]:
+        """Собрать матрицу с выбором пары щелчком."""
+        return matrix_option(
+            self.LABELS, self.KEYS, self.cells(), pick={"x": "#pair-x", "y": "#pair-y"}
+        )
 
-        Названия здесь от двух десятков до сотни знаков, и на оси они обрезались
-        до двух десятков, после чего разные показатели становились неразличимы.
+    def test_axes_carry_short_names_without_empty_row_and_column(self) -> None:
         """
-        option = matrix_option(self.LABELS, self.cells())
-        assert option["xAxis"]["data"] == ["1", "2", "3"]
-        assert option["yAxis"]["data"] == ["1", "2", "3"]
-
-    def test_empty_cell_is_left_empty(self) -> None:
+        По осям — краткие названия; пустые первая строка и последний столбец треугольника
+        на осях не стоят.
         """
-        Незначимая связь не рисуется вовсе.
+        option = self.option()
+        assert option["xAxis"]["data"] == self.LABELS[:-1]
+        assert option["yAxis"]["data"] == self.LABELS[1:]
+        assert option["xAxis"]["axisLabel"]["overflow"] == "truncate"
 
-        Подложка ячеек не заливается: серая клетка читается как значение,
-        которого нет.
-        """
-        option = matrix_option(self.LABELS, self.cells())
-        assert len(option["series"][0]["data"]) == 2
-        assert option["xAxis"]["splitArea"]["show"] is False
-        assert option["yAxis"]["splitArea"]["show"] is False
+    def test_unconfirmed_link_is_grey_and_without_number(self) -> None:
+        """Незначимая связь — серой клеткой без числа, вне шкалы цвета."""
+        option = self.option()
+        significant, quiet = option["series"]
+        assert len(significant["data"]) == 1
+        assert len(quiet["data"]) == 1
+        assert quiet["data"][0]["label"] == {"show": False}
+        assert option["visualMap"]["seriesIndex"] == 0
 
-    def test_tooltip_names_both_indicators(self) -> None:
-        """Подсказка называет оба показателя целиком: на осях стоят номера."""
-        option = matrix_option(self.LABELS, self.cells())
-        name = option["series"][0]["data"][1]["name"]
-        assert self.LABELS[0] in name
-        assert self.LABELS[1] in name
+    def test_cell_opens_its_pair(self) -> None:
+        """Клетка знает свою пару: по горизонтали — столбец, по вертикали — строка."""
+        option = self.option()
+        assert option["pick"] == {"x": "#pair-x", "y": "#pair-y"}
+        assert option["series"][0]["data"][0]["pick"] == ["a:00", "b:00"]
 
     def test_tooltip_and_label_are_ready_text(self) -> None:
         """Подсказка и подпись клетки приходят готовыми, число — с запятой."""
-        option = matrix_option(self.LABELS, self.cells())
-        cell = option["series"][0]["data"][1]
+        cell = self.option()["series"][0]["data"][0]
         tooltip = cell["tooltip"]["formatter"]
         assert "{" not in tooltip
-        assert "&middot;" not in tooltip and "&middot;" not in cell["name"]
+        assert self.LABELS[0] in tooltip and self.LABELS[1] in tooltip
         assert "0,68" in tooltip
         assert cell["label"]["formatter"].replace("−", "-").endswith("0,68")
-        assert "formatter" not in option["tooltip"]
 
     def test_colour_scale_has_no_draggable_handles(self) -> None:
-        """
-        У шкалы цвета нет ползунков.
-
-        Их подписи со значениями библиотека рисует над полосой, и они наезжали
-        на номера показателей под матрицей.
-        """
-        assert matrix_option(self.LABELS, self.cells())["visualMap"]["calculable"] is False
+        """У шкалы цвета нет ползунков: их подписи наезжали на названия под матрицей."""
+        assert self.option()["visualMap"]["calculable"] is False
 
 
 class TestTerritoryLinks:
@@ -408,8 +411,8 @@ class TestTerritoryLinks:
 
     def test_ranking_movement_carries_the_same_link(self) -> None:
         """График движения позиций связан с таблицей так же."""
-        option = bump_option(YEARS, [line("МСК", [1, 1, 2, 1], code="RU-MOW")], max_rank=8)
-        assert option["territories"] == {"МСК": "RU-MOW"}
+        option = bump_option(YEARS, [line("Москва", [1, 1, 2, 1], code="RU-MOW")], max_rank=8)
+        assert option["territories"] == {"Москва": "RU-MOW"}
 
     def test_lines_without_territories_declare_nothing(self) -> None:
         """

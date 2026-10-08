@@ -190,6 +190,64 @@ function unscroll(prepared, element) {
   return prepared;
 }
 
+// Полоса точек: поля холста по горизонтали (прикидка: ось значений библиотека ставит сама),
+// высота подписей оси под полем и наименьшая высота холста.
+const SWARM_MARGIN = 56;
+const SWARM_AXIS = 44;
+const SWARM_MIN_HEIGHT = 140;
+
+/**
+ * Разложить точки полосы без перекрытий (служебный раздел swarm): точки с близкими
+ * значениями сдвигаются вверх и вниз — ближайший свободный сдвиг, считая от середины.
+ * Сдвиг считается в диаметрах точки по настоящей ширине холста, высота холста — под полосу.
+ *
+ * @param {object} prepared настройки, уже приведённые к теме
+ * @param {HTMLElement} element холст
+ * @returns {object} те же настройки со сдвигами точек
+ */
+function swarm(prepared, element) {
+  const spec = prepared.swarm;
+  delete prepared.swarm;
+  const series = spec && prepared.series ? prepared.series[spec.series] : null;
+  if (!series || !element || !element.clientWidth) {
+    return prepared;
+  }
+  // Диаметр с зазором, точек.
+  const size = (series.symbolSize || 8) + 2;
+  const data = series.data || [];
+  const values = data.map((item) => item.value[0]);
+  const low = Math.min(...values);
+  const span = Math.max(...values) - low || 1;
+  const width = Math.max(element.clientWidth - SWARM_MARGIN, 120) / size;
+  const across = values.map((value) => ((value - low) / span) * width);
+
+  const placed = [];
+  across
+    .map((_, index) => index)
+    .sort((a, b) => across[a] - across[b])
+    .forEach((index) => {
+      const x = across[index];
+      const near = placed.filter((point) => Math.abs(point.x - x) < 1);
+      const candidates = [0];
+      near.forEach((point) => {
+        const rise = Math.sqrt(1 - (point.x - x) ** 2);
+        candidates.push(point.y + rise, point.y - rise);
+      });
+      candidates.sort((a, b) => Math.abs(a) - Math.abs(b));
+      const y =
+        candidates.find((c) => near.every((point) => (point.x - x) ** 2 + (point.y - c) ** 2 > 0.999)) ?? 0;
+      placed.push({ x, y });
+      data[index].value = [values[index], y];
+    });
+
+  const reach = Math.max(1, ...placed.map((point) => Math.abs(point.y))) + 0.8;
+  prepared.yAxis = Object.assign({}, prepared.yAxis, { min: -reach, max: reach });
+  const grid = prepared.grid || {};
+  const height = 2 * reach * size + (grid.top || 0) + (grid.bottom || 0) + SWARM_AXIS;
+  element.style.height = `${Math.max(Math.ceil(height), SWARM_MIN_HEIGHT)}px`;
+  return prepared;
+}
+
 /**
  * Покрасить текст компонентов маркерами темы: легенду, названия осей и подписи шкалы
  * ECharts рисует своим серым, в тёмной теме он почти сливается с карточкой.
@@ -245,6 +303,20 @@ export function isNarrow(element) {
 export function prepare(options, element) {
   const prepared = merge(baseOptions(), resolveTokens(options));
 
+  // Общее оформление рядов, помеченных seriesTemplate, — одним образцом с сервера.
+  if (prepared.seriesTemplate) {
+    const template = prepared.seriesTemplate;
+    prepared.series = (prepared.series || []).map((entry) => {
+      if (!entry || !entry.seriesTemplate) {
+        return entry;
+      }
+      const own = Object.assign({}, entry);
+      delete own.seriesTemplate;
+      return merge(template, own);
+    });
+    delete prepared.seriesTemplate;
+  }
+
   // Оси — здесь: цвета из переменных темы, разряды — по языку страницы.
   ["xAxis", "yAxis"].forEach((name) => {
     const single = !Array.isArray(prepared[name]);
@@ -269,10 +341,12 @@ export function prepare(options, element) {
     prepared.tooltip.valueFormatter = (value) => format.auto(value);
   }
 
-  // Соответствие линий территориям библиотеке не передаётся.
+  // Соответствие линий территориям и поля выбора щелчком библиотеке не передаются.
   delete prepared.territories;
+  delete prepared.pick;
 
   unscroll(prepared, element);
+  swarm(prepared, element);
   return paintText(isNarrow(element) ? reflow(prepared, element) : prepared);
 }
 

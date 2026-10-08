@@ -1,5 +1,6 @@
 /* График <rl-chart data-options="<id>"> по настройкам из {{ option|json_script:"<id>" }}.
-   Строится, когда появляется в документе (и во фрагменте HTMX), освобождается, когда уносят. */
+   Строится, когда подходит к окну (и во фрагменте HTMX): библиотека не грузится ради графиков
+   ниже первого экрана. Освобождается, когда уносят; перед печатью строятся все. */
 
 import { fixTextMeasure, isNarrow, prepare } from "../lib/chart-options.js";
 import { follow } from "../lib/highlight.js";
@@ -22,6 +23,25 @@ const DIMMED_LABEL = 0.3;
 
 /** Графики, стоящие сейчас в документе: их перерисовывают смена темы и размера окна. */
 const mounted = new Set();
+
+/** Ждущие подхода к окну; без IntersectionObserver график строится сразу. */
+const waiting = new Set();
+const watcher =
+  "IntersectionObserver" in window
+    ? new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              watcher.unobserve(entry.target);
+              waiting.delete(entry.target);
+              entry.target.mount();
+            }
+          });
+        },
+        // С запасом в полэкрана: график готов, когда до него докрутили.
+        { rootMargin: "50% 0px" },
+      )
+    : null;
 
 /* --- Библиотека: подключена тегом или догружается по адресу из body ----------------- */
 
@@ -104,11 +124,22 @@ function singleQuotedFonts(value) {
 class RegionChart extends HTMLElement {
   connectedCallback() {
     // Настройки после элемента могут быть ещё не вставлены — построение откладывается.
-    queueMicrotask(() => this.mount());
+    queueMicrotask(() => {
+      if (watcher && this.isConnected && !this.instance) {
+        waiting.add(this);
+        watcher.observe(this);
+      } else {
+        this.mount();
+      }
+    });
   }
 
   disconnectedCallback() {
     mounted.delete(this);
+    if (watcher) {
+      watcher.unobserve(this);
+      waiting.delete(this);
+    }
     if (this.saveControl && !this.saveControl.isConnected) {
       this.saveControl = null;
     }
@@ -151,10 +182,13 @@ class RegionChart extends HTMLElement {
     fixTextMeasure(echarts);
 
     this.options = options;
-    this.instance = echarts.init(this, null, { renderer: "canvas" });
     this.narrow = isNarrow(this);
-    this.instance.setOption(prepare(options, this));
-    this.enableFocus();
+    // Настройки — до создания: полоса точек задаёт холсту высоту по своей раскладке.
+    const prepared = prepare(options, this);
+    this.instance = echarts.init(this, null, { renderer: "canvas" });
+    this.instance.setOption(prepared);
+    this.enableFocus(prepared);
+    this.enablePick();
     this.addSaveControl();
     // Соответствие «название линии — код территории»; у мер неравенства пусто.
     this.unfollow = follow(this.instance, options.territories || null);
@@ -169,17 +203,48 @@ class RegionChart extends HTMLElement {
     this.pinned = null;
     this.narrow = isNarrow(this);
     this.instance.setOption(prepare(this.options, this), true);
+    // Полоса точек могла сменить высоту холста.
+    this.instance.resize();
   }
 
-  /** Подогнать размер под контейнер; при смене раскладки подписей — собрать заново. */
+  /**
+   * Подогнать размер под контейнер; при смене раскладки подписей — собрать заново.
+   * Полоса точек раскладывается по ширине — собирается заново всегда.
+   */
   fit() {
     if (!this.instance) {
       return;
     }
-    if (isNarrow(this) !== this.narrow) {
+    if (isNarrow(this) !== this.narrow || this.options.swarm) {
       this.redraw();
     }
     this.instance.resize();
+  }
+
+  /**
+   * Выбор щелчком по элементу графика (служебный раздел pick: {x, y} — селекторы полей формы):
+   * у элемента данных pick — значения полей; поле получает значение, форма — событие change.
+   * То же без мыши — ссылками рядом с графиком.
+   */
+  enablePick() {
+    const pick = this.options.pick;
+    if (!pick) {
+      return;
+    }
+    this.instance.on("click", (params) => {
+      const values = params.data && params.data.pick;
+      if (!values) {
+        return;
+      }
+      const fields = [pick.x, pick.y].map((selector) => document.querySelector(selector));
+      if (fields.some((field) => !field)) {
+        return;
+      }
+      fields.forEach((field, index) => {
+        field.value = values[index];
+      });
+      fields[0].dispatchEvent(new Event("change", { bubbles: true }));
+    });
   }
 
   /**
@@ -187,9 +252,9 @@ class RegionChart extends HTMLElement {
    *
    * Приглушение — прозрачностью: «размытие» библиотеки не отзывается на выделение из кода.
    */
-  enableFocus() {
-    // Исходная прозрачность — чтобы вернуть окружение приглушённым.
-    const initial = (this.options.series || []).map((entry) => ({
+  enableFocus(prepared) {
+    // Исходная прозрачность — чтобы вернуть окружение приглушённым; ряды — уже разложенные.
+    const initial = (prepared.series || []).map((entry) => ({
       name: entry.name,
       focusable: Boolean(entry.triggerLineEvent),
       line: entry.lineStyle && entry.lineStyle.opacity !== undefined ? entry.lineStyle.opacity : 1,
@@ -289,6 +354,15 @@ class RegionChart extends HTMLElement {
       .catch(() => download(chart, fileName(caption, "png")));
   }
 }
+
+// Печать: строятся и те, до которых не докрутили.
+window.addEventListener("beforeprint", () => {
+  [...waiting].forEach((chart) => {
+    watcher.unobserve(chart);
+    waiting.delete(chart);
+    chart.mount();
+  });
+});
 
 // Перерисовка после смены темы — с задержкой до пересчёта стилей.
 onThemeChange(() => window.setTimeout(() => mounted.forEach((chart) => chart.redraw()), 0));

@@ -1,5 +1,5 @@
 {% load i18n formatting %}
-{# Представление «распределение»: гистограмма в цветах классов карты, сводка, положение выбранных. #}
+{# Представление «распределение»: полоса точек в цветах классов карты, сводка, положение выбранных. #}
 
 {% if not series %}
   <div class="empty-state">
@@ -15,32 +15,37 @@
   </div>
 {% else %}
 
-  {# --- Гистограмма ---------------------------------------------------------------------- #}
-  {% if histogram_option %}
+  {# --- Полоса точек: точка — регион, цвет — класс шкалы карты ---------------------------- #}
+  {% if strip_option %}
     <div class="chart-frame">
       <div class="chart-frame__header">
         <div>
-          <h2 class="chart-frame__title">{% translate "Сколько субъектов на каждой ступени шкалы" %}</h2>
+          <h2 class="chart-frame__title">{% translate "Где стоит каждый регион" %}</h2>
           <div class="chart-frame__subtitle">
             {{ year|year }} ·
             {% blocktranslate trimmed with shown=valued_count %}
-              значение известно по {{ shown }} субъектам
+              значение известно по {{ shown }} регионам
             {% endblocktranslate %}
             {% if no_data_count %} · {% translate "без данных" %}: {{ no_data_count }}{% endif %}
+            {% translate "Точка — регион, по горизонтали — значение; точки с близкими значениями сдвинуты по вертикали, чтобы не закрывать друг друга. Цвет — класс той же шкалы, что на карте. Пунктир — медиана и квартили: между соседними линиями — четверть регионов." as strip_hint %}
+            {% include "partials/_hint.html" with hint_id="hint-strip" hint_text=strip_hint hint_label=_("Как читать полосу точек") %}
           </div>
         </div>
       </div>
-      <rl-chart class="chart chart--tall" data-options="distribution-histogram"></rl-chart>
-      {{ histogram_option|json_script:"distribution-histogram" }}
-      <div class="chart-frame__footer">
-        {% blocktranslate trimmed %}
-          По горизонтали отложены значения, по вертикали — число субъектов. Столбец
-          разобран на доли по классам шкалы, и тем же цветом класс закрашен на карте.
-          Разбор нужен потому, что интервал гистограммы и класс шкалы разной ширины:
-          у квантильной шкалы нижние классы узкие, и в первый столбец попадают
-          субъекты сразу из нескольких.
-        {% endblocktranslate %}
-      </div>
+      {% if finding %}<p class="chart-frame__finding">{{ finding }}</p>{% endif %}
+      <rl-chart class="chart chart--strip" data-options="distribution-strip"></rl-chart>
+      {{ strip_option|json_script:"distribution-strip" }}
+      {% if intervals %}
+        <ul class="class-legend" aria-label="{% translate 'Классы шкалы' %}">
+          {% for interval in intervals %}
+            <li class="class-legend__item">
+              <span class="class-legend__swatch" style="background-color: var({{ interval.colour }})" aria-hidden="true"></span>
+              <span class="numeric">{{ interval.lower|ru_number }} — {{ interval.upper|ru_number }}</span>
+              <span class="class-legend__count numeric" title="{% translate 'регионов в классе' %}">{{ interval.count }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
     </div>
   {% endif %}
 
@@ -79,7 +84,11 @@
     <section aria-labelledby="distribution-positions-title">
       <div class="surface-block__head">
         <h2 class="surface-block__title" id="distribution-positions-title">{% translate "Отмеченные регионы" %}</h2>
-        <span class="surface-block__note numeric">{{ year|year }}</span>
+        <span class="surface-block__note">
+          <span class="numeric">{{ year|year }}</span>
+          {% translate "Доля регионов с меньшим значением точнее места: соседние места могут отличаться и на доли процента, и в разы." as share_hint %}
+          {% include "partials/_hint.html" with hint_id="hint-positions" hint_text=share_hint hint_label=_("Почему доля, а не место") %}
+        </span>
       </div>
 
       {% if positions %}
@@ -103,12 +112,6 @@
             </li>
           {% endfor %}
         </ul>
-        <p class="surface-block__footnote">
-          {% blocktranslate trimmed %}
-            Доля регионов с меньшим значением точнее места: соседние места могут отличаться
-            и на доли процента, и в разы.
-          {% endblocktranslate %}
-        </p>
       {% else %}
         <p class="surface-block__footnote">
           {% translate "Отметьте регионы в панели выбора — их место в распределении будет показано здесь." %}

@@ -38,9 +38,16 @@
             {% elif subject.unit %}
               · {{ subject.unit }}
             {% endif %}
+            {% if timeline_breaks %}
+              {% translate "Пунктиром отмечен год из общего выбора: карта, рейтинг и таблица показывают именно его. Отметками цвета внимания показаны годы разрывов сопоставимости." as timeline_hint %}
+            {% else %}
+              {% translate "Пунктиром отмечен год из общего выбора: карта, рейтинг и таблица показывают именно его." as timeline_hint %}
+            {% endif %}
+            {% include "partials/_hint.html" with hint_id="hint-timeline" hint_text=timeline_hint hint_label=_("Что значат отметки") %}
           </div>
         </div>
       </div>
+      {% if finding %}<p class="chart-frame__finding">{{ finding }}</p>{% endif %}
       {% if timeline_breaks %}
         {# Предупреждение о разрывах — над графиком. #}
         <div class="callout {% if timeline_trimmed %}callout--info{% else %}callout--warning{% endif %}"
@@ -130,12 +137,6 @@
       {% endif %}
       <rl-chart class="chart chart--tall" data-options="compare-timeline-option"></rl-chart>
       {{ timeline_option|json_script:"compare-timeline-option" }}
-      <div class="chart-frame__footer">
-        {% translate "Пунктиром отмечен год из общего выбора: карта, рейтинг и таблица показывают именно его." %}
-        {% if timeline_breaks %}
-          {% translate "Отметками цвета внимания показаны годы разрывов сопоставимости." %}
-        {% endif %}
-      </div>
     </div>
   {% elif series %}
     <div class="empty-state">
@@ -145,27 +146,50 @@
     </div>
   {% endif %}
 
-  {# --- Профиль ------------------------------------------------------------------------- #}
-  {% if radar_option %}
-    <div class="chart-frame">
+  {# --- Профиль: строка на показатель, точка — место территории среди регионов ---------- #}
+  {% if profile_dots %}
+    <section class="chart-frame" aria-labelledby="compare-profile-dots-title">
       <div class="chart-frame__header">
         <div>
-          <div class="chart-frame__title">{% translate "Профиль по ключевым показателям" %}</div>
+          <h2 class="chart-frame__title" id="compare-profile-dots-title">{% translate "Место среди регионов по ключевым показателям" %}</h2>
           <div class="chart-frame__subtitle">
-            {% translate "По осям — положение в рейтинге страны: 100 — лучшее, 0 — худшее" %}
+            {% translate "Слева — хуже всех регионов, справа — лучше всех" %}
+            {% translate "Учтено, где рост — к лучшему, а где к худшему: у безработицы и бедности лучше низкое значение. Показатели без такой оценки в профиль не входят." as profile_hint %}
+            {% include "partials/_hint.html" with hint_id="hint-profile" hint_text=profile_hint hint_label=_("Как читать профиль") %}
           </div>
         </div>
       </div>
-      <rl-chart class="chart chart--tall" data-options="compare-radar-option"></rl-chart>
-      {{ radar_option|json_script:"compare-radar-option" }}
-      <div class="chart-frame__footer">
-        {% blocktranslate trimmed %}
-          Шкала осей — положение среди субъектов с учётом направленности показателя:
-          у безработицы и бедности лучшим считается низкое значение. Показатели
-          с неопределённой направленностью на диаграмму не выведены.
-        {% endblocktranslate %}
+      <ul class="dot-legend" aria-hidden="true">
+        {% for item in profile_legend %}
+          <li class="dot-legend__item" data-territory="{{ item.code }}">
+            <span class="dot-legend__swatch" style="background-color: {{ item.colour }}"></span>{{ item.name }}
+          </li>
+        {% endfor %}
+      </ul>
+      <ul class="dot-rows">
+        {% for row in profile_dots %}
+          <li class="dot-rows__row">
+            <span class="dot-rows__name">{{ row.series.short_title }}</span>
+            {# Для программ чтения дорожка — картинка с перечнем мест словами. #}
+            <span class="dot-rows__track" role="img"
+                  aria-label="{% for dot in row.dots %}{% blocktranslate trimmed with name=dot.name share=dot.better %}{{ name }}: лучше, чем у {{ share }} % регионов{% endblocktranslate %}{% if not forloop.last %}; {% endif %}{% endfor %}">
+              {% for dot in row.dots %}
+                <span class="dot-rows__dot" data-territory="{{ dot.code }}"
+                      style="--at: {{ dot.at }}; --dot: {{ dot.colour }}"
+                      title="{% blocktranslate trimmed with name=dot.name share=dot.better %}{{ name }}: лучше, чем у {{ share }} % регионов{% endblocktranslate %}"></span>
+              {% endfor %}
+            </span>
+          </li>
+        {% endfor %}
+      </ul>
+      <div class="dot-rows__axis" aria-hidden="true">
+        <span class="dot-rows__scale">
+          <span>{% translate "хуже всех" %}</span>
+          <span>{% translate "середина" %}</span>
+          <span>{% translate "лучше всех" %}</span>
+        </span>
       </div>
-    </div>
+    </section>
   {% endif %}
 
   {# --- Таблица различий -------------------------------------------------------------------- #}
@@ -175,6 +199,12 @@
         <h2 class="surface-block__title" id="compare-profile-title">{% translate "Таблица различий" %}</h2>
         <span class="surface-block__note">
           {% translate "Последнее доступное значение и место среди субъектов" %}
+          {% blocktranslate trimmed asvar years_hint %}
+            Год указан у каждой величины отдельно: последний доступный год у разных рядов
+            не совпадает, и приведение всех значений к одному году потребовало бы
+            отбросить более свежие данные.
+          {% endblocktranslate %}
+          {% include "partials/_hint.html" with hint_id="hint-profile-years" hint_text=years_hint hint_label=_("Почему годы разные") %}
         </span>
       </div>
 
@@ -227,13 +257,6 @@
         </table>
       </div>
 
-      <p class="surface-block__footnote">
-        {% blocktranslate trimmed %}
-          Год указан у каждой величины отдельно: последний доступный год у разных рядов
-          не совпадает, и приведение всех значений к одному году потребовало бы
-          отбросить более свежие данные.
-        {% endblocktranslate %}
-      </p>
     </section>
   {% endif %}
 

@@ -9,7 +9,11 @@ export function init() {
   document.addEventListener("click", (event) => {
     const button = event.target.closest("[data-print]");
     if (button) {
-      window.print();
+      // Графики строятся по подходу к окну: до печати — все, включая нижние.
+      const charts = [...document.querySelectorAll("rl-chart")].map((chart) =>
+        typeof chart.mount === "function" ? chart.mount() : null,
+      );
+      Promise.all(charts).finally(() => window.print());
     }
   });
 }

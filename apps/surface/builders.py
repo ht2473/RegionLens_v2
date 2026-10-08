@@ -1,8 +1,8 @@
 """
 Представления «Распределение» и «Таблица» рабочей поверхности.
 
-Распределение берёт шкалу карты; таблица строится от справочника, поэтому субъект
-без значения занимает в ней строку.
+Распределение — полоса точек в цветах шкалы карты; таблица строится от справочника, поэтому
+субъект без значения занимает в ней строку.
 """
 
 from __future__ import annotations
@@ -10,13 +10,17 @@ from __future__ import annotations
 from typing import Any
 
 from django.http import HttpRequest
+from django.utils.html import escape
+from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
 from apps.catalog.constants import ValueQuality
+from apps.catalog.indicator import describe_series
 from apps.catalog.models import Territory
-from apps.core.charts import histogram_option
-from apps.core.templatetags.formatting import ru_number
+from apps.core.charts import strip_option
+from apps.core.templatetags.formatting import position_share, ru_number
 from apps.maps.panel import build_values
+from apps.surface.findings import distribution_finding
 from apps.surface.state import SurfaceState
 from apps.warehouse.queries import series_statistics
 
@@ -42,79 +46,78 @@ QUALITY_LABELS: dict[int, Any] = {
 
 
 def build_distribution(request: HttpRequest, state: SurfaceState) -> dict[str, Any]:
-    """Собрать гистограмму разброса, сводку и положение выбранных территорий."""
+    """Собрать полосу точек, сводку и положение выбранных территорий."""
     context = build_values(request, state)
+    context["view_summary"] = context["scale_summary"]
     if state.series is None or state.year is None:
         return context
 
     rows: list[dict[str, Any]] = context["rows"]
-    palette: list[str] = context.get("palette", [])
-
+    statistics = series_statistics(state.series.key, state.year)
+    item = describe_series(state.series)
     context.update(
         {
-            "statistics": series_statistics(state.series.key, state.year),
-            "histogram_option": _histogram_chart(
-                context.get("histogram", []), rows, context.get("intervals", []), palette
+            "statistics": statistics,
+            "strip_option": _strip_chart(
+                rows, statistics, item, compared=bool(context["compare_year"])
             ),
             "positions": _positions(rows, state.codes),
+            "finding": distribution_finding(rows, statistics, item),
             "valued_count": sum(1 for row in rows if row["mapped"] is not None),
         }
     )
     return context
 
 
-def _histogram_chart(
-    bins: list[dict[str, float]],
+def _strip_chart(
     rows: list[dict[str, Any]],
-    intervals: list[dict[str, Any]],
-    palette: list[str],
+    statistics: dict[str, Any] | None,
+    item: Any,
+    *,
+    compared: bool,
 ) -> dict[str, Any] | None:
     """
-    Построить гистограмму распределения, разобрав столбцы по классам шкалы карты.
-
-    Интервал гистограммы и класс шкалы разной ширины: в столбец попадают разные классы.
+    Полоса точек года: цвет точки — класс шкалы карты, выбранные крупнее и подписаны;
+    отметки — квартили, медиана и Россия (у складываемой величины Россия — сумма, её нет).
     """
-    if not bins or not intervals:
+    valued = [row for row in rows if row["mapped"] is not None]
+    if len(valued) < 2:  # noqa: PLR2004 — разброса по одной точке нет
         return None
+    precision = item.precision
 
-    counts = _layer_counts(bins, rows, len(intervals))
-    layers = [
+    def tip(row: dict[str, Any]) -> str:
+        parts = [f"<strong>{escape(row['name'])}</strong>", ru_number(row["mapped"], precision)]
+        if row["percentile"] is not None and not compared:
+            parts.append(escape(position_share(row["percentile"])))
+        return "<br>".join(parts)
+
+    points = [
         {
-            "name": _("%(lower)s — %(upper)s")
-            % {
-                "lower": ru_number(interval["lower"]),
-                "upper": ru_number(interval["upper"]),
-            },
-            "values": counts[index],
-            "colour": f"var({palette[index]})" if index < len(palette) else "",
+            "name": row["name"],
+            "label": row["abbreviation"] or row["name"],
+            "value": row["mapped"],
+            "colour": f"var({row['colour']})" if row["colour"] else "",
+            "selected": row["selected"],
+            "tooltip": tip(row),
         }
-        for index, interval in enumerate(intervals)
+        for row in valued
     ]
-
-    return histogram_option(
-        [ru_number(item["lower"]) for item in bins],
-        layers,
-        unit=str(_("субъектов")),
-    )
-
-
-def _layer_counts(
-    bins: list[dict[str, float]], rows: list[dict[str, Any]], class_count: int
-) -> list[list[int]]:
-    """Разложить субъекты по интервалам гистограммы и классам шкалы."""
-    low = bins[0]["lower"]
-    width = bins[0]["upper"] - bins[0]["lower"]
-    counts = [[0] * len(bins) for _ in range(class_count)]
-    if width <= 0:
-        return counts
-
-    for row in rows:
-        value, index = row["mapped"], row["class_index"]
-        if value is None or index is None or index >= class_count:
-            continue
-        position = min(int((value - low) / width), len(bins) - 1)
-        counts[index][max(position, 0)] += 1
-    return counts
+    marks: list[dict[str, Any]] = []
+    if statistics and not compared:
+        # Квартили — без подписи (о них — в «?»).
+        for key, label in (
+            ("p25_value", ""),
+            ("median_value", gettext("медиана")),
+            ("p75_value", ""),
+        ):
+            if statistics.get(key) is not None:
+                marks.append({"value": statistics[key], "label": label})
+        country = statistics.get("country_value")
+        low = min(row["mapped"] for row in valued)
+        high = max(row["mapped"] for row in valued)
+        if country is not None and not item.absolute and low <= country <= high:
+            marks.append({"value": country, "label": gettext("Россия"), "strong": True})
+    return strip_option(points, marks=marks, unit=item.unit_label)
 
 
 def _positions(rows: list[dict[str, Any]], codes: list[str]) -> list[dict[str, Any]]:
@@ -154,12 +157,17 @@ def build_table(request: HttpRequest, state: SurfaceState) -> dict[str, Any]:
         sort = SORT_NAME
     district = request.GET.get("district", "")
 
-    context.update({"sorts": SORTS, "sort": sort, "district": district})
+    context.update(
+        {"sorts": SORTS, "sort": sort, "district": district, "view_summary": [SORTS[sort]]}
+    )
     if state.series is None or state.year is None:
         context["table_rows"] = []
         return context
 
-    rows = _full_table(context["rows"], state.codes)
+    from apps.accounts.region import my_region
+
+    region = my_region(request)
+    rows = _full_table(context["rows"], state.codes, mine=region.code if region is not None else "")
     if district:
         rows = [row for row in rows if row["district_code"] == district]
     if sort == SORT_VALUE:
@@ -177,10 +185,19 @@ def build_table(request: HttpRequest, state: SurfaceState) -> dict[str, Any]:
     return context
 
 
-def _full_table(rows: list[dict[str, Any]], codes: list[str]) -> list[dict[str, Any]]:
-    """Дополнить наблюдения субъектами, которых в складе за этот год нет, — строками с прочерком."""
+def _full_table(
+    rows: list[dict[str, Any]], codes: list[str], *, mine: str = ""
+) -> list[dict[str, Any]]:
+    """
+    Дополнить наблюдения субъектами, которых в складе за этот год нет, — строками с прочерком.
+
+    Столбик у значения — доля наибольшего (строкой: дробь шаблон записал бы с запятой); только
+    у величин одного знака.
+    """
     known = {row["code"]: row for row in rows}
     selected = set(codes)
+    values = [row["value"] for row in rows if row["value"] is not None]
+    highest = max(values) if values and min(values) >= 0 and max(values) > 0 else None
     table: list[dict[str, Any]] = []
 
     # Порядок — по названию на языке страницы.
@@ -204,6 +221,12 @@ def _full_table(rows: list[dict[str, Any]], codes: list[str]) -> list[dict[str, 
                 "quality": quality,
                 "note": _row_note(row, quality),
                 "selected": territory.code in selected,
+                "mine": territory.code == mine,
+                "bar": (
+                    f"{row['value'] / highest:.3f}"
+                    if highest and row and row["value"] is not None
+                    else ""
+                ),
             }
         )
 

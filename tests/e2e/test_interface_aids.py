@@ -418,6 +418,16 @@ class TestTakeAway:
         if charts.count() == 0:
             pytest.skip("Склад не собран: графиков на странице нет")
 
+        # График строится, когда подходит к окну: каждый показывается по очереди.
+        page.evaluate(
+            """async () => {
+                const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+                for (const element of document.querySelectorAll('rl-chart')) {
+                    element.scrollIntoView({ block: 'center' });
+                    for (let wait = 0; wait < 60 && !element.instance; wait += 1) await frame();
+                }
+            }"""
+        )
         assert page.locator(".chart-save-group").count() == charts.count()
 
         group = page.locator(".chart-save-group").first

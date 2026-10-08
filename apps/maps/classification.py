@@ -11,8 +11,14 @@ from typing import Any
 
 from django.utils.translation import gettext_lazy as _
 
-# Допустимые способы разбиения и их подписи для интерфейса.
+# Допустимые способы разбиения: подпись словами для интерфейса и термин — мелко рядом.
 METHODS: dict[str, Any] = {
+    "quantile": _("поровну регионов"),
+    "equal": _("равными шагами"),
+    "jenks": _("по разрывам"),
+    "stddev": _("от среднего"),
+}
+METHOD_TERMS: dict[str, Any] = {
     "quantile": _("квантили"),
     "equal": _("равные интервалы"),
     "jenks": _("естественные границы"),
@@ -56,8 +62,13 @@ class Classification:
 
     @property
     def method_label(self) -> Any:
-        """Подпись способа разбиения для легенды."""
+        """Подпись способа разбиения словами для легенды."""
         return METHODS.get(self.method, self.method)
+
+    @property
+    def method_term(self) -> Any:
+        """Термин способа разбиения."""
+        return METHOD_TERMS.get(self.method, self.method)
 
     def class_of(self, value: float | None) -> int | None:
         """Определить номер класса значения, считая от нуля; пропуск — ``None``."""
