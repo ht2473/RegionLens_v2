@@ -80,8 +80,11 @@ class _ShareTargetMixin:
         raise NotImplementedError
 
     def back(self, target: Dataset | Study) -> str:
-        name = "userdata:dataset" if isinstance(target, Dataset) else "userdata:study"
-        return f"{reverse(name, args=[target.public_id])}#own-shares"
+        if isinstance(target, Dataset):
+            # Ссылки таблицы — на её вкладке «Доступ».
+            url = reverse("userdata:dataset", args=[target.public_id])
+            return f"{url}?tab=access#own-shares"
+        return f"{reverse('userdata:study', args=[target.public_id])}#own-shares"
 
 
 class ShareCreateView(_ShareTargetMixin, View):

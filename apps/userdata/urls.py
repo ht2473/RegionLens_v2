@@ -47,6 +47,9 @@ urlpatterns = [
     path("own-data/<uuid:public_id>/", pages.DatasetView.as_view(), name="dataset"),
     path("own-data/<uuid:public_id>/delete/", pages.DeleteView.as_view(), name="delete"),
     path(
+        "own-data/<uuid:public_id>/study/", pages.DatasetStudyView.as_view(), name="dataset-study"
+    ),
+    path(
         "own-data/<uuid:public_id>/versions/new/",
         version_views.VersionUploadView.as_view(),
         name="version-new",

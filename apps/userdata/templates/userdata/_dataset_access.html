@@ -1,0 +1,27 @@
+{% load i18n %}
+{# Вкладка «Доступ» (владельцу): кто видит таблицу и закрытые ссылки; гостю — вход. #}
+<section class="page-section" aria-labelledby="own-access">
+  <div class="page-section__head">
+    <h2 class="page-section__title" id="own-access">{% translate "Кто видит" %}</h2>
+  </div>
+  <p class="page-section__lead">
+    {% if shares %}{% translate "Вы и те, у кого есть закрытая ссылка." %}{% else %}{% translate "Только вы." %}{% endif %}
+  </p>
+</section>
+
+{% if guest %}
+  <section class="page-section" aria-labelledby="own-shares-title" id="own-shares">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="own-shares-title">{% translate "Закрытая ссылка" %}</h2>
+    </div>
+    <p class="page-section__lead">
+      {% translate "По закрытой ссылке таблицу смотрят без входа и ничего в ней не меняют." %}
+      <a href="{% url 'accounts:login' %}?next={{ request.get_full_path|urlencode }}">{% translate "Войдите, чтобы создать ссылку" %}</a>.
+    </p>
+  </section>
+{% else %}
+  {% url 'userdata:share-create' dataset.public_id as share_create_url %}
+  {% translate "По ссылке таблицу смотрят без входа: показатели, карту и другие виды, проверки. Изменить, удалить и увидеть исходный файл нельзя." as share_lead %}
+  {% translate "Можно скачивать таблицу и документы" as share_downloads_label %}
+  {% include "userdata/_shares.html" with share_target=dataset share_revoke_name="userdata:share-revoke" %}
+{% endif %}

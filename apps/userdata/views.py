@@ -216,7 +216,11 @@ class FileStepView(DatasetStepMixin, TemplateView):
 
 
 class TableStepView(DatasetStepMixin, TemplateView):
-    """Шаг «Что в таблице»: форма, роли столбцов, периоды, разрезы, территории и вопросы."""
+    """
+    Шаг «Что в таблице»: сама таблица с ролями столбцов в шапке; вопросы — только
+    о неуверенном (территории, год, вложенные области, лишние ряды); разрезы и столбцы
+    периодов широкой таблицы — по требованию.
+    """
 
     template_name = "userdata/table_step.html"
     step = "table"
@@ -248,27 +252,42 @@ class TableStepView(DatasetStepMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         loaded, result = describe.load_and_recognize(self.version, self.request.user)
         columns = [column for column in result.columns if column.distinct or column.header]
-        # Столбцы с периодами широкой таблицы — под раскрытием: их бывает по сорок с одной ролью.
+        # Столбцы с периодами широкой таблицы: первые — в таблице, остальные — под раскрытием,
+        # их бывает по сорок с одной ролью.
         periods = [
             column
             for column in columns
             if result.form == recognize.WIDE and column.role == recognize.VALUE and column.stamp
         ]
-        if len(periods) <= PERIOD_COLUMNS_SHOWN:
-            periods = []
+        hidden = periods[PERIOD_COLUMNS_SHOWN:] if len(periods) > PERIOD_COLUMNS_ALL else []
+        shown = [column for column in columns if column not in hidden]
+        unresolved = describe.unresolved(result)
+        nested = result.territories.nested if result.territories else []
+        too_many = result.series > recognize.MAX_SERIES
         context.update(
             page_title=_("Что в таблице"),
             result=result,
-            columns=[column for column in columns if column not in periods],
-            period_columns=periods,
-            last_period_column=periods[-1] if periods else None,
+            columns=shown,
+            preview=_preview(loaded, result, shown),
+            period_columns=hidden,
+            last_period_column=hidden[-1] if hidden else None,
             role_choices=ROLE_CHOICES,
-            unresolved=describe.unresolved(result),
+            questions=sum(
+                (
+                    result.form == recognize.UNKNOWN,
+                    len(nested),
+                    result.needs_year,
+                    bool(unresolved),
+                    too_many,
+                )
+            ),
+            too_many=too_many,
+            unresolved=unresolved,
             outside=describe.outside(result),
             territory_choices=describe.territory_choices(),
-            nested=result.territories.nested if result.territories else [],
+            nested=nested,
             resolved_regions=_resolved_regions(result),
-            table=_with_sample(jobs.table_of(self.version), loaded),
+            table=jobs.table_of(self.version),
             max_series=recognize.MAX_SERIES,
             repeated={number - 1 for item in result.same_headers for number in item["columns"]},
             form_text=FORM_TEXTS.get(result.form, ""),
@@ -316,7 +335,10 @@ class TableStatusView(DatasetStepMixin, View):
 
 
 class SeriesStepView(DatasetStepMixin, TemplateView):
-    """Шаг «Показатели»: название, единица, вид величины, направленность, пересчёт; сборка."""
+    """
+    Шаг «Показатели»: вопросы о неуверенном (вид величины, единица, месяцы), прочее описание
+    по требованию; сборка. Новые пересчёты — в исследовании («Посчитать»).
+    """
 
     template_name = "userdata/series_step.html"
     step = "series"
@@ -348,15 +370,12 @@ class SeriesStepView(DatasetStepMixin, TemplateView):
         context.update(
             page_title=_("Показатели"),
             indicators=items,
+            asking=[item for item in items if item.questions],
+            settled=[item for item in items if not item.questions],
             report=report,
             meta_form=kwargs.get("meta_form") or DatasetMetaForm(instance=self.dataset),
             kinds=DatasetSeries.Kind.choices,
             polarities=DatasetSeries.Polarity.choices,
-            per_choices=[
-                (value, label)
-                for value, label in DatasetSeries.Derived.choices
-                if value in indicators.PER_CHOICES
-            ],
             build_error=jobs.stage_error(self.version, jobs.BUILD)
             if jobs.stage_state(self.version, jobs.BUILD) == jobs.FAILED
             else "",
@@ -469,29 +488,38 @@ def first_key(version: DatasetVersion) -> str | None:
 
 
 def _indicator_answers(request: HttpRequest) -> dict[str, dict[str, Any]]:
-    """Описание показателей из формы: поля с номером показателя."""
+    """
+    Описание показателей из формы: поля с номером показателя. Пересчёты — только если
+    в форме был их перечень (recounts-N): без него остаются прежние.
+    """
     data = request.POST
     answers: dict[str, dict[str, Any]] = {}
     for key in data:
         if not key.startswith("indicator-"):
             continue
         number = key.removeprefix("indicator-")
-        answers[str(data.get(key, ""))] = {
+        answer: dict[str, Any] = {
             "title": data.get(f"title-{number}", ""),
             "unit": data.get(f"unit-{number}", ""),
             "kind": data.get(f"kind-{number}", ""),
             "polarity": data.get(f"polarity-{number}", ""),
-            "per": data.getlist(f"per-{number}"),
             "breaks": data.get(f"breaks-{number}", ""),
             "break_note": data.get(f"break-note-{number}", ""),
-            "recalc": data.getlist(f"recalc-{number}"),
             "fold_slices": data.getlist(f"fold-{number}"),
             "months": data.get(f"months-{number}", ""),
         }
+        if data.get(f"recounts-{number}"):
+            answer["per"] = data.getlist(f"per-{number}")
+            answer["recalc"] = data.getlist(f"recalc-{number}")
+        answers[str(data.get(key, ""))] = answer
     return answers
 
 
-PERIOD_COLUMNS_SHOWN = 6
+# Столбцов периодов широкой таблицы: до стольких — все в образце, больше — первые три.
+PERIOD_COLUMNS_ALL = 6
+PERIOD_COLUMNS_SHOWN = 3
+# Строк образца под шапкой.
+PREVIEW_ROWS = 8
 
 ROLE_CHOICES = (
     (recognize.TERRITORY, _("регион")),
@@ -525,10 +553,24 @@ FORM_TEXTS = {
 }
 
 
-def _with_sample(table: ingest.TableInfo, loaded: tables.Loaded) -> ingest.TableInfo:
-    """Таблица рецепта с образцом строк: в рецепте образец не хранится."""
-    table.sample = ingest.sample_of(loaded.rows)
-    return table
+def _preview(
+    loaded: tables.Loaded, result: recognize.Recognition, columns: list[recognize.ColumnInfo]
+) -> list[list[dict[str, str]]]:
+    """Первые строки данных под шапкой: клетки показанных столбцов текстом и роль столбца."""
+    found: list[list[dict[str, str]]] = []
+    for row in loaded.rows[result.data_start :]:
+        cells = [
+            {
+                "text": ingest.cell_text(row[column.index]) if column.index < len(row) else "",
+                "role": column.role,
+            }
+            for column in columns
+        ]
+        if any(cell["text"].strip() for cell in cells):
+            found.append(cells)
+        if len(found) >= PREVIEW_ROWS:
+            break
+    return found
 
 
 def _resolved_regions(result: recognize.Recognition) -> int:

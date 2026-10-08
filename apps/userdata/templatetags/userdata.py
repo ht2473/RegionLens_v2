@@ -62,6 +62,17 @@ def rows_text(table: Any) -> str:
 
 
 @register.filter
+def derived_label(code: Any) -> str:
+    """Пересчёт ряда словами по его коду: «на 100 000 жителей», «Россия = 100»."""
+    from apps.userdata.models import DatasetSeries
+
+    try:
+        return str(DatasetSeries.Derived(str(code)).label)
+    except ValueError:
+        return str(code)
+
+
+@register.filter
 def territory_name(code: Any) -> str:
     """Название территории справочника по коду на языке страницы."""
     from apps.userdata import matching

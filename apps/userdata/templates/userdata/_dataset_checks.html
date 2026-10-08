@@ -1,0 +1,122 @@
+{% load i18n formatting userdata %}
+{% comment %}
+  Вкладка «Проверки»: пометки таблицы (суммы, коды вместо чисел, мало субъектов, неполный
+  последний год, вложенные области), замечания по ведущим рядам и территории.
+{% endcomment %}
+<div class="dataset-checks">
+  {% if sums and not per_capita %}
+    <div class="callout callout--warning">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Абсолютные величины" %}</div>
+        <p>
+          {% translate "На карте сумм крупные регионы выделяются размером: больше людей — больше преступлений, рублей и случаев." %}
+          {% if owner %}{% translate "Пересчёт на жителей — в исследовании: «Что сделать» → «Посчитать»." %}{% endif %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if masks %}
+    <div class="callout callout--info">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        {% translate "Коды вместо чисел считаются пропусками и на карту не попадают" %}: <span class="numeric">{{ masks|join:", " }}</span>.
+        {% if owner %}<a href="{% url 'userdata:series' dataset.public_id %}#masks">{% translate "Изменить выбор кодов" %}</a>{% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if few_regions %}
+    <div class="callout callout--info">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>{% translate "Субъектов меньше 20: неравенство и пространственный анализ по таблице не считаются. Карта, таблица и динамика работают." %}</div>
+    </div>
+  {% endif %}
+
+  {% if incomplete %}
+    <div class="callout callout--info">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Неполный последний год" %}</div>
+        <p>{% translate "Значения последнего года есть не у всех регионов; карта и рейтинг по умолчанию открываются за последний полный год." %}</p>
+        <ul class="compact-list">
+          {% for item in incomplete|slice:":5" %}
+            <li><span{% with lang=item.series.full_title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.series.full_title }}</span>: <span class="numeric">{{ item.last|year }}</span> → <span class="numeric">{{ item.full|year }}</span></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if alone_conflict %}
+    <div class="callout callout--warning">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">{% translate "Область, похоже, уже без автономных округов" %}</div>
+        <p>
+          {% translate "Значение области в таблице меньше суммы её автономных округов, поэтому это не итог вместе с ними, и вычитать округа нельзя. Область без округов не вычислена:" %}
+          {% for code in alone_conflict %}{{ code|territory_name }}{% if not forloop.last %}, {% endif %}{% endfor %}.
+          {% if owner %}<a href="{% url 'userdata:table' dataset.public_id %}#nested">{% translate "Ответить на вопрос о вложенных областях" %}</a>{% endif %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if alone_missing %}
+    <div class="callout callout--info">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        {% translate "Область в таблице — вместе с автономными округами. Для долей и средних область без округов не вычислить, и на карте она пустая:" %}
+        {% for code in alone_missing %}{{ code|territory_name }}{% if not forloop.last %}, {% endif %}{% endfor %}.
+      </div>
+    </div>
+  {% endif %}
+
+  {% if checks %}
+    <section class="page-section" aria-labelledby="own-checks">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="own-checks">{% translate "Ряды" %}</h2>
+      </div>
+      <ul class="compact-list own-checks" id="own-checks-list" data-more-list>
+        {% for look in checks %}
+          <li{% if forloop.counter > 4 %} data-more-item{% endif %}>
+            <b{% with lang=look.series.full_title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ look.series.full_title }}</b>.
+            {% if look.kind_note %}{{ look.kind_note }}{% endif %}
+            {% if look.composition_text %}{{ look.composition_text }}{% endif %}
+            {% if look.missing_count %}{% blocktranslate trimmed with year=look.last_year|year count=look.missing_count %}Субъектов без значений в {{ year }} году: {{ count }}{% endblocktranslate %}: {{ look.missing_last|join:", " }}{% if look.missing_count > look.missing_last|length %}…{% endif %}.{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+      {% if checks|length > 4 %}
+        <button type="button" class="button button--ghost button--sm" data-more-toggle aria-controls="own-checks-list" aria-expanded="true" hidden
+                data-more-label="{% blocktranslate trimmed with count=checks|length|add:'-4' %}Ещё {{ count }}{% endblocktranslate %}" data-less-label="{% translate "Свернуть" %}">{% translate "Свернуть" %}</button>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  <section class="page-section" aria-labelledby="own-territories">
+    <div class="page-section__head">
+      <h2 class="page-section__title" id="own-territories">{% translate "Территории" %}</h2>
+    </div>
+    <p class="page-section__lead">
+      {% blocktranslate trimmed with count=version.regions_count %}Субъектов со значениями: {{ count }} из 85.{% endblocktranslate %}
+      {% if nested %}
+        {% translate "Область с автономными округами в таблице — итогом вместе с ними; для сумм область без округов вычислена (пометка «расчёт RegionLens»):" %}
+        {% for code in nested %}{{ code|territory_name }}{% if not forloop.last %}, {% endif %}{% endfor %}.
+      {% endif %}
+      {% if conflicts %}
+        {% blocktranslate trimmed with count=conflicts %}Повторов территории и года с разными числами: {{ count }}; оставлено первое значение.{% endblocktranslate %}
+      {% endif %}
+    </p>
+    {% if outside %}
+      <details class="question-card question-card--quiet">
+        <summary>{% blocktranslate trimmed with count=outside|length %}Строк вне справочника: {{ count }}{% endblocktranslate %}</summary>
+        <p>{% translate "Эти строки сохранены в таблице и в выгрузке, но на карту и в рейтинг не попадают: таких территорий нет в справочнике сайта." %}</p>
+        <ul class="compact-list">
+          {% for label, reason in outside %}<li><span{% with lang=label|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ label }}</span>{% if reason %} — {{ reason }}{% endif %}</li>{% endfor %}
+        </ul>
+      </details>
+    {% endif %}
+  </section>
+</div>

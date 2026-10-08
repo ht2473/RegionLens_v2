@@ -226,10 +226,10 @@ class TestAccess:
 
     def test_share_follows_new_version(self, member_client: Client, warehouse: Any) -> None:
         dataset = _first_version(member_client)
-        member_client.post(
+        created = member_client.post(
             reverse("userdata:share-create", args=[dataset.public_id]), {"days": "7"}
         )
-        page = member_client.get(reverse("userdata:dataset", args=[dataset.public_id]))
+        page = member_client.get(created["Location"])
         link = page.text.split('value="http://testserver', 1)[1].split('"', 1)[0]
         _new_version(member_client, dataset, _table(bump={("Москва", 2022): 999.0}))
         reader = Client()

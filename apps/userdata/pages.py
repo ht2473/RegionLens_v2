@@ -36,6 +36,15 @@ VIEWS = (
     ("distribution", "surface:distribution", _("Распределение")),
     ("table", "surface:table", _("Таблица")),
 )
+# Вкладки страницы таблицы; «Файл и версии» и «Доступ» — только владельцу.
+DATA, CHECKS, FILE, ACCESS = "data", "checks", "file", "access"
+TABS = (
+    (DATA, _("Данные")),
+    (CHECKS, _("Проверки")),
+    (FILE, _("Файл и версии")),
+    (ACCESS, _("Доступ")),
+)
+OWNER_TABS = frozenset({FILE, ACCESS})
 # Причины «вне справочника» словами.
 OUTSIDE_REASONS = {
     "merged": _("прежний субъект, объединённый с другим"),
@@ -122,8 +131,9 @@ class ReadableDatasetMixin:
 
 class DatasetView(ReadableDatasetMixin, BreadcrumbMixin, TemplateView):
     """
-    Страница таблицы: показатели и виды, пометки, территории, выгрузка; владельцу — ещё
-    файл, версии, закрытые ссылки и удаление. Читатель ссылки ничего не меняет.
+    Страница таблицы — вкладки «Данные» (показатели списком и выбранный показатель с картой
+    ряда), «Проверки», «Файл и версии» и «Доступ»; две последние — владельцу. Читатель
+    ссылки ничего не меняет. Ряды без значений к построению не предлагаются.
     """
 
     template_name = "userdata/dataset.html"
@@ -137,57 +147,170 @@ class DatasetView(ReadableDatasetMixin, BreadcrumbMixin, TemplateView):
         )
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        from .share_views import share_context
-
         context = super().get_context_data(**kwargs)
         dataset = self.dataset
         version = dataset.current_version
+        built = version is not None and version.state == DatasetVersion.State.BUILT
         context.update(
             page_title=dataset.title,
             dataset=dataset,
             version=version,
             owner=self.owner,
+            built=built,
             can_export=self.owner or scope.exportable(dataset.code),
             continue_url=_continue_url(dataset, version),
             guest=dataset.owner_id is None,
             retention_days=backup_retention_days(),
         )
-        if self.owner and dataset.owner_id is not None:
-            context.update(share_context(self.request, dataset))
-        if self.owner:
-            context.update(_versions_context(dataset))
-        if version is None or version.state != DatasetVersion.State.BUILT:
+        if not built:
+            # Несобранная таблица: продолжить загрузку или удалить.
+            context["tab"] = ""
             return context
+        assert version is not None
         records = list(version.series.order_by("order"))
         everything = [UserSeries(record, dataset) for record in records]
-        # Показатели по формулам — своим разделом.
         series = [
             item for item in everything if item.record.derived != DatasetSeries.Derived.FORMULA
         ]
         # Слой рядов сам ведёт ключи набора в его файл: набор свой.
         covered = queries.series_covered_years([item.key for item in everything])
-        report = version.report.get("extract") or {}
-        months = monthly.groups(version)
+        notices = _notices(version, series, covered)
+        tab = self.request.GET.get("tab", DATA)
+        available = [code for code, _title in TABS if self.owner or code not in OWNER_TABS]
+        tab = tab if tab in available else DATA
         context.update(
-            groups=_groups(series, covered, months, dataset),
-            formulas=_formulas(dataset, version, everything),
-            checks=glance.checks(dataset, version),
-            sums=[item for item in series if item.is_sum],
-            per_capita=[item for item in series if item.record.derived],
-            few_regions=version.regions_count < FEW_REGIONS,
-            incomplete=_incomplete(series, covered),
-            outside=[
-                (label, OUTSIDE_REASONS.get(reason, ""))
-                for label, reason in report.get("outside", [])
+            tab=tab,
+            tabs=[
+                {
+                    "code": code,
+                    "title": title,
+                    "url": "?" + urlencode({"tab": code}) if code != DATA else "?",
+                    "active": code == tab,
+                    "attention": code == CHECKS and notices["attention"],
+                }
+                for code, title in TABS
+                if code in available
             ],
-            nested=report.get("nested", []),
-            alone_missing=version.report.get("build", {}).get("alone_missing", []),
-            alone_conflict=version.report.get("build", {}).get("alone_conflict", []),
-            conflicts=report.get("conflicts", 0),
-            masks=[item["value"] for item in report.get("masks", []) if item.get("masked")],
+            indicator_count=len({item.record.indicator for item in series}),
             xlsx_allowed=(version.values_count or 0) <= export.XLSX_ROWS,
         )
+        if tab == DATA:
+            context.update(self.data_context(version, series, everything, covered))
+        elif tab == CHECKS:
+            context.update(notices, checks=glance.checks(dataset, version))
+        elif tab == FILE:
+            context.update(_versions_context(dataset))
+        elif tab == ACCESS and dataset.owner_id is not None:
+            from .share_views import share_context
+
+            context.update(share_context(self.request, dataset))
         return context
+
+    def data_context(
+        self,
+        version: DatasetVersion,
+        series: list[UserSeries],
+        everything: list[UserSeries],
+        covered: dict[str, tuple[int, int]],
+    ) -> dict[str, Any]:
+        """
+        Вкладка «Данные»: показатели списком, выбранный ряд (``show`` — код ряда; по
+        умолчанию — первый со значениями) и его карта.
+        """
+        dataset = self.dataset
+        groups = _groups(series, covered, monthly.groups(version), dataset)
+        formulas = _formulas(dataset, version, everything)
+        for group in groups:
+            # Показатель в списке открывает первый ряд со значениями.
+            first = next((item for item in group["items"] if item["has_values"]), None)
+            group["first_code"] = (first or group["items"][0])["record"].code
+        shown = self.request.GET.get("show", "")
+        pairs = [(group, item) for group in groups for item in group["items"]]
+        chosen_formula = next((item for item in formulas if item["definition"].code == shown), None)
+        pair = next(((group, item) for group, item in pairs if item["record"].code == shown), None)
+        if pair is None and chosen_formula is None:
+            # По умолчанию — первый ряд со значениями.
+            pair = next(
+                ((group, item) for group, item in pairs if item["has_values"]),
+                pairs[0] if pairs else None,
+            )
+        chosen_group, chosen = pair if pair is not None else (None, None)
+        target = chosen["series"] if chosen is not None else None
+        if chosen_formula is not None and chosen_formula["series"] is not None:
+            target = chosen_formula["series"]
+        has_values = target is not None and bool(target.record.values_count)
+        picked = chosen_formula if chosen_formula is not None else chosen
+        return {
+            "groups": groups,
+            "formulas": formulas,
+            "chosen_group": chosen_group,
+            "chosen": chosen,
+            "chosen_formula": chosen_formula,
+            "chosen_series": target if has_values else None,
+            "chosen_views": picked["views"] if picked is not None else [],
+            "chosen_related_url": picked["related_url"] if picked is not None else "",
+            "picked": bool(shown),
+            "preview": _preview(self.request, target) if has_values and target else {},
+        }
+
+
+def _notices(
+    version: DatasetVersion, series: list[UserSeries], covered: dict[str, tuple[int, int]]
+) -> dict[str, Any]:
+    """
+    Пометки таблицы для вкладки «Проверки» — то, что считается сразу, без разбора рядов:
+    суммы, коды-маски, мало субъектов, неполный последний год, вложенные области, строки
+    вне справочника. ``attention`` — есть ли о чём предупредить.
+    """
+    report = version.report.get("extract") or {}
+    build = version.report.get("build", {})
+    found = {
+        "sums": [item for item in series if item.is_sum],
+        "per_capita": [item for item in series if item.record.derived],
+        "few_regions": version.regions_count < FEW_REGIONS,
+        "incomplete": _incomplete(series, covered),
+        "outside": [
+            (label, OUTSIDE_REASONS.get(reason, "")) for label, reason in report.get("outside", [])
+        ],
+        "nested": report.get("nested", []),
+        "alone_missing": build.get("alone_missing", []),
+        "alone_conflict": build.get("alone_conflict", []),
+        "conflicts": report.get("conflicts", 0),
+        "masks": [item["value"] for item in report.get("masks", []) if item.get("masked")],
+    }
+    found["attention"] = bool(
+        (found["sums"] and not found["per_capita"])
+        or found["masks"]
+        or found["few_regions"]
+        or found["incomplete"]
+        or found["alone_conflict"]
+        or found["alone_missing"]
+    )
+    return found
+
+
+def _preview(request: HttpRequest, item: UserSeries) -> dict[str, Any]:
+    """Карта выбранного ряда — та же, что у карточки исследования, — разметкой и её год."""
+    from django.template.loader import render_to_string
+
+    from . import study_cards
+
+    block = {
+        "id": "preview",
+        "kind": "view",
+        "target": "map",
+        "parameters": {"series": item.key},
+        "title": "",
+        "note": "",
+        "wide": True,
+    }
+    card = study_cards.render(request, block, year=None, territories=[])
+    if card["template"] != "userdata/cards/_map.html":
+        return {}
+    return {
+        "html": render_to_string(card["template"], {**card, "card": card}, request=request),
+        "year": card.get("year"),
+    }
 
 
 def _formulas(
@@ -303,6 +426,7 @@ def _groups(
             {
                 "series": item,
                 "record": record,
+                "has_values": bool(record.values_count),
                 "detail": ", ".join(part for part in (item.name, derived) if part),
                 "views": _views(item),
                 "related_url": f"{reverse('userdata:related', args=[dataset.public_id])}?"
@@ -325,6 +449,36 @@ def _incomplete(
         if full and item.record.last_year and full[1] < item.record.last_year:
             found.append({"series": item, "last": item.record.last_year, "full": full[1]})
     return found
+
+
+class DatasetStudyView(DatasetMixin, View):
+    """
+    «Открыть в исследовании»: исследование, где ряды таблицы уже есть (последнее), иначе
+    новое с названием таблицы; ряд выбран в панели — «Что сделать» сразу под ним.
+    """
+
+    def post(self, request: HttpRequest, public_id: str) -> HttpResponse:  # noqa: ARG002
+        dataset = self.dataset
+        key = request.POST.get("series", "")
+        if not key.startswith(f"u:{dataset.code}:"):
+            key = ""
+        owned = studies.owned(request)
+        study = next(
+            (
+                item
+                for item in owned.order_by("-updated_at")
+                if dataset.code in studies.dataset_codes(item)
+            ),
+            None,
+        )
+        if study is None:
+            try:
+                study = studies.create(request, dataset.title)
+            except studies.StudyError as error:
+                messages.error(request, str(error))
+                return redirect("userdata:dataset", public_id=dataset.public_id)
+        url = reverse("userdata:study", args=[study.public_id])
+        return redirect(f"{url}?{urlencode({'series': key})}#study-actions" if key else url)
 
 
 class DeleteView(DatasetMixin, View):

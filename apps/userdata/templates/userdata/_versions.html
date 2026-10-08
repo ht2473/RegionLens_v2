@@ -65,7 +65,7 @@
     {% endfor %}
   </ol>
 
-  <details class="own-version-new"{% if not draft and versions|length == 1 %} open{% endif %}>
+  <details class="own-version-new" id="own-version-new"{% if not draft and versions|length == 1 %} open{% endif %}>
     <summary>{% translate "Загрузить новую версию файла" %}</summary>
     <p class="page-section__lead">
       {% blocktranslate trimmed %}

@@ -1,0 +1,27 @@
+{% load i18n formatting userdata %}
+{# Вкладка «Файл и версии» (владельцу): файл, место и срок хранения, версии файла, удаление. #}
+<section class="page-section" aria-labelledby="own-file">
+  <div class="page-section__head">
+    <h2 class="page-section__title" id="own-file">{% translate "Файл" %}</h2>
+  </div>
+  <dl class="about-credits">
+    <dt>{% translate "Файл" %}</dt>
+    <dd{% with lang=version.file_name|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ version.file_name }} · {{ version.file_size|filesizeformat }}</dd>
+    <dt>{% translate "Загружен" %}</dt>
+    <dd>{{ version.created_at|date:"d.m.Y H:i" }}</dd>
+    <dt>{% translate "Место на диске" %}</dt>
+    <dd>{{ dataset.size_bytes|filesizeformat }}</dd>
+    <dt>{% translate "Хранится" %}</dt>
+    <dd>
+      {% if guest %}
+        {% blocktranslate trimmed with moment=dataset.expires_at|date:"d.m.Y H:i" %}до {{ moment }}{% endblocktranslate %}
+        · <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "войдите, чтобы сохранить" %}</a>
+      {% else %}
+        {% translate "пока вы её не удалите" %}{% if retention_days %}; {% blocktranslate trimmed with days=retention_days %}из резервных копий удалённая исчезает через {{ days }} сут.{% endblocktranslate %}{% endif %}
+      {% endif %}
+    </dd>
+  </dl>
+</section>
+
+{% include "userdata/_versions.html" %}
+{% include "userdata/_dataset_delete.html" %}

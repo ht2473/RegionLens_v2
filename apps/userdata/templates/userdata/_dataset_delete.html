@@ -1,0 +1,12 @@
+{% load i18n %}
+{# Удаление таблицы вместе с файлами — владельцу. #}
+<section class="page-section" aria-labelledby="own-delete-title">
+  <div class="page-section__head">
+    <h2 class="page-section__title" id="own-delete-title">{% translate "Удаление" %}</h2>
+  </div>
+  <form method="post" action="{% url 'userdata:delete' dataset.public_id %}" class="stack own-delete">
+    {% csrf_token %}
+    <label class="checkbox"><input type="checkbox" name="confirm" value="1" required> <span>{% translate "Удалить таблицу вместе с файлами" %}</span></label>
+    <div><button class="button button--danger" type="submit">{% translate "Удалить таблицу" %}</button></div>
+  </form>
+</section>

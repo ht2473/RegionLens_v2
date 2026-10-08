@@ -1,0 +1,150 @@
+{% load i18n formatting userdata %}
+{% comment %}
+  Вкладка «Данные»: слева показатели (и по формулам), справа выбранный — ряды по разрезам
+  и периодам, карта выбранного ряда, «Открыть в исследовании» и виды. Ряды без значений
+  не выбираются. На телефоне — список или выбранное (is-picked), с возвратом к списку.
+{% endcomment %}
+<div class="dataset-browser{% if picked %} is-picked{% endif %}" id="dataset-browser" data-dataset-browser>
+  <nav class="dataset-list" aria-label="{% translate 'Показатели таблицы' %}">
+    {% if groups|length > 8 %}
+      <label class="filter-field dataset-list__filter">
+        <svg aria-hidden="true"><use href="#icon-filter"></use></svg>
+        <span class="visually-hidden">{% translate "Отобрать показатель" %}</span>
+        <input type="search" autocomplete="off" data-filter-input="#dataset-list-items"
+               data-filter-empty="#dataset-list-empty" placeholder="{% translate 'Отобрать показатель' %}">
+      </label>
+      <p class="field__hint" id="dataset-list-empty" hidden>{% translate "Ничего не найдено" %}</p>
+    {% endif %}
+    <ul class="dataset-list__items" id="dataset-list-items">
+      {% for group in groups %}
+        <li data-filter-item data-filter-text="{{ group.title }}">
+          <a class="dataset-list__item" href="?show={{ group.first_code|urlencode }}#dataset-detail"
+             hx-get="?show={{ group.first_code|urlencode }}" hx-target="#dataset-detail" hx-select="#dataset-detail"
+             hx-swap="outerHTML" hx-push-url="true" data-dataset-pick
+             {% if group == chosen_group %}aria-current="true"{% endif %}>
+            <span class="dataset-list__title"{% with lang=group.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ group.title }}</span>
+            <span class="dataset-list__meta">
+              {% if group.unit %}<span{% with lang=group.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ group.unit }}</span>{% endif %}{% if group.items|length > 1 %}{% if group.unit %} · {% endif %}{% blocktranslate trimmed with count=group.items|length %}рядов: {{ count }}{% endblocktranslate %}{% endif %}
+            </span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+    {% if formulas or owner %}
+      <div class="dataset-list__group">
+        <div class="dataset-list__heading">
+          {% translate "По формулам" %}
+          {% if owner %}<a class="dataset-list__add" href="{% url 'userdata:formula-new' dataset.public_id %}">{% translate "Добавить" %}</a>{% endif %}
+        </div>
+        {% if formulas %}
+          <ul class="dataset-list__items">
+            {% for item in formulas %}
+              <li>
+                <a class="dataset-list__item" href="?show={{ item.definition.code|urlencode }}#dataset-detail"
+                   hx-get="?show={{ item.definition.code|urlencode }}" hx-target="#dataset-detail" hx-select="#dataset-detail"
+                   hx-swap="outerHTML" hx-push-url="true" data-dataset-pick
+                   {% if item == chosen_formula %}aria-current="true"{% endif %}>
+                  <span class="dataset-list__title"{% with lang=item.definition.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.definition.title }}</span>
+                  <span class="dataset-list__meta">{% if item.error %}{% translate "без значений" %}{% elif item.definition.unit %}<span{% with lang=item.definition.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.definition.unit }}</span>{% else %}{% translate "формула" %}{% endif %}</span>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    {% endif %}
+  </nav>
+
+  <section class="dataset-detail" id="dataset-detail" aria-labelledby="dataset-detail-title">
+    <a class="dataset-detail__back" href="?" data-dataset-back>
+      <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>{% translate "Все показатели" %}
+    </a>
+
+    {% if chosen_formula %}
+      <header class="dataset-detail__head">
+        <p class="kicker">{% translate "Показатель по формуле" %}{% if chosen_formula.definition.unit %} · <span{% with lang=chosen_formula.definition.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ chosen_formula.definition.unit }}</span>{% endif %}</p>
+        <h2 class="dataset-detail__title" id="dataset-detail-title"{% with lang=chosen_formula.definition.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ chosen_formula.definition.title }}</h2>
+        <code class="own-formula"{% with lang=chosen_formula.expression|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ chosen_formula.expression }}</code>
+        {% if chosen_formula.error %}
+          <p class="own-formula__note"><svg aria-hidden="true"><use href="#icon-alert"></use></svg>{{ chosen_formula.error }}</p>
+        {% endif %}
+      </header>
+    {% elif chosen_group %}
+      <header class="dataset-detail__head">
+        <p class="kicker">
+          {% if chosen_group.unit %}<span{% with lang=chosen_group.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ chosen_group.unit }}</span> · {% endif %}{% if chosen_group.kind == "sum" %}{% translate "сумма" %}{% else %}{% translate "относительная величина" %}{% endif %}
+        </p>
+        <h2 class="dataset-detail__title" id="dataset-detail-title"{% with lang=chosen_group.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ chosen_group.title }}</h2>
+        {% if chosen_group.breaks %}
+          <p class="dataset-detail__note">
+            {% translate "Смена методики" %}:
+            {% for item in chosen_group.breaks %}<span class="numeric">{{ item.year|year }}</span>{% if not forloop.last %}, {% endif %}{% endfor %}{% with note=chosen_group.breaks.0.note %}{% if note %} — <span{% with lang=note|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ note }}</span>{% endif %}{% endwith %}
+          </p>
+        {% endif %}
+      </header>
+      {% if chosen_group.items|length > 1 %}
+        <ul class="dataset-series" aria-label="{% translate 'Ряды показателя' %}">
+          {% for item in chosen_group.items %}
+            <li>
+              {% if item.has_values %}
+                <a class="dataset-series__item" href="?show={{ item.record.code|urlencode }}#dataset-detail"
+                   hx-get="?show={{ item.record.code|urlencode }}" hx-target="#dataset-detail" hx-select="#dataset-detail"
+                   hx-swap="outerHTML" hx-push-url="true"{% if item == chosen %} aria-current="true"{% endif %}>
+              {% else %}
+                <span class="dataset-series__item is-disabled">
+              {% endif %}
+                <span class="dataset-series__name"{% with lang=item.detail|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{% if item.detail %}{{ item.detail }}{% else %}{% translate "как в таблице" %}{% endif %}</span>
+                <span class="dataset-series__meta">
+                  {% if item.has_values %}
+                    {% blocktranslate trimmed with count=item.record.regions_count %}субъектов: {{ count }}{% endblocktranslate %}{% if item.record.first_year %} · <span class="numeric">{{ item.record.first_year|year }}{% if item.record.last_year != item.record.first_year %}–{{ item.record.last_year|year }}{% endif %}</span>{% endif %}
+                  {% else %}
+                    {% translate "нет значений" %}
+                  {% endif %}
+                </span>
+              {% if item.has_values %}</a>{% else %}</span>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endif %}
+
+    {% if chosen_series %}
+      <div class="dataset-preview">
+        <p class="kicker"><svg aria-hidden="true"><use href="#icon-map"></use></svg>{% translate "Карта" %}{% if preview.year %} · <span class="numeric">{{ preview.year|year }}</span>{% endif %}</p>
+        {{ preview.html }}
+      </div>
+      <div class="dataset-detail__actions">
+        {% if owner %}
+          <form method="post" action="{% url 'userdata:dataset-study' dataset.public_id %}">
+            {% csrf_token %}
+            <input type="hidden" name="series" value="{{ chosen_series.key }}">
+            <button class="button button--primary" type="submit">
+              <svg aria-hidden="true"><use href="#icon-plus"></use></svg>
+              {% translate "Открыть в исследовании" %}
+            </button>
+          </form>
+        {% endif %}
+        <nav class="dataset-views" aria-label="{% translate 'Открыть ряд' %}">
+          {% for view in chosen_views %}
+            <a class="dataset-view" href="{{ view.url }}"><svg aria-hidden="true"><use href="#icon-{% if view.code == 'compare' %}dynamics{% elif view.code == 'rankings' %}ranking{% else %}{{ view.code }}{% endif %}"></use></svg>{{ view.title }}</a>
+          {% endfor %}
+          {% if chosen_related_url %}
+            <a class="dataset-view" href="{{ chosen_related_url }}"><svg aria-hidden="true"><use href="#icon-correlation"></use></svg>{% translate "С чем связан" %}</a>
+          {% endif %}
+          {% if chosen_group.months_url %}
+            <a class="dataset-view" href="{{ chosen_group.months_url }}"><svg aria-hidden="true"><use href="#icon-dynamics"></use></svg>{% translate "По месяцам" %}</a>
+          {% endif %}
+          {% if chosen_formula and owner %}
+            <a class="dataset-view" href="{{ chosen_formula.edit_url }}"><svg aria-hidden="true"><use href="#icon-edit"></use></svg>{% translate "Изменить формулу" %}</a>
+          {% endif %}
+        </nav>
+      </div>
+    {% elif chosen_formula and owner %}
+      <p><a class="button button--secondary button--sm" href="{{ chosen_formula.edit_url }}">{% translate "Изменить формулу" %}</a></p>
+    {% elif chosen_group %}
+      <p class="study-card__empty">{% translate "У этого ряда нет значений: в таблице одни пропуски." %}</p>
+    {% else %}
+      <p class="study-card__empty">{% translate "Показателей со значениями в таблице нет." %}</p>
+    {% endif %}
+  </section>
+</div>

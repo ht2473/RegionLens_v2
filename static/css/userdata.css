@@ -236,12 +236,8 @@
 
 /* --- Что в таблице ------------------------------------------------------------------------ */
 
-.recognition-facts {
-  max-width: 48rem;
-  margin-bottom: var(--space-6);
-}
-
-.recognition-form {
+/* Вопросы — мерой формы, таблица с ролями столбцов — во всю ширину страницы. */
+.recognition-form > :not(.role-table-section, .form-sheet__actions) {
   max-width: 64rem;
 }
 
@@ -252,6 +248,11 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   background-color: var(--surface-raised);
+}
+
+/* Вопросы, на которые нужен ответ, отмечены полосой акцента. */
+.question-card--ask {
+  border-left: 3px solid var(--accent);
 }
 
 .question-card--quiet > summary {
@@ -364,8 +365,52 @@ legend.question-card__title ~ * {
   overflow-y: auto;
 }
 
-.recognition-sample {
-  margin-top: var(--space-8);
+.recognition-form__ask {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+/* Таблица шага с ролями столбцов в шапке: пропущенные столбцы — бледнее, регион — жирнее. */
+.role-table-section {
+  min-width: 0;
+}
+
+.role-table th,
+.role-table td {
+  white-space: nowrap;
+}
+
+.role-table__roles > th {
+  padding: var(--space-2) var(--space-1);
+  background-color: var(--surface-sunken);
+  vertical-align: bottom;
+}
+
+.role-table__select {
+  width: auto;
+  min-width: 8.5rem;
+  padding-block: var(--space-1);
+}
+
+.role-table__header {
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.role-table [data-role="skip"]:not(.role-table__role) {
+  color: var(--text-muted);
+}
+
+.role-table td[data-role="territory"] {
+  font-weight: var(--weight-semibold);
+}
+
+.role-table__more,
+.role-table__role--more,
+.role-table__header--more {
+  color: var(--text-muted);
+  font-weight: var(--weight-regular);
 }
 
 @media (max-width: 720px) {
@@ -415,11 +460,58 @@ legend.question-card__title ~ * {
 
 .indicator-card__summary {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
   min-height: 24px;
   padding: var(--space-3) 0;
   cursor: pointer;
+  list-style: none;
+}
+
+.indicator-card__summary::-webkit-details-marker {
+  display: none;
+}
+
+.indicator-card__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* Вопросы о неуверенном — сразу под названием, в строку по мере ширины. */
+.indicator-card__ask {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+  gap: var(--space-4) var(--space-6);
+  padding: 0 0 var(--space-4);
+}
+
+.indicator-card__ask fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.indicator-card__ask .radio {
+  display: flex;
+  margin-top: var(--space-2);
+}
+
+.indicator-card__ask > .field + .field {
+  margin-top: 0;
+}
+
+.indicator-card__more {
+  flex: none;
+  font-size: var(--text-sm);
+  color: var(--text-accent);
+}
+
+.indicator-card__fold[open] .indicator-card__more {
+  color: var(--text-muted);
 }
 
 .indicator-card__name {
@@ -453,7 +545,7 @@ legend.question-card__title ~ * {
 }
 
 /* Поля только для сумм скрываются, когда отмечена относительная величина. */
-.indicator-card__body:has(input[name^="kind-"][value="relative"]:checked) [data-sum-only] {
+.indicator-card:has(input[name^="kind-"][value="relative"]:checked) [data-sum-only] {
   display: none;
 }
 
@@ -583,74 +675,229 @@ legend.question-card__title ~ * {
   overflow-wrap: anywhere;
 }
 
-.own-marks {
+/* --- Страница таблицы: вкладки, показатели списком и выбранный ----------------------------- */
+
+.dataset-tabs {
+  margin-top: var(--space-2);
+}
+
+.tabs__mark {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-left: var(--space-1);
+  border-radius: 50%;
+  background-color: var(--attention);
+  vertical-align: 0.15em;
+}
+
+.dataset-menu__hint {
+  max-width: 18rem;
+  margin: var(--space-2) var(--space-3) var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.dataset-browser {
+  display: grid;
+  grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.dataset-list {
+  position: sticky;
+  top: calc(var(--header-height) + var(--space-4));
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  margin-bottom: var(--space-8);
+  max-height: calc(100vh - var(--header-height) - var(--space-8));
+  padding-right: var(--space-2);
+  overflow-y: auto;
 }
 
-.own-indicator + .own-indicator {
-  margin-top: var(--space-8);
-}
-
-.own-indicator__title {
-  margin: 0;
-  font-size: var(--text-base);
-  font-weight: var(--weight-semibold);
-  overflow-wrap: anywhere;
-}
-
-.own-indicator__meta {
-  margin: var(--space-1) 0 var(--space-3);
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-}
-
-.own-series {
+.dataset-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.own-series__item {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-6);
-  padding: var(--space-3) 0;
-  border-top: 1px solid var(--border-subtle);
-  scroll-margin-top: var(--space-16);
-}
-
-.own-series__item:target {
-  background-color: var(--surface-accent-soft);
-}
-
-.own-series__text {
+.dataset-list__item {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  min-width: 0;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
 }
 
-.own-series__name {
+.dataset-list__item:hover {
+  background-color: var(--surface-sunken);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.dataset-list__item[aria-current="true"] {
+  background-color: var(--surface-accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.dataset-list__title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
   overflow-wrap: anywhere;
 }
 
-.own-series__facts {
+.dataset-list__meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.dataset-list__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-1);
+  border-top: 1px solid var(--border-subtle);
   font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+.dataset-list__add {
+  font-weight: var(--weight-regular);
+}
+
+.dataset-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  scroll-margin-top: calc(var(--header-height) + var(--space-4));
+}
+
+.dataset-detail__back {
+  display: none;
+}
+
+.dataset-detail__back svg {
+  width: 16px;
+  height: 16px;
+  rotate: 180deg;
+}
+
+.dataset-detail__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.dataset-detail__title {
+  margin: 0;
+  font-size: var(--text-xl);
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.dataset-detail__note {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.dataset-series {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dataset-series__item {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
+a.dataset-series__item:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.dataset-series__item[aria-current="true"] {
+  background-color: var(--surface-accent-soft);
+  border-color: var(--accent);
+}
+
+.dataset-series__item.is-disabled {
+  border-style: dashed;
   color: var(--text-muted);
 }
 
-.own-series__views {
+.dataset-series__name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.dataset-series__meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.dataset-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.dataset-preview > .kicker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.dataset-preview > .kicker svg {
+  width: 16px;
+  height: 16px;
+}
+
+.dataset-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+}
+
+.dataset-detail__actions form {
+  margin: 0;
+}
+
+.dataset-views {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-4);
 }
 
-.own-series__view {
+.dataset-view {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
@@ -658,16 +905,42 @@ legend.question-card__title ~ * {
   font-size: var(--text-sm);
 }
 
-.own-series__view svg {
+.dataset-view svg {
+  flex-shrink: 0;
   width: 16px;
   height: 16px;
-  flex-shrink: 0;
 }
 
-.own-section-actions {
+/* Телефон: список или выбранное — с возвратом к списку. */
+@media (max-width: 767px) {
+  .dataset-browser {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dataset-list {
+    position: static;
+    max-height: none;
+    padding-right: 0;
+    overflow: visible;
+  }
+
+  .dataset-browser.is-picked .dataset-list,
+  .dataset-browser:not(.is-picked) .dataset-detail {
+    display: none;
+  }
+
+  .dataset-browser.is-picked .dataset-detail__back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: 24px;
+  }
+}
+
+.dataset-checks {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 /* --- Проверки ведущих рядов на странице таблицы ------------------------------------------- */
@@ -697,6 +970,189 @@ legend.question-card__title ~ * {
 
 /* --- Формулы ------------------------------------------------------------------------------- */
 
+/* Форма слева, предпросмотр справа (на узком экране — под формой). */
+.formula-layout {
+  display: grid;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .formula-layout:has(> .formula-preview:not([hidden])) {
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 26rem);
+  }
+
+  .formula-preview {
+    position: sticky;
+    top: calc(var(--header-height) + var(--space-4));
+  }
+}
+
+.formula-form {
+  max-width: 48rem;
+}
+
+.formula-templates__options {
+  flex-wrap: wrap;
+}
+
+/* Шаблон или своя формула — по выбранной радиокнопке, без сценариев. */
+.formula-form:has(input[name="template"][value="free"]:checked) .formula-slots {
+  display: none;
+}
+
+.formula-form:not(:has(input[name="template"][value="free"]:checked)) .formula-free {
+  display: none;
+}
+
+.formula-slots {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.formula-slot {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-2);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+}
+
+.formula-slot.is-active {
+  border-style: solid;
+  border-color: var(--accent);
+}
+
+.formula-slot.is-over,
+.formula-free.is-over .formula-form__expression {
+  border-color: var(--accent);
+  background-color: var(--surface-accent-soft);
+}
+
+.formula-slot__letter {
+  min-width: 1.25rem;
+  color: var(--text-accent);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  text-align: center;
+}
+
+.formula-slots__operator {
+  margin: 0;
+  color: var(--text-secondary);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.formula-slots__operator > span {
+  display: none;
+}
+
+.formula-form:has(input[name="template"][value="per1000"]:checked) [data-operator="per1000"],
+.formula-form:has(input[name="template"][value="diff"]:checked) [data-operator="diff"],
+.formula-form:has(input[name="template"][value="ratio"]:checked) [data-operator="ratio"],
+.formula-form:has(input[name="template"][value="share"]:checked) [data-operator="share"] {
+  display: inline;
+}
+
+@media (max-width: 639px) {
+  .formula-slots {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .formula-slots__operator {
+    padding-left: var(--space-3);
+  }
+}
+
+.formula-palette {
+  min-width: 0;
+}
+
+.formula-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  max-height: 16rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.formula-chip {
+  display: inline-flex;
+  align-items: center;
+  /* Длинное название — в две строки, а не во всю ширину формы. */
+  max-width: min(100%, 34rem);
+  min-height: 2rem;
+  padding: var(--space-1) var(--space-3);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: grab;
+}
+
+.formula-chip:hover {
+  border-color: var(--accent);
+}
+
+.formula-chip:active {
+  cursor: grabbing;
+}
+
+.formula-palette__group > summary {
+  min-height: 24px;
+  margin-block: var(--space-2);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.formula-palette__site {
+  margin-top: var(--space-3);
+}
+
+.formula-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.formula-preview__title {
+  margin: 0;
+  font-size: var(--text-base);
+}
+
+.formula-preview__count {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.formula-preview__count b {
+  color: var(--text-primary);
+  font-size: var(--text-lg);
+}
+
+/* Со сценарием предпросмотр обновляется сам: кнопка проверки не нужна. */
+@media (scripting: enabled) {
+  .formula-form__check {
+    display: none;
+  }
+}
+
 .formula-form__expression {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
@@ -709,17 +1165,11 @@ legend.question-card__title ~ * {
   align-items: start;
 }
 
-.formula-form__meta > .field + .field,
-.formula-form__fields > .field + .field {
+.formula-form__meta > .field + .field {
   margin-top: 0;
 }
 
-.formula-form__fields {
-  display: grid;
-  gap: var(--space-4);
-}
-
-.formula-form__fields fieldset {
+.formula-form fieldset {
   min-width: 0;
   margin: 0;
   padding: 0;

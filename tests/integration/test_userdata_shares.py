@@ -40,7 +40,8 @@ def _share(client: Client, dataset: Dataset, *, downloads: bool = False, days: i
         data["downloads"] = "on"
     response = client.post(reverse("userdata:share-create", args=[dataset.public_id]), data)
     assert response.status_code == 302
-    page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
+    # Новая ссылка показывается на вкладке «Доступ», куда ведёт переход.
+    page = client.get(response["Location"])
     found = LINK.search(page.text)
     assert found, "ссылка не показана владельцу"
     return found.group(1).removeprefix("http://testserver")
@@ -65,7 +66,7 @@ class TestCreate:
         dataset = _built(client)
         client.post(reverse("userdata:share-create", args=[dataset.public_id]), {"days": "30"})
         assert not Share.objects.exists()
-        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
+        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]), {"tab": "access"})
         assert "Войдите, чтобы создать ссылку" in page.text
 
     def test_stranger_cannot_share(
