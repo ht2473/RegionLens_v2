@@ -1,5 +1,5 @@
-{% load i18n formatting %}
-{# Результаты корреляционного анализа: матрица, разбор пары, запаздывание. #}
+{% load i18n formatting glossary %}
+{# Корреляционный анализ: матрица, разбор пары, запаздывание; меры — термины глоссария. #}
 
 {% if not matrix %}
   <div class="empty-state">
@@ -67,11 +67,11 @@
             <tr>
               <th scope="col">{% translate "Показатель" %}</th>
               <th scope="col">{% translate "Показатель" %}</th>
-              <th scope="col" class="is-numeric">{% translate "Коэффициент" %}</th>
+              <th scope="col" class="is-numeric">{% term "correlation-coefficient" _("Коэффициент") %}</th>
               <th scope="col">{% translate "Теснота" %}</th>
               <th scope="col" class="is-numeric">{% translate "Пар" %}</th>
               <th scope="col" class="is-numeric">{% translate "p" %}</th>
-              <th scope="col" class="is-numeric">{% translate "p с поправкой" %}</th>
+              <th scope="col" class="is-numeric">{% term "significance-level" _("p с поправкой") %}</th>
               <th scope="col"><span class="visually-hidden">{% translate "Разбор" %}</span></th>
             </tr>
           </thead>
@@ -97,14 +97,6 @@
             {% endfor %}
           </tbody>
         </table>
-      </div>
-      <div class="card__footer">
-        {% blocktranslate trimmed %}
-          «p с поправкой» — уровень значимости с поправкой Бенджамини — Хохберга
-          по всем парам матрицы; по нему и отбираются связи. Связь не означает причины.
-          Два показателя могут двигаться вместе, потому что оба следуют за третьим —
-          чаще всего за размером и уровнем развития региона.
-        {% endblocktranslate %}
       </div>
     </div>
   {% endif %}
@@ -218,7 +210,7 @@
   {% if partial %}
     <div class="card" style="margin-top: var(--space-5)">
       <div class="card__header">
-        <h2 class="card__title">{% translate "Частная корреляция" %}</h2>
+        <h2 class="card__title">{% term "partial-correlation" %}</h2>
         <span class="card__meta">
           {% translate "субъектов" %}: {{ partial.observations }} ·
           {% translate "исключено влияние остальных показателей" %}
@@ -250,12 +242,7 @@
         </table>
       </div>
       <div class="card__footer">
-        {% blocktranslate trimmed %}
-          Частная корреляция показывает связь двух показателей при исключённом влиянии
-          остальных выбранных. Заметное падение коэффициента по сравнению с парным
-          означает, что связь во многом объяснялась третьими показателями. В расчёт
-          входят только субъекты, по которым есть данные по всем выбранным рядам.
-        {% endblocktranslate %}
+        {% translate "В расчёт входят субъекты с данными по всем выбранным рядам." %}
       </div>
     </div>
   {% endif %}

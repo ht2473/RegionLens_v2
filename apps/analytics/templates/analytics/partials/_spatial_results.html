@@ -1,4 +1,4 @@
-{% load i18n formatting %}
+{% load i18n formatting glossary %}
 {# Результаты пространственного анализа: индекс Морана, диаграмма и карта LISA. #}
 
 {% if too_few %}
@@ -49,14 +49,14 @@
 
     <div class="grid grid--kpi" style="margin-top: var(--space-4)">
       <div class="kpi">
-        <div class="kpi__label">{% translate "Индекс Морана" %}</div>
+        <div class="kpi__label">{% term "moran-index" %}</div>
         <div class="kpi__value numeric">{{ global_moran.value|ru_number:3 }}</div>
         <div class="kpi__footer">
           {% translate "при случайном распределении" %}: {{ global_moran.expected|ru_number:3 }}
         </div>
       </div>
       <div class="kpi">
-        <div class="kpi__label">{% translate "Уровень значимости" %}</div>
+        <div class="kpi__label">{% term "significance-level" %}</div>
         <div class="kpi__value numeric">{{ global_moran.p_value|p_level }}</div>
         <div class="kpi__footer">
           {% if global_moran.is_significant %}

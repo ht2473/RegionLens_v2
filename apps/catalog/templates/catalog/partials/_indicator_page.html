@@ -1,4 +1,4 @@
-{% load i18n formatting workspace exports %}
+{% load i18n formatting workspace exports glossary %}
 {% comment %}
   Страница показателя под шапкой сайта. Отдаётся отдельным фрагментом при смене
   разреза: от ряда зависит всё — главное, карта, ход, сведения о ряде.
@@ -335,7 +335,7 @@
           </dd>
         </div>
         <div>
-          <dt>{% translate "Разрывы" %}</dt>
+          <dt>{% term "comparability-break" _("Разрывы") %}</dt>
           <dd>
             {% if breaks %}
               <a href="#indicator-breaks">{{ break_years|join:", " }}</a>
@@ -350,7 +350,7 @@
           </dd>
         </div>
         <div>
-          <dt>{% translate "Пересмотры" %}</dt>
+          <dt>{% term "revision" _("Пересмотры") %}</dt>
           <dd>
             {% if series.revision_count %}
               {% blocktranslate trimmed with count=series.revision_count|ru_number:0 %}пересмотрено значений: {{ count }}{% endblocktranslate %}

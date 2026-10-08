@@ -1,5 +1,5 @@
-{% load i18n formatting %}
-{# Результаты расчёта неравенства: меры, кривая Лоренца, динамика, разложение. #}
+{% load i18n formatting glossary %}
+{# Результаты расчёта неравенства: меры (название — термин глоссария), Лоренц, динамика, разложение. #}
 
 {% if too_few %}
   {% include "analytics/partials/_too_few.html" %}
@@ -51,19 +51,17 @@
     {% for measure in snapshot.measures %}
       {% with label=measure_labels|dict_value:measure.code %}
         <div class="kpi">
-          <div class="kpi__label" title="{{ label.hint }}">{{ label.title }}</div>
+          <div class="kpi__label">{% if label.term %}{% term label.term label.title %}{% else %}{{ label.title }}{% endif %}</div>
           {% if measure.is_available %}
             <div class="kpi__value numeric">{{ measure.value|ru_number:label.digits }}</div>
           {% else %}
             <div class="kpi__value text-muted">—</div>
           {% endif %}
-          <div class="kpi__footer">
-            {% if measure.note %}
-              <span class="text-attention">{{ measure.note }}</span>
-            {% else %}
-              {{ label.hint }}
-            {% endif %}
-          </div>
+          {% if measure.note %}
+            <div class="kpi__footer"><span class="text-attention">{{ measure.note }}</span></div>
+          {% elif not label.term %}
+            <div class="kpi__footer">{{ label.hint }}</div>
+          {% endif %}
         </div>
       {% endwith %}
     {% endfor %}
@@ -346,20 +344,5 @@
       </div>
     </div>
   {% endif %}
-
-  <div class="callout callout--methodology" style="margin-top: var(--space-5)">
-    <svg class="callout__icon" aria-hidden="true"><use href="#icon-book"></use></svg>
-    <div>
-      <div class="callout__title">{% translate "Как считаются меры" %}</div>
-      <p>
-        {% blocktranslate trimmed %}
-          Коэффициент Джини — удвоенная площадь между кривой Лоренца и линией равенства.
-          Индекс Тейла раскладывается на различия между округами и внутри округов. Индексы
-          Тейла и Аткинсона считаются только для положительных значений, коэффициент Джини —
-          для неотрицательных; если мера неприменима, вместо неё стоит прочерк с причиной.
-        {% endblocktranslate %}
-      </p>
-    </div>
-  </div>
 
 {% endif %}

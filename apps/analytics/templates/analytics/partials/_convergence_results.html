@@ -1,5 +1,5 @@
-{% load i18n formatting %}
-{# Результаты проверки сближения: разброс во времени и связь темпа роста с уровнем. #}
+{% load i18n formatting glossary %}
+{# Проверка сближения: разброс во времени и связь темпа роста с уровнем; меры — термины глоссария. #}
 
 {% if too_few %}
   {% include "analytics/partials/_too_few.html" %}
@@ -34,7 +34,7 @@
   <div class="grid grid--halves">
     <div class="card">
       <div class="card__header">
-        <h2 class="card__title">{% translate "Сигма-конвергенция" %}</h2>
+        <h2 class="card__title">{% term "sigma-convergence" %}</h2>
         <span class="card__meta">{% translate "сокращается ли разброс" %}</span>
       </div>
       {% if sigma_trend.available %}
@@ -72,7 +72,7 @@
 
     <div class="card">
       <div class="card__header">
-        <h2 class="card__title">{% translate "Бета-конвергенция" %}</h2>
+        <h2 class="card__title">{% term "beta-convergence" %}</h2>
         <span class="card__meta">{% translate "догоняют ли отстающие" %}</span>
       </div>
       {% if beta %}
@@ -97,8 +97,10 @@
           <dd class="numeric">
             {% if beta.speed %}{{ beta.speed|percent:2 }} {% translate "в год" %}{% else %}—{% endif %}
           </dd>
-          <dt title="{% translate 'За сколько лет исчезнет половина отставания при сохранении темпа' %}">
+          <dt>
             {% translate "Период полусокращения разрыва" %}
+            {% translate "За сколько лет исчезнет половина отставания, если темп сохранится. Это продолжение наблюдавшегося темпа, а не прогноз." as half_life_hint %}
+            {% include "partials/_hint.html" with hint_id="hint-half-life" hint_text=half_life_hint hint_label=_("Что такое полупериод") %}
           </dt>
           <dd class="numeric">
             {% if beta.half_life %}
@@ -258,21 +260,5 @@
       </div>
     </div>
   {% endif %}
-
-  <div class="callout callout--methodology" style="margin-top: var(--space-5)">
-    <svg class="callout__icon" aria-hidden="true"><use href="#icon-book"></use></svg>
-    <div>
-      <div class="callout__title">{% translate "Почему две меры и почему они расходятся" %}</div>
-      <p>
-        {% blocktranslate trimmed %}
-          Сигма-конвергенция — сокращение разброса значений между регионами,
-          бета-конвергенция — более быстрый рост регионов с низким исходным уровнем. Из
-          второй не следует первая: регионы могут догонять лидеров и при этом меняться
-          местами, так что разброс не сокращается. Период полусокращения продолжает
-          наблюдавшийся темп и прогнозом не является.
-        {% endblocktranslate %}
-      </p>
-    </div>
-  </div>
 
 {% endif %}

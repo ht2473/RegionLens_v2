@@ -1,4 +1,4 @@
-{% load i18n formatting %}
+{% load i18n formatting glossary %}
 {# Представление «распределение»: полоса точек в цветах классов карты, сводка, положение выбранных. #}
 
 {% if not series %}
@@ -63,17 +63,17 @@
         </div>
         <dl class="figure-list">
           <div><dt>{% translate "Минимум" %}</dt><dd class="numeric">{{ statistics.min_value|ru_number:precision }}</dd></div>
-          <div><dt>{% translate "Первый квартиль" %}</dt><dd class="numeric">{{ statistics.p25_value|ru_number:precision }}</dd></div>
-          <div><dt>{% translate "Медиана" %}</dt><dd class="numeric">{{ statistics.median_value|ru_number:precision }}</dd></div>
-          <div><dt>{% translate "Третий квартиль" %}</dt><dd class="numeric">{{ statistics.p75_value|ru_number:precision }}</dd></div>
+          <div><dt>{% term "quantile" _("Первый квартиль") %}</dt><dd class="numeric">{{ statistics.p25_value|ru_number:precision }}</dd></div>
+          <div><dt>{% term "median" %}</dt><dd class="numeric">{{ statistics.median_value|ru_number:precision }}</dd></div>
+          <div><dt>{% term "quantile" _("Третий квартиль") %}</dt><dd class="numeric">{{ statistics.p75_value|ru_number:precision }}</dd></div>
           <div><dt>{% translate "Максимум" %}</dt><dd class="numeric">{{ statistics.max_value|ru_number:precision }}</dd></div>
           <div><dt>{% translate "Российская Федерация" %}</dt><dd class="numeric">{{ statistics.country_value|ru_number:precision }}</dd></div>
           <div>
-            <dt title="{% translate 'Отношение стандартного отклонения к среднему' %}">{% translate "Коэффициент вариации" %}</dt>
+            <dt>{% term "coefficient-of-variation" %}</dt>
             <dd class="numeric">{{ statistics.coef_variation|percent }}</dd>
           </div>
           <div>
-            <dt title="{% translate 'Отношение девятого дециля к первому' %}">{% translate "Децильный коэффициент" %}</dt>
+            <dt>{% term "decile-ratio" %}</dt>
             <dd class="numeric">{{ statistics.decile_ratio|ru_number:1 }}</dd>
           </div>
         </dl>
