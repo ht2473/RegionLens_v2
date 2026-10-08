@@ -7,15 +7,24 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView
 
-from apps.catalog.selectors import MAX_COMPARE, grouped_territories, series_options
+from apps.catalog.selectors import (
+    MAX_COMPARE,
+    grouped_territories,
+    resolve_territories,
+    series_options,
+)
 from apps.core.navigation import Crumb
 from apps.core.views import BreadcrumbMixin
+from apps.surface import picks
 from apps.surface.panels import (
     PANEL_DISTRIBUTION,
     PANEL_TABLE,
@@ -45,13 +54,30 @@ class SurfaceView(BreadcrumbMixin, TemplateView):
         """Описание текущего представления."""
         return PANELS_BY_CODE[self.panel_code]
 
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """
+        Быстрый вариант выбора регионов (``pick``) дополняет выбор и переводит на адрес
+        с регионами словами: ссылка на вид остаётся обычной. HTMX идёт за переходом сам
+        и записывает в историю конечный адрес.
+        """
+        pick = request.GET.get("pick", "")
+        if pick in picks.PICKS:
+            try:
+                state = resolve_state(request)
+                codes = picks.apply(request, pick, state.territories)
+                chosen = replace(state, territories=resolve_territories(codes))
+                return redirect(panel_url(self.panel, chosen, request))
+            except WarehouseNotBuiltError:
+                pass
+        return super().get(request, *args, **kwargs)
+
     def get_template_names(self) -> list[str]:
         """Выбрать полный экран, рабочую область или один холст."""
         if not self.request.headers.get("HX-Request"):
             return [self.template_name]
         if self.request.headers.get("HX-Target") == WORKSPACE_ID:
             return ["surface/partials/_workspace_response.html"]
-        return ["surface/partials/_main.html"]
+        return ["surface/partials/_main_response.html"]
 
     def get_crumbs(self) -> tuple[Crumb, ...]:
         """Путь к странице: раздел «Исследовать», как в меню, и представление."""
@@ -76,6 +102,8 @@ class SurfaceView(BreadcrumbMixin, TemplateView):
             context["territory_count"] = sum(len(group["items"]) for group in groups)
             state = resolve_state(self.request)
             context.update(state_context(state))
+            # На пределе отметок перечень регионов не предлагается.
+            context["territories_full"] = len(state.codes) >= MAX_COMPARE
             subject = describe_subject(state)
             context["subject"] = subject
             context["precision"] = subject.item.precision if subject else None
@@ -86,6 +114,9 @@ class SurfaceView(BreadcrumbMixin, TemplateView):
             context["tabs"] = build_tabs(panel, state, self.request)
             context["territories_reset_url"] = panel_url(
                 panel, state, self.request, with_territories=False
+            )
+            context["territory_picks"] = picks.offers(
+                self.request, state.territories, panel_url(panel, state, self.request)
             )
             context.update(panel.builder(self.request, state))
             # После холста: рейтинг бывает показан не за выбранный год.

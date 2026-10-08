@@ -1,0 +1,9 @@
+{% comment %}
+  Ответ на смену параметра: холст и, вне его, группа регионов рейля — фишки отмеченных,
+  счётчик и перечень остальных следуют за выбором. Раскрытый перечень остаётся раскрытым
+  (data-keep-open), фокус переходит к фишке с тем же опознавателем (htmx).
+{% endcomment %}
+{% include "surface/partials/_main.html" %}
+<div class="filter-rail__group" id="surface-territories-group" hx-swap-oob="innerHTML">
+  {% include "surface/partials/_territories.html" %}
+</div>

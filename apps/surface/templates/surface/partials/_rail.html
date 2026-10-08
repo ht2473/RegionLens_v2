@@ -1,8 +1,9 @@
 {% load i18n %}
-{# Рейль выбора: общий выбор, затем параметры построения; применяется сразу. #}
-{# Рейль — сама форма: холст несёт свои формы, а вложенные формы недопустимы. #}
+{# Рейль — что смотрим: показатель, год, регионы; применяется сразу. Как показать — над графиком. #}
+{# Рейль — сама форма: холст несёт свои формы, а вложенные формы недопустимы. Поля «Настроить #}
+{# вид» над графиком приписаны к ней атрибутом form и уходят с каждым запросом рейля. #}
 <form class="filter-rail" id="surface-rail"
-      aria-label="{% translate 'Выбор и параметры построения' %}"
+      aria-label="{% translate 'Что смотрим' %}"
       hx-get="{{ panel.url }}"
       hx-target="#surface-main"
       hx-push-url="true"
@@ -10,7 +11,7 @@
       hx-swap="innerHTML transition:true"
       hx-indicator="#surface-main">
 
-  {% translate "Выбор и параметры" as rail_title %}
+  {% translate "Что смотрим" as rail_title %}
   {% include "partials/_rail_sheet_head.html" with sheet_title=rail_title %}
 
   <div class="filter-rail__group">
@@ -21,21 +22,15 @@
     {% include "surface/partials/_year.html" %}
   </div>
 
-  <div class="filter-rail__group">
+  {# Группа регионов приходит заново с каждым пересчётом холста (_main_response.html). #}
+  <div class="filter-rail__group" id="surface-territories-group">
     {% include "surface/partials/_territories.html" %}
   </div>
-
-  {% if panel.rail_template %}
-    <div class="filter-rail__group">
-      <div class="filter-rail__title">{% translate "Построение" %}</div>
-      {% include panel.rail_template %}
-    </div>
-  {% endif %}
 
   <div class="filter-rail__foot">
     <a class="filter-rail__reset" href="{{ panel.url }}">
       <svg aria-hidden="true"><use href="#icon-refresh"></use></svg>
-      {% translate "Сбросить выбор и параметры" %}
+      {% translate "Сбросить выбор и вид" %}
     </a>
   </div>
 </form>

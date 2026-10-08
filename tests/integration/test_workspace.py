@@ -247,7 +247,7 @@ class TestSavedInWords:
         content = member_client.get(reverse("workspace:saved")).content.decode()
         assert "Доходы населения" in content
         assert "2024 год" in content
-        assert "естественные границы, классов: 6" in content
+        assert "по разрывам, классов: 6" in content
         for code in ("method:", "series:", "classes:", catalogued.key, "absolute"):
             assert code not in content
 

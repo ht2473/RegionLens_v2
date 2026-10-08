@@ -1,0 +1,11 @@
+{% load i18n %}
+{% comment %}
+  «?» у подписи поля или заголовка: пояснение по нажатию вместо постоянной подписи.
+  Панель — всплывающий слой браузера (закрывается щелчком мимо и Esc), строчная: «?» стоит
+  и внутри абзаца. hint_id — опознаватель панели, hint_text — пояснение, hint_label — о чём
+  оно (имя кнопки для программ чтения).
+{% endcomment %}
+<button type="button" class="hint" popovertarget="{{ hint_id }}"
+        aria-label="{% if hint_label %}{{ hint_label }}{% else %}{% translate 'Пояснение' %}{% endif %}"
+        title="{% if hint_label %}{{ hint_label }}{% else %}{% translate 'Пояснение' %}{% endif %}">?</button>
+<span class="menu-popover hint__panel" id="{{ hint_id }}" popover>{{ hint_text }}</span>

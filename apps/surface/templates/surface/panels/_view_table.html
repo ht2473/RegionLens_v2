@@ -1,0 +1,15 @@
+{% load i18n %}
+{# «Настроить вид» таблицы: порядок строк; отбор по округу — в рейле, у регионов. #}
+<div class="field view-field">
+  <div class="field__label" id="surface-sort-label">{% translate "Порядок строк" %}</div>
+  <div class="segmented" role="radiogroup" aria-labelledby="surface-sort-label">
+    {% for code, title in sorts.items %}
+      <label class="segmented__option">
+        <input type="radio" name="sort" value="{{ code }}" id="view-sort-{{ code }}"
+               form="surface-rail"
+               {% if code == sort %}checked{% endif %}>
+        <span>{{ title }}</span>
+      </label>
+    {% endfor %}
+  </div>
+</div>

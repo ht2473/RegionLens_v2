@@ -362,6 +362,11 @@ button.main-nav__link {
   content: " ·";
 }
 
+/* Числа и диапазоны лет в сведениях не рвутся переносом. */
+.page-head__meta .numeric {
+  white-space: nowrap;
+}
+
 /* Поиск, выбор и прочее под вводной: отступ — у первого блока после текста шапки. */
 .page-head > :is(.page-head__title, .page-head__lead, .page-head__meta)
   + :not(.page-head__lead, .page-head__meta, .page-head__actions, .page-head__aside) {
@@ -489,20 +494,22 @@ button.main-nav__link {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  padding: var(--space-5);
+  /* По вертикали плотнее: рейль поверхности помещается в окно 1366 × 768. */
+  padding: var(--space-4) var(--space-5);
   background-color: var(--surface-sunken);
   border-radius: var(--radius-lg);
 }
 
 .filter-rail__group + .filter-rail__group {
-  margin-top: var(--space-5);
-  padding-top: var(--space-5);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
   border-top: 1px solid var(--border-strong);
 }
 
 /* Заголовок группы и подпись первого поля — одного рисунка; прочие подписи мелкие. */
 .filter-rail__title,
-.filter-rail__group > .field:first-child > .field__label {
+.filter-rail__group > .field:first-child > .field__label,
+.filter-rail__group > .field:first-child > .field__head > .field__label {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -513,8 +520,13 @@ button.main-nav__link {
   color: var(--text-primary);
 }
 
-.filter-rail__group > .field:first-child > .field__label {
+.filter-rail__group > .field:first-child > .field__label,
+.filter-rail__group > .field:first-child > .field__head {
   margin-bottom: var(--space-1);
+}
+
+.filter-rail__group > .field:first-child > .field__head > .field__label {
+  margin-bottom: 0;
 }
 
 .filter-rail__count {
@@ -525,7 +537,7 @@ button.main-nav__link {
 
 /* Сброс — тихая ссылка в конце рейля. */
 .filter-rail__foot {
-  margin-top: var(--space-5);
+  margin-top: var(--space-4);
   padding-top: var(--space-4);
   border-top: 1px solid var(--border-strong);
 }
@@ -832,13 +844,13 @@ button.main-nav__link {
      иначе в полосе отступа видна прокрученная часть. */
   html[data-rail="sheet"] .filter-rail__head {
     position: sticky;
-    top: calc(-1 * var(--space-5));
+    top: calc(-1 * var(--space-4));
     z-index: var(--z-base);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
-    margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-4);
+    margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-5)) var(--space-4);
     padding: var(--space-3) var(--space-4);
     background-color: var(--surface-sunken);
     border-bottom: 1px solid var(--border-strong);

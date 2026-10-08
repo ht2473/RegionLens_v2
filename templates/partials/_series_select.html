@@ -3,9 +3,15 @@
 {# select_label — своя подпись поля, select_empty — пустой пункт, пока ряд не выбран, select_name — имя поля. #}
 {% series_choice series as choice %}
 <div class="field">
-  <label class="field__label" id="series-select-label" for="series-select">
-    {% if select_label %}{{ select_label }}{% else %}{% translate "Показатель" %}{% endif %}
-  </label>
+  <div class="field__head">
+    <label class="field__label" id="series-select-label" for="series-select">
+      {% if select_label %}{{ select_label }}{% else %}{% translate "Показатель" %}{% endif %}
+    </label>
+    {% translate "Показаны ряды с покрытием не менее 80 % субъектов и не менее десяти лет" as coverage_hint %}
+    {% with hint_name=select_name|default:"series" %}
+      {% include "partials/_hint.html" with hint_id="hint-"|add:hint_name hint_text=coverage_hint hint_label=_("Какие ряды в перечне") %}
+    {% endwith %}
+  </div>
   {# <rl-combobox> — выбор с поиском; в странице только выбранный ряд, перечень догружается. #}
   {# Без сценариев перечень раскрывается ссылкой ниже. #}
   <rl-combobox class="combobox"
@@ -38,9 +44,6 @@
       <a class="field__hint" href="{% querystring series_list=1 %}">{% translate "Показать весь перечень рядов" %}</a>
     </noscript>
   {% endif %}
-  <span class="field__hint">
-    {% translate "Показаны ряды с покрытием не менее 80 % субъектов и не менее десяти лет" %}
-  </span>
 
   {# Предупреждение о ненормированной величине — подсказка, а не запрет. #}
   {% if choice and choice.unnormalised %}
@@ -49,7 +52,9 @@
       <div>
         <div class="callout__title">{% translate "Величина не приведена к численности" %}</div>
         <p style="margin: 0">
-          {% translate "Сравнение субъектов по этому ряду показывает, где больше населения и крупнее экономика, а не где лучше положение дел. Для сопоставления регионов выберите душевой или относительный показатель." %}
+          {% translate "Для сравнения регионов лучше душевой или относительный показатель." %}
+          {% translate "Сравнение субъектов по этому ряду показывает, где больше населения и крупнее экономика, а не где лучше положение дел." as unnormalised_hint %}
+          {% include "partials/_hint.html" with hint_id="hint-unnormalised" hint_text=unnormalised_hint hint_label=_("Почему") %}
         </p>
       </div>
     </div>

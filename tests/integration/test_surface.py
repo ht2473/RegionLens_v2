@@ -227,27 +227,35 @@ class TestSelectionIsVisibleEverywhere:
 class TestDistributionPanel:
     """Разброс значений по субъектам."""
 
-    def test_histogram_layers_account_for_every_valued_region(
+    def test_strip_has_a_point_for_every_valued_region(
         self, client: Client, series_key: str
     ) -> None:
         """
-        Сумма долей столбцов равна числу субъектов со значением.
+        Точек столько, сколько субъектов со значением.
 
-        Столбец разобран по классам шкалы, и потерянный при разборе субъект
-        означал бы, что гистограмма показывает не то распределение, что карта.
+        Потерянная точка означала бы, что полоса показывает не то распределение, что карта.
         """
         response = client.get(reverse("surface:distribution"), {"series": series_key})
-        option = response.context["histogram_option"]
-        total = sum(sum(entry["data"]) for entry in option["series"])
-        assert total == response.context["valued_count"]
+        option = response.context["strip_option"]
+        assert len(option["series"][0]["data"]) == response.context["valued_count"]
 
-    def test_histogram_uses_the_map_palette(self, client: Client, series_key: str) -> None:
-        """Цвета долей — те же переменные оформления, что и у классов карты."""
+    def test_strip_uses_the_map_palette(self, client: Client, series_key: str) -> None:
+        """Цвет точки — та же переменная оформления, что у класса региона на карте."""
         response = client.get(reverse("surface:distribution"), {"series": series_key})
-        option = response.context["histogram_option"]
-        colours = [entry["itemStyle"]["color"] for entry in option["series"]]
-        expected = [f"var({name})" for name in response.context["palette"]]
-        assert colours == expected
+        option = response.context["strip_option"]
+        colours = {item["itemStyle"]["color"] for item in option["series"][0]["data"]}
+        expected = {f"var({name})" for name in response.context["palette"]}
+        assert colours <= expected
+
+    def test_chosen_region_is_labelled(
+        self, client: Client, series_key: str, codes: list[str]
+    ) -> None:
+        """Отмеченный регион на полосе подписан."""
+        response = client.get(
+            reverse("surface:distribution"), {"series": series_key, "territory": codes[0]}
+        )
+        data = response.context["strip_option"]["series"][0]["data"]
+        assert sum(1 for item in data if "label" in item) == 1
 
     def test_scale_is_shared_with_the_map(self, client: Client, series_key: str) -> None:
         """Разбиение шкалы совпадает с картой при тех же параметрах."""
@@ -255,6 +263,95 @@ class TestDistributionPanel:
         chart = client.get(reverse("surface:distribution"), parameters)
         map_page = client.get(reverse("maps:choropleth"), parameters)
         assert chart.context["intervals"] == map_page.context["intervals"]
+
+
+class TestTerritoryPicks:
+    """Быстрые варианты выбора: мой регион, соседи, похожие, весь округ."""
+
+    def test_pick_leads_to_a_plain_address(self, client: Client, series_key: str) -> None:
+        """Вариант дополняет выбор и переводит на адрес с регионами словами, без ``pick``."""
+        response = client.get(
+            reverse("maps:choropleth"),
+            {"series": series_key, "territory": "RU-TA", "pick": "neighbours"},
+        )
+        assert response.status_code == 302
+        target = response["Location"]
+        assert "pick=" not in target
+        assert "territory=RU-TA" in target
+        assert target.count("territory=") > 1
+
+    def test_district_is_added_whole(self, client: Client, series_key: str) -> None:
+        """Весь округ — все его регионы, если они помещаются в предел отметок."""
+        from apps.catalog.models import Territory
+
+        anchor = Territory.objects.get(code="RU-AD")
+        members = Territory.objects.comparable().filter(parent_id=anchor.parent_id).count()
+        response = client.get(
+            reverse("rankings:index"),
+            {"series": series_key, "territory": "RU-AD", "pick": "district"},
+        )
+        assert response["Location"].count("territory=") == members
+
+    def test_large_district_is_offered_grey_with_a_reason(
+        self, client: Client, series_key: str
+    ) -> None:
+        """Округ больше предела — серым, с причиной; ссылки нет."""
+        response = client.get(
+            reverse("maps:choropleth"), {"series": series_key, "territory": "RU-TA"}
+        )
+        district = next(
+            item for item in response.context["territory_picks"] if item["pick"] == "district"
+        )
+        assert district["url"] == ""
+        assert "больше, чем можно отметить" in district["reason"]
+
+    def test_my_region_is_offered_and_added(self, client: Client, series_key: str) -> None:
+        """Мой регион из cookie предлагается и добавляется первым при пустом выборе."""
+        from apps.accounts.region import REGION_COOKIE
+
+        client.cookies[REGION_COOKIE] = "RU-SVE"
+        page = client.get(reverse("maps:choropleth"), {"series": series_key})
+        assert any(
+            item["pick"] == "mine" and item["url"] for item in page.context["territory_picks"]
+        )
+        response = client.get(reverse("maps:choropleth"), {"series": series_key, "pick": "mine"})
+        assert "territory=RU-SVE" in response["Location"]
+
+    def test_without_an_anchor_picks_explain_why(self, client: Client, series_key: str) -> None:
+        """Без отметок и своего региона соседей и похожих не от кого искать — сказано почему."""
+        response = client.get(reverse("maps:choropleth"), {"series": series_key})
+        picks = {item["pick"]: item for item in response.context["territory_picks"]}
+        assert picks["neighbours"]["url"] == ""
+        assert picks["neighbours"]["reason"]
+
+
+class TestMyRegionAndBars:
+    """Рейтинг и таблица: столбик у значения, мой регион выделен, «Положение» не повторяет место."""
+
+    @pytest.mark.parametrize("route", ["rankings:index", "surface:table"])
+    def test_my_region_is_marked(
+        self, client: Client, series_key: str, codes: list[str], route: str
+    ) -> None:
+        """Регион посетителя (из cookie) отмечен строкой и пометкой «мой регион»."""
+        from apps.accounts.region import REGION_COOKIE
+
+        client.cookies[REGION_COOKIE] = codes[0]
+        content = client.get(reverse(route), {"series": series_key}).content.decode("utf-8")
+        assert re.search(rf'<tr data-territory="{codes[0]}" class="[^"]*\bis-mine\b', content)
+        assert content.count('class="mine-mark"') == 1
+
+    @pytest.mark.parametrize("route", ["rankings:index", "surface:table"])
+    def test_value_has_a_bar(self, client: Client, series_key: str, route: str) -> None:
+        """У положительных значений — столбик в доле наибольшего; у наибольшего он полный."""
+        content = client.get(reverse(route), {"series": series_key}).content.decode("utf-8")
+        assert 'class="value-cell__bar" style="--share: 1.000"' in content
+
+    def test_table_has_no_position_column(self, client: Client, series_key: str) -> None:
+        """Столбца «Положение» нет: доля регионов ниже повторяла место."""
+        content = client.get(reverse("surface:table"), {"series": series_key}).content.decode(
+            "utf-8"
+        )
+        assert "Положение" not in content
 
 
 class TestTablePanel:
@@ -497,25 +594,18 @@ class TestWorkspaceMarkup:
 
 
 class TestRailLayout:
-    """Порядок и свёртка рейля: параметры построения видны без прокрутки."""
-
-    @staticmethod
-    def _opened(content: str, css_class: str) -> bool:
-        """Раскрыт ли блок details с указанным классом."""
-        match = re.search(rf'<details class="{css_class}"\s*(open)?\s*>', content)
-        assert match, f"блок {css_class} не найден"
-        return match.group(1) is not None
+    """Рейль — что смотрим; как показать — в «Настроить вид» над графиком."""
 
     @pytest.mark.parametrize("route", ["rankings:index", "surface:table"])
     def test_district_stands_with_territories(
         self, client: Client, series_key: str, route: str
     ) -> None:
-        """Отбор по округу стоит в группе территорий, выше перечня, а не в «Построении»."""
+        """Отбор по округу стоит в рейле, в группе территорий, а не в «Настроить вид»."""
         content = client.get(reverse(route), {"series": series_key}).content.decode("utf-8")
         district = content.index('id="surface-district"')
         title = content.index('id="surface-territories-title"')
         assert title < district < content.index('id="surface-territories"')
-        assert district < content.index("Построение")
+        assert district < content.index('id="surface-view"')
         assert content.count('name="district"') == 1
 
     @pytest.mark.parametrize("route", ["maps:choropleth", "compare:index", "surface:distribution"])
@@ -526,63 +616,70 @@ class TestRailLayout:
         content = client.get(reverse(route), {"series": series_key}).content.decode("utf-8")
         assert 'name="district"' not in content
 
-    def test_region_list_is_folded_until_chosen(
-        self, client: Client, series_key: str, codes: list[str]
+    @pytest.mark.parametrize("route", PANEL_ROUTES)
+    def test_view_settings_live_over_the_chart(
+        self, client: Client, series_key: str, route: str
     ) -> None:
         """
-        Перечень субъектов свёрнут при пустом выборе и раскрыт, когда выбор есть.
-
-        Поле поиска стоит над перечнем в любом случае: субъект чаще находят
-        набором названия.
+        Параметры построения — не в рейле, а над графиком, и приписаны к форме рейля:
+        смена года уносит их с собой.
         """
-        empty = client.get(reverse("maps:choropleth"), {"series": series_key})
-        content = empty.content.decode("utf-8")
-        assert not self._opened(content, "territory-list")
-        assert content.index('data-filter-input="#surface-territories"') < content.index(
-            '<details class="territory-list"'
-        )
-        assert f">{empty.context['territory_count']}<" in content
+        content = client.get(reverse(route), {"series": series_key}).content.decode("utf-8")
+        rail = content.index('id="surface-rail"')
+        rail_end = content.index("</form>", rail)
+        view = content.index('id="surface-view"')
+        assert rail_end < view
+        assert 'form="surface-rail"' in content[view:]
+        assert 'hx-include="#surface-rail"' in content[view:]
 
-        chosen = client.get(
-            reverse("maps:choropleth"), {"series": series_key, "territory": codes}
-        ).content.decode("utf-8")
-        assert self._opened(chosen, "territory-list")
-
-    def test_dynamics_opens_the_list_at_once(self, client: Client, series_key: str) -> None:
-        """Динамика без выбора не строится, и перечень у неё раскрыт сразу."""
-        content = client.get(reverse("compare:index"), {"series": series_key}).content.decode(
-            "utf-8"
-        )
-        assert self._opened(content, "territory-list")
-
-    def test_rare_parameter_is_folded_with_its_value(
+    def test_view_settings_are_folded_and_summarised(
         self, client: Client, series_key: str, year: int
     ) -> None:
-        """
-        Сравнение лет на карте свёрнуто и называет своё значение в заголовке.
-
-        Включённое сравнение меняет всю карту и потому раскрывает блок само.
-        """
+        """«Настроить вид» свёрнут; сводка называет, как построено сейчас."""
         plain = client.get(
             reverse("maps:choropleth"), {"series": series_key, "year": year}
         ).content.decode("utf-8")
-        assert not self._opened(plain, "rail-more")
-        assert re.search(r'data-summary-of="map-compare">\s*не сравнивать\s*<', plain)
+        assert re.search(
+            r'<details class="view-settings[^"]*" id="surface-view"(?![^>]*\sopen[\s>])', plain
+        )
+        assert "Поровну регионов" in plain
 
         compared = client.get(
             reverse("maps:choropleth"),
             {"series": series_key, "year": year, "compare": year - 1},
-        ).content.decode("utf-8")
-        assert self._opened(compared, "rail-more")
-        assert re.search(rf'data-summary-of="map-compare">\s*{year - 1}\s*<', compared)
-
-    def test_build_parameters_precede_the_rare_one(self, client: Client, series_key: str) -> None:
-        """В рейтинге порядок стоит выше свёрнутого года сравнения позиций."""
-        content = client.get(reverse("rankings:index"), {"series": series_key}).content.decode(
-            "utf-8"
         )
-        assert content.index('name="order"') < content.index('<details class="rail-more"')
-        assert content.index('<details class="rail-more"') < content.index('name="base"')
+        assert f"изменение с {year - 1} по {year} год" in str(compared.context["view_summary"][0])
+
+    def test_chosen_regions_are_chips_and_leave_the_list(
+        self, client: Client, series_key: str, codes: list[str]
+    ) -> None:
+        """
+        Отмеченный регион — фишкой, которую можно снять; в свёрнутом перечне его нет.
+
+        Иначе отметку пришлось бы искать в перечне из 85 строк, а рейль не помещался бы в окно.
+        """
+        content = client.get(
+            reverse("maps:choropleth"), {"series": series_key, "territory": codes[0]}
+        ).content.decode("utf-8")
+        chips = content.index('class="territory-chips"')
+        listed = content.index('id="surface-territories"')
+        assert content.count(f'name="territory" value="{codes[0]}"') == 1
+        assert chips < content.index(f'value="{codes[0]}" checked') < listed
+        assert not re.search(r'<details class="territory-list"\s+open', content)
+
+    def test_full_selection_closes_the_list(self, client: Client, series_key: str) -> None:
+        """На пределе отметок перечня нет, поле отбора выключено и сказано почему."""
+        from apps.catalog.models import Territory
+        from apps.catalog.selectors import MAX_COMPARE
+
+        codes = list(Territory.objects.comparable().values_list("code", flat=True)[:MAX_COMPARE])
+        response = client.get(
+            reverse("maps:choropleth"), {"series": series_key, "territory": codes}
+        )
+        content = response.content.decode("utf-8")
+        assert response.context["territories_full"] is True
+        assert 'id="surface-territories"' not in content
+        assert "снимите регион, чтобы добавить другой" in content
 
 
 class TestRailOnANarrowScreen:
@@ -716,8 +813,9 @@ class TestComparabilityBreaks:
             {"series": broken_series, "territory": codes[0], "span": "comparable"},
             headers={"HX-Request": "true", "HX-Target": "surface"},
         )
-        assert '<input type="hidden" name="span" value="comparable">' in response.content.decode(
-            "utf-8"
+        assert (
+            '<input type="hidden" name="span" value="comparable" form="surface-rail">'
+            in response.content.decode("utf-8")
         )
 
     def test_series_without_breaks_says_nothing(self, client: Client, series_key: str) -> None:

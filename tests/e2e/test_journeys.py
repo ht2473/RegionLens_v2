@@ -153,7 +153,7 @@ class TestAnalysisPages:
 
         assert "/ru/rankings/" in page.url
         assert f"territory={code}" in page.url
-        expect(page.locator(f"#surface-territories input[value='{code}']")).to_be_checked()
+        expect(page.locator(f".territory-chips input[value='{code}']")).to_be_checked()
         expect(page.locator(".data-table tbody tr.is-selected")).to_have_count(1)
 
     def test_pointer_links_the_table_with_the_chart(

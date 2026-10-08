@@ -1,0 +1,23 @@
+{% load i18n %}
+{# «Настроить вид» динамики: значения или приведение к базовому году; отрезок — скрытым полем. #}
+{% if span and span != 'all' %}
+  <input type="hidden" name="span" value="{{ span }}" form="surface-rail">
+{% endif %}
+
+<div class="field view-field">
+  <div class="field__head">
+    <div class="field__label" id="surface-basis-label">{% translate "Линии" %}</div>
+    {% translate "Уровни регионов различаются кратно, и на общей оси движение видно только у верхней линии. Приведение к базовому году сравнивает рост, а не уровень." as basis_hint %}
+    {% include "partials/_hint.html" with hint_id="hint-basis" hint_text=basis_hint hint_label=_("Зачем приводить к базовому году") %}
+  </div>
+  <div class="segmented" role="radiogroup" aria-labelledby="surface-basis-label">
+    {% for code, title in bases.items %}
+      <label class="segmented__option">
+        <input type="radio" name="basis" value="{{ code }}" id="view-basis-{{ code }}"
+               form="surface-rail"
+               {% if code == basis %}checked{% endif %}>
+        <span>{{ title }}</span>
+      </label>
+    {% endfor %}
+  </div>
+</div>

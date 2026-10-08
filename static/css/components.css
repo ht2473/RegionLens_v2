@@ -849,6 +849,56 @@ a.leader-list__name:hover {
   color: var(--text-muted);
 }
 
+/* Подпись поля с «?» на одной линии. */
+.field__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* --- «?»: пояснение по нажатию (partials/_hint.html) ---------------------------------------- */
+
+.hint {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  background: none;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+  color: var(--text-muted);
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.hint:hover,
+.hint:focus-visible {
+  border-color: var(--accent);
+  color: var(--text-accent);
+}
+
+.menu-popover.hint__panel {
+  width: min(22rem, calc(100vw - 2 * var(--space-4)));
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+  text-align: left;
+  white-space: normal;
+}
+
+.menu-popover.hint__panel:popover-open {
+  display: block;
+}
+
 .field > .field__hint {
   margin-top: 0;
 }
@@ -1204,6 +1254,48 @@ a.leader-list__name:hover {
 .data-table tbody tr.is-selected {
   background-color: var(--surface-accent-soft);
   box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* Ячейка значения со столбиком: число, справа — доля наибольшего значения. */
+.value-cell {
+  white-space: nowrap;
+}
+
+.value-cell__bar {
+  display: inline-block;
+  width: 4rem;
+  height: 0.375rem;
+  margin-left: var(--space-2);
+  vertical-align: middle;
+  background: linear-gradient(
+      to right,
+      var(--text-muted) calc(var(--share, 0) * 100%),
+      transparent calc(var(--share, 0) * 100%)
+    ),
+    var(--surface-sunken);
+  border-radius: var(--radius-pill);
+}
+
+/* Мой регион в таблице — пометкой у названия. */
+.mine-mark {
+  margin-left: var(--space-2);
+  padding: 0 var(--space-2);
+  background-color: var(--surface-accent-soft);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-accent);
+  white-space: nowrap;
+}
+
+.data-table tbody tr.is-mine a {
+  font-weight: var(--weight-semibold);
+}
+
+@media (max-width: 639px) {
+  .value-cell__bar {
+    width: 2.5rem;
+  }
 }
 
 /* Итоговая строка («Российская Федерация»). */
@@ -2079,6 +2171,32 @@ rl-time-slider {
   min-height: 200px;
 }
 
+/* Полоса точек: высоту холсту задаёт раскладка точек (chart-options.js). */
+.chart--strip {
+  min-height: 0;
+}
+
+/* Вывод по правилам — одной строкой под заголовком графика. */
+.chart-frame__finding {
+  max-width: var(--measure);
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+}
+
+/* Предложение над графиком: другая шкала при перекосе и возврат к обычной. */
+.chart-frame__offer {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.chart-frame__offer a {
+  margin-left: var(--space-2);
+  font-weight: var(--weight-semibold);
+}
+
 /* Рамка графика или карты. */
 .chart-frame {
   padding: var(--space-5);
@@ -2455,6 +2573,11 @@ rl-time-slider {
   color: var(--text-primary);
 }
 
+.map-legend__term {
+  font-weight: var(--weight-regular);
+  color: var(--text-muted);
+}
+
 .map-legend__unit {
   font-size: var(--text-sm);
   color: var(--text-muted);
@@ -2687,6 +2810,22 @@ rl-time-slider {
   margin-top: var(--space-4);
 }
 
+/* Два поля в строку: начало и конец отрезка лет. */
+.field-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.field-pair > .field + .field {
+  margin-top: 0;
+}
+
+/* «Ещё параметры» первой строкой группы — без отступа сверху. */
+.rail-more--first {
+  margin-top: 0;
+}
+
 .territory-list {
   margin-top: var(--space-2);
 }
@@ -2744,7 +2883,7 @@ details[open] > .rail-more__summary {
 }
 
 .territory-district {
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
 .territory-search {
@@ -2929,60 +3068,8 @@ details[open] > .rail-more__summary {
   overflow-x: auto;
 }
 
-/* Малые графики по плиточной раскладке: линия хода по годам в клетке субъекта. */
-.multiples {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.multiples__back {
-  fill: var(--surface-sunken);
-}
-
-.multiples__back--empty {
-  fill: var(--no-data-fill);
-}
-
-.multiples__cell:hover .multiples__back,
-.multiples__cell:focus-visible .multiples__back {
-  fill: var(--surface-accent-soft);
-}
-
-.multiples__cell.is-selected .multiples__back {
-  stroke: var(--accent);
-  stroke-width: 1.5;
-  vector-effect: non-scaling-stroke;
-}
-
-.multiples__label {
-  font-family: var(--font-narrow);
-  font-size: 9px;
-  font-weight: var(--weight-semibold);
-  fill: var(--text-secondary);
-  pointer-events: none;
-}
-
-.multiples__line {
-  fill: none;
-  stroke: var(--text-primary);
-  stroke-width: 1.25;
-  stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
-}
-
-/* Точка — отрезок нулевой длины с круглым концом: кругом при любом масштабе. */
-.multiples__dot {
-  fill: none;
-  stroke: var(--text-primary);
-  stroke-width: 6;
-  stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
-}
-
 @media (max-width: 720px) {
-  .tile-map,
-  .multiples {
+  .tile-map {
     min-width: 620px;
     max-height: none;
   }
@@ -3904,6 +3991,41 @@ rl-combobox:defined > select {
   font-size: var(--text-sm);
   color: var(--text-secondary);
 }
+
+/* --- Шкала цвета строкой: ступени последовательной шкалы с границами ---------------------
+   Тепловая таблица исследования и предпросмотр формулы. */
+
+.scale-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.scale-legend__step {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.scale-legend__swatch {
+  display: inline-block;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 2px;
+}
+
+.scale-legend__swatch[data-step="1"] { background: var(--scale-seq-1); }
+.scale-legend__swatch[data-step="2"] { background: var(--scale-seq-2); }
+.scale-legend__swatch[data-step="3"] { background: var(--scale-seq-3); }
+.scale-legend__swatch[data-step="4"] { background: var(--scale-seq-4); }
+.scale-legend__swatch[data-step="5"] { background: var(--scale-seq-5); }
+.scale-legend__swatch[data-step="6"] { background: var(--scale-seq-6); }
+.scale-legend__swatch[data-step="7"] { background: var(--scale-seq-7); }
 
 /* --- Чип: выбранное значение со снятием «×» — разбор поиска, регионы исследования ----- */
 

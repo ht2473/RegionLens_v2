@@ -27,6 +27,9 @@ PYTHON_RE = re.compile(r"""(?:\bicon=|["']icon["']:\s*)["']([a-z-]+)["']""")
 QUERY_TARGET_RE = re.compile(r'QueryTarget\("[^"]+", "[^"]+", _\("[^"]+"\), "([a-z-]+)"\)')
 # Запасной значок, подставляемый шаблоном.
 DEFAULT_RE = re.compile(r"icon\|default:'([a-z-]+)'")
+# Словарь значков по коду (карточки-ответы исследования): ICONS = {"код": "значок", …}.
+ICONS_RE = re.compile(r"^ICONS\s*=\s*\{(?P<body>[^}]*)\}", re.MULTILINE)
+ICON_VALUE_RE = re.compile(r""":\s*["']([a-z-]+)["']""")
 
 
 def sprite_icons() -> set[str]:
@@ -45,6 +48,8 @@ def used_icons() -> set[str]:
             if path.suffix == ".py":
                 found.update(PYTHON_RE.findall(text))
                 found.update(QUERY_TARGET_RE.findall(text))
+                for block in ICONS_RE.finditer(text):
+                    found.update(ICON_VALUE_RE.findall(block.group("body")))
             else:
                 found.update(MARKUP_RE.findall(text))
                 found.update(DEFAULT_RE.findall(text))

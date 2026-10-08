@@ -38,7 +38,8 @@ const BEHAVIOURS = {
     "[data-count-of], [data-filter-input], [data-summary-of], form[data-autosubmit]",
     () => import("./ui/forms.js"),
   ],
-  formula: ["[data-formula-insert]", () => import("./ui/formula.js")],
+  dataset: ["[data-dataset-browser]", () => import("./ui/dataset.js")],
+  formula: ["#formula-form", () => import("./ui/formula.js")],
   more: ["[data-more-toggle]", () => import("./ui/more.js")],
   print: ["[data-print]", () => import("./ui/print.js")],
   scroll: [
@@ -109,11 +110,26 @@ document.body.addEventListener("htmx:afterRequest", (event) => {
   }
 });
 
+// Раскрытые панели с data-keep-open остаются раскрытыми после замены фрагмента:
+// «Настроить вид» не закрывается от каждой смены параметра.
+let keptOpen = [];
+document.body.addEventListener("htmx:beforeSwap", () => {
+  keptOpen = [...document.querySelectorAll("details[data-keep-open][open][id]")].map((node) => node.id);
+});
+
 // Пришедший фрагмент: элементы, поведения, формы, счётчики и состояние листа рейля.
 document.body.addEventListener("htmx:afterSwap", (event) => {
+  keptOpen.forEach((id) => {
+    const node = document.getElementById(id);
+    if (node instanceof HTMLDetailsElement) {
+      node.open = true;
+    }
+  });
+  keptOpen = [];
   defineElements();
+  // Весь документ: вместе с целью могли прийти внеполосные блоки (группа регионов рейля).
   refresh("forms", (forms) => {
-    forms.enhance(event.target);
+    forms.enhance(document);
     forms.refreshCounters();
   });
   refresh("more", (more) => more.enhance(event.target));

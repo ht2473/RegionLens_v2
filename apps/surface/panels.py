@@ -46,7 +46,8 @@ class Panel:
     lead: Translatable
     icon: str
     template: str
-    rail_template: str
+    # «Настроить вид» над графиком: параметры построения представления.
+    view_template: str
     builder: Callable[[HttpRequest, SurfaceState], dict[str, Any]]
     # Параметры построения представления; общее состояние сюда не входит.
     params: tuple[str, ...] = ()
@@ -71,7 +72,7 @@ PANELS: tuple[Panel, ...] = (
         ),
         icon="map",
         template="maps/partials/_map_surface.html",
-        rail_template="maps/partials/_rail.html",
+        view_template="maps/partials/_view.html",
         builder=build_map,
         params=("method", "classes", "mode", "compare"),
     ),
@@ -86,7 +87,7 @@ PANELS: tuple[Panel, ...] = (
         ),
         icon="dynamics",
         template="compare/partials/_compare_results.html",
-        rail_template="compare/partials/_rail.html",
+        view_template="compare/partials/_view.html",
         builder=build_compare,
         params=("basis", "span"),
         export_kind=ReportKind.SERIES,
@@ -102,7 +103,7 @@ PANELS: tuple[Panel, ...] = (
         ),
         icon="ranking",
         template="rankings/partials/_ranking_results.html",
-        rail_template="rankings/partials/_rail.html",
+        view_template="rankings/partials/_view.html",
         builder=build_ranking,
         params=("order", "district", "base"),
     ),
@@ -111,13 +112,12 @@ PANELS: tuple[Panel, ...] = (
         url_name="surface:distribution",
         tab=_("Распределение"),
         lead=_(
-            "Как устроен разброс значений: сколько субъектов приходится на каждую "
-            "ступень шкалы, где проходят квартили и в какой части распределения "
-            "стоят выбранные территории."
+            "Как устроен разброс значений: где на шкале стоит каждый регион, где "
+            "проходят квартили и в какой части распределения выбранные территории."
         ),
         icon="distribution",
         template="surface/panels/_distribution.html",
-        rail_template="surface/panels/_rail_distribution.html",
+        view_template="surface/panels/_view_distribution.html",
         builder=build_distribution,
         params=("method", "classes"),
     ),
@@ -131,7 +131,7 @@ PANELS: tuple[Panel, ...] = (
         ),
         icon="table",
         template="surface/panels/_table.html",
-        rail_template="surface/panels/_rail_table.html",
+        view_template="surface/panels/_view_table.html",
         builder=build_table,
         params=("sort", "district"),
         # Выгрузка с пропусками, как и сама таблица.

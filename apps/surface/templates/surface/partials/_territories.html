@@ -1,11 +1,58 @@
 {% load i18n %}
-{# Выбор территорий — общий для всех представлений; может быть пустым. #}
-{# Перечень свёрнут, пока выбор пуст (кроме динамики); поиск на виду и раскрывает его. #}
+{% comment %}
+  Выбор регионов — общий для всех представлений; может быть пустым. Отмеченные — фишками:
+  снятая фишка убирает регион. Перечень остальных свёрнут, поле отбора на виду и раскрывает
+  его; на пределе отметок перечень серый, и сказано почему.
+{% endcomment %}
 <div class="filter-rail__title" id="surface-territories-title">
-  {% translate "Регионы" %}
+  <span class="field__head">
+    {% translate "Регионы" %}
+    {% blocktranslate trimmed with limit=max_compare asvar limit_hint %}
+      Отметить можно до {{ limit }} регионов: девятая линия на графике уже неразличима.
+    {% endblocktranslate %}
+    {% include "partials/_hint.html" with hint_id="hint-territories" hint_text=limit_hint hint_label=_("Сколько регионов можно отметить") %}
+  </span>
   <span class="filter-rail__count numeric"
         title="{% translate 'Отмечено из допустимых' %}">{{ selected_codes|length }}/{{ max_compare }}</span>
 </div>
+
+{% if territories %}
+  <ul class="territory-chips" aria-labelledby="surface-territories-title">
+    {% for territory in territories %}
+      <li>
+        <label class="territory-chip" data-territory="{{ territory.code }}"
+               title="{% translate 'Снять отметку' %}">
+          <input type="checkbox" name="territory" value="{{ territory.code }}" checked
+                 id="territory-{{ territory.code }}">
+          <span class="territory-chip__name">{{ territory.name }}</span>
+          <svg class="territory-chip__close" aria-hidden="true"><use href="#icon-close"></use></svg>
+        </label>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{# Быстрые варианты: недоступный — серым, причина — в подсказке. #}
+{% if territory_picks %}
+  <ul class="territory-picks" aria-label="{% translate 'Добавить сразу' %}">
+    {% for item in territory_picks %}
+      <li>
+        {% if item.url %}
+          <a class="territory-pick" href="{{ item.url }}"
+             hx-get="{{ item.url }}" hx-target="#surface" hx-swap="outerHTML" hx-push-url="true"
+             {% if item.hint %}title="{{ item.hint }}"{% endif %}>
+            <svg aria-hidden="true"><use href="#icon-plus"></use></svg>{{ item.title }}
+          </a>
+        {% else %}
+          <span class="territory-pick is-disabled" aria-disabled="true" title="{{ item.reason }}">
+            <svg aria-hidden="true"><use href="#icon-plus"></use></svg>{{ item.title }}
+            <span class="visually-hidden">— {{ item.reason }}</span>
+          </span>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
 
 {% if "district" in panel.params %}
   {% include "surface/partials/_district.html" %}
@@ -13,46 +60,45 @@
 
 <label class="filter-field territory-search">
   <svg aria-hidden="true"><use href="#icon-filter"></use></svg>
-  <span class="visually-hidden">{% translate "Отобрать регион" %}</span>
+  <span class="visually-hidden">{% translate "Добавить регион" %}</span>
   <input type="search" autocomplete="off"
          data-filter-input="#surface-territories" data-filter-empty="#surface-territories-empty"
-         placeholder="{% translate 'Отобрать регион' %}">
+         placeholder="{% translate 'Добавить регион' %}"{% if territories_full %} disabled{% endif %}>
 </label>
 
-<details class="territory-list" {% if selected_codes or panel.code == "compare" %}open{% endif %}>
-  <summary class="rail-more__summary">
-    <span class="rail-more__label">{% translate "Отметить в перечне" %}</span>
-    <span class="rail-more__value numeric">{{ territory_count }}</span>
-    <svg class="rail-more__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
-  </summary>
+{% if territories_full %}
+  <p class="field__hint">{% translate "Отмечено сколько можно — снимите регион, чтобы добавить другой." %}</p>
+{% else %}
+  <details class="territory-list" id="surface-territory-list" data-keep-open>
+    <summary class="rail-more__summary">
+      <span class="rail-more__label">{% translate "Весь перечень" %}</span>
+      <span class="rail-more__value numeric">{{ territory_count }}</span>
+      <svg class="rail-more__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
+    </summary>
 
-  <div class="territory-picker" id="surface-territories">
-    {% for group in grouped_territories %}
-      <div class="territory-picker__group" data-filter-group>
-        <div class="territory-picker__title">
-          {% if group.district %}{{ group.district.name }}{% else %}{% translate "вне округов" %}{% endif %}
+    <div class="territory-picker" id="surface-territories">
+      {% for group in grouped_territories %}
+        <div class="territory-picker__group" data-filter-group>
+          <div class="territory-picker__title">
+            {% if group.district %}{{ group.district.name }}{% else %}{% translate "вне округов" %}{% endif %}
+          </div>
+          <div class="stack stack--tight">
+            {% for territory in group.items %}
+              {% if territory.code not in selected_codes %}
+                <label class="checkbox" data-filter-item data-filter-text="{{ territory.name }}"
+                       data-territory="{{ territory.code }}">
+                  <input type="checkbox" name="territory" value="{{ territory.code }}"
+                         id="territory-{{ territory.code }}">
+                  <span class="text-truncate" title="{{ territory.name }}">{{ territory.name }}</span>
+                </label>
+              {% endif %}
+            {% endfor %}
+          </div>
         </div>
-        <div class="stack stack--tight">
-          {% for territory in group.items %}
-            <label class="checkbox" data-filter-item data-filter-text="{{ territory.name }}"
-                   data-territory="{{ territory.code }}">
-              <input type="checkbox" name="territory" value="{{ territory.code }}"
-                     {% if territory.code in selected_codes %}checked{% endif %}>
-              <span class="text-truncate" title="{{ territory.name }}">{{ territory.name }}</span>
-            </label>
-          {% endfor %}
-        </div>
-      </div>
-    {% endfor %}
-  </div>
-
-  <span class="field__hint">
-    {% blocktranslate trimmed with limit=max_compare %}
-      Учитываются первые {{ limit }} отмеченных субъектов: девятая линия на графике
-      уже неразличима.
-    {% endblocktranslate %}
-  </span>
-</details>
+      {% endfor %}
+    </div>
+  </details>
+{% endif %}
 
 <p class="field__hint" id="surface-territories-empty" hidden>
   {% translate "Ничего не найдено" %}
@@ -66,6 +112,6 @@
      hx-swap="outerHTML"
      hx-push-url="true">
     <svg aria-hidden="true"><use href="#icon-close"></use></svg>
-    {% translate "Снять отметки" %}
+    {% translate "Снять все отметки" %}
   </a>
 {% endif %}

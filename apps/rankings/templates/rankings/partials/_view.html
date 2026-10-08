@@ -1,0 +1,36 @@
+{% load i18n formatting %}
+{# «Настроить вид» рейтинга: порядок мест и год, с которым сравниваются места. #}
+<div class="field view-field">
+  <div class="field__head">
+    <div class="field__label" id="surface-order-label">{% translate "Первое место" %}</div>
+    {% translate "Для показателей, где рост — к худшему (безработица, бедность), первым осмысленно ставить наименьшее значение." as order_hint %}
+    {% include "partials/_hint.html" with hint_id="hint-order" hint_text=order_hint hint_label=_("Какой порядок выбрать") %}
+  </div>
+  <div class="segmented" role="radiogroup" aria-labelledby="surface-order-label">
+    <label class="segmented__option">
+      <input type="radio" name="order" value="desc" id="view-order-desc" form="surface-rail"
+             {% if not ascending %}checked{% endif %}>
+      <span>{% translate "у наибольшего" %}</span>
+    </label>
+    <label class="segmented__option">
+      <input type="radio" name="order" value="asc" id="view-order-asc" form="surface-rail"
+             {% if ascending %}checked{% endif %}>
+      <span>{% translate "у наименьшего" %}</span>
+    </label>
+  </div>
+</div>
+
+{% if ranking_years|length > 1 %}
+  <div class="field view-field">
+    <label class="field__label" for="ranking-base">{% translate "Сравнить места с годом" %}</label>
+    <select class="select" id="ranking-base" name="base" form="surface-rail">
+      {% for item in ranking_years reversed %}
+        {% if item != ranking_year %}
+          <option value="{{ item|year }}" {% if item == previous_year %}selected{% endif %}>
+            {{ item|year }}
+          </option>
+        {% endif %}
+      {% endfor %}
+    </select>
+  </div>
+{% endif %}

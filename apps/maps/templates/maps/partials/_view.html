@@ -1,0 +1,42 @@
+{% load i18n formatting %}
+{# «Настроить вид» карты: шкала, вид карты и сравнение лет; поля — в форме рейля. #}
+{% include "surface/partials/_scale.html" %}
+
+<div class="field view-field">
+  <div class="field__head">
+    <div class="field__label" id="surface-mode-label">{% translate "Карта" %}</div>
+    {% translate "На плиточной карте все регионы одного размера: площадь не связана с величиной показателя, и малые регионы видны наравне с большими." as tiles_hint %}
+    {% include "partials/_hint.html" with hint_id="hint-map-mode" hint_text=tiles_hint hint_label=_("Чем отличаются виды карты") %}
+  </div>
+  <div class="segmented" role="radiogroup" aria-labelledby="surface-mode-label">
+    <label class="segmented__option">
+      <input type="radio" name="mode" value="geo" id="view-mode-geo" form="surface-rail"
+             {% if mode == 'geo' %}checked{% endif %}
+             {% if not boundaries_available %}disabled{% endif %}>
+      <span>{% translate "география" %}</span>
+    </label>
+    <label class="segmented__option">
+      <input type="radio" name="mode" value="tiles" id="view-mode-tiles" form="surface-rail"
+             {% if mode == 'tiles' %}checked{% endif %}>
+      <span>{% translate "плитки" %}</span>
+    </label>
+  </div>
+</div>
+
+<div class="field view-field">
+  <div class="field__head">
+    <label class="field__label" for="map-compare">{% translate "Сравнить с годом" %}</label>
+    {% translate "Карта покажет, насколько значение изменилось между двумя годами." as compare_hint %}
+    {% include "partials/_hint.html" with hint_id="hint-map-compare" hint_text=compare_hint hint_label=_("Что даёт сравнение лет") %}
+  </div>
+  <select class="select" id="map-compare" name="compare" form="surface-rail">
+    <option value="">{% translate "не сравнивать" %}</option>
+    {% for item in years %}
+      {% if item != year %}
+        <option value="{{ item|year }}" {% if item == compare_year %}selected{% endif %}>
+          {{ item|year }}
+        </option>
+      {% endif %}
+    {% endfor %}
+  </select>
+</div>

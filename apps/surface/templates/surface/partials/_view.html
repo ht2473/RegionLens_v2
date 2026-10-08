@@ -1,0 +1,29 @@
+{% load i18n %}
+{% comment %}
+  «Настроить вид» над графиком: как показать выбранное. Поля приписаны к форме рейля
+  (form="surface-rail"): смена здесь уносит весь выбор рейля, смена в рейле — эти поля.
+  Сводка — как построено сейчас; раскрытая панель остаётся раскрытой после пересчёта
+  (data-keep-open, app.js).
+{% endcomment %}
+{% if panel.view_template and series %}
+  <details class="view-settings no-print" id="surface-view" data-keep-open
+           hx-get="{{ panel.url }}"
+           hx-include="#surface-rail"
+           hx-target="#surface-main"
+           hx-trigger="change"
+           hx-push-url="true"
+           hx-swap="innerHTML transition:true"
+           hx-indicator="#surface-main">
+    <summary class="view-settings__summary">
+      <span class="view-settings__now">{{ view_summary|join:" · "|capfirst }}</span>
+      <span class="view-settings__toggle">
+        <svg aria-hidden="true"><use href="#icon-sliders"></use></svg>
+        {% translate "Настроить вид" %}
+        <svg class="view-settings__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
+      </span>
+    </summary>
+    <div class="view-settings__body">
+      {% include panel.view_template %}
+    </div>
+  </details>
+{% endif %}

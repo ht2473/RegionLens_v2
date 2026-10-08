@@ -1,14 +1,23 @@
 {% load i18n %}
-{# Параметры шкалы, общие у карты и распределения: способ разбиения и число классов. #}
-<div class="field">
-  <div class="field__label" id="surface-method-label">{% translate "Способ разбиения шкалы" %}</div>
-  <div class="segmented segmented--grid" role="radiogroup" aria-labelledby="surface-method-label">
-    {% for code, title in methods.items %}
-      <label class="segmented__option">
-        <input type="radio" name="method" value="{{ code }}"
-               {% if code == method %}checked{% endif %}
+{% comment %}
+  Шкала карты и распределения: способ разбиения словами, термин мелко и образец — как этот
+  способ делит значения выбранного года (доли размаха, занятые классами); число классов.
+  Поля приписаны к форме рейля (surface/partials/_view.html).
+{% endcomment %}
+<div class="field view-field view-field--scale">
+  <div class="field__label" id="surface-method-label">{% translate "Шкала" %}</div>
+  <div class="scale-options" role="radiogroup" aria-labelledby="surface-method-label">
+    {% for option in scale_options %}
+      <label class="scale-option">
+        <input type="radio" name="method" value="{{ option.code }}" id="view-method-{{ option.code }}"
+               form="surface-rail"
+               {% if option.code == method %}checked{% endif %}
                {% if compare_year %}disabled{% endif %}>
-        <span>{{ title|capfirst }}</span>
+        <span class="scale-option__name">{{ option.title|capfirst }}</span>
+        <span class="scale-option__term">{{ option.term }}</span>
+        {% if option.sample %}
+          <span class="scale-sample" aria-hidden="true">{% for part in option.sample %}<span style="flex-grow: {{ part.grow }}; background-color: var({{ part.colour }})"></span>{% endfor %}</span>
+        {% endif %}
       </label>
     {% endfor %}
   </div>
@@ -19,12 +28,13 @@
   {% endif %}
 </div>
 
-<div class="field">
+<div class="field view-field">
   <div class="field__label" id="surface-classes-label">{% translate "Число классов" %}</div>
   <div class="segmented segmented--fill" role="radiogroup" aria-labelledby="surface-classes-label">
     {% for number in class_range %}
       <label class="segmented__option">
-        <input type="radio" name="classes" value="{{ number }}"
+        <input type="radio" name="classes" value="{{ number }}" id="view-classes-{{ number }}"
+               form="surface-rail"
                {% if number == class_count %}checked{% endif %}>
         <span class="numeric">{{ number }}</span>
       </label>

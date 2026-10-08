@@ -345,6 +345,390 @@
   font-size: var(--text-xs);
 }
 
+/* --- «Настроить вид» над графиком: сводка строкой, параметры — по раскрытию ------------- */
+
+.view-settings {
+  margin-bottom: var(--space-5);
+  border-block: 1px solid var(--border-subtle);
+}
+
+.view-settings__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+  list-style: none;
+  cursor: pointer;
+}
+
+.view-settings__summary::-webkit-details-marker {
+  display: none;
+}
+
+.view-settings__summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.view-settings__now {
+  min-width: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.view-settings__toggle {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-accent);
+}
+
+.view-settings__toggle svg {
+  width: 16px;
+  height: 16px;
+}
+
+.view-settings__chevron {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.view-settings[open] .view-settings__chevron {
+  transform: rotate(180deg);
+}
+
+.view-settings__summary:hover .view-settings__toggle {
+  color: var(--text-primary);
+}
+
+.view-settings__body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  align-items: start;
+  gap: var(--space-4) var(--space-6);
+  padding-block: var(--space-2) var(--space-5);
+}
+
+.view-settings__body > .field + .field {
+  margin-top: 0;
+}
+
+/* Шкала — во всю ширину: четыре способа с образцами в ряд. */
+.view-field--scale {
+  grid-column: 1 / -1;
+}
+
+.scale-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
+  gap: var(--space-2);
+}
+
+.scale-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.scale-option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.scale-option:hover {
+  border-color: var(--border-strong);
+}
+
+.scale-option:has(input:checked) {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.scale-option:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.scale-option:has(input:disabled) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.scale-option__name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.scale-option__term {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* Образец: доли размаха значений года, занятые классами способа. */
+.scale-sample {
+  display: flex;
+  gap: 1px;
+  height: 0.5rem;
+  margin-top: var(--space-1);
+  overflow: hidden;
+  border-radius: var(--radius-xs);
+}
+
+.scale-sample > span {
+  flex-basis: 0;
+  min-width: 2px;
+}
+
+/* --- Отмеченные регионы в рейле: фишки, снятая — уходит --------------------------------- */
+
+.territory-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.territory-chips > li {
+  max-width: 100%;
+}
+
+.territory-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+  min-height: 1.75rem;
+  padding: 0 var(--space-2) 0 var(--space-3);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.territory-chip input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.territory-chip:hover,
+.territory-chip.is-highlighted {
+  background-color: var(--accent-quiet);
+}
+
+.territory-chip:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Снятая до ответа сервера — бледнее и зачёркнута. */
+.territory-chip:has(input:not(:checked)) {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.territory-chip__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.territory-chip__close {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  color: var(--text-muted);
+}
+
+/* Быстрые варианты выбора: мой регион, соседи, похожие, весь округ. */
+.territory-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.territory-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.territory-pick svg {
+  width: 12px;
+  height: 12px;
+}
+
+.territory-pick.is-disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* Перечень регионов открыт по требованию; длинный — прокручивается сам, рейль — нет. */
+.filter-rail .territory-picker {
+  max-height: 18rem;
+}
+
+/* --- Профиль: строки точек по показателям ------------------------------------------------- */
+
+.dot-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.dot-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dot-legend__swatch {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+}
+
+.dot-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dot-rows__row,
+.dot-rows__axis {
+  display: grid;
+  grid-template-columns: minmax(8rem, 14rem) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.dot-rows__row {
+  min-height: 2.25rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.dot-rows__name {
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+/* Ось: линия посередине строки и отметка середины. */
+.dot-rows__track {
+  position: relative;
+  height: 1.25rem;
+  margin-inline: 0.5rem;
+  background: linear-gradient(var(--border-strong), var(--border-strong)) center / 100% 1px no-repeat;
+}
+
+.dot-rows__track::after {
+  position: absolute;
+  top: 20%;
+  bottom: 20%;
+  left: 50%;
+  border-left: 1px dashed var(--border-strong);
+  content: "";
+}
+
+.dot-rows__dot {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: calc(var(--at) * 100%);
+  width: 0.875rem;
+  height: 0.875rem;
+  background-color: var(--dot);
+  border: 2px solid var(--surface-raised);
+  border-radius: 50%;
+  translate: -50% -50%;
+}
+
+.dot-rows__dot.is-highlighted {
+  z-index: 2;
+  box-shadow: 0 0 0 2px var(--text-primary);
+}
+
+.dot-rows__axis {
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.dot-rows__scale {
+  display: flex;
+  grid-column: 2;
+  justify-content: space-between;
+  margin-inline: 0.5rem;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* --- Классы шкалы под полосой точек ------------------------------------------------------- */
+
+.class-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.class-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.class-legend__swatch {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+.class-legend__count {
+  color: var(--text-muted);
+}
+
+
 /* --- Телефон и планшет -------------------------------------------------------------- */
 
 @media (max-width: 1180px) {
@@ -411,6 +795,22 @@
 
   .surface-columns {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Строка профиля: название над осью. */
+  .dot-rows__row,
+  .dot-rows__axis {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding-block: var(--space-1);
+  }
+
+  .dot-rows__scale {
+    grid-column: 1;
+  }
+
+  .view-settings__now {
+    display: none;
   }
 }
 
