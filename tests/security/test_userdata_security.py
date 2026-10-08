@@ -226,8 +226,8 @@ class TestStudiesAndLinks:
         from apps.userdata.models import Share
 
         dataset = _built(member_client)
-        member_client.post(reverse("userdata:share-create", args=[dataset.public_id]), {})
-        page = member_client.get(reverse("userdata:dataset", args=[dataset.public_id]))
+        created = member_client.post(reverse("userdata:share-create", args=[dataset.public_id]), {})
+        page = member_client.get(created["Location"])
         token = page.text.split("/s/", 1)[1].split('"', 1)[0]
         share = Share.objects.get()
         stored = " ".join(str(value) for value in Share.objects.values_list().get())

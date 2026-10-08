@@ -394,7 +394,7 @@ def test_oblast_already_without_okrugs(client: Client, warehouse: Any) -> None:
     rows = _rows(dataset, key_of(dataset, base))
     assert all(value >= 0 for value, _flags in rows.values())
     assert "RU-TYU" in version.report["build"]["alone_conflict"]
-    page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
+    page = client.get(reverse("userdata:dataset", args=[dataset.public_id]), {"tab": "checks"})
     assert "Область, похоже, уже без автономных округов" in page.text
 
 

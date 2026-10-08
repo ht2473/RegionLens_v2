@@ -263,7 +263,7 @@ class TestBuild:
         _build(client, dataset, kind=indicators.RELATIVE)
         version = _version(dataset)
         assert "RU-ARK" in version.report["build"]["alone_missing"]
-        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
+        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]), {"tab": "checks"})
         assert "Для долей и средних область без округов не вычислить" in page.text
 
     def test_codes_survive_rebuild(self, client: Client, warehouse: Any) -> None:
@@ -336,7 +336,7 @@ class TestCanvas:
             assert page.status_code == 200, name
             assert "видно только вам" in page.text
             assert "Население в городах с высоким" in page.text
-            assert f"/own-data/{dataset.public_id}/#series-{record.code}" in page.text
+            assert f"/own-data/{dataset.public_id}/?show={record.code}" in page.text
             # У ряда своей таблицы нет запроса к программному интерфейсу.
             assert "/api/v1/observations/?series=u" not in page.text
 
@@ -455,9 +455,16 @@ class TestDatasetPage:
         assert page.status_code == 200
         text = page.text
         assert '<meta name="robots" content="noindex, nofollow">' in text
-        assert "Абсолютные величины" in text
-        assert "Субъектов со значениями: 77 из 85." in text
         assert "на 100 000 жителей" in text
+        # Пересчёт на жителей есть — о суммах не предупреждают; территории — на «Проверках».
+        checks = client.get(
+            reverse("userdata:dataset", args=[dataset.public_id]), {"tab": "checks"}
+        )
+        assert "Абсолютные величины" not in checks.text
+        assert "Субъектов со значениями: 77 из 85." in checks.text
+        bare = _built(client, kind=indicators.SUM, per=())
+        warned = client.get(reverse("userdata:dataset", args=[bare.public_id]), {"tab": "checks"})
+        assert "Абсолютные величины" in warned.text
         section = client.get(reverse("userdata:index"))
         assert dataset.title in section.text
 
@@ -633,7 +640,7 @@ class TestMasks:
             for years in values.get(key, {}).values()
             for value in years.values()
         )
-        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]))
+        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]), {"tab": "checks"})
         assert "Коды вместо чисел считаются пропусками" in page.text
 
     def test_person_can_keep_codes(self, client: Client, warehouse: Any) -> None:

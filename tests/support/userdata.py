@@ -94,6 +94,8 @@ def build(
                 f"kind-{number}": chosen,
                 f"polarity-{number}": item.polarity,
                 f"per-{number}": list(per if per is not None else item.per),
+                # Перечень пересчётов есть в форме: снятые отметки убирают пересчёт.
+                f"recounts-{number}": "1",
             }
         )
     data.update(extra or {})

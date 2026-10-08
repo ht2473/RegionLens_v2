@@ -6,6 +6,7 @@ from typing import Any
 
 from django import forms
 from django.conf import settings
+from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
 from . import ingest
@@ -19,14 +20,16 @@ class UploadForm(forms.Form):
 
     file = forms.FileField(
         label=_("Файл таблицы"),
-        help_text=_("CSV, TXT, XLSX, XLS, ODS, Parquet или архив ZIP с ними, до %(limit)s МБ")
-        % {"limit": settings.USERDATA_UPLOAD_MAX_BYTES // (1024 * 1024)},
         widget=forms.FileInput(attrs={"accept": ACCEPTED_SUFFIXES, "class": "file-input"}),
     )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.fields["file"].widget.attrs["data-max-bytes"] = settings.USERDATA_UPLOAD_MAX_BYTES
+        # Подсказка — на языке запроса: при объявлении поля язык ещё не выбран.
+        self.fields["file"].help_text = gettext(
+            "CSV, TXT, XLSX, XLS, ODS, Parquet или архив ZIP с ними, до %(limit)s МБ"
+        ) % {"limit": settings.USERDATA_UPLOAD_MAX_BYTES // (1024 * 1024)}
 
 
 class PasteForm(forms.Form):

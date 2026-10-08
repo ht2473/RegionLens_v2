@@ -1,0 +1,84 @@
+{% load i18n formatting userdata %}
+{% comment %}
+  Одно поле описания показателя в шаге «Показатели»: name — какое (indicators.FIELDS), item —
+  показатель. Каждое поле выводится один раз: вопросом или в «Изменить».
+{% endcomment %}
+{% with number=item.number %}
+{% if name == "title" %}
+  <div class="field">
+    <label class="field__label" for="title-{{ number }}">{% translate "Название" %}</label>
+    <input class="input" id="title-{{ number }}" name="title-{{ number }}" value="{{ item.title }}" maxlength="300">
+  </div>
+{% elif name == "unit" %}
+  <div class="field">
+    <label class="field__label" for="unit-{{ number }}">{% if "unit" in item.questions %}{% translate "Единица не найдена — в чём значения?" %}{% else %}{% translate "Единица" %}{% endif %}</label>
+    <input class="input" id="unit-{{ number }}" name="unit-{{ number }}" value="{{ item.unit }}" maxlength="120"{% if item.units|length > 1 %} list="units-{{ number }}"{% endif %}{% if "unit" in item.questions %} placeholder="{% translate 'например, человек или процентов' %}"{% endif %}>
+    {% if item.units|length > 1 %}
+      <datalist id="units-{{ number }}">{% for unit in item.units %}<option value="{{ unit }}">{% endfor %}</datalist>
+    {% endif %}
+  </div>
+{% elif name == "kind" %}
+  <fieldset class="field">
+    <legend class="field__label">{% if "kind" in item.questions %}{% translate "Складывается ли по регионам?" %}{% else %}{% translate "Вид величины" %}{% endif %}</legend>
+    {% for value, label in kinds %}
+      <label class="radio"><input type="radio" name="kind-{{ number }}" value="{{ value }}"{% if item.kind == value %} checked{% endif %}> {{ label }}</label>
+    {% endfor %}
+    {% if "kind" in item.questions %}
+      <span class="field__hint">{% translate "Сумма складывается по регионам: люди, случаи, рубли всего. Доля, среднее и значение на жителя — нет." %}</span>
+    {% endif %}
+  </fieldset>
+{% elif name == "months" %}
+  {% if item.month_options %}
+    <div class="field">
+      <label class="field__label" for="months-{{ number }}">{% if "months" in item.questions %}{% translate "Только месяцы — свести в год?" %}{% else %}{% translate "Месяцы — в год" %}{% endif %}</label>
+      <select class="select" id="months-{{ number }}" name="months-{{ number }}" aria-describedby="months-hint-{{ number }}">
+        <option value="">{% translate "не сворачивать" %}</option>
+        {% for method in item.month_options %}
+          <option value="{{ method }}"{% if item.months == method %} selected{% endif %}{% if method == "sum" %} data-sum-only{% endif %}>{% if method == "sum" %}{% translate "сумма за 12 месяцев" %}{% elif method == "mean" %}{% translate "среднее за месяц" %}{% elif method == "december" %}{% translate "значение за декабрь" %}{% else %}{% translate "январь–декабрь из итогов с начала года" %}{% endif %}</option>
+        {% endfor %}
+      </select>
+      <span class="field__hint" id="months-hint-{{ number }}">{% translate "Годовой ряд из месяцев: складываются только суммы, у долей и средних — среднее за месяц. Год без всех месяцев остаётся пустым." %}</span>
+    </div>
+  {% endif %}
+{% elif name == "polarity" %}
+  <div class="field">
+    <label class="field__label" for="polarity-{{ number }}">{% translate "Направленность" %}</label>
+    <select class="select" id="polarity-{{ number }}" name="polarity-{{ number }}">
+      {% for value, label in polarities %}
+        <option value="{{ value }}"{% if item.polarity == value %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+{% elif name == "breaks" %}
+  <fieldset class="field indicator-card__breaks">
+    <legend class="field__label">{% translate "Смена методики" %}</legend>
+    <label class="indicator-card__sublabel" for="breaks-{{ number }}">{% translate "С какого года значения считаются по-другому" %}</label>
+    <input class="input input--years numeric" id="breaks-{{ number }}" name="breaks-{{ number }}" value="{{ item.breaks|join:', ' }}" inputmode="numeric" placeholder="2019" aria-describedby="breaks-hint-{{ number }}">
+    <label class="indicator-card__sublabel" for="break-note-{{ number }}">{% translate "Что изменилось" %}</label>
+    <input class="input" id="break-note-{{ number }}" name="break-note-{{ number }}" value="{{ item.break_note }}" maxlength="300">
+    <span class="field__hint" id="breaks-hint-{{ number }}">{% translate "Несколько лет — через запятую. Динамика и инструменты анализа покажут разрыв и предложат сравнивать годы по одной методике." %}</span>
+  </fieldset>
+{% elif name == "fold" %}
+  {% if item.slice_headers %}
+    <fieldset class="field" data-sum-only>
+      <legend class="field__label">{% translate "Сложить значения разреза" %}</legend>
+      {% for header in item.slice_headers %}
+        <label class="checkbox"><input type="checkbox" name="fold-{{ number }}" value="{{ header }}"{% if header in item.fold_slices %} checked{% endif %}> <span{% with lang=header|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ header }}</span></label>
+      {% endfor %}
+      <span class="field__hint">{% translate "Сумма по всем отобранным значениям разреза — например, по всем возрастам, если итога в таблице нет. Итог («Всего», «Оба пола») в сумму не входит. Только для сумм." %}</span>
+    </fieldset>
+  {% endif %}
+{% elif name == "recounts" %}
+  <fieldset class="field">
+    <legend class="field__label">{% translate "Пересчёты" %}</legend>
+    <input type="hidden" name="recounts-{{ number }}" value="1">
+    {% for code in item.per %}
+      <label class="checkbox" data-sum-only><input type="checkbox" name="per-{{ number }}" value="{{ code }}" checked> <span>{{ code|derived_label }}</span></label>
+    {% endfor %}
+    {% for code in item.recalc %}
+      <label class="checkbox"><input type="checkbox" name="recalc-{{ number }}" value="{{ code }}" checked> <span>{{ code|derived_label }}</span></label>
+    {% endfor %}
+    <span class="field__hint">{% if item.recounts %}{% translate "Снимите отметку, чтобы убрать пересчёт. Новые пересчёты — в исследовании: «Что сделать» → «Посчитать»." %}{% else %}{% translate "Пересчёты — в исследовании: «Что сделать» → «Посчитать»." %}{% endif %}</span>
+  </fieldset>
+{% endif %}
+{% endwith %}

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n static formatting userdata %}
 
-{# Шаг «Что в таблице»: что понято словами, вопросы, роли столбцов, разрезы, образец. #}
+{# Шаг «Что в таблице»: что понято строкой, вопросы о неуверенном, сама таблица с ролями столбцов в шапке. #}
 
 {% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
@@ -16,6 +16,14 @@
   <header class="page-head">
     <h1 class="page-head__title">{% translate "Что в таблице" %}</h1>
     {% if result %}<p class="page-head__lead">{{ form_text }}</p>{% endif %}
+    {% if result and not waiting %}
+      <p class="page-head__meta">
+        <span>{% blocktranslate trimmed with count=table|rows_text %}строк: {{ count }}{% endblocktranslate %}</span>
+        <span>{% blocktranslate trimmed with count=resolved_regions %}субъектов узнано: {{ count }} из 85{% endblocktranslate %}</span>
+        {% if result.periods %}<span><span class="numeric">{{ result.periods.first }}{% if result.periods.last != result.periods.first %}–{{ result.periods.last }}{% endif %}</span>, {{ period_kinds|join:", " }}</span>{% endif %}
+        <span>{% blocktranslate trimmed with count=result.series|ru_number:0 %}рядов получится: {{ count }}{% endblocktranslate %}</span>
+      </p>
+    {% endif %}
   </header>
 
   {% include "userdata/_steps.html" %}
@@ -37,25 +45,14 @@
     </div>
   {% endif %}
 
-  <section class="recognition-facts" aria-label="{% translate 'Что найдено' %}">
-    <dl class="definition-list definition-list--compact">
-      <dt>{% translate "Строк" %}</dt>
-      <dd>{{ table|rows_text }}</dd>
-      <dt>{% translate "Субъектов узнано" %}</dt>
-      <dd>{% blocktranslate trimmed with count=resolved_regions %}{{ count }} из 85{% endblocktranslate %}</dd>
-      {% if result.periods %}
-        <dt>{% translate "Годы" %}</dt>
-        <dd>{{ result.periods.first }}{% if result.periods.last != result.periods.first %}–{{ result.periods.last }}{% endif %}</dd>
-        <dt>{% translate "Периоды" %}</dt>
-        <dd>{{ period_kinds|join:", " }}</dd>
-      {% endif %}
-      <dt>{% translate "Рядов получится" %}</dt>
-      <dd>{{ result.series|ru_number:0 }}</dd>
-    </dl>
-  </section>
-
   <form method="post" class="stack recognition-form" novalidate>
     {% csrf_token %}
+
+    {% if questions %}
+      <h2 class="recognition-form__ask">
+        {% blocktranslate trimmed with count=questions %}Нужно ответить: {{ count }}{% endblocktranslate %}
+      </h2>
+    {% endif %}
 
     {% if result.form == "unknown" %}
       <div class="callout callout--warning" role="alert">
@@ -189,9 +186,11 @@
     {% endif %}
 
     {% if result.slices %}
-      <section class="question-card" aria-labelledby="slices-title">
-        <h2 class="question-card__title" id="slices-title">{% translate "Разрезы" %}</h2>
-        {% if result.series > max_series %}
+      <details class="question-card{% if too_many %} question-card--ask{% else %} question-card--quiet{% endif %}"{% if too_many %} open{% endif %}>
+        <summary class="question-card__title">
+          {% if too_many %}{% translate "Разрезы: рядов слишком много" %}{% else %}{% translate "Разрезы: отбор значений" %}{% endif %}
+        </summary>
+        {% if too_many %}
           <p class="field__error">{% blocktranslate trimmed with count=result.series|ru_number:0 limit=max_series %}Получается {{ count }} рядов — больше {{ limit }}. Выберите значения разрезов.{% endblocktranslate %}</p>
         {% endif %}
         <input type="hidden" name="slices-present" value="1">
@@ -205,21 +204,64 @@
             </div>
           </fieldset>
         {% endfor %}
-      </section>
+      </details>
     {% endif %}
 
-    <section class="question-card" aria-labelledby="columns-title">
-      <h2 class="question-card__title" id="columns-title">{% translate "Столбцы" %}</h2>
-      <ul class="column-roles">
-        {% for column in columns %}
-          {% include "userdata/_column_role.html" %}
-        {% endfor %}
-      </ul>
+    <section class="role-table-section" aria-labelledby="columns-title">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="columns-title">{% translate "Таблица" %}</h2>
+      </div>
+      <div class="data-table-wrapper role-table-wrapper" tabindex="0"
+           aria-label="{% translate 'Таблица с ролями столбцов — прокрутка' %}">
+        <table class="data-table data-table--compact role-table">
+          <caption class="visually-hidden">{% translate "Первые строки таблицы и роли столбцов" %}</caption>
+          <thead>
+            <tr class="role-table__roles">
+              {% for column in columns %}
+                <th scope="col" class="role-table__role" data-role="{{ column.role }}">
+                  <label class="visually-hidden" for="role-{{ column.index }}">
+                    {% blocktranslate trimmed with header=column.header|default:_("без названия")|truncatechars:60 %}Роль столбца «{{ header }}»{% endblocktranslate %}
+                  </label>
+                  <select class="select role-table__select" id="role-{{ column.index }}" name="role-{{ column.index }}">
+                    {% for value, title in role_choices %}<option value="{{ value }}"{% if value == column.role %} selected{% endif %}>{{ title }}</option>{% endfor %}
+                  </select>
+                </th>
+              {% endfor %}
+              {% if period_columns %}<th scope="col" class="role-table__role role-table__role--more">{% translate "значение" %}</th>{% endif %}
+            </tr>
+            <tr>
+              {% for column in columns %}
+                <th scope="col" class="role-table__header" data-role="{{ column.role }}"{% with lang=column.header|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>
+                  {{ column.header|default:_("без названия")|truncatechars:60 }}
+                  {% if column.index in repeated %}<span class="column-roles__number">{% blocktranslate trimmed with number=column.index|add:1 %}столбец {{ number }}{% endblocktranslate %}</span>{% endif %}
+                </th>
+              {% endfor %}
+              {% if period_columns %}
+                <th scope="col" class="role-table__header role-table__header--more">
+                  {% blocktranslate trimmed with count=period_columns|length %}ещё столбцов с периодами: {{ count }}{% endblocktranslate %}
+                </th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in preview %}
+              <tr>
+                {% for cell in row %}
+                  {% with lang=cell.text|source_lang %}
+                    <td data-role="{{ cell.role }}"{% if lang %} lang="{{ lang }}"{% endif %}{% if cell.text|is_number %} class="is-numeric"{% endif %}>{{ cell.text|truncatechars:40 }}</td>
+                  {% endwith %}
+                {% endfor %}
+                {% if period_columns %}<td class="role-table__more" aria-hidden="true">…</td>{% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
       {% if period_columns %}
         <details class="column-roles__more">
           <summary>
             {% blocktranslate trimmed with count=period_columns|length first=period_columns.0.header last=last_period_column.header %}
-              Столбцы с периодами: {{ count }} (от «{{ first }}» до «{{ last }}»)
+              Ещё столбцы с периодами: {{ count }} (от «{{ first }}» до «{{ last }}»)
             {% endblocktranslate %}
           </summary>
           <ul class="column-roles">
@@ -237,11 +279,6 @@
       <a class="button button--ghost" href="{% url 'userdata:file' dataset.public_id %}">{% translate "Назад к файлу" %}</a>
     </div>
   </form>
-
-  <details class="table-option__sample recognition-sample">
-    <summary>{% translate "Первые строки" %}</summary>
-    {% include "userdata/_sample.html" with table=table %}
-  </details>
 
   {% endif %}
 </div>

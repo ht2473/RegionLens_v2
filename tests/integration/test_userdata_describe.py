@@ -66,11 +66,11 @@ class TestRecognitionPage:
         assert 'name="role-5"' in text
         assert 'value="territory" selected' in text
         assert "Подписи без территории" not in text
-        # Образец строк — с буквами столбцов в шапке, как в электронной таблице, и со строками
-        # самой таблицы (в рецепте образца нет — он берётся из прочитанной таблицы).
-        assert '<th scope="col" class="sample-table__letter">A</th>' in text
-        assert '<th scope="col" class="sample-table__letter">J</th>' in text
-        assert text.count('class="sample-table__territory"') == 12
+        # Сама таблица — первые строки данных под шапкой, роль — над столбцом (в рецепте
+        # образца нет — строки берутся из прочитанной таблицы).
+        assert "role-table" in text
+        assert text.count('<td data-role="territory"') == 8
+        assert "Нужно ответить" not in text
 
     def test_years_in_columns_with_nested_question(self, client: Client) -> None:
         dataset = _chosen(client, "crime_wide.csv", (FIXTURES / "crime_wide.csv").read_bytes())

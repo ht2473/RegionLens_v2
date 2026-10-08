@@ -1,0 +1,36 @@
+{% load i18n formatting userdata %}
+{% comment %}
+  Показатель в шаге «Показатели»: строка с названием и сведениями раскрывает описание
+  («Изменить»); вопросы — то, что из таблицы не понятно, — видны сразу под строкой.
+  Каждое поле выводится один раз.
+{% endcomment %}
+<li class="indicator-card{% if item.questions %} indicator-card--ask{% endif %}" id="indicator-{{ item.number }}">
+  <input type="hidden" name="indicator-{{ item.number }}" value="{{ item.name }}">
+  <details class="indicator-card__fold">
+    <summary class="indicator-card__summary">
+      <span class="indicator-card__head">
+        <span class="indicator-card__name"{% with lang=item.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.title }}</span>
+        <span class="indicator-card__facts">
+          {% if item.unit %}<span{% with lang=item.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.unit }}</span> · {% endif %}
+          {% if item.is_sum %}{% translate "сумма" %}{% else %}{% translate "относительная величина" %}{% endif %}
+          · {% blocktranslate trimmed with count=item.series %}рядов: {{ count }}{% endblocktranslate %}
+          · {% blocktranslate trimmed with count=item.regions %}субъектов: {{ count }}{% endblocktranslate %}
+          {% if item.first_year %}· <span class="numeric">{{ item.first_year|year }}{% if item.last_year != item.first_year %}–{{ item.last_year|year }}{% endif %}</span>{% endif %}
+          {% for code in item.recounts %}· {{ code|derived_label }} {% endfor %}
+        </span>
+      </span>
+      <span class="indicator-card__more">{% translate "Изменить" %}</span>
+    </summary>
+    <div class="indicator-card__body">
+      {% for name in item.fields %}{% include "userdata/_indicator_field.html" %}{% endfor %}
+      {% if item.note %}
+        <p class="indicator-card__note"{% with lang=item.note|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.note|truncatechars:400 }}</p>
+      {% endif %}
+    </div>
+  </details>
+  {% if item.questions %}
+    <div class="indicator-card__ask">
+      {% for name in item.questions %}{% include "userdata/_indicator_field.html" %}{% endfor %}
+    </div>
+  {% endif %}
+</li>

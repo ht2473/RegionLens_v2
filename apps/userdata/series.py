@@ -160,8 +160,8 @@ class UserSeries:
 
     @property
     def detail_url(self) -> str:
-        """Страница набора с этим рядом."""
-        return f"{self.dataset_url}#series-{self.record.code}"
+        """Страница набора с этим рядом, выбранным в перечне показателей."""
+        return f"{self.dataset_url}?show={self.record.code}#dataset-detail"
 
     def publisher(self) -> str:
         """Чьи данные: источник, названный при загрузке, или «таблица пользователя»."""

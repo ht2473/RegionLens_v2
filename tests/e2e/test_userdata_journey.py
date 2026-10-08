@@ -77,10 +77,10 @@ def test_journey_desktop(page: Page, own_data: Any) -> None:
     _open_card(page)
     expect(page.locator(".surface-head__private")).to_have_text("видно только вам")
     page.locator(".surface-head__about a").click()
-    # Ссылка ведёт к ряду на странице таблицы: адрес с якорем.
-    page.wait_for_url(re.compile(r"/own-data/[^/]+/#series-"))
+    # Ссылка ведёт к ряду на странице таблицы: он выбран, рядом — его карта.
+    page.wait_for_url(re.compile(r"/own-data/[^/]+/\?show="))
     problems.extend(page.evaluate(AUDIT_SCRIPT))
-    expect(page.locator(".own-series__item").first).to_be_visible()
+    expect(page.locator(".dataset-preview .geo-map, .dataset-preview .tile-map")).to_be_visible()
     assert not problems, "\n".join(problems)
 
 
@@ -113,8 +113,8 @@ def test_journey_english(page: Page, own_data: Any) -> None:
 
 def _analysis(page: Page, base: str) -> list[str]:
     """
-    После сборки: страница таблицы с первым взглядом, формула со вставкой показателя
-    поиском, проверка и сохранение, «С чем связан показатель», неравенство по ряду таблицы.
+    После сборки: страница таблицы с выбранным рядом, своя формула с показателем нажатием,
+    предпросмотр и сохранение, «С чем связан показатель», неравенство по ряду таблицы.
     """
     problems: list[str] = []
 
@@ -129,29 +129,30 @@ def _analysis(page: Page, base: str) -> list[str]:
     page.locator(".surface-head__about a").click()
     page.wait_for_url(re.compile(r"/own-data/[^/]+/"))
     audit()
-    expect(page.locator(".own-series__item").first).to_be_visible()
-    page.locator("a[href$='/formula/']").click()
+    expect(page.locator(".dataset-preview").first).to_be_visible()
+    table_url = page.url.split("?")[0]
+    page.locator("button[popovertarget=dataset-edit]").click()
+    page.locator("#dataset-edit a[href$='/formula/']").click()
     page.wait_for_url("**/formula/")
     audit()
     page.fill("#formula-title", "Вдвое")
-    page.locator("rl-combobox .combobox__trigger").click()
-    page.locator(".combobox__option", has_text=TITLE).first.click()
+    page.locator(".segmented__option", has_text="Своя формула").click()
     field = page.locator("#formula-expression")
+    field.click()
+    page.locator("[data-formula-chip]", has_text=TITLE).first.click()
     expect(field).to_have_value(re.compile(r"^\[.+\]$"))
     field.press("End")
     field.type(" * 2")
-    page.locator("button[name=action][value=check]").click()
-    page.wait_for_load_state("networkidle")
-    expect(page.locator(".formula-check")).to_be_visible()
+    # Предпросмотр приходит сам: карта и сколько субъектов посчитано.
+    expect(page.locator("#formula-preview .formula-preview__count")).to_be_visible()
     audit()
     page.locator("button[name=action][value=save]").click()
-    page.wait_for_url("**/map/**")
-    page.go_back()
-    page.goto(page.url.split("/formula/")[0] + "/related/")
+    page.wait_for_url(re.compile(r"/own-data/[^/]+/\?show="))
+    page.goto(table_url + "related/")
     audit()
     expect(page.locator("h1")).to_be_visible()
-    page.goto(page.url.replace("/related/", "/"))
-    key = page.locator(".own-series__view").first.get_attribute("href") or ""
+    page.goto(table_url)
+    key = page.locator(".dataset-view").first.get_attribute("href") or ""
     page.goto(f"{base}/ru/analytics/inequality/?{key.split('?', 1)[1]}")
     audit()
     expect(page.locator(".tool-subject__title")).to_contain_text(TITLE)
