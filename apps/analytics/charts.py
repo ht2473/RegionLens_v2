@@ -12,7 +12,7 @@ from typing import Any
 from django.utils.translation import gettext_lazy as _
 
 from apps.core import chart_layout as layout
-from apps.core.charts import time_marks
+from apps.core.charts import extreme_codes, time_marks
 from apps.core.templatetags.formatting import ru_number
 
 # Цвет вспомогательных линий: равенства на кривой Лоренца и осей диаграммы Морана.
@@ -26,6 +26,14 @@ LABEL_COLOUR = "var(--text-secondary)"
 
 # Цвет заливки области между кривой Лоренца и линией равенства.
 AREA_COLOUR = "var(--accent-quiet)"
+
+# Ширина подписи показателя на оси матрицы связей, точек.
+MATRIX_LABEL = 150
+
+# Облако точек: перекос — во сколько раз наибольшее значение больше медианы и от скольких
+# точек о нём судить.
+SKEW_RATIO = 4.0
+SKEW_MIN_POINTS = 10
 
 # Цвета расходящейся шкалы для матрицы связей: от обратной связи через отсутствие
 # связи к прямой.
@@ -151,35 +159,57 @@ def decomposition_option(groups: list[dict[str, Any]]) -> dict[str, Any]:
 # ---------------------------------------------------------------------------------------
 
 
-def matrix_option(labels: list[str], cells: list[dict[str, Any]]) -> dict[str, Any]:
+def matrix_option(
+    labels: list[str],
+    keys: list[str],
+    cells: list[dict[str, Any]],
+    *,
+    pick: dict[str, str] | None = None,
+) -> dict[str, Any]:
     """
-    Построить матрицу связей; по осям — номера показателей, названия — рядом и в подсказке.
+    Матрица связей — нижний треугольник: по осям краткие названия показателей, в клетке —
+    коэффициент. Незначимые с поправкой на множественность — серые без числа. Щелчок по
+    клетке открывает разбор пары (``pick`` — селекторы полей пары, см. chart.js).
 
-    Незначимые связи не показываются, подложка ячеек не заливается.
+    Клетка — ``{"x", "y", "value", "significant"}`` в номерах показателей; ``value`` пусто —
+    коэффициент не рассчитан.
     """
-    return {
+    significant: list[dict[str, Any]] = []
+    quiet: list[dict[str, Any]] = []
+    for cell in cells:
+        if cell["y"] <= cell["x"] or cell["value"] is None:
+            continue
+        item = _matrix_cell(labels, cell)
+        item["pick"] = [keys[cell["x"]], keys[cell["y"]]]
+        # Первая строка и последний столбец треугольника пусты — их на осях нет.
+        item["value"] = [cell["x"], cell["y"] - 1, cell["value"]]
+        (significant if cell["significant"] else quiet).append(item)
+    for item in quiet:
+        item["label"] = {"show": False}
+
+    def axis(names: list[str], **extra: Any) -> dict[str, Any]:
+        return {
+            "type": "category",
+            "data": names,
+            "splitArea": {"show": False},
+            "axisTick": {"show": False},
+            "axisLabel": {"fontSize": 11, "width": MATRIX_LABEL, "overflow": "truncate", **extra},
+        }
+
+    option: dict[str, Any] = {
         # Поле снизу оставлено под шкалу цвета.
         "grid": {"left": 8, "right": 8, "top": 8, "bottom": 52, "containLabel": True},
         # Подсказка и подпись — готовыми у каждой клетки: шаблон {@[2]} ECharts 6
         # печатает буквально, а подставленное в {b} экранирует.
         "tooltip": {"position": "top"},
-        "xAxis": {
-            "type": "category",
-            "data": [str(index + 1) for index in range(len(labels))],
-            "splitArea": {"show": False},
-            "axisLabel": {"fontSize": 11},
-        },
-        "yAxis": {
-            "type": "category",
-            "data": [str(index + 1) for index in range(len(labels))],
-            "splitArea": {"show": False},
-            "axisLabel": {"fontSize": 11},
-        },
-        # Без ползунков: их подписи наезжают на номера показателей.
+        "xAxis": axis(labels[:-1], rotate=30, interval=0),
+        "yAxis": {**axis(labels[1:], interval=0), "inverse": True},
+        # Без ползунков: их подписи наезжают на названия. Шкала — только у значимых.
         "visualMap": {
             "min": -1,
             "max": 1,
             "calculable": False,
+            "seriesIndex": 0,
             "orient": "horizontal",
             "left": "center",
             "bottom": 4,
@@ -191,26 +221,53 @@ def matrix_option(labels: list[str], cells: list[dict[str, Any]]) -> dict[str, A
         "series": [
             {
                 "type": "heatmap",
-                "data": [_matrix_cell(labels, cell) for cell in cells if cell["value"] is not None],
+                "data": significant,
                 # Ячейка подписывается самим коэффициентом; текст подписи — у клетки.
                 "label": {"show": True, "fontSize": 10},
                 "itemStyle": {"borderColor": "var(--surface-base)", "borderWidth": 1},
                 "emphasis": {"itemStyle": {"borderColor": "var(--text-primary)", "borderWidth": 2}},
-            }
+                "cursor": "pointer",
+            },
+            {
+                "type": "heatmap",
+                "data": quiet,
+                "itemStyle": {
+                    "color": "var(--border-subtle)",
+                    "borderColor": "var(--surface-base)",
+                    "borderWidth": 1,
+                },
+                "emphasis": {"itemStyle": {"borderColor": "var(--text-primary)", "borderWidth": 2}},
+                "cursor": "pointer",
+            },
         ],
     }
+    if pick:
+        option["pick"] = pick
+    return option
 
 
 def _matrix_cell(labels: list[str], cell: dict[str, Any]) -> dict[str, Any]:
-    """Клетка матрицы связей: значение, подпись и подсказка с экранированными названиями."""
+    """Клетка матрицы связей: подпись и подсказка с экранированными названиями."""
     value = ru_number(cell["value"], 2)
     pair = f"{escape(labels[cell['y']])} · {escape(labels[cell['x']])}"
+    note = "" if cell["significant"] else f"<br>{escape(str(_('связь не подтверждена')))}"
     return {
-        "value": [cell["x"], cell["y"], cell["value"]],
         "name": f"{labels[cell['y']]} · {labels[cell['x']]}",
         "label": {"formatter": value},
-        "tooltip": {"formatter": f"{pair}<br><strong>{value}</strong>"},
+        "tooltip": {"formatter": f"{pair}<br><strong>{value}</strong>{note}"},
     }
+
+
+def is_skewed(values: list[float]) -> bool:
+    """
+    Перекос: значения положительны, и несколько крайних далеко от остальных — наибольшее
+    больше медианы в разы. На обычной шкале такие точки сжимают облако в угол.
+    """
+    if len(values) < SKEW_MIN_POINTS or min(values) <= 0:
+        return False
+    ordered = sorted(values)
+    median = ordered[len(ordered) // 2]
+    return ordered[-1] / median >= SKEW_RATIO
 
 
 def scatter_fit_option(
@@ -221,17 +278,25 @@ def scatter_fit_option(
     line: list[list[float]] | None = None,
     line_label: str = "",
     labels: dict[str, str] | None = None,
+    log: str = "",
 ) -> dict[str, Any]:
     """
-    Построить диаграмму рассеяния; линия — только при значимой связи. ``labels`` — подписи
-    точек по коду территории (сокращения); перекрывающиеся подписи прячутся.
+    Построить диаграмму рассеяния; линия — только при значимой связи. Подписаны крайние
+    точки (``labels`` — подписи по коду территории, сокращения). ``log`` — оси
+    в логарифмической шкале: «x», «y» или «xy»; точки с неположительным значением на такой
+    оси не показываются.
     """
+    log_x, log_y = "x" in log, "y" in log
+    shown = [
+        point for point in points if (not log_x or point["x"] > 0) and (not log_y or point["y"] > 0)
+    ]
+    extremes = extreme_codes(shown)
     data: list[dict[str, Any]] = []
-    for point in points:
+    for point in shown:
         item: dict[str, Any] = {"name": point["name"], "value": [point["x"], point["y"]]}
         short = (labels or {}).get(point.get("code", ""), "")
-        if short:
-            item["label"] = {"formatter": short}
+        if short and point.get("code") in extremes:
+            item["label"] = {"show": True, "formatter": short}
         data.append(item)
     series: list[dict[str, Any]] = [
         {
@@ -240,21 +305,15 @@ def scatter_fit_option(
             "symbolSize": 9,
             "data": data,
             "emphasis": {"focus": "series"},
-            **(
-                {
-                    "label": {
-                        "show": True,
-                        "position": "right",
-                        "distance": 3,
-                        "fontSize": 10,
-                        "color": LABEL_COLOUR,
-                        "textBorderWidth": 0,
-                    },
-                    "labelLayout": {"hideOverlap": True},
-                }
-                if labels
-                else {}
-            ),
+            "label": {
+                "show": False,
+                "position": "right",
+                "distance": 3,
+                "fontSize": 10,
+                "color": LABEL_COLOUR,
+                "textBorderWidth": 0,
+            },
+            "labelLayout": {"hideOverlap": True},
         }
     ]
 
@@ -273,6 +332,9 @@ def scatter_fit_option(
             }
         )
 
+    def scale(logarithmic: bool) -> dict[str, Any]:
+        return {"type": "log", "logBase": 10} if logarithmic else {"type": "value", "scale": True}
+
     # Легенда из одного пункта «субъекты» ничего не объясняет — только вместе с линией.
     return {
         "grid": layout.grid(
@@ -280,8 +342,8 @@ def scatter_fit_option(
         ),
         "legend": layout.legend(scroll=False) if line else layout.legend(show=False),
         "tooltip": {"trigger": "item"},
-        "xAxis": {"type": "value", "scale": True, **layout.bottom_axis_name(x_name)},
-        "yAxis": layout.value_axis(y_name, scale=True),
+        "xAxis": {**scale(log_x), **layout.bottom_axis_name(x_name)},
+        "yAxis": {**layout.value_axis(y_name), **scale(log_y)},
         "series": series,
     }
 

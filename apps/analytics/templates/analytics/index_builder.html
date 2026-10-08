@@ -35,20 +35,25 @@
       </select>
     </div>
 
-    <div class="field">
-      <label class="field__label" for="index-aggregation">{% translate "Свёртка" %}</label>
-      <select class="select" id="index-aggregation" name="aggregation">
-        {% for code, label in aggregation_methods.items %}
-          <option value="{{ code }}" {% if code == aggregation %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-      <span class="field__hint">
-        {% blocktranslate trimmed %}
-          Аддитивная свёртка допускает полное возмещение: провал по одному показателю
-          покрывается избытком по другому. Геометрическая возмещение ограничивает.
-        {% endblocktranslate %}
-      </span>
-    </div>
+    <details class="rail-more">
+      <summary class="rail-more__summary">
+        <span class="rail-more__label">{% translate "Свёртка" %}</span>
+        <span class="rail-more__value" data-summary-of="index-aggregation">{{ aggregation_methods|dict_value:aggregation }}</span>
+        <svg class="rail-more__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
+      </summary>
+      <div class="field">
+        <div class="field__head">
+          <label class="field__label" for="index-aggregation">{% translate "Свёртка" %}</label>
+          {% blocktranslate trimmed asvar hint_text %}Аддитивная свёртка допускает полное возмещение: провал по одному показателю покрывается избытком по другому. Геометрическая возмещение ограничивает.{% endblocktranslate %}
+          {% include "partials/_hint.html" with hint_id="hint-index-builder-1" hint_text=hint_text %}
+        </div>
+        <select class="select" id="index-aggregation" name="aggregation">
+          {% for code, label in aggregation_methods.items %}
+            <option value="{{ code }}" {% if code == aggregation %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </details>
   </div>
 {% endblock %}
 

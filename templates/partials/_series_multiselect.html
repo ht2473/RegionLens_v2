@@ -3,17 +3,17 @@
 <div class="filter-rail__group">
   {# Счётчик пересчитывает браузер: заголовок не приходит ни с одним из фрагментов. #}
   <div class="filter-rail__title">
-    {% translate "Показатели" %}
+    <span class="field__head">
+      {% translate "Показатели" %}
+      {% blocktranslate trimmed with limit=max_series least=min_series asvar picker_hint %}
+        Учитываются первые {{ limit }} отмеченных рядов; для расчёта нужно
+        не менее {{ least }}.
+      {% endblocktranslate %}
+      {% include "partials/_hint.html" with hint_id="hint-series-picker" hint_text=picker_hint hint_label=_("Сколько рядов учитывается") %}
+    </span>
     <span class="text-muted" data-count-of="#series-picker-frame"
           data-count-max="{{ max_series }}">({{ selected_keys|length }}/{{ max_series }})</span>
   </div>
 
   {% include "partials/_series_picker.html" %}
-
-  <span class="field__hint">
-    {% blocktranslate trimmed with limit=max_series least=min_series %}
-      Учитываются первые {{ limit }} отмеченных рядов; для расчёта нужно
-      не менее {{ least }}.
-    {% endblocktranslate %}
-  </span>
 </div>

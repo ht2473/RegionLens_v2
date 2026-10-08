@@ -13,6 +13,13 @@
   </div>
 {% else %}
 
+  {# Пара разбора — в форме расчёта: её меняют щелчок по клетке матрицы и ссылки перечня. #}
+  {% if pair_first %}
+    <input type="hidden" id="pair-x" name="x" value="{{ pair_first.key }}">
+    <input type="hidden" id="pair-y" name="y" value="{{ pair_second.key }}">
+    {% if pair_log %}<input type="hidden" name="log" value="{{ pair_log }}">{% endif %}
+  {% endif %}
+
   <header class="tool-subject">
     <div class="tool-subject__text">
       <h2 class="tool-subject__title">
@@ -32,31 +39,18 @@
       <div>
         <div class="chart-frame__title">{% translate "Матрица парных связей" %}</div>
         <div class="chart-frame__subtitle">
-          {% translate "показаны только коэффициенты, значимые с поправкой на множественность сравнений" %}
+          {% translate "нажмите на клетку — ниже разбор этой пары" %}
+          {% blocktranslate trimmed asvar matrix_hint %}
+            Серая клетка — коэффициент не удалось отличить от нуля на уровне значимости 5 %
+            с поправкой Бенджамини — Хохберга: при многих парах часть выходит «значимой»
+            случайно, и поправка сдерживает долю таких находок.
+          {% endblocktranslate %}
+          {% include "partials/_hint.html" with hint_id="hint-matrix" hint_text=matrix_hint hint_label=_("Что значит серая клетка") %}
         </div>
       </div>
     </div>
     <rl-chart class="chart chart--tall" data-options="correlation-matrix-option"></rl-chart>
     {{ matrix_option|json_script:"correlation-matrix-option" }}
-
-    {# Соответствие номеров на осях матрицы названиям. #}
-    <ol class="matrix-key">
-      {% for label in matrix.labels %}
-        <li class="matrix-key__item">
-          <span class="matrix-key__number numeric">{{ forloop.counter }}</span>
-          <span>{{ label }}</span>
-        </li>
-      {% endfor %}
-    </ol>
-
-    <div class="chart-frame__footer">
-      {% blocktranslate trimmed %}
-        Пустая ячейка означает, что коэффициент не удалось отличить от нуля на уровне
-        значимости 5 % с поправкой Бенджамини — Хохберга: при многих парах часть
-        из них выходит «значимой» случайно, и поправка сдерживает долю таких
-        ложных находок. Значения вместе с уровнями значимости приведены в перечне ниже.
-      {% endblocktranslate %}
-    </div>
   </div>
 
   {# --- Наиболее выраженные связи ----------------------------------------------------------- #}
@@ -78,6 +72,7 @@
               <th scope="col" class="is-numeric">{% translate "Пар" %}</th>
               <th scope="col" class="is-numeric">{% translate "p" %}</th>
               <th scope="col" class="is-numeric">{% translate "p с поправкой" %}</th>
+              <th scope="col"><span class="visually-hidden">{% translate "Разбор" %}</span></th>
             </tr>
           </thead>
           <tbody>
@@ -94,6 +89,10 @@
                 <td class="is-numeric text-secondary">{{ item.correlation.pairs }}</td>
                 <td class="is-numeric text-secondary">{{ item.correlation.p_value|p_level }}</td>
                 <td class="is-numeric">{{ item.correlation.p_adjusted|p_level }}</td>
+                <td>
+                  <a href="{{ item.url }}" hx-get="{{ item.url }}" hx-target="#analytics-results"
+                     hx-push-url="true" hx-swap="innerHTML transition:true">{% translate "Разобрать" %}</a>
+                </td>
               </tr>
             {% endfor %}
           </tbody>
@@ -116,7 +115,7 @@
       <div class="chart-frame__header">
         <div>
           <div class="chart-frame__title">
-            {{ pair_second.short }} {% translate "и" %} {{ pair_first.short }}
+            {{ pair_second.title }} {% translate "и" %} {{ pair_first.title }}
           </div>
           <div class="chart-frame__subtitle">
             {% if pair.is_available %}
@@ -134,12 +133,26 @@
           </div>
         </div>
       </div>
+      {% if pair_finding %}<p class="chart-frame__finding">{{ pair_finding }}</p>{% endif %}
+      {% if pair_log %}
+        <p class="chart-frame__offer">
+          {% translate "Логарифмическая шкала: равные расстояния — равные отношения значений." %}
+          <a href="{{ pair_linear_url }}" hx-get="{{ pair_linear_url }}" hx-target="#analytics-results"
+             hx-push-url="true" hx-swap="innerHTML transition:true">{% translate "Обычная шкала" %}</a>
+        </p>
+      {% elif pair_skewed %}
+        <p class="chart-frame__offer">
+          {% translate "Несколько регионов далеко от остальных, и точки сжаты у начала оси." %}
+          <a href="{{ pair_log_url }}" hx-get="{{ pair_log_url }}" hx-target="#analytics-results"
+             hx-push-url="true" hx-swap="innerHTML transition:true">{% translate "Логарифмическая шкала" %}</a>
+        </p>
+      {% endif %}
       <rl-chart class="chart chart--tall" data-options="correlation-scatter-option"></rl-chart>
       {{ scatter_option|json_script:"correlation-scatter-option" }}
       <div class="chart-frame__footer">
         {% blocktranslate trimmed %}
           На диаграмме видно, держится ли связь на всех регионах или её создают несколько
-          выделяющихся.
+          выделяющихся; подписаны крайние.
         {% endblocktranslate %}
       </div>
     </div>
@@ -166,7 +179,7 @@
           <dd class="numeric">{{ pair_fit.observations }}</dd>
         </dl>
         <div class="card__footer">
-          {% blocktranslate trimmed with x=pair_first.short y=pair_second.short %}
+          {% blocktranslate trimmed with x=pair_first.title y=pair_second.title %}
             Наклон читается так: при увеличении показателя «{{ x }}» на единицу
             показатель «{{ y }}» в среднем меняется на величину коэффициента.
             Это описание совместного движения, а не утверждение о воздействии.
@@ -183,7 +196,7 @@
         <div>
           <div class="chart-frame__title">{% translate "Связь при сдвиге во времени" %}</div>
           <div class="chart-frame__subtitle">
-            {% blocktranslate trimmed with x=pair_first.short y=pair_second.short target=lag_target_year|stringformat:"d" %}
+            {% blocktranslate trimmed with x=pair_first.title y=pair_second.title target=lag_target_year|stringformat:"d" %}
               «{{ x }}» за более ранние годы и «{{ y }}» за {{ target }} год
             {% endblocktranslate %}
           </div>

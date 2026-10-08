@@ -9,33 +9,38 @@
   </div>
 
   <div class="filter-rail__group">
-    <div class="field">
-      <label class="field__label" for="convergence-first">{% translate "Начальный год" %}</label>
-      <select class="select" id="convergence-first" name="first">
-        {% for item in years %}
-          <option value="{{ item|year }}" {% if item == first_year %}selected{% endif %}>{{ item|year }}</option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="field">
-      <label class="field__label" for="convergence-last">{% translate "Конечный год" %}</label>
-      <select class="select" id="convergence-last" name="last">
-        {% for item in years reversed %}
-          <option value="{{ item|year }}" {% if item == last_year %}selected{% endif %}>{{ item|year }}</option>
-        {% endfor %}
-      </select>
-      <span class="field__hint">
-        {% blocktranslate trimmed %}
-          Вывод о сближении сильно зависит от границ отрезка. Стоит проверить
-          несколько периодов, прежде чем делать заключение.
-        {% endblocktranslate %}
-      </span>
+    <div class="field-pair">
+      <div class="field">
+        <label class="field__label" for="convergence-first">{% translate "Начальный год" %}</label>
+        <select class="select" id="convergence-first" name="first">
+          {% for item in years %}
+            <option value="{{ item|year }}" {% if item == first_year %}selected{% endif %}>{{ item|year }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <div class="field__head">
+          <label class="field__label" for="convergence-last">{% translate "Конечный год" %}</label>
+          {% blocktranslate trimmed asvar hint_text %}Вывод о сближении сильно зависит от границ отрезка. Стоит проверить несколько периодов, прежде чем делать заключение.{% endblocktranslate %}
+          {% include "partials/_hint.html" with hint_id="hint-convergence-1" hint_text=hint_text %}
+        </div>
+        <select class="select" id="convergence-last" name="last">
+          {% for item in years reversed %}
+            <option value="{{ item|year }}" {% if item == last_year %}selected{% endif %}>{{ item|year }}</option>
+          {% endfor %}
+        </select>
+      </div>
     </div>
   </div>
 
   <div class="filter-rail__group">
-    <div class="filter-rail__title">{% translate "Состав субъектов в разбросе" %}</div>
+    <div class="filter-rail__title">
+      <span class="field__head">
+        {% translate "Состав субъектов в разбросе" %}
+        {% blocktranslate trimmed asvar hint_text %}Бета-конвергенция всегда считается по субъектам, у которых есть оба года отрезка.{% endblocktranslate %}
+        {% include "partials/_hint.html" with hint_id="hint-convergence-2" hint_text=hint_text %}
+      </span>
+    </div>
     <div class="stack stack--tight">
       {% for code, label in compositions.items %}
         <label class="radio">
@@ -45,15 +50,16 @@
         </label>
       {% endfor %}
     </div>
-    <span class="field__hint">
-      {% blocktranslate trimmed %}
-        Бета-конвергенция всегда считается по субъектам, у которых есть оба года отрезка.
-      {% endblocktranslate %}
-    </span>
   </div>
 
   <div class="filter-rail__group">
-    <div class="filter-rail__title">{% translate "Постановка задачи" %}</div>
+    <div class="filter-rail__title">
+      <span class="field__head">
+        {% translate "Постановка задачи" %}
+        {% blocktranslate trimmed asvar hint_text %}В условной постановке в модель добавлены фиктивные переменные федеральных округов: проверяется сближение внутри округа, а не с общим уровнем страны.{% endblocktranslate %}
+        {% include "partials/_hint.html" with hint_id="hint-convergence-3" hint_text=hint_text %}
+      </span>
+    </div>
     <div class="stack stack--tight">
       {% for code, label in modes.items %}
         <label class="radio">
@@ -62,12 +68,6 @@
         </label>
       {% endfor %}
     </div>
-    <span class="field__hint">
-      {% blocktranslate trimmed %}
-        В условной постановке в модель добавлены фиктивные переменные федеральных
-        округов: проверяется сближение внутри округа, а не с общим уровнем страны.
-      {% endblocktranslate %}
-    </span>
   </div>
 {% endblock %}
 

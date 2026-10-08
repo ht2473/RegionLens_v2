@@ -20,7 +20,13 @@
   </div>
 
   <div class="filter-rail__group">
-    <div class="filter-rail__title">{% translate "Что считать соседством" %}</div>
+    <div class="filter-rail__title">
+      <span class="field__head">
+        {% translate "Что считать соседством" %}
+        {% blocktranslate trimmed asvar hint_text %}Вывод зависит от схемы соседства; надёжнее тот, что держится при всех трёх.{% endblocktranslate %}
+        {% include "partials/_hint.html" with hint_id="hint-spatial-1" hint_text=hint_text %}
+      </span>
+    </div>
     <div class="stack stack--tight">
       {% for code, label in schemes.items %}
         <label class="radio">
@@ -29,11 +35,6 @@
         </label>
       {% endfor %}
     </div>
-    <span class="field__hint">
-      {% blocktranslate trimmed %}
-        Вывод зависит от схемы соседства; надёжнее тот, что держится при всех трёх.
-      {% endblocktranslate %}
-    </span>
   </div>
 {% endblock %}
 

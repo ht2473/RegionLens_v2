@@ -10,59 +10,49 @@
 
   <div class="filter-rail__group">
     <div class="field">
-      <label class="field__label" for="inequality-year">{% translate "Год" %}</label>
+      <div class="field__head">
+        <label class="field__label" for="inequality-year">{% translate "Год" %}</label>
+        {% translate "Определяет срез, по которому рассчитаны меры и кривая Лоренца" as hint_text %}
+        {% include "partials/_hint.html" with hint_id="hint-inequality-1" hint_text=hint_text %}
+      </div>
       <select class="select" id="inequality-year" name="year">
         {% for item in years reversed %}
           <option value="{{ item|year }}" {% if item == year %}selected{% endif %}>{{ item|year }}</option>
         {% endfor %}
       </select>
-      <span class="field__hint">
-        {% translate "Определяет срез, по которому рассчитаны меры и кривая Лоренца" %}
-      </span>
     </div>
   </div>
 
   <div class="filter-rail__group">
     <div class="filter-rail__title">{% translate "Динамика мер" %}</div>
-    <div class="field">
-      <label class="field__label" for="inequality-first">{% translate "Начальный год" %}</label>
-      <select class="select" id="inequality-first" name="first">
-        {% for item in years %}
-          <option value="{{ item|year }}" {% if item == first_year %}selected{% endif %}>{{ item|year }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="field">
-      <label class="field__label" for="inequality-last">{% translate "Конечный год" %}</label>
-      <select class="select" id="inequality-last" name="last">
-        {% for item in years reversed %}
-          <option value="{{ item|year }}" {% if item == last_year %}selected{% endif %}>{{ item|year }}</option>
-        {% endfor %}
-      </select>
+    <div class="field-pair">
+      <div class="field">
+        <label class="field__label" for="inequality-first">{% translate "Начальный год" %}</label>
+        <select class="select" id="inequality-first" name="first">
+          {% for item in years %}
+            <option value="{{ item|year }}" {% if item == first_year %}selected{% endif %}>{{ item|year }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label class="field__label" for="inequality-last">{% translate "Конечный год" %}</label>
+        <select class="select" id="inequality-last" name="last">
+          {% for item in years reversed %}
+            <option value="{{ item|year }}" {% if item == last_year %}selected{% endif %}>{{ item|year }}</option>
+          {% endfor %}
+        </select>
+      </div>
     </div>
   </div>
 
   <div class="filter-rail__group">
-    <div class="filter-rail__title">{% translate "Состав субъектов в динамике" %}</div>
-    <div class="stack stack--tight">
-      {% for code, label in compositions.items %}
-        <label class="radio">
-          <input type="radio" name="composition" value="{{ code }}"
-                 {% if code == composition_mode %}checked{% endif %}>
-          <span>{{ label }}</span>
-        </label>
-      {% endfor %}
+    <div class="filter-rail__title">
+      <span class="field__head">
+        {% translate "Единица наблюдения" %}
+        {% blocktranslate trimmed asvar hint_text %}Без взвешивания меры отвечают на вопрос о различии территорий, со взвешиванием по населению — о различии условий жизни людей. Ответы часто расходятся.{% endblocktranslate %}
+        {% include "partials/_hint.html" with hint_id="hint-inequality-3" hint_text=hint_text %}
+      </span>
     </div>
-    <span class="field__hint">
-      {% blocktranslate trimmed %}
-        Когда в ряд входят новые субъекты, меры меняются от одного этого. На постоянном
-        составе динамика сравнивает одни и те же регионы.
-      {% endblocktranslate %}
-    </span>
-  </div>
-
-  <div class="filter-rail__group">
-    <div class="filter-rail__title">{% translate "Единица наблюдения" %}</div>
     <div class="stack stack--tight">
       {% for code, label in weighting_options.items %}
         <label class="radio">
@@ -72,25 +62,44 @@
         </label>
       {% endfor %}
     </div>
-    <span class="field__hint">
-      {% blocktranslate trimmed %}
-        Без взвешивания меры отвечают на вопрос о различии территорий, со взвешиванием
-        по населению — о различии условий жизни людей. Ответы часто расходятся.
-      {% endblocktranslate %}
-    </span>
   </div>
 
+  {# Редкие параметры свёрнуты; рейль при пересчёте не заменяется, поэтому в заголовке — их названия. #}
   <div class="filter-rail__group">
-    <div class="field">
-      <label class="field__label" for="inequality-epsilon">
-        {% translate "Неприятие неравенства (индекс Аткинсона)" %}
-      </label>
-      <input class="input numeric" type="number" id="inequality-epsilon" name="epsilon"
-             min="0.1" max="2" step="0.1" value="{{ epsilon|stringformat:'.1f' }}">
-      <span class="field__hint">
-        {% translate "Чем выше значение, тем сильнее учитывается отставание нижней части" %}
-      </span>
-    </div>
+    <details class="rail-more rail-more--first">
+      <summary class="rail-more__summary">
+        <span class="rail-more__label">{% translate "Ещё параметры" %}</span>
+        <span class="rail-more__value">{% translate "состав, индекс Аткинсона" %}</span>
+        <svg class="rail-more__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
+      </summary>
+
+      <div class="field">
+        <div class="field__head">
+          <div class="field__label" id="inequality-composition-label">{% translate "Состав субъектов в динамике" %}</div>
+          {% blocktranslate trimmed asvar hint_text %}Когда в ряд входят новые субъекты, меры меняются от одного этого. На постоянном составе динамика сравнивает одни и те же регионы.{% endblocktranslate %}
+          {% include "partials/_hint.html" with hint_id="hint-inequality-2" hint_text=hint_text %}
+        </div>
+        <div class="stack stack--tight" role="radiogroup" aria-labelledby="inequality-composition-label">
+          {% for code, label in compositions.items %}
+            <label class="radio">
+              <input type="radio" name="composition" value="{{ code }}"
+                     {% if code == composition_mode %}checked{% endif %}>
+              <span>{{ label }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field__head">
+          <label class="field__label" for="inequality-epsilon">{% translate "Неприятие неравенства (индекс Аткинсона)" %}</label>
+          {% translate "Чем выше значение, тем сильнее учитывается отставание нижней части" as hint_text %}
+          {% include "partials/_hint.html" with hint_id="hint-inequality-4" hint_text=hint_text %}
+        </div>
+        <input class="input numeric" type="number" id="inequality-epsilon" name="epsilon"
+               min="0.1" max="2" step="0.1" value="{{ epsilon|stringformat:'.1f' }}">
+      </div>
+    </details>
   </div>
 {% endblock %}
 

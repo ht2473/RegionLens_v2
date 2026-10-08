@@ -1,65 +1,39 @@
 {% extends "analytics/tool.html" %}
 {% load i18n formatting %}
 
-{# Корреляции: набор, год, коэффициент и пара — слева; матрица, рассеяние и запаздывание — справа. #}
+{# Корреляции: набор, год и коэффициент — слева; матрица, разбор пары и запаздывание — справа. #}
 
 {% block filters %}
   {% include "partials/_series_multiselect.html" %}
 
   <div class="filter-rail__group">
     <div class="field">
-      <label class="field__label" for="correlation-year">{% translate "Год среза" %}</label>
+      <div class="field__head">
+        <label class="field__label" for="correlation-year">{% translate "Год среза" %}</label>
+        {% translate "Для показателей без данных за этот год берётся ближайший; он указан в таблице показателей." as year_hint %}
+        {% include "partials/_hint.html" with hint_id="hint-correlation-year" hint_text=year_hint hint_label=_("Если за год нет данных") %}
+      </div>
       <select class="select" id="correlation-year" name="year">
         {% for item in years reversed %}
           <option value="{{ item|year }}" {% if item == year %}selected{% endif %}>{{ item|year }}</option>
         {% endfor %}
       </select>
-      <span class="field__hint">
-        {% translate "Для показателей без данных за этот год берётся ближайший; он указан в таблице" %}
-      </span>
     </div>
 
     <div class="field">
-      <label class="field__label" for="correlation-method">{% translate "Коэффициент связи" %}</label>
+      <div class="field__head">
+        <label class="field__label" for="correlation-method">{% translate "Коэффициент связи" %}</label>
+        {% translate "Для региональных данных с тяжёлыми хвостами распределения устойчивее ранговый коэффициент Спирмена." as method_hint %}
+        {% include "partials/_hint.html" with hint_id="hint-correlation-method" hint_text=method_hint hint_label=_("Какой коэффициент выбрать") %}
+      </div>
       <select class="select" id="correlation-method" name="method">
         {% for code, label in methods.items %}
           <option value="{{ code }}" {% if code == method %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
       </select>
-      <span class="field__hint">
-        {% blocktranslate trimmed %}
-          Для региональных данных с тяжёлыми хвостами распределения устойчивее
-          ранговый коэффициент Спирмена.
-        {% endblocktranslate %}
-      </span>
     </div>
   </div>
 
-  {% if columns %}
-    <div class="filter-rail__group">
-      <div class="filter-rail__title">{% translate "Разбор пары" %}</div>
-      <div class="field">
-        <label class="field__label" for="correlation-x">{% translate "По горизонтали" %}</label>
-        <select class="select" id="correlation-x" name="x">
-          {% for column in columns %}
-            <option value="{{ column.key }}" {% if column.key == pair_first.key %}selected{% endif %}>
-              {{ column.short }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="field">
-        <label class="field__label" for="correlation-y">{% translate "По вертикали" %}</label>
-        <select class="select" id="correlation-y" name="y">
-          {% for column in columns %}
-            <option value="{{ column.key }}" {% if column.key == pair_second.key %}selected{% endif %}>
-              {{ column.short }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-    </div>
-  {% endif %}
 {% endblock %}
 
 {% block results %}

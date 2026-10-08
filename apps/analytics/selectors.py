@@ -17,6 +17,7 @@ from django.utils.translation import get_language
 from django.utils.translation import gettext_lazy as _
 
 from apps.catalog.constants import BreakKind
+from apps.catalog.indicator import describe_series
 from apps.catalog.models import Series, SeriesBreak, Territory, TerritoryAdjacency
 from apps.catalog.selectors import analysis_ready_series, resolve_series
 from apps.warehouse.queries import (
@@ -173,6 +174,8 @@ def series_columns(selected: list[Series], year: int) -> list[dict[str, Any]]:
                 "label": label,
                 "lang": label_lang(series, label),
                 "short": series.indicator.name,
+                # Краткое название — для осей и подписей, где полное не помещается.
+                "title": describe_series(series).short_title,
                 "unit": series.unit.short_name if series.unit else "",
                 "polarity": series.polarity,
                 "year": entry["year"],

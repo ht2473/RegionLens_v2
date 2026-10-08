@@ -342,7 +342,10 @@ def _relation(reading: Reading) -> dict[str, Any] | None:
         "significant": result.p_value is not None and result.p_value < SIGNIFICANCE,
         "pairs": result.pairs,
         "chart": scatter_option(
-            scatter_points(x, y, labels, codes), x_name=first.short_title, y_name=second.short_title
+            scatter_points(x, y, labels, codes),
+            x_name=first.short_title,
+            y_name=second.short_title,
+            labels={code: territories[code].short_code for code in codes if code in territories},
         ),
         "link": _url("analytics:correlation", series=[first.key, second.key], year=year),
         "link_label": _("Связи показателей"),
