@@ -21,7 +21,6 @@ import {
   BarChart,
   HeatmapChart,
   LineChart,
-  RadarChart,
   ScatterChart,
 } from "echarts/charts";
 
@@ -31,7 +30,6 @@ import {
   LegendComponent,
   LegendScrollComponent,
   MarkLineComponent,
-  RadarComponent,
   TitleComponent,
   TooltipComponent,
   VisualMapContinuousComponent,
@@ -41,17 +39,15 @@ import { LabelLayout } from "echarts/features";
 import { CanvasRenderer, SVGRenderer } from "echarts/renderers";
 
 echarts.use([
-  // Построения: линии динамики, столбцы вкладов, точки рассеяния,
-  // лепестковый профиль региона, матрица связей.
+  // Построения: линии динамики и мест, столбцы вкладов, точки рассеяния и полоса
+  // распределения, матрица связей.
   LineChart,
   BarChart,
   ScatterChart,
-  RadarChart,
   HeatmapChart,
 
   // Части холста: поле, оси-указатели подсказки, легенда (обычная и прокручиваемая),
-  // заголовок, отметки разрывов сопоставимости, оси лепесткового профиля,
-  // непрерывная шкала цвета матрицы.
+  // заголовок, отметки разрывов сопоставимости и медианы, непрерывная шкала цвета матрицы.
   GridComponent,
   TooltipComponent,
   AxisPointerComponent,
@@ -59,7 +55,6 @@ echarts.use([
   LegendScrollComponent,
   TitleComponent,
   MarkLineComponent,
-  RadarComponent,
   VisualMapContinuousComponent,
 
   // Расталкивание сошедшихся подписей у концов линий.
