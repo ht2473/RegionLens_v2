@@ -1,0 +1,84 @@
+{% load i18n %}
+{% comment %}
+  Меню «Сохранить» — одно на сайте (apps/workspace/menu.py): в «Сохранённое» одним нажатием
+  или в исследование — вид карточкой, регион — к регионам исследования. С HTMX «В Сохранённое»
+  заменяет меню целиком; без сценариев — переход назад с сообщением.
+{% endcomment %}
+<div class="save-menu no-print" id="save-menu-root">
+  <button type="button" class="button button--sm {% if saved %}button--secondary{% else %}button--ghost{% endif %}"
+          popovertarget="save-menu" aria-haspopup="true">
+    <svg aria-hidden="true"><use href="#icon-bookmark"></use></svg>
+    {% if saved %}{% translate "Сохранено" %}{% else %}{% translate "Сохранить" %}{% endif %}
+  </button>
+
+  <div class="menu-popover save-menu__panel" id="save-menu" popover aria-label="{% translate 'Сохранить' %}">
+    {% if not request.user.is_authenticated %}
+      <a class="menu-item" href="{% url 'accounts:login' %}?next={{ save_back|urlencode }}">
+        <svg aria-hidden="true"><use href="#icon-bookmark"></use></svg>
+        {% translate "Войти, чтобы сохранить" %}
+      </a>
+    {% elif save_kind == "view" and saved %}
+      <a class="menu-item" href="{% url 'workspace:saved' %}">
+        <svg aria-hidden="true"><use href="#icon-check"></use></svg>
+        <span>{% blocktranslate trimmed with title=saved_title %}В Сохранённом: «{{ title }}»{% endblocktranslate %}</span>
+      </a>
+    {% elif save_kind == "view" %}
+      <form method="post" action="{% url 'workspace:query-save' %}"
+            hx-post="{% url 'workspace:query-save' %}" hx-target="#save-menu-root" hx-swap="outerHTML">
+        {% csrf_token %}
+        <input type="hidden" name="target" value="{{ save_identifier }}">
+        <input type="hidden" name="query_string" value="{{ save_query }}">
+        <input type="hidden" name="back" value="{{ save_back }}">
+        <button type="submit" class="menu-item">
+          <svg aria-hidden="true"><use href="#icon-bookmark"></use></svg>
+          {% translate "В Сохранённое" %}
+        </button>
+      </form>
+    {% else %}
+      <form method="post" action="{% url 'workspace:favorite-toggle' %}"
+            hx-post="{% url 'workspace:favorite-toggle' %}" hx-target="#save-menu-root" hx-swap="outerHTML">
+        {% csrf_token %}
+        <input type="hidden" name="kind" value="{{ save_kind }}">
+        <input type="hidden" name="identifier" value="{{ save_identifier }}">
+        <input type="hidden" name="series" value="{{ save_series }}">
+        <input type="hidden" name="back" value="{{ save_back }}">
+        <button type="submit" class="menu-item">
+          {% if saved %}
+            <svg aria-hidden="true"><use href="#icon-close"></use></svg>
+            {% translate "Убрать из Сохранённого" %}
+          {% else %}
+            <svg aria-hidden="true"><use href="#icon-bookmark"></use></svg>
+            {% translate "В Сохранённое" %}
+          {% endif %}
+        </button>
+      </form>
+    {% endif %}
+
+    {% if study_target or study_territory %}
+      <form class="save-menu__studies" method="post" action="{% url 'userdata:study-add' %}"
+            aria-labelledby="save-menu-studies">
+        {% csrf_token %}
+        <p class="save-menu__label" id="save-menu-studies">
+          {% if study_territory %}{% translate "Регион — в исследование" %}{% else %}{% translate "В исследование" %}{% endif %}
+        </p>
+        {% if study_territory %}
+          <input type="hidden" name="territory" value="{{ study_territory }}">
+        {% else %}
+          <input type="hidden" name="target" value="{{ study_target }}">
+          <input type="hidden" name="query_string" value="{{ study_query }}">
+        {% endif %}
+        <input type="hidden" name="back" value="{{ save_back }}">
+        {% for study in studies %}
+          <button type="submit" class="menu-item" name="study" value="{{ study.public_id }}">
+            <svg aria-hidden="true"><use href="#icon-multiples"></use></svg>
+            <span class="save-menu__study">{{ study.title }}</span>
+          </button>
+        {% endfor %}
+        <button type="submit" class="menu-item" name="study" value="new">
+          <svg aria-hidden="true"><use href="#icon-plus"></use></svg>
+          {% translate "Новое исследование" %}
+        </button>
+      </form>
+    {% endif %}
+  </div>
+</div>

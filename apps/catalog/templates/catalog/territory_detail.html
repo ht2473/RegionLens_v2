@@ -39,7 +39,7 @@
 
     <div class="page-head__actions">
       {% if territory.is_region and not territory.is_aggregate %}{% my_region_button territory %}{% endif %}
-      {% favorite_button "territory" territory.code %}
+      {% save_menu "territory" territory.code %}
       {% export_button "territory" territory=territory.code title=territory.name %}
       <a class="button button--secondary button--sm"
          href="{% url 'compare:index' %}?territory={{ territory.code }}">

@@ -22,6 +22,7 @@ from django.http import Http404, HttpRequest, HttpResponse, QueryDict
 from django.http.response import HttpResponseBase
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils.html import format_html
 from django.utils.translation import get_language, gettext
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView, View
@@ -385,11 +386,15 @@ def _own_study(request: HttpRequest, public_id: str) -> Study:
 
 
 class StudyAddView(View):
-    """«В исследование» со страницы холста или инструмента: вид с параметрами — карточкой."""
+    """
+    «В исследование» из меню «Сохранить»: вид с параметрами — карточкой, регион
+    (поле ``territory``) — к регионам исследования.
+    """
 
     def post(self, request: HttpRequest) -> HttpResponse:
         back = safe_back(request, reverse("core:home"))
         target = request.POST.get("target", "")
+        territory = request.POST.get("territory", "")
         chosen = request.POST.get("study", "")
         if not _allowed(request):
             messages.error(request, gettext("Слишком много изменений подряд. Повторите позже."))
@@ -399,13 +404,26 @@ class StudyAddView(View):
                 study = studies.create(request, request.POST.get("new_title", ""))
             else:
                 study = _own_study(request, chosen)
-            studies.add_view(study, target, request.POST.get("query_string", ""))
+            if territory:
+                name = studies.add_territory(study, territory)
+                done = gettext("Регион «%(name)s» добавлен в исследование «%(title)s».") % {
+                    "name": name,
+                    "title": study.title,
+                }
+            else:
+                studies.add_view(study, target, request.POST.get("query_string", ""))
+                done = gettext("Вид добавлен в исследование «%(title)s».") % {"title": study.title}
         except studies.StudyError as error:
             messages.error(request, str(error))
             return redirect(back)
         messages.success(
             request,
-            gettext("Вид добавлен в исследование «%(title)s».") % {"title": study.title},
+            format_html(
+                '{} <a href="{}">{}</a>',
+                done,
+                reverse("userdata:study", args=[study.public_id]),
+                gettext("Открыть"),
+            ),
         )
         if request.POST.get("open") == "1":
             return redirect("userdata:study", public_id=study.public_id)

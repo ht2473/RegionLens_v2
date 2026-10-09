@@ -295,6 +295,24 @@ def restore(study: Study) -> bool:
     return True
 
 
+def add_territory(study: Study, code: str) -> str:
+    """Регион — к общим регионам исследования, если его там нет; вернуть его название."""
+    from apps.catalog.models import Territory
+    from apps.catalog.selectors import MAX_COMPARE
+
+    territory = Territory.objects.comparable().filter(code=code).first()
+    if territory is None:
+        raise StudyError(_("Такого региона нет."))
+    current = list(study.territories or [])
+    if code not in current:
+        if len(current) >= MAX_COMPARE:
+            raise StudyError(
+                _("В исследовании уже %(count)s регионов — это предел.") % {"count": MAX_COMPARE}
+            )
+        set_common(study, study.year, [*current, code])
+    return territory.name
+
+
 def set_common(study: Study, year: int | None, territories: Iterable[str]) -> None:
     """Общий год и регионы карточек."""
     from apps.catalog.models import Territory

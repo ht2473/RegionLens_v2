@@ -43,13 +43,15 @@ def _audit(page: Page, problems: list[str]) -> None:
 def _study_with_link(page: Page, base: str) -> str:
     """
     Таблица → исследование с картой → та же карта на холсте → «В исследование» (то же)
-    второй карточкой → заметка → закрытая ссылка; вернуть ссылку.
+    второй карточкой из меню «Сохранить» → «Открыть» в сообщении → заметка → закрытая
+    ссылка; вернуть ссылку.
     """
     _walk(page, base)
     page.locator(".study-card__open").first.click()
     page.wait_for_url("**/map/**")
-    page.locator("button[popovertarget=save-query]").click()
-    page.locator(".save-query__study button[name=open][value='1']").click()
+    page.locator("button[popovertarget=save-menu]").click()
+    page.locator("#save-menu button[name=study]").first.click()
+    page.locator(".toast a").click()
     page.wait_for_url("**/own-data/studies/**")
     expect(page.locator(".study-card__body")).to_have_count(2)
     expect(page.locator(".study-card__body .geo-map, .study-card__body .tile-map")).to_have_count(2)

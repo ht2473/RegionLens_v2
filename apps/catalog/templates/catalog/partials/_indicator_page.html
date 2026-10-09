@@ -70,7 +70,7 @@
   {% endif %}
 
   <div class="page-head__actions">
-    {% favorite_button "indicator" indicator.slug %}
+    {% save_menu "indicator" indicator.slug series.key %}
     {% if series %}
       {% export_button "series" series=series.key title=heading %}
       <a class="button button--secondary button--sm" href="{% url 'maps:choropleth' %}?series={{ series.key }}">

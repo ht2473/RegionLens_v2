@@ -9,6 +9,7 @@ from apps.accounts.models import User
 from apps.accounts.permissions import ensure_quota
 from apps.catalog.models import Indicator, Series, Territory
 
+from .constants import QUERY_TARGETS_BY_CODE
 from .models import Favorite, SavedQuery
 
 # Параметры способа обращения, а не состояния страницы.
@@ -20,6 +21,10 @@ IGNORED_PARAMETERS = frozenset(
 MAX_PARAMETERS = 40
 MAX_VALUES_PER_PARAMETER = 20
 MAX_VALUE_LENGTH = 200
+
+# Длина названия вида и сколько параметров словами идёт в название, данное само.
+TITLE_LENGTH = 160
+TITLE_PHRASES = 2
 
 
 def parse_query_string(query_string: str) -> dict[str, Any]:
@@ -48,6 +53,56 @@ def parse_query_string(query_string: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------------------
 # Сохранённые выборки
 # ---------------------------------------------------------------------------------------
+
+
+def auto_title(target: str, parameters: dict[str, Any]) -> str:
+    """Название вида, данное само: страница и первые параметры словами через «·»."""
+    from .describe import describe_parameters
+
+    info = QUERY_TARGETS_BY_CODE.get(target)
+    parts = [str(info.title) if info else target]
+    parts.extend(describe_parameters(target, parameters)[:TITLE_PHRASES])
+    return " · ".join(parts)[:TITLE_LENGTH]
+
+
+def free_title(user: User, title: str, *, exclude: int | None = None) -> str:
+    """Название, свободное у пользователя: занятое получает номер — «… (2)»."""
+    title = title.strip()[:TITLE_LENGTH]
+    others = SavedQuery.objects.filter(user=user)
+    if exclude is not None:
+        others = others.exclude(pk=exclude)
+    taken = set(others.values_list("title", flat=True))
+    if title not in taken:
+        return title
+    number = 2
+    while True:
+        suffix = f" ({number})"
+        candidate = title[: TITLE_LENGTH - len(suffix)] + suffix
+        if candidate not in taken:
+            return candidate
+        number += 1
+
+
+def saved_view(user: Any, target: str, query_string: str) -> SavedQuery | None:
+    """Тот же вид в «Сохранённом»: та же страница с теми же параметрами."""
+    if not getattr(user, "is_authenticated", False):
+        return None
+    return SavedQuery.objects.filter(
+        user=user, target=target, parameters=parse_query_string(query_string)
+    ).first()
+
+
+def save_view(user: User, *, target: str, query_string: str) -> tuple[SavedQuery, bool]:
+    """
+    «В Сохранённое» одним нажатием: название — само, переименовать можно в «Сохранённом».
+
+    Тот же вид второй раз не сохраняется; второе значение — сохранён ли он сейчас.
+    """
+    existing = saved_view(user, target, query_string)
+    if existing is not None:
+        return existing, False
+    title = free_title(user, auto_title(target, parse_query_string(query_string)))
+    return create_saved_query(user, title=title, target=target, query_string=query_string), True
 
 
 def create_saved_query(

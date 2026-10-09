@@ -24,7 +24,8 @@ from apps.catalog.selectors import MAX_COMPARE
 from apps.core.utils.redirects import safe_back
 
 from . import services
-from .forms import FavoriteForm, FavoriteNoteForm, SavedQueryCreateForm, SavedQueryForm
+from .forms import FavoriteForm, FavoriteNoteForm, SavedQueryForm, SaveViewForm
+from .menu import save_menu_context
 from .models import SavedQuery
 from .selectors import favorites, saved_queries, vanished_series
 
@@ -85,35 +86,36 @@ def territory_actions(territories: list[Any]) -> list[tuple[Any, str, str]]:
 
 
 class SavedQueryCreateView(View):
-    """Сохранение выборки со страницы расчёта с её строкой запроса."""
+    """«В Сохранённое» со страницы расчёта: вид с её строкой запроса, название — само."""
 
     def post(self, request: HttpRequest) -> HttpResponse:
-        """Создать выборку и вернуться на страницу, с которой она сохранена."""
+        """Сохранить вид; HTMX — меню заново, иначе — назад с сообщением."""
         if not request.user.is_authenticated:
             return redirect_to_login(request)
 
         # После проверки выше mypy сужает тип пользователя до User.
         user = request.user
-        form = SavedQueryCreateForm(request.POST, user=user)
+        form = SaveViewForm(request.POST)
         back = safe_back(request, reverse("core:home"))
 
         if not form.is_valid():
             messages.error(request, _("Вид сохранить не удалось: %s") % form.errors.as_text())
             return HttpResponseRedirect(back)
 
+        target = form.cleaned_data["target"]
+        query_string = form.cleaned_data.get("query_string", "")
         try:
-            query = services.create_saved_query(
-                user,
-                title=form.cleaned_data["title"],
-                target=form.cleaned_data["target"],
-                query_string=form.cleaned_data.get("query_string", ""),
-                description=form.cleaned_data.get("description", ""),
-            )
+            query, created = services.save_view(user, target=target, query_string=query_string)
         except QuotaExceededError as error:
             messages.error(request, str(error))
             return HttpResponseRedirect(back)
 
-        messages.success(request, _("Вид «%s» сохранён в кабинете") % query.title)
+        if request.headers.get("HX-Request"):
+            return render_save_menu(request, "view", target, query_string=query_string, back=back)
+        if created:
+            messages.success(request, _("Вид «%s» сохранён в кабинете") % query.title)
+        else:
+            messages.info(request, _("Этот вид уже в «Сохранённом»: «%s»") % query.title)
         return HttpResponseRedirect(back)
 
 
@@ -219,11 +221,11 @@ class FavoriteToggleView(View):
             return HttpResponseRedirect(back)
 
         if request.headers.get("HX-Request"):
-            return render_favorite_button(
+            return render_save_menu(
                 request,
-                kind=form.cleaned_data["kind"],
-                identifier=form.cleaned_data["identifier"],
-                active=added,
+                form.cleaned_data["kind"],
+                form.cleaned_data["identifier"],
+                series=form.cleaned_data.get("series", ""),
                 back=back,
             )
 
@@ -272,22 +274,17 @@ def redirect_to_login(request: HttpRequest) -> HttpResponse:
     return django_redirect_to_login(safe_back(request, request.path))
 
 
-def render_favorite_button(
+def render_save_menu(
     request: HttpRequest,
-    *,
     kind: str,
     identifier: str,
-    active: bool,
+    *,
+    series: str = "",
+    query_string: str = "",
     back: str,
 ) -> HttpResponse:
-    """Отрисовать кнопку избранного после переключения отметки."""
-    return render(
-        request,
-        "workspace/partials/_favorite_button.html",
-        {
-            "favorite_kind": kind,
-            "favorite_identifier": identifier,
-            "favorite_active": active,
-            "favorite_back": back,
-        },
+    """Меню «Сохранить» после действия — для замены HTMX: страница, с которой оно пришло."""
+    context = save_menu_context(
+        request, kind, identifier, series=series, query_string=query_string, back=back
     )
+    return render(request, "workspace/partials/_save_menu.html", context)

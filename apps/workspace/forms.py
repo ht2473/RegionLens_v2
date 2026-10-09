@@ -47,11 +47,11 @@ class SavedQueryForm(forms.ModelForm):
         return title
 
 
-class SavedQueryCreateForm(SavedQueryForm):
-    """Сохранение выборки со страницы расчёта: название, код страницы и строка запроса."""
+class SaveViewForm(forms.Form):
+    """«В Сохранённое» со страницы расчёта: код страницы и строка запроса; название — само."""
 
-    target = forms.CharField(widget=forms.HiddenInput())
-    query_string = forms.CharField(widget=forms.HiddenInput(), required=False)
+    target = forms.CharField()
+    query_string = forms.CharField(required=False)
 
     def clean_target(self) -> str:
         """Проверить, что страница входит в перечень сохраняемых."""
@@ -69,6 +69,8 @@ class FavoriteForm(forms.Form):
     )
     identifier = forms.CharField(max_length=200)
     note = forms.CharField(max_length=200, required=False)
+    # Открытый ряд показателя: меню после переключения снова кладёт его в исследование.
+    series = forms.CharField(max_length=200, required=False)
 
 
 class FavoriteNoteForm(forms.Form):
