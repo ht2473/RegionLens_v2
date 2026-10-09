@@ -16,9 +16,13 @@ pytestmark = [pytest.mark.e2e, pytest.mark.django_db(transaction=True)]
 
 PAGES = (*PUBLIC_PAGES, "content:methodology", "content:glossary", "feedback:create")
 
-# Бюджет страницы: запросы сценариев (больше всего — у поверхности с графиками) и узлы DOM.
+# Бюджет страницы: запросы сценариев (больше всего — у поверхности с графиками), узлы DOM,
+# документ по сети (сжатый) и разобранные стили. Пределы — с запасом над итогом этапа 8
+# на настоящих данных: сценариев 24, узлов 4 860 (рейтинг), стилей 158 КБ (исследование).
 MAX_SCRIPTS = 24
 MAX_NODES = 5000
+MAX_HTML_KB = 64
+MAX_CSS_KB = 170
 
 # Ответы поиска с самой широкой разметкой: два столбца рейтинга и таблица сравнения.
 SEARCHES = ("где самые высокие зарплаты", "сравнить Москву и Санкт-Петербург")
@@ -60,5 +64,9 @@ def test_layout_rules_and_budget(
             failures.append(f"{path}: сценариев {metrics['scripts']} > {MAX_SCRIPTS}")
         if metrics["nodes"] > MAX_NODES:
             failures.append(f"{path}: узлов DOM {metrics['nodes']} > {MAX_NODES}")
+        if metrics["html_kb"] > MAX_HTML_KB:
+            failures.append(f"{path}: документ {metrics['html_kb']} КБ > {MAX_HTML_KB}")
+        if metrics["css_kb"] > MAX_CSS_KB:
+            failures.append(f"{path}: стилей {metrics['css_kb']} КБ > {MAX_CSS_KB}")
 
     assert not failures, "нарушения раскладки:\n  " + "\n  ".join(failures)

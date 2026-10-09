@@ -10,6 +10,10 @@ DEBUG = True
 # Любые хосты локальной сети — для проверки с телефона.
 ALLOWED_HOSTS = ["*"]
 
+# Без постоянных подключений: runserver заводит поток на запрос, и подключения потоков
+# копятся до предела PostgreSQL («too many clients») при частых обращениях.
+DATABASES["default"]["CONN_MAX_AGE"] = 0  # noqa: F405
+
 # --- Инструменты разработчика ------------------------------------------------------------
 INSTALLED_APPS = [*INSTALLED_APPS, "django_extensions"]
 

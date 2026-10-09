@@ -151,6 +151,8 @@ LAYOUT_SCRIPT = r"""([maxLineChars, minEmptyHeight]) => {
     const empty = [];
     main.querySelectorAll('div, section, aside, article, figure').forEach((el) => {
         if (!visible(el) || el.getBoundingClientRect().height <= minEmptyHeight) return;
+        // Обёртка всей страницы — не заглушка: у короткого сообщения она просто невысока.
+        if (el.parentElement === main) return;
         if (el.closest('.empty-state')) return;
         if (el.querySelector(media) || el.querySelectorAll(interactive).length >= 3) return;
         const shown = el.innerText.trim();
@@ -206,6 +208,10 @@ LAYOUT_SCRIPT = r"""([maxLineChars, minEmptyHeight]) => {
             nodes: document.getElementsByTagName('*').length,
             scripts,
             css_kb: Math.round(cssChars / 1024),
+            // Документ, как он пришёл по сети: сжатый GZipMiddleware.
+            html_kb: Math.round(
+                (performance.getEntriesByType('navigation')[0]?.encodedBodySize || 0) / 1024,
+            ),
         },
     };
 }"""
