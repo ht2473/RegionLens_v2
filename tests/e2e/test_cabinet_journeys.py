@@ -45,10 +45,10 @@ class TestSignIn:
     """Вход и первая страница кабинета."""
 
     def test_login_opens_overview(self, page: Page, site: Any, registered_user: Any) -> None:
-        """После входа — обзор кабинета с шестью разделами."""
+        """После входа — обзор кабинета с четырьмя вкладками."""
         sign_in(page, site, registered_user.email)
         assert page.url.endswith("/ru/cabinet/")
-        expect(page.locator(".cabinet-tabs__tab")).to_have_count(6)
+        expect(page.locator(".cabinet-tabs__tab")).to_have_count(4)
         expect(page.locator(".cabinet-tabs__tab[aria-current='page']")).to_have_text(
             re.compile("Обзор")
         )
@@ -111,6 +111,7 @@ class TestLinksFromMail:
         """Новый адрес — после кнопки на странице из письма; прежний получает уведомление."""
         sign_in(page, site, registered_user.email)
         page.goto(f"{site.url}/ru/cabinet/security/")
+        page.locator("summary", has_text="Сменить адрес").click()
         page.fill("input[name='new_email']", "renamed@example.com")
         page.locator("form[action$='/security/email/'] input[name='password']").fill(PASSWORD)
         page.get_by_role("button", name="Отправить ссылку на новый адрес").click()
@@ -139,7 +140,7 @@ class TestMyRegion:
         expect(page.locator(".my-region-form button")).to_have_attribute("aria-pressed", "true")
 
         page.goto(f"{site.url}/ru/")
-        expect(page.locator(".home-region__title")).to_have_text(territory.name)
+        expect(page.locator(".region-band__title")).to_have_text(territory.name)
         expect(page.locator(".app-header__region")).to_be_visible()
 
 
@@ -147,7 +148,7 @@ class TestCabinetSections:
     """Пометки, обращения, удаление."""
 
     def test_note_on_saved_region(self, page: Page, site: Any, registered_user: Any) -> None:
-        """Пометка к отметке правится во всплывающей панели и видна в перечне."""
+        """Пометка к отметке правится на месте и остаётся после обновления страницы."""
         from apps.catalog.models import Territory
         from apps.workspace.models import Favorite
 
@@ -156,11 +157,32 @@ class TestCabinetSections:
         )
         sign_in(page, site, registered_user.email)
         page.goto(f"{site.url}/ru/cabinet/saved/")
-        page.locator(".saved-mark button[popovertarget^='mark-note-']").click()
-        page.locator(".save-query__form input[name='note']").fill("сравнить с соседями")
-        page.locator(".save-query__form button[type='submit']").click()
+        page.locator(".tile__note").click()
+        field = page.locator(".tile input.inplace__field")
+        field.fill("сравнить с соседями")
+        field.press("Enter")
+        expect(page.locator(".tile__note")).to_have_text("сравнить с соседями")
         page.wait_for_load_state("networkidle")
-        expect(page.locator(".saved-mark__note")).to_have_text("сравнить с соседями")
+        page.reload()
+        expect(page.locator(".tile__note")).to_have_text("сравнить с соседями")
+
+    def test_view_saved_from_menu_and_undone(
+        self, page: Page, site: Any, registered_user: Any, warehouse_committed: Any
+    ) -> None:
+        """«В Сохранённое» в меню — одним нажатием; в «Сохранённом» вид убирается и возвращается."""
+        sign_in(page, site, registered_user.email)
+        page.goto(f"{site.url}/ru/rankings/")
+        page.wait_for_load_state("networkidle")
+        page.locator("button[popovertarget=save-menu]").click()
+        page.locator("#save-menu button", has_text="В Сохранённое").click()
+        expect(page.locator("button[popovertarget=save-menu]")).to_contain_text("Сохранено")
+
+        page.goto(f"{site.url}/ru/cabinet/saved/")
+        expect(page.locator(".tile")).to_have_count(1)
+        page.locator(".tile__remove").click()
+        expect(page.locator(".tile")).to_have_count(0)
+        page.locator(".saved-undo button").click()
+        expect(page.locator(".tile")).to_have_count(1)
 
     def test_ticket_appears_in_cabinet(self, page: Page, site: Any, registered_user: Any) -> None:
         """Обращение из учётной записи видно в кабинете."""
@@ -182,9 +204,10 @@ class TestCabinetSections:
         """Удаление учётной записи паролем: выход, письмо, вход больше не работает."""
         sign_in(page, site, registered_user.email)
         page.goto(f"{site.url}/ru/cabinet/data/")
-        page.fill("input[name='password']", PASSWORD)
+        page.locator("summary", has_text="Удалить учётную запись").click()
+        page.locator("form[action$='/cabinet/data/'] input[name='password']").fill(PASSWORD)
         page.check("input[name='confirm']")
-        page.get_by_role("button", name="Удалить учётную запись").click()
+        page.get_by_role("button", name="Удалить", exact=True).click()
         page.wait_for_load_state("networkidle")
         expect(page.locator(".app-header__login")).to_be_visible()
         assert mailoutbox[-1].to == [registered_user.email]

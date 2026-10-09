@@ -129,38 +129,6 @@
   color: var(--negative);
 }
 
-/* --- Правка на месте: кнопка выглядит текстом, поле занимает её место ----------------- */
-
-.inplace {
-  max-width: 100%;
-  padding: 0;
-  background: none;
-  border: 0;
-  border-radius: var(--radius-sm);
-  color: inherit;
-  font: inherit;
-  letter-spacing: inherit;
-  text-align: left;
-  cursor: text;
-}
-
-.inplace:hover {
-  text-decoration: underline dotted var(--text-muted);
-  text-underline-offset: 0.2em;
-}
-
-.inplace--text {
-  display: block;
-  width: 100%;
-  white-space: normal;
-}
-
-.inplace__field {
-  width: 100%;
-  font: inherit;
-  letter-spacing: inherit;
-}
-
 /* --- «Вернуть» после удаления ---------------------------------------------------------- */
 
 .study-toast:empty {

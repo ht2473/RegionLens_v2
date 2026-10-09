@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any
+from functools import partial
+from typing import TYPE_CHECKING, Any
 
 from django.contrib import messages
-from django.db.models import QuerySet
+from django.db.models import F, QuerySet
 from django.forms import ModelForm
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
@@ -20,54 +22,62 @@ from ..models import User
 from ..region import my_region, region_choices, write_cookie
 from .settings import SettingsContextMixin
 
+if TYPE_CHECKING:  # pragma: no cover - только для проверки типов
+    from apps.workspace.tiles import Tile
+
 # Граница «нового по сохранённому» на время сеанса: обновление страницы её не сдвигает.
 UPDATES_SINCE_SESSION_KEY = "cabinet:updates-since"
-# Сколько последних открытых видов показывает обзор.
-RECENT_VIEWS = 4
+# Сколько плиток в «Продолжить»: последние виды, исследования и свои таблицы вместе.
+CONTINUE_TILES = 6
 
 
 class CabinetOverviewView(CabinetViewMixin, TemplateView):
-    """Первая страница кабинета: мой регион, новое по сохранённому, последние виды."""
+    """Обзор кабинета — «мой стол»: мой регион, продолжить начатое, новое по сохранённому."""
 
     template_name = "accounts/overview.html"
     section_code = "overview"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Собрать блоки обзора."""
-        from apps.catalog.brief import region_brief
-        from apps.feedback.models import Ticket
+        from apps.catalog.brief import BAND_NOW, region_brief
         from apps.workspace.selectors import favorites, saved_queries
-        from apps.workspace.updates import saved_updates
+        from apps.workspace.tiles import dataset_tile, query_tile, study_tile
+        from apps.workspace.updates import news_rows, saved_updates
 
         context = super().get_context_data(**kwargs)
         user = self.current_user
         region = my_region(self.request)
-        context["region"] = region_brief(region) if region is not None else None
+        context["region"] = (
+            region_brief(region, metrics=0, now=BAND_NOW) if region is not None else None
+        )
         if region is None:
             context["region_choices"] = region_choices()
 
         since = self._updates_since(user)
-        context["updates"] = saved_updates(user, since)
+        context["news"] = news_rows(saved_updates(user, since))
+        context["has_marks"] = favorites(user).exists()
         context["updates_since"] = since
 
-        views = saved_queries(user)
-        opened = list(
-            views.filter(last_opened_at__isnull=False).order_by("-last_opened_at")[:RECENT_VIEWS]
+        # Последние виды, исследования и таблицы — по времени последнего обращения.
+        views = list(
+            saved_queries(user).order_by(F("last_opened_at").desc(nulls_last=True), "-updated_at")[
+                :CONTINUE_TILES
+            ]
         )
-        context["recent_views"] = opened or list(views[:RECENT_VIEWS])
-        context["recent_opened"] = bool(opened)
-        context["counts"] = {
-            "views": views.count(),
-            "marks": favorites(user).count(),
-            "tickets_open": Ticket.objects.filter(author=user).open().count(),
-            "tickets_answered": Ticket.objects.filter(author=user).answered().count(),
-        }
-        context["own_tables"] = list(
-            user.datasets.select_related("current_version").order_by("-updated_at")[:RECENT_VIEWS]
+        tables = list(
+            user.datasets.select_related("current_version").order_by("-updated_at")[:CONTINUE_TILES]
         )
-        context["own_tables_count"] = user.datasets.count()
-        context["own_tables_bytes"] = sum(item.size_bytes for item in user.datasets.all())
-        context["own_studies"] = list(user.studies.order_by("-updated_at")[:RECENT_VIEWS])
+        studies = list(user.studies.order_by("-updated_at")[:CONTINUE_TILES])
+        candidates: list[tuple[datetime, Callable[[], Tile]]] = [
+            *(
+                (query.last_opened_at or query.updated_at, partial(query_tile, query))
+                for query in views
+            ),
+            *((study.updated_at, partial(study_tile, study)) for study in studies),
+            *((table.updated_at, partial(dataset_tile, table)) for table in tables),
+        ]
+        candidates.sort(key=lambda item: item[0], reverse=True)
+        context["continue_tiles"] = [build() for _moment, build in candidates[:CONTINUE_TILES]]
         context["panel_needs_code"] = user.has_panel_access and not user.two_factor_enabled
         return context
 

@@ -1,13 +1,7 @@
 {% extends "cabinet_base.html" %}
-{% load i18n formatting %}
+{% load i18n %}
 
-{# Обзор кабинета: мой регион, новое по сохранённому, последние открытые виды. #}
-
-{% block cabinet_lead %}
-  <p class="cabinet__lead">
-    {% translate "Мой регион, новые данные по сохранённому и виды экрана, которые вы открывали последними." %}
-  </p>
-{% endblock %}
+{# Обзор кабинета — «мой стол»: мой регион, продолжить начатое, новое по сохранённому. #}
 
 {% block cabinet_content %}
 
@@ -24,172 +18,78 @@
     </div>
   {% endif %}
 
-  <ul class="cabinet-counts" aria-label="{% translate 'Коротко' %}">
-    <li>
-      <a href="{% url 'workspace:saved' %}">
-        <span class="cabinet-counts__label">{% translate "Регионы и показатели" %}</span>
-        <span class="cabinet-counts__value numeric">{{ counts.marks }}</span>
-      </a>
-    </li>
-    <li>
-      <a href="{% url 'workspace:saved' %}#saved-views-title">
-        <span class="cabinet-counts__label">{% translate "Виды экрана" %}</span>
-        <span class="cabinet-counts__value numeric">{{ counts.views }}</span>
-      </a>
-    </li>
-    <li>
-      <a href="{% url 'feedback:mine' %}">
-        <span class="cabinet-counts__label">{% translate "Обращения ждут ответа" %}</span>
-        <span class="cabinet-counts__value numeric">{{ counts.tickets_open }}</span>
-      </a>
-    </li>
-    <li>
-      <a href="{% url 'feedback:mine' %}">
-        <span class="cabinet-counts__label">{% translate "Обращения с ответом" %}</span>
-        <span class="cabinet-counts__value numeric">{{ counts.tickets_answered }}</span>
-      </a>
-    </li>
-  </ul>
+  {# --- Мой регион: та же полоса, что на главной -------------------------------------------- #}
+  {% if region %}
+    {% url 'accounts:settings' as settings_url %}
+    {% include "catalog/partials/_region_band.html" with brief=region change_url=settings_url|add:"#settings-profile" %}
+  {% else %}
+    <section class="page-section overview-region" aria-labelledby="overview-region">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="overview-region">{% translate "Мой регион" %}</h2>
+      </div>
+      <form class="region-pick" method="post" action="{% url 'accounts:my-region' %}">
+        {% csrf_token %}
+        <input type="hidden" name="back" value="{% url 'accounts:dashboard' %}">
+        <label class="visually-hidden" for="overview-region-select">{% translate "Регион" %}</label>
+        <select class="select" id="overview-region-select" name="region" required>
+          <option value="">{% translate "Выберите регион" %}</option>
+          {% for territory in region_choices %}
+            <option value="{{ territory.code }}">{{ territory.name }}</option>
+          {% endfor %}
+        </select>
+        <button class="button button--primary" type="submit">{% translate "Это мой регион" %}</button>
+      </form>
+    </section>
+  {% endif %}
 
-  {# --- Мой регион ------------------------------------------------------------------------ #}
-  <section class="page-section" aria-labelledby="overview-region">
+  {# --- Продолжить: последние виды, исследования и свои таблицы ----------------------------- #}
+  <section class="page-section" aria-labelledby="overview-continue">
     <div class="page-section__head">
-      <h2 class="page-section__title" id="overview-region">{% translate "Мой регион" %}</h2>
-      {% if region %}<a href="{% url 'accounts:profile' %}">{% translate "Выбрать другой" %}</a>{% endif %}
+      <h2 class="page-section__title" id="overview-continue">{% translate "Продолжить" %}</h2>
+      <a href="{% url 'workspace:saved' %}">{% translate "Всё сохранённое" %}</a>
     </div>
-
-    {% if region %}
-      <div class="my-region">
-        <header class="my-region__head">
-          <div>
-            {% if region.territory.parent %}<p class="kicker my-region__kicker">{{ region.territory.parent.name }}</p>{% endif %}
-            <h3 class="my-region__title"><a href="{{ region.href }}">{{ region.territory.name }}</a></h3>
-          </div>
-          <a class="button button--secondary button--sm" href="{{ region.href }}">
-            {% translate "Паспорт региона" %}
-            <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
-          </a>
-        </header>
-
-        {% if region.summary %}
-          <ul class="my-region__summary" aria-label="{% translate 'Главное' %}">
-            {% for line in region.summary %}<li>{{ line }}</li>{% endfor %}
-          </ul>
-        {% endif %}
-
-        {% if region.now %}
-          <h3 class="my-region__subtitle">{% translate "Что сейчас" %}</h3>
-          {% include "catalog/partials/_now_grid.html" with rows=region.now %}
-        {% endif %}
-
-        {% if region.metrics %}
-          <h3 class="my-region__subtitle">{% translate "Главные показатели" %}</h3>
-          <ul class="stat-grid">
-            {% for metric in region.metrics %}
-              {% with position=metric.position %}
-                <li class="stat-tile">
-                  <a class="stat-tile__title"
-                     href="{% url 'rankings:index' %}?series={{ metric.series.key }}&amp;territory={{ region.territory.code }}">{{ metric.series.short_title }}</a>
-                  <p class="stat-tile__value">
-                    <span class="numeric">{{ metric.current.value|ru_number:metric.series.precision }}</span>
-                    <span class="stat-tile__unit">{{ metric.series.unit_label }}, {{ metric.current.year|year }}</span>
-                  </p>
-                  {% if position %}
-                    <p class="stat-tile__facts">
-                      <span class="verdict verdict--{{ position.tone }}">{{ position.standing|capfirst }}</span>
-                      <span>{{ position.place_text }}</span>
-                    </p>
-                  {% endif %}
-                  {% if metric.spark %}
-                    <div class="stat-tile__foot">
-                      <svg class="sparkline" viewBox="0 0 {{ metric.spark.width }} {{ metric.spark.height }}"
-                           preserveAspectRatio="none" aria-hidden="true">
-                        <path class="sparkline__line" d="{{ metric.spark.path }}"></path>
-                        <path class="sparkline__end" d="M{{ metric.spark.end_x }} {{ metric.spark.end_y }}h0"></path>
-                      </svg>
-                    </div>
-                  {% endif %}
-                </li>
-              {% endwith %}
-            {% endfor %}
-          </ul>
-        {% endif %}
-
-        {% if not region.ready %}
-          <p class="cabinet-block__footnote">{% translate "Сведения о регионе пока недоступны." %}</p>
-        {% endif %}
-      </div>
+    {% if continue_tiles %}
+      <ul class="tiles">
+        {% for tile in continue_tiles %}{% include "workspace/partials/_tile.html" %}{% endfor %}
+      </ul>
     {% else %}
-      <div class="cabinet-empty">
-        <p class="cabinet-empty__text">
-          {% blocktranslate trimmed %}
-            Выберите свой регион: кабинет и главная страница будут начинаться с него —
-            главное из паспорта, последние месячные данные и место среди регионов.
-          {% endblocktranslate %}
-        </p>
-        <form class="region-pick" method="post" action="{% url 'accounts:my-region' %}">
-          {% csrf_token %}
-          <input type="hidden" name="back" value="{% url 'accounts:dashboard' %}">
-          <label class="visually-hidden" for="overview-region-select">{% translate "Регион" %}</label>
-          <select class="select" id="overview-region-select" name="region" required>
-            <option value="">{% translate "Выберите регион" %}</option>
-            {% for territory in region_choices %}
-              <option value="{{ territory.code }}">{{ territory.name }}</option>
-            {% endfor %}
-          </select>
-          <button class="button button--primary" type="submit">{% translate "Это мой регион" %}</button>
-        </form>
-      </div>
+      <p class="cabinet-empty__text">
+        {% blocktranslate trimmed %}
+          Кнопка «Сохранить» есть на карте, в рейтинге, динамике и инструментах анализа:
+          сохраняются настройки, а расчёт при открытии выполняется на текущих данных.
+        {% endblocktranslate %}
+        <a href="{% url 'userdata:upload' %}">{% translate "Загрузить таблицу" %}</a>
+      </p>
     {% endif %}
   </section>
 
-  {# --- Новое по сохранённому ----------------------------------------------------------- #}
+  {# --- Новое по сохранённому: строка на регион или показатель и источник ------------------- #}
   <section class="page-section" aria-labelledby="overview-news">
     <div class="page-section__head">
-      <h2 class="page-section__title" id="overview-news">{% translate "Новое по сохранённому" %}</h2>
-      <p class="page-section__note">
-        {% blocktranslate trimmed with date=updates_since|date:"d.m.Y" %}
+      <h2 class="page-section__title" id="overview-news">
+        {% translate "Новое по сохранённому" %}
+        {% blocktranslate trimmed asvar news_hint with date=updates_since|date:"d.m.Y" %}
           Новое — полученное после прошлого визита ({{ date }}); ниже — выпуски за 90 дней
         {% endblocktranslate %}
-      </p>
+        {% include "partials/_hint.html" with hint_id="hint-overview-news" hint_text=news_hint hint_label=_("Что считается новым") %}
+      </h2>
     </div>
 
-    {% if updates %}
-      <ul class="news-list">
-        {% for item in updates %}
-          <li class="news-item{% if item.is_new %} is-new{% endif %}">
-            <p class="news-item__head">
-              {% if item.is_new %}<span class="badge badge--accent">{% translate "новое" %}</span>{% endif %}
-              <span class="news-item__source" title="{{ item.source_title }}">{{ item.source }}</span>
-              <span class="news-item__release">
-                {{ item.release }}{% if item.releases > 1 %} · {% blocktranslate trimmed with count=item.releases %}выпусков: {{ count }}{% endblocktranslate %}{% endif %}
-              </span>
-              <span class="news-item__date">
-                {% blocktranslate trimmed with date=item.received|date:"d.m.Y" %}получен {{ date }}{% endblocktranslate %}
-              </span>
-            </p>
-            {% if item.series %}
-              <ul class="news-item__series">
-                {% for entry in item.series %}
-                  <li><a href="{{ entry.href }}">{{ entry.title }}</a> — {{ entry.period }}</li>
-                {% endfor %}
-                {% if item.more %}
-                  <li class="news-item__more">{% blocktranslate trimmed with count=item.more %}и ещё показателей: {{ count }}{% endblocktranslate %}</li>
-                {% endif %}
-              </ul>
-            {% endif %}
-            {% if item.regions %}
-              <p class="news-item__regions">
-                {% if item.regions_label %}{{ item.regions_label }}{% else %}{% translate "Показателей основного набора с новыми значениями:" %}{% endif %}
-                {% for entry in item.regions %}
-                  <a href="{{ entry.href }}">{{ entry.name }}</a> — {{ entry.count }}{% if not forloop.last %};{% endif %}
-                {% endfor %}
-              </p>
-            {% endif %}
+    {% if news %}
+      <ul class="news-rows">
+        {% for row in news %}
+          <li class="news-row{% if row.is_new %} is-new{% endif %}">
+            <a class="news-row__subject" href="{{ row.href }}">{{ row.subject }}</a>
+            <span class="news-row__what">{{ row.what }}</span>
+            <span class="news-row__source" title="{{ row.source_title }}">{{ row.source }} · {{ row.release }}</span>
+            <span class="news-row__date">
+              {% if row.is_new %}<span class="badge badge--accent">{% translate "новое" %}</span>{% endif %}
+              <span class="numeric">{{ row.received|date:"d.m.Y" }}</span>
+            </span>
           </li>
         {% endfor %}
       </ul>
-    {% elif counts.marks or region %}
+    {% elif region or has_marks %}
       <p class="cabinet-empty__text">
         {% translate "За последние 90 дней выпусков с новыми значениями по сохранённому не было." %}
       </p>
@@ -198,88 +98,6 @@
         {% blocktranslate trimmed %}
           Отметьте регионы и показатели кнопкой «Сохранить» — здесь появятся новые значения
           по ним из новых версий набора данных и выпусков Росстата, Банка России и ФНС.
-        {% endblocktranslate %}
-      </p>
-    {% endif %}
-  </section>
-
-  {# --- Свои данные: таблицы, занятое место и исследования --------------------------------------- #}
-  <section class="page-section" aria-labelledby="overview-own-data">
-    <div class="page-section__head">
-      <h2 class="page-section__title" id="overview-own-data">{% translate "Свои данные" %}</h2>
-      <a href="{% url 'userdata:index' %}">{% translate "Все мои таблицы" %}</a>
-    </div>
-    {% if own_tables %}
-      <ul class="own-overview">
-        {% for item in own_tables %}
-          <li><a href="{% url 'userdata:dataset' item.public_id %}">{{ item.title }}</a>
-            <span class="own-overview__meta">{% if item.current_version.state == "built" %}{% blocktranslate trimmed with count=item.current_version.series_count %}рядов: {{ count }}{% endblocktranslate %}{% else %}{% translate "не собрана" %}{% endif %} · {{ item.size_bytes|filesizeformat }}</span>
-          </li>
-        {% endfor %}
-      </ul>
-      <p class="cabinet-block__footnote">
-        {% blocktranslate trimmed with count=own_tables_count used=own_tables_bytes|filesizeformat %}
-          Таблиц: {{ count }}, занято {{ used }}.
-        {% endblocktranslate %}
-      </p>
-    {% else %}
-      <p class="cabinet-empty__text">
-        {% translate "Своя таблица по регионам открывается на той же карте и в тех же видах, что и данные сайта." %}
-        <a href="{% url 'userdata:upload' %}">{% translate "Загрузить таблицу" %}</a>
-      </p>
-    {% endif %}
-    {% if own_studies %}
-      <h3 class="own-overview__title">{% translate "Исследования" %}</h3>
-      <ul class="own-overview">
-        {% for study in own_studies %}
-          <li><a href="{% url 'userdata:study' study.public_id %}">{{ study.title }}</a>
-            <span class="own-overview__meta">{% blocktranslate trimmed with count=study.blocks|length %}карточек и заметок: {{ count }}{% endblocktranslate %}</span>
-          </li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-  </section>
-
-  {# --- Последние открытые виды --------------------------------------------------------- #}
-  <section class="page-section" aria-labelledby="overview-views">
-    <div class="page-section__head">
-      <h2 class="page-section__title" id="overview-views">
-        {% if recent_opened %}{% translate "Последние открытые виды" %}{% else %}{% translate "Сохранённые виды" %}{% endif %}
-      </h2>
-      <a href="{% url 'workspace:saved' %}">{% translate "Всё сохранённое" %}</a>
-    </div>
-
-    {% if recent_views %}
-      <ul class="saved-grid">
-        {% for query in recent_views %}
-          <li class="saved-view">
-            <p class="saved-view__kind">
-              {% if query.target_info %}<svg aria-hidden="true"><use href="#icon-{{ query.target_info.icon }}"></use></svg>{% endif %}
-              {{ query.get_target_display }}
-            </p>
-            <h3 class="saved-view__title">
-              <a href="{% url 'workspace:query-open' public_id=query.public_id %}">{{ query.title }}</a>
-            </h3>
-            <ul class="saved-view__params" aria-label="{% translate 'Параметры' %}">
-              {% for phrase in query.phrases|slice:":4" %}<li>{{ phrase }}</li>{% empty %}<li>{% translate "параметры по умолчанию" %}</li>{% endfor %}
-            </ul>
-            <div class="saved-view__foot">
-              <p class="saved-view__meta">
-                {% if query.last_opened_at %}
-                  {% blocktranslate trimmed with date=query.last_opened_at|date:"d.m.Y" %}открыт {{ date }}{% endblocktranslate %}
-                {% else %}
-                  {% blocktranslate trimmed with date=query.updated_at|date:"d.m.Y" %}сохранён {{ date }}{% endblocktranslate %}
-                {% endif %}
-              </p>
-            </div>
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="cabinet-empty__text">
-        {% blocktranslate trimmed %}
-          Кнопка «Сохранить вид» есть на карте, в рейтинге, динамике и инструментах анализа:
-          сохраняются настройки, а расчёт при открытии выполняется на текущих данных.
         {% endblocktranslate %}
       </p>
     {% endif %}

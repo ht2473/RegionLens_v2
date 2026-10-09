@@ -1,0 +1,7 @@
+{# Миниатюра плитки (apps/workspace/thumbs.py): чертёж из путей или значок вида. #}
+{% if thumb.kind == "icon" %}
+  <span class="thumb thumb--icon" aria-hidden="true"><svg><use href="#icon-{{ thumb.icon }}"></use></svg></span>
+{% else %}
+  <svg class="thumb thumb--{{ thumb.kind }}" viewBox="0 0 {{ thumb.width }} {{ thumb.height }}"
+       preserveAspectRatio="xMidYMid meet" aria-hidden="true">{% for name, d in thumb.paths %}<path class="thumb__{{ name }}" d="{{ d }}"></path>{% endfor %}</svg>
+{% endif %}

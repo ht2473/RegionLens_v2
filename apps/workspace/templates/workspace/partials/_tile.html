@@ -1,0 +1,58 @@
+{% load i18n %}
+{% comment %}
+  Плитка сохранённого (apps/workspace/tiles.py): миниатюра, вид, название, показатель,
+  параметры словами. editable — правка на месте (название и пометка) и «Убрать»;
+  kind — открытый отбор «Сохранённого», чтобы вернуться к нему.
+{% endcomment %}
+<li class="tile" id="{{ tile.dom_id }}">
+  <a class="tile__thumb" href="{{ tile.url }}" tabindex="-1" aria-hidden="true">{% include "workspace/partials/_thumb.html" with thumb=tile.thumb %}</a>
+  <p class="tile__kind">
+    <svg aria-hidden="true"><use href="#icon-{{ tile.icon }}"></use></svg>
+    {{ tile.kind_label }}
+  </p>
+  <h3 class="tile__title">
+    <a href="{{ tile.url }}" id="{{ tile.dom_id }}-title"
+       {% if editable and tile.rename_url %}data-inplace-url="{{ tile.rename_url }}" data-inplace-name="title" data-inplace-max="160"
+       data-inplace-label="{% translate 'Название' %}" data-inplace-failed="{% translate 'Не сохранено' %}"{% endif %}>{{ tile.title }}</a>
+  </h3>
+  {% if tile.subtitle %}<p class="tile__subtitle">{{ tile.subtitle }}</p>{% endif %}
+  {% if tile.vanished %}
+    <p class="tile__vanished">
+      <svg aria-hidden="true"><use href="#icon-alert"></use></svg>
+      {% blocktranslate trimmed with names=tile.vanished|join:"; " %}
+        Нет в данных: {{ names }}. Вид откроется без них.
+      {% endblocktranslate %}
+    </p>
+  {% endif %}
+  {% if tile.chips %}
+    <ul class="tile__params" aria-label="{% translate 'Параметры' %}">
+      {% for phrase in tile.chips %}<li>{{ phrase }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+  {% if editable %}
+    {# Пометка — правка на месте; пустая показывает приглашение. #}
+    <button type="button" class="inplace tile__note{% if not tile.note %} is-empty{% endif %}"
+            data-inplace-url="{{ tile.note_url }}" data-inplace-name="{{ tile.note_name }}"
+            data-inplace-value="{{ tile.note }}" data-inplace-max="{% if tile.note_name == 'note' %}200{% else %}500{% endif %}"
+            data-inplace-placeholder="{% translate 'Добавить пометку' %}"
+            data-inplace-label="{% translate 'Пометка' %}" data-inplace-failed="{% translate 'Не сохранено' %}"
+            aria-label="{% translate 'Пометка' %}" hidden>{% if tile.note %}{{ tile.note }}{% else %}{% translate "Добавить пометку" %}{% endif %}</button>
+    {% if tile.note %}<p class="tile__note-text" data-inplace-static>{{ tile.note }}</p>{% endif %}
+  {% endif %}
+  <div class="tile__foot">
+    <p class="tile__meta">{{ tile.meta }}</p>
+    {% if editable %}
+      <div class="tile__actions">
+        {% if tile.edit_url %}
+          <a href="{{ tile.edit_url }}" data-inplace-edit="{{ tile.dom_id }}-title">{% translate "Переименовать" %}</a>
+        {% endif %}
+        <form method="post" action="{{ tile.delete_url }}">
+          {% csrf_token %}
+          <input type="hidden" name="kind" value="{{ kind }}">
+          <button type="submit" class="tile__remove"
+                  aria-label="{% blocktranslate trimmed with title=tile.title %}Убрать «{{ title }}» из сохранённого{% endblocktranslate %}">{% translate "Убрать" %}</button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+</li>

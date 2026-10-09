@@ -1,67 +1,81 @@
 """
-Страницы личного кабинета: сохранённые выборки и избранное.
+Страницы личного кабинета: «Сохранённое» плитками, меню «Сохранить» и правка на месте.
 
 Чужой идентификатор даёт «не найдено», а не отказ: иначе чужие записи узнавались бы перебором.
 """
 
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any
 from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.views import redirect_to_login as django_redirect_to_login
 from django.db.models import QuerySet
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import DeleteView, TemplateView, UpdateView, View
+from django.views.generic import TemplateView, UpdateView, View
 
 from apps.accounts.cabinet import CabinetViewMixin
 from apps.accounts.permissions import QuotaExceededError
 from apps.catalog.selectors import MAX_COMPARE
+from apps.core.throttle import allow_key
 from apps.core.utils.redirects import safe_back
 
 from . import services
+from .constants import SAVED_EDITS, SAVED_EDITS_WINDOW
 from .forms import FavoriteForm, FavoriteNoteForm, SavedQueryForm, SaveViewForm
 from .menu import save_menu_context
 from .models import SavedQuery
 from .selectors import favorites, saved_queries, vanished_series
+from .tiles import KIND_LABELS, KIND_TERRITORY, favorite_tile, query_tile
+
+# Параметр отбора «Сохранённого» по виду и отметка «только что убрано».
+KIND_PARAM = "kind"
+REMOVED_PARAM = "removed"
 
 
 class SavedView(CabinetViewMixin, TemplateView):
-    """Всё сохранённое без разбиения на страницы: регионы, показатели и виды экрана."""
+    """Всё сохранённое плитками без разбиения на страницы; отбор по виду."""
 
     template_name = "workspace/saved.html"
     section_code = "saved"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Разложить отметки по видам объектов и добавить выборки."""
+        """Плитки отметок и видов, отбор по виду и «Вернуть» после удаления."""
         context = super().get_context_data(**kwargs)
-        marked = list(favorites(self.current_user))
-        territories = [item for item in marked if item.kind == "territory"]
-        # Показатель и ряд показателя открывают одну страницу.
-        indicators = [item for item in marked if item.kind != "territory"]
-        context["territories"] = territories
-        context["indicators"] = indicators
-        # Третье — подсказка для пустой группы, четвёртое — переходы со всей группой.
-        context["favorite_groups"] = [
-            (
-                _("Регионы"),
-                territories,
-                _("Кнопка «Сохранить» — в паспорте региона."),
-                territory_actions(territories),
-            ),
-            (_("Показатели"), indicators, _("Кнопка «Сохранить» — на странице показателя."), []),
-        ]
-        context["compare_limit"] = MAX_COMPARE
-        context["over_limit"] = len(territories) > MAX_COMPARE
-        queries = list(saved_queries(self.current_user))
+        user = self.current_user
+        marked = list(favorites(user))
+        queries = list(saved_queries(user))
         vanished = vanished_series(queries)
         for query in queries:
             query.vanished = tuple(vanished.get(query.pk, ()))
-        context["queries"] = queries
+
+        tiles = [favorite_tile(item) for item in marked] + [query_tile(item) for item in queries]
+        tiles.sort(key=lambda tile: tile.moment, reverse=True)
+        counts = Counter(tile.kind for tile in tiles)
+        chosen = self.request.GET.get(KIND_PARAM, "")
+        if chosen not in counts:
+            chosen = ""
+        context["tiles"] = [tile for tile in tiles if not chosen or tile.kind == chosen]
+        context["total"] = len(tiles)
+        context["kind"] = chosen
+        context["filters"] = [
+            {"code": code, "title": title, "count": counts[code], "active": code == chosen}
+            for code, title in KIND_LABELS.items()
+            if counts[code]
+        ]
+        territories = [item for item in marked if item.territory_id]
+        if chosen in ("", KIND_TERRITORY):
+            context["territory_actions"] = territory_actions(territories)
+            context["over_limit"] = len(territories) > MAX_COMPARE
+        context["compare_limit"] = MAX_COMPARE
+        removed = self.request.session.get(services.REMOVED_SESSION_KEY)
+        if self.request.GET.get(REMOVED_PARAM) and removed:
+            context["removed"] = removed.get("title", "")
         return context
 
 
@@ -80,8 +94,40 @@ def territory_actions(territories: list[Any]) -> list[tuple[Any, str, str]]:
     return actions
 
 
+def saved_url(kind: str = "", *, removed: bool = False) -> str:
+    """Адрес «Сохранённого» с отбором по виду и отметкой «только что убрано»."""
+    params = {
+        KIND_PARAM: kind if kind in KIND_LABELS else "",
+        REMOVED_PARAM: "1" if removed else "",
+    }
+    query = urlencode({name: value for name, value in params.items() if value})
+    base = reverse("workspace:saved")
+    return f"{base}?{query}" if query else base
+
+
+def _edits_allowed(request: HttpRequest) -> bool:
+    """Правка «Сохранённого» в пределах частоты учётной записи."""
+    return allow_key(
+        "saved-edit", str(request.user.pk), limit=SAVED_EDITS, window=SAVED_EDITS_WINDOW
+    )
+
+
+def _too_often(request: HttpRequest, *, json: bool = False) -> HttpResponse:
+    """Ответ на правку сверх предела частоты."""
+    text = _("Слишком много изменений подряд. Повторите позже.")
+    if json:
+        return JsonResponse({"error": str(text)}, status=429)
+    messages.error(request, text)
+    return redirect(saved_url(request.POST.get(KIND_PARAM, "")))
+
+
+def _wants_json(request: HttpRequest) -> bool:
+    """Запрос правки на месте (сценарий ждёт JSON), а не отправка формы."""
+    return "application/json" in request.headers.get("Accept", "")
+
+
 # ---------------------------------------------------------------------------------------
-# Сохранённые выборки
+# Сохранённые виды
 # ---------------------------------------------------------------------------------------
 
 
@@ -120,7 +166,7 @@ class SavedQueryCreateView(View):
 
 
 class SavedQueryUpdateView(CabinetViewMixin, UpdateView):
-    """Правка названия и пояснения сохранённой выборки."""
+    """Правка названия и пометки вида на отдельной странице — без сценариев."""
 
     template_name = "workspace/query_form.html"
     form_class = SavedQueryForm
@@ -145,24 +191,47 @@ class SavedQueryUpdateView(CabinetViewMixin, UpdateView):
         return reverse("workspace:saved")
 
 
-class SavedQueryDeleteView(CabinetViewMixin, DeleteView):
-    """Удаление сохранённой выборки."""
+class SavedQueryChangeView(CabinetViewMixin, View):
+    """Правка на месте: название или пометка вида; ответ — JSON с новым значением."""
 
-    template_name = "workspace/query_confirm_delete.html"
     section_code = "saved"
-    context_object_name = "query"
-    slug_field = "public_id"
-    slug_url_kwarg = "public_id"
-    success_url = reverse_lazy("workspace:saved")
 
-    def get_queryset(self) -> QuerySet[SavedQuery]:
-        """Только выборки текущего пользователя."""
-        return saved_queries(self.current_user)
+    def post(self, request: HttpRequest, public_id: str) -> HttpResponse:
+        """Сохранить название (``title``) или пометку (``description``)."""
+        query = get_object_or_404(saved_queries(self.current_user), public_id=public_id)
+        if not _edits_allowed(request):
+            return _too_often(request, json=True)
+        if "title" in request.POST:
+            title = request.POST["title"].strip()[: services.TITLE_LENGTH]
+            if not title:
+                return JsonResponse({"error": str(_("Название не может быть пустым"))}, status=400)
+            taken = saved_queries(self.current_user).filter(title=title).exclude(pk=query.pk)
+            if taken.exists():
+                return JsonResponse(
+                    {"error": str(_("Вид с таким названием уже сохранён"))}, status=400
+                )
+            query.title = title
+            query.save(update_fields=["title", "updated_at"])
+            return JsonResponse({"value": query.title})
+        if "description" in request.POST:
+            query.description = request.POST["description"].strip()[: services.DESCRIPTION_LENGTH]
+            query.save(update_fields=["description", "updated_at"])
+            return JsonResponse({"value": query.description})
+        return JsonResponse({"error": str(_("Нечего менять"))}, status=400)
 
-    def form_valid(self, form: Any) -> HttpResponse:
-        """Сообщить об удалении."""
-        messages.success(self.request, _("Вид удалён"))
-        return super().form_valid(form)
+
+class SavedQueryDeleteView(CabinetViewMixin, View):
+    """Убрать вид из «Сохранённого»; вернуть — кнопкой «Вернуть» на той же странице."""
+
+    section_code = "saved"
+
+    def post(self, request: HttpRequest, public_id: str) -> HttpResponse:
+        """Удалить вид и запомнить его в сеансе."""
+        query = get_object_or_404(saved_queries(self.current_user), public_id=public_id)
+        if not _edits_allowed(request):
+            return _too_often(request)
+        request.session[services.REMOVED_SESSION_KEY] = services.forget_query(query)
+        return redirect(saved_url(request.POST.get(KIND_PARAM, ""), removed=True))
 
 
 class SavedQueryOpenView(CabinetViewMixin, View):
@@ -189,13 +258,37 @@ class SavedQueryOpenView(CabinetViewMixin, View):
         return HttpResponseRedirect(url)
 
 
+class RestoreView(CabinetViewMixin, View):
+    """«Вернуть» последнее убранное из «Сохранённого»."""
+
+    section_code = "saved"
+
+    def post(self, request: HttpRequest) -> HttpResponse:
+        """Вернуть вид или отметку из сеанса."""
+        kind = request.POST.get(KIND_PARAM, "")
+        if not _edits_allowed(request):
+            return _too_often(request)
+        payload = request.session.pop(services.REMOVED_SESSION_KEY, None)
+        if not payload:
+            messages.info(request, _("Возвращать нечего"))
+            return redirect(saved_url(kind))
+        try:
+            title = services.restore(self.current_user, payload)
+        except QuotaExceededError as error:
+            messages.error(request, str(error))
+            return redirect(saved_url(kind))
+        if title:
+            messages.success(request, _("«%s» снова в «Сохранённом»") % title)
+        return redirect(saved_url(kind))
+
+
 # ---------------------------------------------------------------------------------------
 # Избранное
 # ---------------------------------------------------------------------------------------
 
 
 class FavoriteToggleView(View):
-    """Постановка и снятие отметки избранного: форме — переход назад, HTMX — новая кнопка."""
+    """Постановка и снятие отметки из меню «Сохранить»: HTMX — меню заново, форме — назад."""
 
     def post(self, request: HttpRequest) -> HttpResponse:
         """Переключить отметку избранного."""
@@ -242,31 +335,38 @@ class FavoriteNoteView(CabinetViewMixin, View):
     section_code = "saved"
 
     def post(self, request: HttpRequest, pk: int) -> HttpResponse:
-        """Сохранить пометку; пустая — убрать."""
+        """Сохранить пометку; пустая — убрать. Правка на месте получает JSON."""
         favorite = get_object_or_404(favorites(self.current_user), pk=pk)
+        json = _wants_json(request)
+        if not _edits_allowed(request):
+            return _too_often(request, json=json)
         form = FavoriteNoteForm(request.POST)
-        if form.is_valid():
-            favorite.note = form.cleaned_data["note"].strip()
-            favorite.save(update_fields=["note", "updated_at"])
-            messages.success(
-                request, _("Пометка сохранена") if favorite.note else _("Пометка убрана")
-            )
-        else:
-            messages.error(request, _("Пометка не длиннее 200 знаков"))
+        if not form.is_valid():
+            text = _("Пометка не длиннее 200 знаков")
+            if json:
+                return JsonResponse({"error": str(text)}, status=400)
+            messages.error(request, text)
+            return redirect("workspace:saved")
+        favorite.note = form.cleaned_data["note"].strip()
+        favorite.save(update_fields=["note", "updated_at"])
+        if json:
+            return JsonResponse({"value": favorite.note})
+        messages.success(request, _("Пометка сохранена") if favorite.note else _("Пометка убрана"))
         return redirect("workspace:saved")
 
 
 class FavoriteDeleteView(CabinetViewMixin, View):
-    """Удаление отметки из перечня избранного."""
+    """Убрать отметку из «Сохранённого»; вернуть — кнопкой «Вернуть»."""
 
     section_code = "saved"
 
     def post(self, request: HttpRequest, pk: int) -> HttpResponse:
-        """Удалить отметку."""
+        """Снять отметку и запомнить её в сеансе."""
         favorite = get_object_or_404(favorites(self.current_user), pk=pk)
-        favorite.delete()
-        messages.success(request, _("Убрано из сохранённого"))
-        return redirect("workspace:saved")
+        if not _edits_allowed(request):
+            return _too_often(request)
+        request.session[services.REMOVED_SESSION_KEY] = services.forget_favorite(favorite)
+        return redirect(saved_url(request.POST.get(KIND_PARAM, ""), removed=True))
 
 
 def redirect_to_login(request: HttpRequest) -> HttpResponse:

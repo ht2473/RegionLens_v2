@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from typing import Any
 from urllib.parse import urlencode
 
 from django.conf import settings
@@ -74,6 +75,48 @@ class SourceNews:
     regions: list[RegionNews] = field(default_factory=list)
     # Подпись к перечню регионов; пустая — «с новыми значениями».
     regions_label: str = ""
+
+
+@dataclass(slots=True)
+class NewsRow:
+    """Строка «Нового»: регион или показатель, что пришло, источник и когда."""
+
+    subject: str
+    href: str
+    what: str
+    source: str
+    source_title: str
+    release: str
+    received: datetime
+    is_new: bool
+
+
+def news_rows(items: list[SourceNews]) -> list[NewsRow]:
+    """«Новое» по строке на регион и источник и на показатель и источник; новое — первым."""
+    rows: list[NewsRow] = []
+    for item in items:
+        common: dict[str, Any] = {
+            "source": item.source,
+            "source_title": item.source_title,
+            "release": item.release,
+            "received": item.received,
+            "is_new": item.is_new,
+        }
+        rows.extend(
+            NewsRow(
+                subject=region.name,
+                href=region.href,
+                what=gettext("показателей: %(count)s") % {"count": region.count},
+                **common,
+            )
+            for region in item.regions
+        )
+        rows.extend(
+            NewsRow(subject=entry.title, href=entry.href, what=entry.period, **common)
+            for entry in item.series
+        )
+    rows.sort(key=lambda row: (not row.is_new, -row.received.timestamp()))
+    return rows
 
 
 def edition_code(release: Release) -> str:

@@ -151,6 +151,165 @@ class TestSavedQueries:
         assert SavedQuery.objects.filter(user=member).count() == 1
 
 
+class TestSaveMenu:
+    """Меню «Сохранить»: вид — одним нажатием, без повторов; ответ HTMX — меню целиком."""
+
+    def test_view_gets_a_title_by_itself(self, member_client: Client, member: User) -> None:
+        """Название вида — страница и параметры словами; повтор того же вида не сохраняется."""
+        payload = {"target": "map", "query_string": "year=2023", "back": "/ru/map/?year=2023"}
+        member_client.post(reverse("workspace:query-save"), payload)
+        member_client.post(reverse("workspace:query-save"), payload)
+        titles = list(SavedQuery.objects.filter(user=member).values_list("title", flat=True))
+        assert titles == ["Карта · 2023 год"]
+
+    def test_same_title_gets_a_number(self, member_client: Client, member: User) -> None:
+        """Другой вид с тем же названием, данным само, получает номер."""
+        SavedQuery.objects.create(user=member, title="Карта · 2023 год", target="map")
+        member_client.post(
+            reverse("workspace:query-save"), {"target": "map", "query_string": "year=2023"}
+        )
+        titles = set(SavedQuery.objects.filter(user=member).values_list("title", flat=True))
+        assert titles == {"Карта · 2023 год", "Карта · 2023 год (2)"}
+
+    def test_htmx_answer_is_the_menu(self, member_client: Client, member: User) -> None:
+        """С HTMX ответ — меню в состоянии «Сохранено» со ссылкой в «Сохранённое»."""
+        response = member_client.post(
+            reverse("workspace:query-save"),
+            {"target": "rankings", "query_string": "year=2023", "back": "/ru/rankings/"},
+            headers={"HX-Request": "true"},
+        )
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert 'id="save-menu-root"' in content
+        assert "Сохранено" in content
+        assert reverse("workspace:saved") in content
+
+    def test_region_menu_offers_studies(
+        self, member_client: Client, member: User, reference_seed: None
+    ) -> None:
+        """Регион — в «Сохранённое» и к регионам исследования; исследование называется в меню."""
+        from apps.userdata.models import Study
+
+        Study.objects.create(owner=member, title="К курсовой")
+        territory = Territory.objects.get(code="RU-TA")
+        content = member_client.get(
+            reverse("catalog:territory-detail", kwargs={"slug": territory.slug})
+        ).content.decode()
+        assert 'name="territory" value="RU-TA"' in content
+        assert "К курсовой" in content
+
+    def test_region_goes_to_study_regions(
+        self, member_client: Client, member: User, reference_seed: None
+    ) -> None:
+        """«В исследование» у региона добавляет его к общим регионам исследования."""
+        from apps.userdata.models import Study
+
+        study = Study.objects.create(owner=member, title="К курсовой")
+        member_client.post(
+            reverse("userdata:study-add"),
+            {"territory": "RU-TA", "study": str(study.public_id), "back": "/ru/"},
+        )
+        study.refresh_from_db()
+        assert study.territories == ["RU-TA"]
+
+    def test_guest_is_sent_to_login(self, client: Client) -> None:
+        """Гостю «В Сохранённое» — после входа."""
+        response = client.post(
+            reverse("workspace:query-save"), {"target": "map", "query_string": ""}
+        )
+        assert response.status_code == 302
+        assert reverse("accounts:login") in response.url
+
+
+class TestSavedEditing:
+    """Правка на месте и «Убрать» с «Вернуть»."""
+
+    def test_rename_in_place(self, member_client: Client, member: User) -> None:
+        """Название меняется запросом правки на месте; занятое — отказ с причиной."""
+        query = SavedQuery.objects.create(user=member, title="Первая", target="map")
+        SavedQuery.objects.create(user=member, title="Занято", target="map")
+        url = reverse("workspace:query-change", kwargs={"public_id": query.public_id})
+
+        response = member_client.post(
+            url, {"title": "Новое имя"}, headers={"Accept": "application/json"}
+        )
+        assert response.json() == {"value": "Новое имя"}
+
+        response = member_client.post(
+            url, {"title": "Занято"}, headers={"Accept": "application/json"}
+        )
+        assert response.status_code == 400
+        assert "уже сохранён" in response.json()["error"]
+        query.refresh_from_db()
+        assert query.title == "Новое имя"
+
+    def test_note_in_place(self, member_client: Client, member: User, catalogued: Series) -> None:
+        """Пометка вида и отметки — тем же способом; ответ — новое значение."""
+        query = SavedQuery.objects.create(user=member, title="Вид", target="map")
+        favorite = Favorite.objects.create(user=member, series=catalogued)
+        answer = member_client.post(
+            reverse("workspace:query-change", kwargs={"public_id": query.public_id}),
+            {"description": "к главе 2"},
+            headers={"Accept": "application/json"},
+        )
+        assert answer.json() == {"value": "к главе 2"}
+        answer = member_client.post(
+            reverse("workspace:favorite-note", kwargs={"pk": favorite.pk}),
+            {"note": "сравнить с соседями"},
+            headers={"Accept": "application/json"},
+        )
+        assert answer.json() == {"value": "сравнить с соседями"}
+
+    def test_removed_view_comes_back_the_same(self, member_client: Client, member: User) -> None:
+        """Убранный вид возвращается с тем же адресом, параметрами и счётчиком открытий."""
+        query = SavedQuery.objects.create(
+            user=member, title="Вид", target="map", parameters={"year": "2023"}, opened_count=4
+        )
+        public_id = query.public_id
+        response = member_client.post(
+            reverse("workspace:query-delete", kwargs={"public_id": public_id})
+        )
+        assert not SavedQuery.objects.filter(user=member).exists()
+        page = member_client.get(response.url)
+        assert "убран из Сохранённого" in page.content.decode()
+
+        member_client.post(reverse("workspace:restore"))
+        restored = SavedQuery.objects.get(user=member)
+        assert restored.public_id == public_id
+        assert restored.parameters == {"year": "2023"}
+        assert restored.opened_count == 4
+
+    def test_removed_mark_comes_back(
+        self, member_client: Client, member: User, catalogued: Series
+    ) -> None:
+        """Снятая отметка возвращается с пометкой."""
+        favorite = Favorite.objects.create(user=member, series=catalogued, note="зачем")
+        member_client.post(reverse("workspace:favorite-delete", kwargs={"pk": favorite.pk}))
+        assert not Favorite.objects.filter(user=member).exists()
+        member_client.post(reverse("workspace:restore"))
+        assert Favorite.objects.get(user=member).note == "зачем"
+
+    def test_restore_is_one_time(self, member_client: Client, member: User) -> None:
+        """«Вернуть» срабатывает один раз: второй раз возвращать нечего."""
+        query = SavedQuery.objects.create(user=member, title="Вид", target="map")
+        member_client.post(reverse("workspace:query-delete", kwargs={"public_id": query.public_id}))
+        member_client.post(reverse("workspace:restore"))
+        member_client.post(reverse("workspace:restore"))
+        assert SavedQuery.objects.filter(user=member).count() == 1
+
+    def test_foreign_view_is_not_changed(
+        self, member_client: Client, make_user: Callable[..., Any]
+    ) -> None:
+        """Чужой вид не переименовать и не убрать."""
+        stranger = make_user(email="stranger@example.com")
+        query = SavedQuery.objects.create(user=stranger, title="Чужая", target="map")
+        change = reverse("workspace:query-change", kwargs={"public_id": query.public_id})
+        delete = reverse("workspace:query-delete", kwargs={"public_id": query.public_id})
+        assert member_client.post(change, {"title": "Моя"}).status_code == 404
+        assert member_client.post(delete).status_code == 404
+        assert SavedQuery.objects.get(pk=query.pk).title == "Чужая"
+
+
 class TestFavorites:
     """Отметки избранного."""
 
@@ -213,12 +372,15 @@ class TestFavorites:
 
         response = member_client.get(reverse("workspace:saved"))
 
-        assert [item.kind for item in response.context["territories"]] == ["territory"]
-        assert sorted(item.kind for item in response.context["indicators"]) == [
-            "indicator",
-            "series",
-        ]
-        assert [query.title for query in response.context["queries"]] == ["Выборка"]
+        kinds = sorted(tile.kind for tile in response.context["tiles"])
+        assert kinds == ["indicator", "indicator", "map", "territory"]
+        assert {item["code"]: item["count"] for item in response.context["filters"]} == {
+            "territory": 1,
+            "indicator": 2,
+            "map": 1,
+        }
+        chosen = member_client.get(reverse("workspace:saved"), {"kind": "territory"})
+        assert [tile.title for tile in chosen.context["tiles"]] == ["Тестовая"]
 
 
 class TestSavedInWords:

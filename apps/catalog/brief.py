@@ -13,6 +13,9 @@ from apps.core.charts import sparkline_path
 from apps.warehouse.duckdb_client import WarehouseNotBuiltError
 from apps.warehouse.queries import featured_snapshot
 
+# Сколько чисел «Что сейчас» в полосе «Мой регион» (главная и обзор кабинета).
+BAND_NOW = 4
+
 
 def region_brief(
     territory: Territory, *, metrics: int = 6, now: int | None = None

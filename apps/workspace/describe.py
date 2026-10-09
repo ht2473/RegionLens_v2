@@ -23,15 +23,19 @@ LISTED = 3
 
 def describe_parameters(target: str, parameters: dict[str, Any] | None) -> list[str]:
     """Параметры вида по порядку чтения: что, когда, где, как построено."""
-    values = parameters or {}
-    phrases: list[str] = []
+    what, rest = parameter_parts(target, parameters)
+    return [*what, *rest]
 
-    phrases.extend(_series_phrases(values))
-    phrases.extend(_time_phrases(values))
+
+def parameter_parts(target: str, parameters: dict[str, Any] | None) -> tuple[list[str], list[str]]:
+    """Что смотрим (показатели) и остальное (когда, где, как построено) — порознь."""
+    values = parameters or {}
+    rest: list[str] = []
+    rest.extend(_time_phrases(values))
     if territories := _territory_names(_as_list(values.get("territory"))):
-        phrases.append(_listed(territories))
-    phrases.extend(_build_phrases(target, values))
-    return phrases
+        rest.append(_listed(territories))
+    rest.extend(_build_phrases(target, values))
+    return _series_phrases(values), rest
 
 
 # ---------------------------------------------------------------------------------------

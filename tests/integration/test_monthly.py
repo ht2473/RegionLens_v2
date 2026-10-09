@@ -674,5 +674,5 @@ class TestSavedUpdates:
         user.save(update_fields=["updates_seen_at"])
 
         page = client.get(reverse("accounts:dashboard")).content.decode()
-        assert 'class="news-item is-new"' in page
+        assert 'class="news-row is-new"' in page
         assert "июль 2026" in page

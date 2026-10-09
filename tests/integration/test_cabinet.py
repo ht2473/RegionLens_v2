@@ -17,6 +17,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts import totp
+from apps.accounts.cabinet import settings_url
 from apps.accounts.constants import (
     CODE_ATTEMPTS_PER_LOGIN,
     PASSWORD_CHECK_PER_USER,
@@ -234,8 +235,8 @@ class TestSessions:
 
         here.post(reverse("accounts:sign-out-others"))
 
-        assert here.get(reverse("accounts:security")).status_code == 200
-        assert there.get(reverse("accounts:security")).status_code == 302
+        assert here.get(reverse("accounts:settings")).status_code == 200
+        assert there.get(reverse("accounts:settings")).status_code == 302
 
     def test_password_change_ends_other_sessions(self, member: User) -> None:
         """Смена пароля завершает сеансы на других устройствах."""
@@ -250,8 +251,8 @@ class TestSessions:
                 "new_password2": "другой-пароль-98765",
             },
         )
-        assert here.get(reverse("accounts:security")).status_code == 200
-        assert there.get(reverse("accounts:security")).status_code == 302
+        assert here.get(reverse("accounts:settings")).status_code == 200
+        assert there.get(reverse("accounts:settings")).status_code == 302
 
 
 # ---------------------------------------------------------------------------------------
@@ -323,8 +324,8 @@ class TestEmailChange:
         assert member.email == "new@example.com"
         assert member.pending_email == ""
         assert mailoutbox[-1].to == ["member@example.com"]
-        assert member_client.get(reverse("accounts:security")).status_code == 200
-        assert other.get(reverse("accounts:security")).status_code == 302
+        assert member_client.get(reverse("accounts:settings")).status_code == 200
+        assert other.get(reverse("accounts:settings")).status_code == 302
 
         # Ссылка одноразовая.
         page = Client().post(link).content.decode()
@@ -397,7 +398,7 @@ class TestPanelPermissions:
         user = make_user(email="fresh-admin@example.com", roles=(ROLE_ADMIN,))
         client.force_login(user)
         response = client.get(reverse("dashboard:index"))
-        assert response.url == reverse("accounts:security")
+        assert response.url == settings_url("security")
 
     def test_session_without_code_is_asked_for_it(
         self, client: Client, administrator: User
@@ -696,7 +697,7 @@ class TestMyRegion:
         territory = Territory.objects.comparable().first()
         client.cookies[REGION_COOKIE] = territory.code
         home = client.get(reverse("core:home")).content.decode()
-        assert 'class="home-region"' in home
+        assert 'class="region-band"' in home
         assert territory.name in home
 
         passport = client.get(
@@ -743,7 +744,7 @@ class TestOverviewAndSaved:
     def test_overview_shows_region_and_recent_views(
         self, member_client: Client, member: User, warehouse: Any
     ) -> None:
-        """Обзор: мой регион с «Главным» и последние открытые виды."""
+        """Обзор: мой регион полосой и последние открытые виды плитками в «Продолжить»."""
         from apps.catalog.models import Territory
 
         member.region = Territory.objects.comparable().first()
@@ -757,7 +758,8 @@ class TestOverviewAndSaved:
         )
         response = member_client.get(reverse("accounts:dashboard"))
         assert response.context["region"]["ready"] is True
-        assert response.context["recent_views"] == [opened]
+        assert [tile.title for tile in response.context["continue_tiles"]] == [opened.title]
+        assert 'class="region-band"' in response.content.decode()
         assert member.region.name in response.content.decode()
 
     def test_updates_border_holds_for_the_session(
@@ -852,13 +854,33 @@ def test_cabinet_pages_open(member_client: Client, reference_seed: None) -> None
         "accounts:dashboard",
         "workspace:saved",
         "feedback:mine",
-        "accounts:profile",
-        "accounts:security",
+        "accounts:settings",
         "accounts:two-factor",
-        "accounts:data",
         "accounts:password-change",
     ):
         assert member_client.get(reverse(name)).status_code == 200, name
+
+
+def test_former_sections_lead_to_settings(member_client: Client) -> None:
+    """Прежние адреса профиля, безопасности и персональных данных ведут к разделам «Настроек»."""
+    for name, part in (
+        ("accounts:profile", "profile"),
+        ("accounts:security", "security"),
+        ("accounts:data", "data"),
+    ):
+        response = member_client.get(reverse(name))
+        assert response.status_code == 302, name
+        assert response.url == settings_url(part)
+
+
+def test_settings_show_form_errors_in_place(member_client: Client) -> None:
+    """Действие с ошибкой возвращает «Настройки» с раскрытой формой, а не другую страницу."""
+    response = member_client.post(reverse("accounts:data"), {"password": "не тот", "confirm": "on"})
+    assert response.status_code == 200
+    assert response.context["delete_form"].errors
+    content = response.content.decode()
+    assert 'id="settings-data"' in content
+    assert '<details class="settings-action" open>' in content
 
 
 def test_menu_offers_panel_only_with_rights(
@@ -866,10 +888,10 @@ def test_menu_offers_panel_only_with_rights(
 ) -> None:
     """Пункт «Панель управления» — только при праве панели."""
     assert (
-        "Панель управления" not in member_client.get(reverse("accounts:profile")).content.decode()
+        "Панель управления" not in member_client.get(reverse("accounts:settings")).content.decode()
     )
     login_with_code(client, editor)
-    assert "Панель управления" in client.get(reverse("accounts:profile")).content.decode()
+    assert "Панель управления" in client.get(reverse("accounts:settings")).content.decode()
 
 
 def test_session_hash_depends_on_version(member: User) -> None:

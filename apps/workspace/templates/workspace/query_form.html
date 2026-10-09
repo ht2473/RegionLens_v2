@@ -23,8 +23,8 @@
 
     <section class="cabinet-block" aria-labelledby="query-params-title">
       <h2 class="cabinet-block__title" id="query-params-title">{% translate "Что сохранено" %}</h2>
-      <p class="saved-view__kind">{{ query.get_target_display }}</p>
-      <ul class="saved-view__params">
+      <p class="tile__kind">{{ query.get_target_display }}</p>
+      <ul class="tile__params">
         {% for phrase in query.phrases %}
           <li>{{ phrase }}</li>
         {% empty %}

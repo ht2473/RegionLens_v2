@@ -26,9 +26,6 @@ from apps.warehouse.queries import warehouse_summary
 
 logger = logging.getLogger(__name__)
 
-# Сколько строк «Что сейчас» показывает полоса «Мой регион» на главной.
-HOME_REGION_NOW = 4
-
 
 class BreadcrumbMixin:
     """Добавляет в контекст путь к странице из ``crumbs`` или ``get_crumbs()``."""
@@ -104,12 +101,12 @@ class HomeView(TemplateView):
 def _my_region_brief(request: HttpRequest) -> dict[str, Any] | None:
     """Полоса «Мой регион» над живой картой: главное словами и последние месяцы."""
     from apps.accounts.region import my_region
-    from apps.catalog.brief import region_brief
+    from apps.catalog.brief import BAND_NOW, region_brief
 
     region = my_region(request)
     if region is None:
         return None
-    return region_brief(region, metrics=0, now=HOME_REGION_NOW)
+    return region_brief(region, metrics=0, now=BAND_NOW)
 
 
 @require_GET

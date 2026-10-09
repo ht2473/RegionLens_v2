@@ -167,7 +167,7 @@
    3 : 1 (WCAG 1.4.1). */
 .cabinet-block__lead a,
 .cabinet-block__footnote a,
-.news-item__regions a {
+.cabinet-empty__text a {
   text-decoration: underline;
 }
 
@@ -232,213 +232,308 @@
   color: var(--text-secondary);
 }
 
-.saved-columns {
+/* Плитка сохранённого: миниатюра, вид, название, показатель, параметры (workspace/_tile). */
+.tiles {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-8) var(--space-12);
-  margin-bottom: var(--space-12);
-}
-
-.saved-group__title {
-  margin: 0 0 var(--space-4);
-  font-size: var(--text-lg);
-  font-weight: var(--weight-bold);
-}
-
-.saved-group__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin: var(--space-4) 0 0;
-}
-
-.saved-group__count {
-  margin-left: var(--space-1);
-  font-size: var(--text-base);
-  font-weight: var(--weight-medium);
-  color: var(--text-muted);
-}
-
-.saved-group__empty {
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--text-muted);
-}
-
-/* Регион или показатель — пилюля со ссылкой и крестиком «убрать». */
-.saved-marks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.saved-mark {
-  display: inline-flex;
-  align-items: center;
-  max-width: 100%;
-  background-color: var(--surface-raised);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-}
-
-.saved-mark form {
-  display: flex;
-  flex: none;
-  margin: 0;
-}
-
-.saved-mark__link {
-  min-width: 0;
-  padding: var(--space-2) var(--space-1) var(--space-2) var(--space-4);
-  font-weight: var(--weight-semibold);
-  line-height: var(--leading-snug);
-  color: var(--text-primary);
-}
-
-.saved-mark__link:hover {
-  color: var(--text-accent);
-  text-decoration: none;
-}
-
-/* Не сжимается рядом с длинным названием: цель нажатия не меньше 24 × 24 (WCAG 2.5.8). */
-.saved-mark__remove {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  margin-right: var(--space-1);
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: none;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.saved-mark__remove:hover,
-.saved-mark__remove:focus-visible {
-  background-color: var(--surface-sunken);
-  color: var(--text-primary);
-}
-
-.saved-mark__remove svg {
-  width: 14px;
-  height: 14px;
-}
-
-.saved-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
   gap: var(--space-4);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-/* Сохранённый вид — объект, у него рамка. */
-.saved-view {
+.tile {
   display: flex;
   flex-direction: column;
-  padding: var(--space-4) var(--space-5);
+  min-width: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
   background-color: var(--surface-raised);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
 }
 
-.saved-view__kind {
+.tile__thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 6.5rem;
+  margin-bottom: var(--space-3);
+  padding: var(--space-2);
+  background-color: var(--surface-sunken);
+  border-radius: var(--radius-md);
+}
+
+.tile__kind {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin: 0 0 var(--space-2);
-  font-size: var(--text-sm);
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   color: var(--text-muted);
 }
 
-.saved-view__kind svg {
-  width: 15px;
-  height: 15px;
+.tile__kind svg {
+  width: 14px;
+  height: 14px;
   color: var(--text-accent);
 }
 
-.saved-view__title {
+.tile__title {
   margin: 0;
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   font-weight: var(--weight-bold);
   line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
 }
 
-.saved-view__title a {
+.tile__title a {
   color: var(--text-primary);
 }
 
-.saved-view__title a:hover {
+.tile__title a:hover {
   color: var(--text-accent);
   text-decoration: none;
 }
 
-.saved-view__note {
+/* Показатель — не длиннее двух строк: полное имя — на его странице. */
+.tile__subtitle {
+  display: -webkit-box;
+  margin: var(--space-1) 0 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+/* Параметры словами: «2024 год», регионы, «шкала — квантили, классов: 5». */
+.tile__params {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tile__params li {
+  padding: 1px var(--space-2);
+  background-color: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.tile__note,
+.tile__note-text {
   margin: var(--space-2) 0 0;
   font-size: var(--text-sm);
   line-height: var(--leading-snug);
   color: var(--text-secondary);
 }
 
-/* Параметры словами: «Уровень бедности», «2024 год», «шкала — квантили, классов: 5». */
-.saved-view__params {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-2);
-  margin: var(--space-3) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.saved-view__params li {
-  padding: 2px var(--space-2);
-  background-color: var(--surface-sunken);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  line-height: var(--leading-snug);
-  color: var(--text-secondary);
-}
-
-.saved-view__foot {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
-  margin-top: auto;
-  padding-top: var(--space-4);
-}
-
-.saved-view__meta,
-.saved-view__actions {
-  margin: 0;
-  font-size: var(--text-sm);
-}
-
-.saved-view__meta {
+.tile__note.is-empty {
   color: var(--text-muted);
 }
 
-.saved-view__actions {
+.tile__vanished {
   display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--attention);
+}
+
+.tile__vanished svg {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  margin-top: 2px;
+}
+
+.tile__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  margin-top: auto;
+  padding-top: var(--space-3);
+}
+
+.tile__meta {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.tile__actions {
+  display: flex;
+  align-items: baseline;
   gap: var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.tile__actions form {
+  margin: 0;
+}
+
+.tile__remove {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--text-accent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tile__remove:hover {
+  color: var(--negative);
+  text-decoration: underline;
+}
+
+/* Миниатюра: путь на класс; цвета — шкала карты и линии графиков. */
+.thumb {
+  width: 100%;
+  height: 100%;
+}
+
+.thumb--icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.thumb--icon svg {
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--text-muted);
+}
+
+.thumb__step-1 { fill: var(--scale-seq-1); }
+.thumb__step-2 { fill: var(--scale-seq-3); }
+.thumb__step-3 { fill: var(--scale-seq-4); }
+.thumb__step-4 { fill: var(--scale-seq-5); }
+.thumb__step-5 { fill: var(--scale-seq-7); }
+
+.thumb__none {
+  fill: var(--no-data-fill);
+}
+
+.thumb__land {
+  fill: var(--map-land);
+}
+
+.thumb__region {
+  fill: var(--accent);
+}
+
+.thumb--map .thumb__chosen {
+  fill: none;
+  stroke: var(--text-primary);
+  stroke-width: 1.4;
+}
+
+.thumb__country,
+.thumb__line-1,
+.thumb__line-2,
+.thumb__line-3 {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.thumb__country {
+  stroke: var(--text-muted);
+  stroke-dasharray: 3 3;
+}
+
+.thumb__line-1 { stroke: var(--series-1); }
+.thumb__line-2 { stroke: var(--series-2); }
+.thumb__line-3 { stroke: var(--series-3); }
+
+.thumb__bar,
+.thumb--bars .thumb__chosen {
+  stroke-width: 1.3;
+}
+
+.thumb__bar {
+  stroke: var(--scale-seq-3);
+}
+
+.thumb--bars .thumb__chosen {
+  stroke: var(--accent);
+}
+
+.thumb__dot {
+  fill: var(--scale-seq-4);
+}
+
+.thumb--dots .thumb__chosen {
+  fill: var(--accent);
+}
+
+/* Отбор по виду и действия с отмеченными регионами — над плитками. */
+.saved-filter {
+  margin-bottom: var(--space-5);
+}
+
+.saved-filter .choice-chip {
+  min-height: 2rem;
+  padding-inline: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+/* На узком экране фишки — одной строкой с прокруткой вбок. */
+@media (max-width: 720px) {
+  .saved-filter .choice-list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: var(--space-1);
+    scrollbar-width: thin;
+  }
+
+  .saved-filter .choice-chip {
+    white-space: nowrap;
+  }
+}
+
+.saved-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: 0 0 var(--space-5);
+}
+
+.saved-actions__note {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* «Убрано. Вернуть» — строкой над перечнем. */
+.saved-undo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
 }
 
 @media (max-width: 900px) {
-  .cabinet-columns,
-  .saved-columns {
+  .cabinet-columns {
     grid-template-columns: minmax(0, 1fr);
   }
-
 }
 
 @media (max-width: 560px) {
@@ -448,115 +543,10 @@
   }
 }
 
-/* Пометка к отметке — после названия, мельче; длинная обрезается многоточием. */
-.saved-mark__note {
-  display: inline-block;
-  max-width: 16rem;
-  margin-left: var(--space-2);
-  overflow: hidden;
-  vertical-align: bottom;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-regular);
-  color: var(--text-muted);
-}
-
-.saved-view__vanished {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  margin: var(--space-3) 0 0;
-  font-size: var(--text-sm);
-  line-height: var(--leading-snug);
-  color: var(--attention);
-}
-
-.saved-view__vanished svg {
-  flex-shrink: 0;
-  width: 15px;
-  height: 15px;
-  margin-top: 2px;
-}
-
 /* --- Обзор кабинета ---------------------------------------------------------------------- */
 
 .cabinet-notice {
   margin-bottom: var(--space-6);
-}
-
-.cabinet-counts {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-4);
-  margin: 0 0 var(--space-10);
-  padding: 0;
-  list-style: none;
-}
-
-.cabinet-counts a {
-  display: flex;
-  flex-direction: column-reverse;
-  gap: var(--space-1);
-  padding-top: var(--space-3);
-  border-top: 2px solid var(--border-strong);
-  color: var(--text-primary);
-}
-
-.cabinet-counts a:hover {
-  border-top-color: var(--accent);
-  text-decoration: none;
-}
-
-.cabinet-counts__value {
-  font-size: var(--text-2xl);
-  font-weight: var(--weight-bold);
-  line-height: 1.1;
-}
-
-.cabinet-counts__label {
-  font-size: var(--text-sm);
-  color: var(--text-muted);
-}
-
-.my-region__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-3) var(--space-6);
-}
-
-.my-region__kicker {
-  margin-bottom: var(--space-1);
-}
-
-.my-region__title {
-  margin: 0;
-  font-size: var(--text-2xl);
-  font-weight: var(--weight-bold);
-  letter-spacing: var(--tracking-tight);
-}
-
-.my-region__title a {
-  color: var(--text-primary);
-}
-
-.my-region__summary {
-  display: grid;
-  gap: var(--space-1);
-  max-width: var(--measure);
-  margin: var(--space-3) 0 0;
-  padding: 0;
-  list-style: none;
-  line-height: var(--leading-snug);
-  color: var(--text-secondary);
-}
-
-.my-region__subtitle {
-  margin: var(--space-8) 0 var(--space-4);
-  font-size: var(--text-base);
-  font-weight: var(--weight-bold);
 }
 
 .region-pick {
@@ -571,62 +561,48 @@
   width: auto;
 }
 
-/* Новое по сохранённому: выпуск источника строкой, показатели и регионы под ней. */
-.news-list {
-  display: grid;
-  gap: var(--space-4);
+/* «Новое»: строка — регион или показатель, что пришло, источник, когда. */
+.news-rows {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.news-item {
-  padding: var(--space-4) var(--space-5);
-  background-color: var(--surface-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-}
-
-.news-item.is-new {
-  border-color: var(--border-accent);
-}
-
-.news-item__head {
-  display: flex;
-  flex-wrap: wrap;
+.news-row {
+  display: grid;
+  grid-template-columns: minmax(0, 16rem) minmax(0, 9rem) minmax(0, 1fr) auto;
   align-items: baseline;
-  gap: var(--space-1) var(--space-3);
-  margin: 0;
-}
-
-.news-item__source {
-  font-weight: var(--weight-bold);
-}
-
-.news-item__release,
-.news-item__date {
+  gap: var(--space-1) var(--space-4);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border-subtle);
   font-size: var(--text-sm);
+}
+
+.news-row__subject {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+
+.news-row__what {
+  color: var(--text-primary);
+}
+
+.news-row__source,
+.news-row__date {
   color: var(--text-muted);
 }
 
-.news-item__series {
-  display: grid;
-  gap: var(--space-1);
-  margin: var(--space-3) 0 0;
-  padding: 0;
-  list-style: none;
-  line-height: var(--leading-snug);
+.news-row__date {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: var(--space-2);
 }
 
-.news-item__more,
-.news-item__regions {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-}
-
-.news-item__regions {
-  margin: var(--space-3) 0 0;
-  line-height: var(--leading-snug);
+@media (max-width: 720px) {
+  .news-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
 }
 
 /* --- Обращения ---------------------------------------------------------------------------- */
@@ -875,10 +851,6 @@
 }
 
 @media (max-width: 900px) {
-  .cabinet-counts {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .two-factor-setup__steps {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -931,32 +903,6 @@
 .favorite-form {
   display: inline-flex;
   margin: 0;
-}
-
-/* Свои данные в «Обзоре»: таблицы строкой со сводкой. */
-.own-overview {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.own-overview li {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-3);
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--border-subtle);
-  overflow-wrap: anywhere;
-}
-
-.own-overview__meta {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-}
-
-.own-overview__title {
-  margin: var(--space-5) 0 var(--space-2);
-  font-size: var(--text-base);
 }
 
 }

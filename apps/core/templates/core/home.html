@@ -27,43 +27,7 @@
   {% endif %}
 
   {% if my_region_brief %}
-    {% with brief=my_region_brief %}
-      <section class="home-region" aria-labelledby="home-region-title">
-        <div class="home-region__text">
-          <p class="kicker home-region__kicker">
-            {% translate "Мой регион" %}{% if brief.territory.parent %} · {{ brief.territory.parent.name }}{% endif %}
-          </p>
-          <h2 class="home-region__title" id="home-region-title">
-            <a href="{{ brief.href }}">{{ brief.territory.name }}</a>
-          </h2>
-          {% if brief.summary %}
-            <ul class="home-region__summary">
-              {% for line in brief.summary|slice:":2" %}<li>{{ line }}</li>{% endfor %}
-            </ul>
-          {% endif %}
-          <a class="button button--secondary button--sm" href="{{ brief.href }}">
-            {% translate "Паспорт региона" %}
-            <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
-          </a>
-        </div>
-        {% if brief.now %}
-          <dl class="home-region__now" aria-label="{% translate 'Что сейчас' %}">
-            {% for row in brief.now %}
-              <div class="home-region__figure">
-                <dt>{{ row.title }}</dt>
-                <dd class="home-region__value">
-                  <span class="numeric">{{ row.value }}</span>
-                  <span class="home-region__unit">{{ row.unit }}</span>
-                </dd>
-                <dd class="home-region__period">
-                  {{ row.period|capfirst }}{% if row.change %} · <span class="verdict verdict--{{ row.tone }}">{{ row.change }}</span>{% endif %}
-                </dd>
-              </div>
-            {% endfor %}
-          </dl>
-        {% endif %}
-      </section>
-    {% endwith %}
+    {% include "catalog/partials/_region_band.html" with brief=my_region_brief %}
   {% endif %}
 
   {% if live %}

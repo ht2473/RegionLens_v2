@@ -1,0 +1,43 @@
+{% load i18n %}
+{% comment %}
+  «Мой регион» полосой — на главной и в обзоре кабинета: главное строками, четыре числа
+  «Что сейчас» и паспорт. brief — apps/catalog/brief.py; change_url — «Выбрать другой».
+{% endcomment %}
+<section class="region-band" aria-labelledby="region-band-title">
+  <div class="region-band__text">
+    <p class="kicker region-band__kicker">
+      {% translate "Мой регион" %}{% if brief.territory.parent %} · {{ brief.territory.parent.name }}{% endif %}
+    </p>
+    <h2 class="region-band__title" id="region-band-title">
+      <a href="{{ brief.href }}">{{ brief.territory.name }}</a>
+    </h2>
+    {% if brief.summary %}
+      <ul class="region-band__summary">
+        {% for line in brief.summary|slice:":2" %}<li>{{ line }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+    <p class="region-band__actions">
+      <a class="button button--secondary button--sm" href="{{ brief.href }}">
+        {% translate "Паспорт региона" %}
+        <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+      </a>
+      {% if change_url %}<a href="{{ change_url }}">{% translate "Выбрать другой" %}</a>{% endif %}
+    </p>
+  </div>
+  {% if brief.now %}
+    <dl class="region-band__now" aria-label="{% translate 'Что сейчас' %}">
+      {% for row in brief.now %}
+        <div class="region-band__figure">
+          <dt>{{ row.title }}</dt>
+          <dd class="region-band__value">
+            <span class="numeric">{{ row.value }}</span>
+            <span class="region-band__unit">{{ row.unit }}</span>
+          </dd>
+          <dd class="region-band__period">
+            {{ row.period|capfirst }}{% if row.change %} · <span class="verdict verdict--{{ row.tone }}">{{ row.change }}</span>{% endif %}
+          </dd>
+        </div>
+      {% endfor %}
+    </dl>
+  {% endif %}
+</section>

@@ -21,10 +21,16 @@ urlpatterns = [
         name="query-edit",
     ),
     path(
+        "cabinet/queries/<uuid:public_id>/change/",
+        views.SavedQueryChangeView.as_view(),
+        name="query-change",
+    ),
+    path(
         "cabinet/queries/<uuid:public_id>/delete/",
         views.SavedQueryDeleteView.as_view(),
         name="query-delete",
     ),
+    path("cabinet/saved/restore/", views.RestoreView.as_view(), name="restore"),
     path(
         "cabinet/queries/<uuid:public_id>/open/",
         views.SavedQueryOpenView.as_view(),

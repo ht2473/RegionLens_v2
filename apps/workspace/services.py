@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 from urllib.parse import parse_qsl
+from uuid import UUID
 
 from apps.accounts.models import User
 from apps.accounts.permissions import ensure_quota
@@ -22,9 +24,13 @@ MAX_PARAMETERS = 40
 MAX_VALUES_PER_PARAMETER = 20
 MAX_VALUE_LENGTH = 200
 
-# Длина названия вида и сколько параметров словами идёт в название, данное само.
+# Длина названия и пометки вида; сколько параметров словами идёт в название, данное само.
 TITLE_LENGTH = 160
+DESCRIPTION_LENGTH = 500
 TITLE_PHRASES = 2
+
+# Последнее убранное из «Сохранённого» — в сеансе, для «Вернуть».
+REMOVED_SESSION_KEY = "workspace:removed"
 
 
 def parse_query_string(query_string: str) -> dict[str, Any]:
@@ -124,6 +130,117 @@ def create_saved_query(
         parameters=parse_query_string(query_string),
     )
     return query
+
+
+# ---------------------------------------------------------------------------------------
+# Убрать и вернуть
+# ---------------------------------------------------------------------------------------
+
+
+def forget_query(query: SavedQuery) -> dict[str, Any]:
+    """Удалить вид; вернуть всё, что нужно, чтобы он вернулся тем же."""
+    payload = {
+        "kind": "query",
+        "title": query.title,
+        "description": query.description,
+        "target": query.target,
+        "parameters": query.parameters,
+        "public_id": str(query.public_id),
+        "created_at": query.created_at.isoformat(),
+        "updated_at": query.updated_at.isoformat(),
+        "opened_count": query.opened_count,
+        "last_opened_at": query.last_opened_at.isoformat() if query.last_opened_at else None,
+    }
+    query.delete()
+    return payload
+
+
+def forget_favorite(favorite: Favorite) -> dict[str, Any]:
+    """Снять отметку; вернуть всё, что нужно, чтобы она вернулась той же."""
+    identifier = (
+        favorite.indicator.slug
+        if favorite.indicator is not None
+        else favorite.series.key
+        if favorite.series is not None
+        else favorite.territory.code
+        if favorite.territory is not None
+        else ""
+    )
+    payload = {
+        "kind": "favorite",
+        "object": favorite.kind,
+        "identifier": identifier,
+        "title": mark_name(favorite),
+        "note": favorite.note,
+        "created_at": favorite.created_at.isoformat(),
+        "updated_at": favorite.updated_at.isoformat(),
+    }
+    favorite.delete()
+    return payload
+
+
+def restore(user: User, payload: dict[str, Any]) -> str:
+    """Вернуть убранное; ответ — название для сообщения, пустое — возвращать нечего."""
+    if payload.get("kind") == "query":
+        return _restore_query(user, payload)
+    if payload.get("kind") == "favorite":
+        return _restore_favorite(user, payload)
+    return ""
+
+
+def _restore_query(user: User, payload: dict[str, Any]) -> str:
+    """Вернуть вид с прежним адресом, счётчиком открытий и датами."""
+    public_id = UUID(str(payload["public_id"]))
+    found = SavedQuery.objects.filter(public_id=public_id).first()
+    if found is not None:
+        return found.title if found.user_id == user.pk else ""
+    ensure_quota("saved_queries", SavedQuery.objects.filter(user=user).count())
+    query = SavedQuery.objects.create(
+        user=user,
+        public_id=public_id,
+        title=free_title(user, str(payload["title"])),
+        description=str(payload.get("description", "")),
+        target=str(payload["target"]),
+        parameters=payload.get("parameters") or {},
+        opened_count=int(payload.get("opened_count") or 0),
+        last_opened_at=_moment(payload.get("last_opened_at")),
+    )
+    # Даты — прежние: место в перечне не меняется.
+    SavedQuery.objects.filter(pk=query.pk).update(
+        created_at=_moment(payload["created_at"]), updated_at=_moment(payload["updated_at"])
+    )
+    return query.title
+
+
+def _restore_favorite(user: User, payload: dict[str, Any]) -> str:
+    """Вернуть отметку с пометкой и датами; объекта больше нет — возвращать нечего."""
+    kind = str(payload.get("object", ""))
+    if kind not in ("indicator", "series", "territory"):
+        return ""
+    target = resolve_favorite_object(kind, str(payload.get("identifier", "")))
+    if target is None:
+        return ""
+    existing = Favorite.objects.filter(user=user, **{kind: target}).first()
+    if existing is not None:
+        return mark_name(existing)
+    ensure_quota("favorites", Favorite.objects.filter(user=user).count())
+    favorite = Favorite.objects.create(
+        user=user, note=str(payload.get("note", "")), **{kind: target}
+    )
+    Favorite.objects.filter(pk=favorite.pk).update(
+        created_at=_moment(payload["created_at"]), updated_at=_moment(payload["updated_at"])
+    )
+    return mark_name(favorite)
+
+
+def mark_name(favorite: Favorite) -> str:
+    """Имя отметки для плитки и сообщений: показатель — наименованием без кода."""
+    return favorite.indicator.name if favorite.indicator is not None else favorite.title
+
+
+def _moment(value: Any) -> datetime | None:
+    """Момент из строки ISO в сеансе."""
+    return datetime.fromisoformat(value) if value else None
 
 
 # ---------------------------------------------------------------------------------------

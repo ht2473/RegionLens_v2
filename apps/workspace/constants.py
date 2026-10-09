@@ -38,3 +38,7 @@ QUERY_TARGETS: tuple[QueryTarget, ...] = (
 QUERY_TARGETS_BY_CODE: dict[str, QueryTarget] = {item.code: item for item in QUERY_TARGETS}
 
 QUERY_TARGET_CHOICES = [(item.code, item.title) for item in QUERY_TARGETS]
+
+# Правки «Сохранённого» (название, пометка, убрать, вернуть): предел за окно в секундах.
+SAVED_EDITS = 300
+SAVED_EDITS_WINDOW = 600
