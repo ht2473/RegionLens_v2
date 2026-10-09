@@ -52,28 +52,26 @@ CABINET_SECTIONS: tuple[CabinetSection, ...] = (
         hint=_("Ваши обращения, их состояние и ответы"),
     ),
     CabinetSection(
-        code="profile",
-        title=_("Профиль"),
-        url_name="accounts:profile",
-        hint=_("Имя и мой регион"),
-    ),
-    CabinetSection(
-        code="security",
-        title=_("Безопасность"),
-        url_name="accounts:security",
-        hint=_("Пароль, адрес почты, вход с кодом и сеансы на других устройствах"),
-    ),
-    CabinetSection(
-        code="data",
-        title=_("Персональные данные"),
-        url_name="accounts:data",
-        hint=_("Выгрузка всего, что хранится о вас, и удаление учётной записи"),
+        code="settings",
+        title=_("Настройки"),
+        url_name="accounts:settings",
+        hint=_("Профиль, вход и безопасность, персональные данные"),
     ),
 )
+
+# Разделы страницы «Настройки»: якоря, на которые ведут прежние адреса и действия.
+SETTINGS_PARTS = ("profile", "security", "data")
 
 CABINET_SECTIONS_BY_CODE: dict[str, CabinetSection] = {
     section.code: section for section in CABINET_SECTIONS
 }
+
+
+def settings_url(part: str) -> str:
+    """Адрес раздела страницы «Настройки»: профиль, безопасность или персональные данные."""
+    if part not in SETTINGS_PARTS:
+        raise ValueError(f"Нет раздела настроек «{part}»")
+    return f"{reverse('accounts:settings')}#settings-{part}"
 
 
 def role_label(user: User) -> str:

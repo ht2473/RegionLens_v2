@@ -1,0 +1,351 @@
+{% extends "cabinet_base.html" %}
+{% load i18n formatting %}
+
+{% comment %}
+  «Настройки»: профиль, вход и безопасность, персональные данные — разделами одной страницы.
+  Формы отправляются на адреса своих действий; с ошибками те возвращают эту же страницу
+  (profile_form, email_form, disable_form, codes_form, delete_form).
+{% endcomment %}
+
+{% block cabinet_content %}
+  {% with user=request.user %}
+
+  <nav class="toc-pills settings__toc" data-toc aria-label="{% translate 'Разделы настроек' %}">
+    <ul>
+      <li><a href="#settings-profile">{% translate "Профиль" %}</a></li>
+      <li><a href="#settings-security">{% translate "Вход и безопасность" %}</a></li>
+      <li><a href="#settings-data">{% translate "Персональные данные" %}</a></li>
+    </ul>
+  </nav>
+
+  {# --- Профиль ------------------------------------------------------------------------- #}
+  <section class="page-section settings__section" aria-labelledby="settings-profile">
+    <div class="page-section__head">
+      <h2 class="page-section__title toc-target" id="settings-profile">{% translate "Профиль" %}</h2>
+    </div>
+
+    <div class="cabinet-columns">
+      <form method="post" action="{% url 'accounts:profile' %}" class="stack cabinet-form" novalidate>
+        {% csrf_token %}
+        {% for field in profile_form %}{% include "partials/_field.html" with field=field %}{% endfor %}
+        <div class="cabinet-form__actions cabinet-form__actions--start">
+          <button type="submit" class="button button--primary">{% translate "Сохранить" %}</button>
+        </div>
+      </form>
+
+      <div>
+        <dl class="cabinet-facts">
+          <div>
+            <dt>{% translate "Роли" %}</dt>
+            <dd>
+              {% for role in roles %}
+                {{ role.label }}
+                <span class="cabinet-facts__note">{{ role.description }}</span>
+              {% endfor %}
+            </dd>
+          </div>
+          <div>
+            <dt>{% translate "Зарегистрирован" %}</dt>
+            <dd class="numeric">{{ user.created_at|date:"d.m.Y" }}</dd>
+          </div>
+        </dl>
+        <p class="cabinet-block__footnote">
+          {% blocktranslate trimmed with views=limits.saved_queries|ru_number:0 marks=limits.favorites|ru_number:0 %}
+            В кабинете помещается до {{ views }} видов экрана и до {{ marks }} регионов
+            и показателей.
+          {% endblocktranslate %}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  {# --- Вход и безопасность ------------------------------------------------------------- #}
+  <section class="page-section settings__section" aria-labelledby="settings-security">
+    <div class="page-section__head">
+      <h2 class="page-section__title toc-target" id="settings-security">{% translate "Вход и безопасность" %}</h2>
+    </div>
+
+    <div class="cabinet-columns">
+      <div class="cabinet-block">
+        <h3 class="cabinet-block__title">{% translate "Вход и сеансы" %}</h3>
+        <dl class="cabinet-facts">
+          <div>
+            <dt>{% translate "Последний вход" %}</dt>
+            <dd class="numeric">{{ user.last_login|date:"d.m.Y H:i"|default:"—" }}</dd>
+          </div>
+          <div>
+            <dt>{% translate "Последняя активность" %}</dt>
+            <dd class="numeric">{{ user.last_seen_at|date:"d.m.Y H:i"|default:"—" }}</dd>
+          </div>
+          <div>
+            <dt>{% translate "Пароль" %}</dt>
+            <dd><a href="{% url 'accounts:password-change' %}">{% translate "Сменить пароль" %}</a></dd>
+          </div>
+        </dl>
+
+        <form method="post" action="{% url 'accounts:sign-out-others' %}" class="security-action">
+          {% csrf_token %}
+          <button type="submit" class="button button--secondary">{% translate "Выйти на других устройствах" %}</button>
+          <p class="cabinet-block__footnote">
+            {% blocktranslate trimmed %}
+              Завершает вход на других компьютерах и телефонах; здесь вы останетесь.
+              Смена пароля или адреса почты делает то же самое.
+            {% endblocktranslate %}
+          </p>
+        </form>
+      </div>
+
+      <div class="cabinet-block">
+        <h3 class="cabinet-block__title">{% translate "Адрес почты" %}</h3>
+        <p class="cabinet-block__lead">{{ user.email }}</p>
+
+        {% if user.pending_email %}
+          <div class="callout callout--info">
+            <svg class="callout__icon" aria-hidden="true"><use href="#icon-mail"></use></svg>
+            <div>
+              <div class="callout__title">{% translate "Ждёт подтверждения" %}</div>
+              <p>
+                {% blocktranslate trimmed with email=user.pending_email %}
+                  Ссылка отправлена на {{ email }}. Адрес сменится, когда вы её откроете.
+                {% endblocktranslate %}
+              </p>
+              <form method="post" action="{% url 'accounts:email-cancel' %}">
+                {% csrf_token %}
+                <button type="submit" class="button button--ghost button--sm">{% translate "Отменить смену" %}</button>
+              </form>
+            </div>
+          </div>
+        {% endif %}
+
+        <details class="settings-action"{% if email_form.errors %} open{% endif %}>
+          <summary class="button button--secondary">{% translate "Сменить адрес" %}</summary>
+          <form method="post" action="{% url 'accounts:email-change' %}" class="stack cabinet-form" novalidate>
+            {% csrf_token %}
+            {% if email_form.non_field_errors %}
+              <div class="callout callout--danger">
+                <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+                <div>{% for error in email_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+              </div>
+            {% endif %}
+            {% for field in email_form %}{% include "partials/_field.html" with field=field %}{% endfor %}
+            <div class="cabinet-form__actions cabinet-form__actions--start">
+              <button type="submit" class="button button--primary">{% translate "Отправить ссылку на новый адрес" %}</button>
+            </div>
+            <p class="cabinet-block__footnote">
+              {% blocktranslate trimmed %}
+                На прежний адрес после смены придёт уведомление. Вход по прежнему адресу
+                перестанет работать.
+              {% endblocktranslate %}
+            </p>
+          </form>
+        </details>
+      </div>
+    </div>
+
+    {# --- Вход с кодом ------------------------------------------------------------------ #}
+    <div class="cabinet-block two-factor">
+      <h3 class="cabinet-block__title">
+        {% translate "Вход с одноразовым кодом" %}
+        {% if user.two_factor_enabled %}
+          <span class="badge badge--positive">
+            {% blocktranslate trimmed with date=user.totp_enabled_at|date:"d.m.Y" %}включён {{ date }}{% endblocktranslate %}
+          </span>
+        {% else %}
+          <span class="badge badge--outline">{% translate "выключен" %}</span>
+        {% endif %}
+      </h3>
+
+      <p class="two-factor__lead">
+        {% blocktranslate trimmed %}
+            После пароля сайт спрашивает шесть цифр из приложения-генератора на телефоне
+            (Яндекс Ключ, Google Authenticator, FreeOTP и другие). Код меняется каждые 30 секунд,
+            поэтому украденного пароля для входа мало.
+        {% endblocktranslate %}
+      </p>
+
+      {% if panel_needs_code %}
+        <div class="callout {% if user.two_factor_enabled %}callout--info{% else %}callout--warning{% endif %}">
+          <svg class="callout__icon" aria-hidden="true"><use href="#icon-shield"></use></svg>
+          <div>
+            <div class="callout__title">{% translate "Обязателен для панели управления" %}</div>
+            <p>{% translate "У вас есть права панели: без входа с кодом она не открывается, и выключить его нельзя." %}</p>
+          </div>
+        </div>
+      {% endif %}
+
+      {% if user.two_factor_enabled %}
+        <p class="cabinet-block__lead">
+          {% blocktranslate trimmed with count=recovery_left %}
+            Резервных кодов осталось: {{ count }}.
+          {% endblocktranslate %}
+          {% translate "Каждый код входит один раз вместо шести цифр — на случай, если телефона нет под рукой. Новый набор отменяет прежний." as codes_hint %}
+          {% include "partials/_hint.html" with hint_id="hint-recovery-codes" hint_text=codes_hint hint_label=_("Резервные коды") %}
+        </p>
+        <div class="settings-actions">
+            <details class="settings-action"{% if codes_form.errors %} open{% endif %}>
+              <summary class="button button--secondary">{% translate "Выпустить новые коды" %}</summary>
+              <form method="post" action="{% url 'accounts:recovery-codes' %}" class="stack cabinet-form" novalidate>
+                {% csrf_token %}
+                {% for field in codes_form %}{% include "partials/_field.html" with field=field %}{% endfor %}
+                <div class="cabinet-form__actions cabinet-form__actions--start">
+                  <button type="submit" class="button button--primary">{% translate "Выпустить" %}</button>
+                </div>
+              </form>
+            </details>
+
+          {% if not panel_needs_code %}
+            <details class="settings-action"{% if disable_form.errors %} open{% endif %}>
+              <summary class="button button--secondary">{% translate "Выключить вход с кодом" %}</summary>
+              <form method="post" action="{% url 'accounts:two-factor-disable' %}" class="stack cabinet-form" novalidate>
+                {% csrf_token %}
+                {% if disable_form.non_field_errors %}
+                  <div class="callout callout--danger">
+                    <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+                    <div>{% for error in disable_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+                  </div>
+                {% endif %}
+                {% for field in disable_form %}{% include "partials/_field.html" with field=field %}{% endfor %}
+                <div class="cabinet-form__actions cabinet-form__actions--start">
+                  <button type="submit" class="button button--danger">{% translate "Выключить" %}</button>
+                </div>
+              </form>
+            </details>
+          {% endif %}
+        </div>
+      {% else %}
+        <a class="button button--primary" href="{% url 'accounts:two-factor' %}">
+          <svg aria-hidden="true"><use href="#icon-shield"></use></svg>
+          {% translate "Включить вход с кодом" %}
+        </a>
+      {% endif %}
+    </div>
+  </section>
+
+  {# --- Персональные данные ------------------------------------------------------------- #}
+  <section class="page-section settings__section" aria-labelledby="settings-data">
+    <div class="page-section__head">
+      <h2 class="page-section__title toc-target" id="settings-data">{% translate "Персональные данные" %}</h2>
+    </div>
+
+    <div class="cabinet-columns">
+      <div class="cabinet-block">
+        <h3 class="cabinet-block__title">{% translate "Что хранится" %}</h3>
+        <dl class="cabinet-facts">
+          <div>
+            <dt>{% translate "Профиль" %}</dt>
+            <dd>{% translate "адрес почты, имя, мой регион" %}</dd>
+          </div>
+          <div>
+            <dt>{% translate "Сохранённое" %}</dt>
+            <dd>
+              {% blocktranslate trimmed with marks=stored.marks views=stored.views %}
+                регионов и показателей — {{ marks }}, видов экрана — {{ views }}
+              {% endblocktranslate %}
+            </dd>
+          </div>
+          <div>
+            <dt>{% translate "Свои данные" %}</dt>
+            <dd>
+              {% blocktranslate trimmed with count=stored.tables studies=stored.studies %}
+                загруженных таблиц — {{ count }}: исходные файлы, их версии и разбор; исследований — {{ studies }}
+              {% endblocktranslate %}
+            </dd>
+          </div>
+          <div>
+            <dt>{% translate "Обращения" %}</dt>
+            <dd>{{ stored.tickets }}</dd>
+          </div>
+          <div>
+            <dt>{% translate "Вход" %}</dt>
+            <dd>{% translate "хэш пароля, время последнего входа, ключ входа с кодом, если он включён" %}</dd>
+          </div>
+        </dl>
+
+        <div class="cabinet-form__actions cabinet-form__actions--start">
+          <a class="button button--secondary" href="{% url 'accounts:data-export' %}" download>
+            <svg aria-hidden="true"><use href="#icon-download"></use></svg>
+            {% translate "Выгрузить всё (JSON)" %}
+          </a>
+        </div>
+        <p class="cabinet-block__footnote">
+          {% translate "В файле — профиль, сохранённое с параметрами видов, перечень загруженных таблиц с версиями и закрытыми ссылками, исследования и обращения с ответами. Пароль, ключи входа и адреса закрытых ссылок в файл не попадают; сами таблицы скачиваются на их страницах." %}
+          <a href="{% url 'core:privacy' %}">{% translate "Политика обработки персональных данных" %}</a>
+        </p>
+      </div>
+
+      <div class="cabinet-block">
+        <h3 class="cabinet-block__title">{% translate "Согласие на обработку" %}</h3>
+        {% if account.has_current_consent %}
+          <p class="cabinet-block__lead">
+            {% blocktranslate trimmed with given=account.consent_at|date:"d.m.Y H:i" revision=account.consent_revision|date:"d.m.Y" %}
+              Дано {{ given }} на редакцию от {{ revision }}.
+            {% endblocktranslate %}
+            <a href="{% url 'core:consent' %}">{% translate "Текст согласия" %}</a>
+          </p>
+          <p class="cabinet-block__footnote">
+            {% translate "Отозвать согласие — значит удалить учётную запись: без согласия сайт не хранит сведения о вас." %}
+          </p>
+        {% else %}
+          <p class="cabinet-block__lead">
+            {% if account.consent_at %}
+              {% blocktranslate trimmed with revision=account.consent_revision|date:"d.m.Y" %}
+                Дано на прежнюю редакцию от {{ revision }}; текст с тех пор изменился.
+              {% endblocktranslate %}
+            {% else %}
+              {% translate "Согласие не записано: учётная запись заведена без него." %}
+            {% endif %}
+          </p>
+          <form method="post" action="{% url 'accounts:consent' %}" class="stack cabinet-form">
+            {% csrf_token %}
+            <label class="checkbox">
+              <input type="checkbox" name="consent" value="1" required>
+              <span>{{ consent_label }}</span>
+            </label>
+            <div class="cabinet-form__actions cabinet-form__actions--start">
+              <button type="submit" class="button button--primary">{% translate "Дать согласие" %}</button>
+            </div>
+          </form>
+        {% endif %}
+      </div>
+
+      <div class="cabinet-block danger-zone">
+        <h3 class="cabinet-block__title">{% translate "Удалить учётную запись" %}</h3>
+        <p class="cabinet-block__lead">
+          {% blocktranslate trimmed %}
+            Сохранённое, загруженные таблицы и исследования удаляются сразу и безвозвратно. Обращения остаются у администратора
+            без имени и адреса. На адрес учётной записи придёт письмо об удалении. Удаление
+            учётной записи — отзыв согласия на обработку персональных данных.
+          {% endblocktranslate %}
+        </p>
+
+        {% if last_administrator %}
+          <div class="callout callout--warning">
+            <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+            <div>
+              <p>{% translate "Это последняя учётная запись администратора: сначала назначьте администратором кого-то ещё." %}</p>
+            </div>
+          </div>
+        {% else %}
+          <details class="settings-action"{% if delete_form.errors %} open{% endif %}>
+          <summary class="button button--secondary">{% translate "Удалить учётную запись" %}</summary>
+          <form method="post" action="{% url 'accounts:data' %}" class="stack cabinet-form" novalidate>
+            {% csrf_token %}
+            {% if delete_form.non_field_errors %}
+              <div class="callout callout--danger">
+                <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+                <div>{% for error in delete_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+              </div>
+            {% endif %}
+            {% for field in delete_form %}{% include "partials/_field.html" with field=field %}{% endfor %}
+            <div class="cabinet-form__actions cabinet-form__actions--start">
+              <button type="submit" class="button button--danger">{% translate "Удалить" %}</button>
+            </div>
+          </form>
+          </details>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  {% endwith %}
+{% endblock %}

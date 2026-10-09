@@ -1,6 +1,7 @@
 """
 Страницы учётных записей: ``auth`` — вход и пароль, ``cabinet`` — обзор и профиль,
-``security`` — безопасность, ``data`` — свои данные, ``region`` — «Мой регион».
+``settings`` — страница «Настройки», ``security`` и ``data`` — её действия,
+``region`` — «Мой регион».
 """
 
 from __future__ import annotations
@@ -24,11 +25,11 @@ from .security import (
     EmailChangeView,
     EmailConfirmView,
     RecoveryCodesView,
-    SecurityView,
     SignOutOthersView,
     TwoFactorDisableView,
     TwoFactorSetupView,
 )
+from .settings import SettingsPartView, SettingsView
 
 __all__ = [
     "CabinetOverviewView",
@@ -50,7 +51,8 @@ __all__ = [
     "ProfileView",
     "RecoveryCodesView",
     "RegisterView",
-    "SecurityView",
+    "SettingsPartView",
+    "SettingsView",
     "SignOutOthersView",
     "TwoFactorDisableView",
     "TwoFactorSetupView",

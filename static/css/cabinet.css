@@ -728,10 +728,54 @@
   overflow-wrap: anywhere;
 }
 
-/* --- Безопасность и вход с кодом ------------------------------------------------------------ */
+/* --- Настройки: профиль, вход и безопасность, персональные данные ----------------------- */
+
+.settings__toc {
+  margin-bottom: var(--space-8);
+}
+
+.cabinet-block__subtitle {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+}
+
+.cabinet-block__title .badge {
+  margin-left: var(--space-2);
+  vertical-align: middle;
+}
 
 .security-action {
   margin-top: var(--space-5);
+}
+
+/* Редкое действие — кнопкой; форма раскрывается под ней. */
+.settings-action > summary {
+  list-style: none;
+}
+
+.settings-action > summary::-webkit-details-marker {
+  display: none;
+}
+
+.settings-action[open] > summary {
+  margin-bottom: var(--space-4);
+}
+
+/* Несколько редких действий — рядом; раскрытое занимает всю строку. */
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.settings-actions > .settings-action[open] {
+  flex-basis: 100%;
+  max-width: 32rem;
+}
+
+.two-factor {
+  margin-top: var(--space-10);
 }
 
 .two-factor__lead {
@@ -743,10 +787,6 @@
 
 .two-factor .callout {
   margin-bottom: var(--space-5);
-}
-
-.two-factor__columns {
-  margin-top: var(--space-2);
 }
 
 .two-factor-setup__steps {

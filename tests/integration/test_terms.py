@@ -210,12 +210,12 @@ class TestConsent:
         self, member_client: Client, member: User
     ) -> None:
         """Учётная запись без согласия видит предложение дать его и даёт одним флажком."""
-        page = member_client.get(reverse("accounts:data")).content.decode("utf-8")
+        page = member_client.get(reverse("accounts:settings")).content.decode("utf-8")
         assert reverse("accounts:consent") in page
         member_client.post(reverse("accounts:consent"), {"consent": "1"})
         member.refresh_from_db()
         assert member.has_current_consent
-        page = member_client.get(reverse("accounts:data")).content.decode("utf-8")
+        page = member_client.get(reverse("accounts:settings")).content.decode("utf-8")
         assert reverse("accounts:consent") not in page
         assert f'href="{reverse("core:privacy")}"' in page
 

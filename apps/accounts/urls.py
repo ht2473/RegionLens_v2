@@ -34,8 +34,14 @@ urlpatterns = [
     ),
     # --- Личный кабинет ----------------------------------------------------------------
     path("cabinet/", views.CabinetOverviewView.as_view(), name="dashboard"),
+    path("cabinet/settings/", views.SettingsView.as_view(), name="settings"),
+    # Прежние адреса разделов: открытие ведёт в «Настройки», формы отправляются сюда.
     path("cabinet/profile/", views.ProfileView.as_view(), name="profile"),
-    path("cabinet/security/", views.SecurityView.as_view(), name="security"),
+    path(
+        "cabinet/security/",
+        views.SettingsPartView.as_view(part="security"),
+        name="security",
+    ),
     path(
         "cabinet/security/password/",
         views.PasswordChangeView.as_view(),

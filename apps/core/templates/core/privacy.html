@@ -293,8 +293,8 @@
         </ul>
         <div class="prose">
           <p>
-            {% url 'accounts:data' as data_url %}
-            {% url 'accounts:profile' as profile_url %}
+            {% url 'accounts:settings' as settings_url %}
+            {% with data_url=settings_url|add:"#settings-data" profile_url=settings_url|add:"#settings-profile" %}
             {% blocktranslate trimmed %}
               В личном кабинете, в разделе <a href="{{ data_url }}">«Персональные данные»</a>, всё
               сохранённое о себе выгружается одним файлом JSON, а учётная запись удаляется
@@ -302,6 +302,7 @@
               в <a href="{{ profile_url }}">профиле</a>. Удаление учётной записи — отзыв
               согласия: сохранённое удаляется сразу, обращения остаются без имени и адреса.
             {% endblocktranslate %}
+            {% endwith %}
           </p>
           <p>
             {% url 'feedback:create' as feedback_url %}

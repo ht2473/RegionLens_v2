@@ -1,4 +1,4 @@
-"""Раздел «Персональные данные»: выгрузка всего своего одним файлом и удаление учётной записи."""
+"""«Персональные данные» в «Настройках»: выгрузка, согласие, удаление учётной записи."""
 
 from __future__ import annotations
 
@@ -13,20 +13,21 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView, View
 
-from apps.core.documents import consent_label
-
-from ..cabinet import CabinetViewMixin
+from ..cabinet import CabinetViewMixin, settings_url
 from ..forms import DeleteAccountForm
-from ..roles import LastAdministratorError, is_last_administrator
+from ..roles import LastAdministratorError
 from ..services import delete_account, export_account
+from .settings import SettingsContextMixin
 
 
-class DataView(CabinetViewMixin, FormView):
-    """Страница раздела: что хранится, выгрузка, удаление с подтверждением паролем."""
+class DataView(SettingsContextMixin, FormView):
+    """Удаление учётной записи с подтверждением паролем; форма — в «Настройках»."""
 
-    template_name = "accounts/data.html"
     form_class = DeleteAccountForm
-    section_code = "data"
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:  # noqa: ARG002
+        """Форма живёт на странице «Настройки»."""
+        return redirect(settings_url("data"))
 
     def get_form_kwargs(self) -> dict[str, Any]:
         """Передать форме пользователя."""
@@ -34,23 +35,9 @@ class DataView(CabinetViewMixin, FormView):
         kwargs["user"] = self.current_user
         return kwargs
 
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Сколько чего хранится."""
-        from apps.feedback.models import Ticket
-
-        context = super().get_context_data(**kwargs)
-        user = self.current_user
-        context["stored"] = {
-            "marks": user.favorites.count(),
-            "views": user.saved_queries.count(),
-            "tickets": Ticket.objects.filter(author=user).count(),
-            "tables": user.datasets.count(),
-            "studies": user.studies.count(),
-        }
-        context["last_administrator"] = is_last_administrator(user)
-        context["account"] = user
-        context["consent_label"] = consent_label()
-        return context
+    def form_invalid(self, form: DeleteAccountForm) -> HttpResponse:
+        """Показать «Настройки» с ошибками формы удаления."""
+        return self.render_to_response(self.get_context_data(delete_form=form))
 
     def form_valid(self, form: DeleteAccountForm) -> HttpResponse:
         """Удалить учётную запись, выйти и сообщить об этом."""
@@ -78,7 +65,7 @@ class ConsentView(CabinetViewMixin, View):
             messages.success(request, _("Согласие на обработку персональных данных записано"))
         else:
             messages.error(request, _("Отметьте флажок согласия"))
-        return redirect("accounts:data")
+        return redirect(settings_url("data"))
 
 
 class ExportView(CabinetViewMixin, View):

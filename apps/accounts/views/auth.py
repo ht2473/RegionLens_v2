@@ -22,7 +22,7 @@ from apps.core.navigation import Crumb
 from apps.core.throttle import allow, allow_key
 from apps.core.views import BreadcrumbMixin
 
-from ..cabinet import CABINET_SECTIONS, CabinetViewMixin
+from ..cabinet import CABINET_SECTIONS, CabinetViewMixin, settings_url
 from ..constants import (
     CODE_ATTEMPTS_PER_LOGIN,
     CODE_PER_IP,
@@ -155,7 +155,7 @@ class LoginCodeView(BreadcrumbMixin, FormView):
                 request,
                 _(
                     "Вход по резервному коду; осталось кодов: %(count)d. Новые выпускаются "
-                    "в разделе «Безопасность»."
+                    "в «Настройках» кабинета."
                 )
                 % {"count": len(account.recovery_codes)},
             )
@@ -247,15 +247,18 @@ class RegisterView(BreadcrumbMixin, FormView):
 
 
 class PasswordChangeView(CabinetViewMixin, auth_views.PasswordChangeView):
-    """Смена пароля в разделе «Безопасность»; другие сеансы при этом завершаются."""
+    """Смена пароля из «Настроек»; другие сеансы при этом завершаются."""
 
     template_name = "accounts/password_change.html"
     form_class = StyledPasswordChangeForm
-    section_code = "security"
-    success_url = reverse_lazy("accounts:security")
+    section_code = "settings"
+
+    def get_success_url(self) -> str:
+        """Вернуться к разделу «Вход и безопасность»."""
+        return settings_url("security")
 
     def get_crumbs(self) -> tuple[Crumb, ...]:
-        """Путь к странице: кабинет, «Безопасность», смена пароля."""
+        """Путь к странице: кабинет, «Настройки», смена пароля."""
         return (
             Crumb(title=_("Личный кабинет"), url=CABINET_SECTIONS[0].url),
             Crumb(title=self.section.title, url=self.section.url),

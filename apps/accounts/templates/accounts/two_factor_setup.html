@@ -35,7 +35,7 @@
           {% csrf_token %}
           {% for field in form %}{% include "partials/_field.html" with field=field %}{% endfor %}
           <div class="cabinet-form__actions cabinet-form__actions--start">
-            <a class="button button--ghost" href="{% url 'accounts:security' %}">{% translate "Отмена" %}</a>
+            <a class="button button--ghost" href="{% url 'accounts:settings' %}#settings-security">{% translate "Отмена" %}</a>
             <button type="submit" class="button button--primary">{% translate "Включить" %}</button>
           </div>
         </form>

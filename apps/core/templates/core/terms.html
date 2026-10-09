@@ -171,7 +171,7 @@
           <li>
             {% blocktranslate trimmed %}
               Пароль хранится только в виде хэша. Вход с одноразовым кодом включается
-              в разделе «Безопасность»; для панели управления он обязателен.
+              в «Настройках» кабинета; для панели управления он обязателен.
             {% endblocktranslate %}
           </li>
           <li>
@@ -181,8 +181,8 @@
             {% endblocktranslate %}
           </li>
           <li>
-            {% url 'accounts:data' as data_url %}
-            {% blocktranslate trimmed with url=data_url %}
+            {% url 'accounts:settings' as settings_url %}
+            {% blocktranslate trimmed with url=settings_url|add:"#settings-data" %}
               Учётная запись удаляется в разделе <a href="{{ url }}">«Персональные данные»</a> после
               подтверждения паролем. Удаление учётной записи — отзыв согласия на обработку
               персональных данных.

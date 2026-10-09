@@ -1,4 +1,4 @@
-"""Обзор кабинета и профиль учётной записи."""
+"""Обзор кабинета и сохранение профиля."""
 
 from __future__ import annotations
 
@@ -8,17 +8,17 @@ from typing import Any
 from django.contrib import messages
 from django.db.models import QuerySet
 from django.forms import ModelForm
-from django.http import HttpResponse
-from django.urls import reverse_lazy
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import redirect
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView, UpdateView
 
-from ..cabinet import CabinetViewMixin, role_label
-from ..constants import CABINET_LIMITS, ROLES_BY_NAME
+from ..cabinet import CabinetViewMixin, settings_url
 from ..forms import ProfileForm
 from ..models import User
 from ..region import my_region, region_choices, write_cookie
+from .settings import SettingsContextMixin
 
 # Граница «нового по сохранённому» на время сеанса: обновление страницы её не сдвигает.
 UPDATES_SINCE_SESSION_KEY = "cabinet:updates-since"
@@ -87,26 +87,26 @@ class CabinetOverviewView(CabinetViewMixin, TemplateView):
         return since
 
 
-class ProfileView(CabinetViewMixin, UpdateView):
-    """Сведения о себе, мой регион и роли."""
+class ProfileView(SettingsContextMixin, UpdateView):
+    """Сохранение профиля из «Настроек»: имя и мой регион."""
 
-    template_name = "accounts/profile.html"
     form_class = ProfileForm
-    section_code = "profile"
-    success_url = reverse_lazy("accounts:profile")
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:  # noqa: ARG002
+        """Форма живёт на странице «Настройки»."""
+        return redirect(settings_url("profile"))
 
     def get_object(self, queryset: QuerySet[Any] | None = None) -> Any:  # noqa: ARG002
         """Правится только собственная учётная запись."""
         return self.current_user
 
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Дополнить контекст ролями и их возможностями."""
-        context = super().get_context_data(**kwargs)
-        context["page_title"] = _("Профиль")
-        context["roles"] = [ROLES_BY_NAME[name] for name in self.current_user.role_names]
-        context["role_label"] = role_label(self.current_user)
-        context["limits"] = CABINET_LIMITS
-        return context
+    def get_success_url(self) -> str:
+        """Вернуться к профилю в «Настройках»."""
+        return settings_url("profile")
+
+    def form_invalid(self, form: ModelForm[Any]) -> HttpResponse:
+        """Показать «Настройки» с ошибками формы профиля."""
+        return self.render_to_response(self.get_context_data(profile_form=form))
 
     def form_valid(self, form: ModelForm[Any]) -> HttpResponse:
         """Сохранить изменения; регион запоминается и в cookie — для страниц после выхода."""

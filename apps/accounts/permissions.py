@@ -2,7 +2,7 @@
 Доступ к панели управления и пределы кабинета.
 
 Гость отправляется на вход, вошедший без права раздела получает 403. С правом, но без
-входа по коду — страница «Безопасность»: панель открывается только после второго фактора.
+входа по коду — «Настройки» кабинета: панель открывается только после второго фактора.
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
+from .cabinet import settings_url
 from .constants import CABINET_LIMITS
 from .security import passed_second_factor
 
@@ -70,5 +71,5 @@ class PanelPermissionMixin(PermissionRequiredMixin):
                 request,
                 _("Для панели управления нужен вход с одноразовым кодом. Включите его ниже."),
             )
-            return redirect("accounts:security")
+            return redirect(settings_url("security"))
         return super().dispatch(request, *args, **kwargs)

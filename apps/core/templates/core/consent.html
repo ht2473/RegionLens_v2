@@ -75,14 +75,16 @@
             {% endblocktranslate %}
           </li>
           <li>
-            {% url 'accounts:data' as data_url %}
+            {% url 'accounts:settings' as settings_url %}
             {% url 'feedback:create' as feedback_url %}
+            {% with data_url=settings_url|add:"#settings-data" %}
             {% blocktranslate trimmed with email=project.author_email days=destruction_days %}
               Отзыв: удаление учётной записи в разделе <a href="{{ data_url }}">«Персональные данные»</a>
               личного кабинета либо письмо на адрес <a href="mailto:{{ email }}">{{ email }}</a>
               или обращение через <a href="{{ feedback_url }}">форму</a>. После отзыва данные
               уничтожаются в течение {{ days }} дней, если закон не требует их хранить.
             {% endblocktranslate %}
+            {% endwith %}
           </li>
         </ol>
         <div class="prose">

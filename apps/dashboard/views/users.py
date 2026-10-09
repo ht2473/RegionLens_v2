@@ -179,9 +179,7 @@ class UserTwoFactorResetView(AdminViewMixin, View):
         account = get_object_or_404(User, public_id=public_id)
         target = reverse("dashboard:user-detail", kwargs={"public_id": account.public_id})
         if account.pk == request.user.pk:
-            messages.error(
-                request, _("Свой вход с кодом меняется в кабинете, в разделе «Безопасность»")
-            )
+            messages.error(request, _("Свой вход с кодом меняется в «Настройках» кабинета"))
             return redirect(target)
         if account.two_factor_enabled:
             disable_two_factor(None, account)

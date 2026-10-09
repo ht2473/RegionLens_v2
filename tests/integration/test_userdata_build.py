@@ -608,7 +608,7 @@ class TestAccount:
         payload = export.json()
         assert payload["own_data"][0]["title"] == dataset.title
         assert payload["own_data"][0]["series"]
-        data = member_client.get(reverse("accounts:data"))
+        data = member_client.get(reverse("accounts:settings"))
         assert "Персональные данные" in data.text
 
     def test_account_deletion_removes_tables(

@@ -139,8 +139,8 @@
           <a class="menu-item" href="{% url 'feedback:mine' %}">
             {% translate "Обращения" %}
           </a>
-          <a class="menu-item" href="{% url 'accounts:security' %}">
-            {% translate "Безопасность" %}
+          <a class="menu-item" href="{% url 'accounts:settings' %}">
+            {% translate "Настройки" %}
           </a>
           {% if request.user.has_panel_access %}
             <a class="menu-item" href="{% url 'dashboard:index' %}">
