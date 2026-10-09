@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-08 19:40+0000\n"
+"POT-Creation-Date: 2026-10-09 03:03+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -25,7 +25,7 @@ msgid "Мой регион, новое по сохранённому и посл
 msgstr "My region, what is new for your saved items and recently opened views"
 
 #: apps/accounts/cabinet.py:44
-#: apps/accounts/templates/accounts/data.html:23
+#: apps/accounts/templates/accounts/settings.html:239
 #: templates/partials/_header.html:137
 msgid "Сохранённое"
 msgstr "Saved"
@@ -35,9 +35,9 @@ msgid "Регионы, показатели и виды экрана, к кот�
 msgstr "Regions, indicators and views to come back to"
 
 #: apps/accounts/cabinet.py:50
-#: apps/accounts/templates/accounts/data.html:39
 #: apps/accounts/templates/accounts/login.html:34
 #: apps/accounts/templates/accounts/register.html:34
+#: apps/accounts/templates/accounts/settings.html:255
 #: apps/dashboard/templates/dashboard/index.html:156
 msgid "Обращения"
 msgstr "Enquiries"
@@ -47,37 +47,18 @@ msgid "Ваши обращения, их состояние и ответы"
 msgstr "Your enquiries, their status and the answers"
 
 #: apps/accounts/cabinet.py:56
-#: apps/accounts/templates/accounts/data.html:19
-#: apps/accounts/views/cabinet.py:105
-msgid "Профиль"
-msgstr "Profile"
+#: templates/partials/_header.html:143
+msgid "Настройки"
+msgstr "Settings"
 
 #: apps/accounts/cabinet.py:58
-msgid "Имя и мой регион"
-msgstr "Name and my region"
+msgid "Профиль, вход и безопасность, персональные данные"
+msgstr "Profile, sign-in and security, personal data"
 
-#: apps/accounts/cabinet.py:62
-#: templates/partials/_header.html:143
-msgid "Безопасность"
-msgstr "Security"
-
-#: apps/accounts/cabinet.py:64
-msgid "Пароль, адрес почты, вход с кодом и сеансы на других устройствах"
-msgstr "Password, email address, sign-in with a code and sessions on other devices"
-
-#: apps/accounts/cabinet.py:68
-#: apps/core/navigation.py:242
-msgid "Персональные данные"
-msgstr "Personal data"
-
-#: apps/accounts/cabinet.py:70
-msgid "Выгрузка всего, что хранится о вас, и удаление учётной записи"
-msgstr "Download everything stored about you and delete the account"
-
+#: apps/accounts/cabinet.py:104
 #: apps/accounts/cabinet.py:106
-#: apps/accounts/cabinet.py:108
-#: apps/accounts/views/auth.py:260
-#: apps/accounts/views/security.py:156
+#: apps/accounts/views/auth.py:263
+#: apps/accounts/views/security.py:135
 #: apps/core/navigation.py:232
 msgid "Личный кабинет"
 msgstr "Personal account"
@@ -88,8 +69,8 @@ msgid "Пользователь"
 msgstr "User"
 
 #: apps/accounts/constants.py:52
-msgid "Личный кабинет: мой регион, сохранённое, обращения, профиль и безопасность."
-msgstr "Personal account: my region, saved items, enquiries, profile and security."
+msgid "Личный кабинет: мой регион, сохранённое, обращения и настройки."
+msgstr "Personal account: my region, saved items, enquiries and settings."
 
 #: apps/accounts/constants.py:57
 msgid "Редактор содержимого"
@@ -108,7 +89,7 @@ msgid "Панель управления целиком: пользовател�
 msgstr "The whole control panel: users and roles, data loading and sources, enquiries, glossary and methodology."
 
 #: apps/accounts/forms.py:96
-#: apps/accounts/templates/accounts/security.html:33
+#: apps/accounts/templates/accounts/settings.html:81
 msgid "Пароль"
 msgstr "Password"
 
@@ -243,11 +224,11 @@ msgstr "my region"
 msgid "С него открываются главная страница и кабинет"
 msgstr "The home page and the personal account start with it"
 
-#: apps/accounts/permissions.py:71
+#: apps/accounts/permissions.py:72
 msgid "Для панели управления нужен вход с одноразовым кодом. Включите его ниже."
 msgstr "The control panel requires sign-in with a one-time code. Turn it on below."
 
-#: apps/accounts/permissions.py:66
+#: apps/accounts/permissions.py:67
 msgid "Подтвердите вход одноразовым кодом."
 msgstr "Confirm the sign-in with a one-time code."
 
@@ -271,107 +252,9 @@ msgstr "The link has already been used or cancelled"
 msgid "Учётная запись удалена"
 msgstr "Account deleted"
 
-#: apps/accounts/templates/accounts/data.html:8
-msgid "Что сайт хранит о вас, выгрузка всего этого одним файлом и удаление учётной записи."
-msgstr "What the site stores about you, a download of all of it as one file, and account deletion."
-
-#: apps/accounts/templates/accounts/data.html:16
-msgid "Что хранится"
-msgstr "What is stored"
-
-#: apps/accounts/templates/accounts/data.html:20
-msgid "адрес почты, имя, мой регион"
-msgstr "email address, name, my region"
-
-#: apps/accounts/templates/accounts/data.html:31
-#: apps/accounts/templates/accounts/overview.html:209
-#: apps/core/navigation.py:145
-#: apps/core/navigation.py:226
-#: apps/core/templates/core/terms.html:195
-msgid "Свои данные"
-msgstr "Your own data"
-
-#: apps/accounts/templates/accounts/data.html:43
-#: apps/accounts/templates/accounts/login.html:13
-#: apps/accounts/views/auth.py:60
-#: apps/accounts/views/auth.py:65
-msgid "Вход"
-msgstr "Sign-in"
-
-#: apps/accounts/templates/accounts/data.html:44
-msgid "хэш пароля, время последнего входа, ключ входа с кодом, если он включён"
-msgstr "password hash, time of the last sign-in, the sign-in code key if it is turned on"
-
-#: apps/accounts/templates/accounts/data.html:51
-msgid "Выгрузить всё (JSON)"
-msgstr "Download everything (JSON)"
-
-#: apps/accounts/templates/accounts/data.html:55
-msgid "В файле — профиль, сохранённое с параметрами видов, перечень загруженных таблиц с версиями и закрытыми ссылками, исследования и обращения с ответами. Пароль, ключи входа и адреса закрытых ссылок в файл не попадают; сами таблицы скачиваются на их страницах."
-msgstr "The file contains the profile, saved items with view settings, the list of uploaded tables with their versions and private links, studies and enquiries with answers. The password, sign-in keys and the addresses of private links are not included; the tables themselves are downloaded on their pages."
-
-#: apps/accounts/templates/accounts/data.html:56
-#: apps/accounts/templates/accounts/register.html:68
-#: apps/core/navigation.py:194
-#: apps/core/templates/core/about.html:128
-#: apps/core/templates/core/privacy.html:20
-msgid "Политика обработки персональных данных"
-msgstr "Personal data processing policy"
-
-#: apps/accounts/templates/accounts/data.html:61
-#: apps/dashboard/templates/dashboard/user_detail.html:129
-msgid "Согласие на обработку"
-msgstr "Consent to processing"
-
-#: apps/accounts/templates/accounts/data.html:67
-#: apps/core/templates/core/consent.html:28
-msgid "Текст согласия"
-msgstr "Text of the consent"
-
-#: apps/accounts/templates/accounts/data.html:70
-msgid "Отозвать согласие — значит удалить учётную запись: без согласия сайт не хранит сведения о вас."
-msgstr "To withdraw consent, delete the account: without consent the site keeps no information about you."
-
-#: apps/accounts/templates/accounts/data.html:79
-msgid "Согласие не записано: учётная запись заведена без него."
-msgstr "No consent is recorded: the account was created without it."
-
-#: apps/accounts/templates/accounts/data.html:89
-msgid "Дать согласие"
-msgstr "Give consent"
-
-#: apps/accounts/templates/accounts/data.html:123
-#: apps/accounts/templates/accounts/data.html:96
-msgid "Удалить учётную запись"
-msgstr "Delete account"
-
-#: apps/accounts/templates/accounts/data.html:109
-msgid "Это последняя учётная запись администратора: сначала назначьте администратором кого-то ещё."
-msgstr "This is the last administrator account: make someone else an administrator first."
-
-#: apps/accounts/templates/accounts/data.html:25
-msgid "регионов и показателей — %(marks)s, видов экрана — %(views)s"
-msgstr "regions and indicators: %(marks)s, screen views: %(views)s"
-
-#: apps/accounts/templates/accounts/data.html:33
-msgid "загруженных таблиц — %(count)s: исходные файлы, их версии и разбор; исследований — %(studies)s"
-msgstr "uploaded tables — %(count)s: source files, their versions and parsing; studies — %(studies)s"
-
-#: apps/accounts/templates/accounts/data.html:64
-msgid "Дано %(given)s на редакцию от %(revision)s."
-msgstr "Given on %(given)s for the version of %(revision)s."
-
-#: apps/accounts/templates/accounts/data.html:75
-msgid "Дано на прежнюю редакцию от %(revision)s; текст с тех пор изменился."
-msgstr "Given for the earlier version of %(revision)s; the text has changed since."
-
-#: apps/accounts/templates/accounts/data.html:98
-msgid "Сохранённое, загруженные таблицы и исследования удаляются сразу и безвозвратно. Обращения остаются у администратора без имени и адреса. На адрес учётной записи придёт письмо об удалении. Удаление учётной записи — отзыв согласия на обработку персональных данных."
-msgstr "Saved items, uploaded tables and studies are deleted at once and for good. Enquiries stay with the administrator without a name or address. A message about the deletion will be sent to the account’s address. Deleting the account withdraws consent to the processing of personal data."
-
 #: apps/accounts/templates/accounts/email_confirm.html:12
-#: apps/accounts/views/security.py:107
-#: apps/accounts/views/security.py:112
+#: apps/accounts/views/security.py:86
+#: apps/accounts/views/security.py:91
 msgid "Новый адрес почты"
 msgstr "New email address"
 
@@ -403,8 +286,14 @@ msgstr "Recover the password"
 msgid "Превышено число неудачных попыток входа. Попробуйте через час или восстановите пароль по ссылке из письма."
 msgstr "Too many failed sign-in attempts. Try again in an hour or recover the password by the link from the message."
 
+#: apps/accounts/templates/accounts/login.html:13
+#: apps/accounts/templates/accounts/settings.html:259
+#: apps/accounts/views/auth.py:60
+#: apps/accounts/views/auth.py:65
+msgid "Вход"
+msgstr "Sign-in"
+
 #: apps/accounts/templates/accounts/login.html:22
-#: apps/accounts/templates/accounts/overview.html:30
 #: apps/accounts/templates/accounts/register.html:22
 msgid "Регионы и показатели"
 msgstr "Regions and indicators"
@@ -415,9 +304,7 @@ msgid "— свои, собраны в разделе «Сохранённое»
 msgstr "— your own, gathered in the “Saved” section of your account."
 
 #: apps/accounts/templates/accounts/login.html:26
-#: apps/accounts/templates/accounts/overview.html:36
 #: apps/accounts/templates/accounts/register.html:26
-#: apps/workspace/templates/workspace/saved.html:110
 msgid "Виды экрана"
 msgstr "Views"
 
@@ -427,7 +314,7 @@ msgid "— карта, рейтинг или расчёт с теми же на�
 msgstr "— a map, ranking or calculation with the same settings; reopened on fresh data."
 
 #: apps/accounts/templates/accounts/login.html:30
-#: apps/accounts/templates/accounts/overview.html:149
+#: apps/accounts/templates/accounts/overview.html:70
 #: apps/accounts/templates/accounts/register.html:30
 msgid "Новое по сохранённому"
 msgstr "New for your saved items"
@@ -532,86 +419,34 @@ msgstr "The link works once: it stops working after the password is changed. If 
 
 #: apps/accounts/templates/accounts/mail/password_reset_subject.txt:1
 #: apps/accounts/templates/accounts/password_reset.html:12
-#: apps/accounts/views/auth.py:290
-#: apps/accounts/views/auth.py:295
-#: apps/accounts/views/auth.py:325
+#: apps/accounts/views/auth.py:293
+#: apps/accounts/views/auth.py:298
+#: apps/accounts/views/auth.py:328
 msgid "Восстановление пароля"
 msgstr "Password recovery"
 
-#: apps/accounts/templates/accounts/overview.html:8
-msgid "Мой регион, новые данные по сохранённому и виды экрана, которые вы открывали последними."
-msgstr "My region, new data for your saved items and the screen views you opened most recently."
-
-#: apps/accounts/templates/accounts/overview.html:18
+#: apps/accounts/templates/accounts/overview.html:12
 msgid "Панели управления нужен вход с кодом"
 msgstr "The control panel requires sign-in with a code"
 
-#: apps/accounts/templates/accounts/overview.html:20
+#: apps/accounts/templates/accounts/overview.html:14
 msgid "У вас есть права панели. Она откроется, когда вы включите вход с одноразовым кодом."
 msgstr "You have control panel rights. The panel opens once you turn on sign-in with a one-time code."
 
-#: apps/accounts/templates/accounts/overview.html:21
+#: apps/accounts/templates/accounts/overview.html:15
 #: apps/accounts/templates/accounts/two_factor_setup.html:39
 msgid "Включить"
 msgstr "Turn on"
 
-#: apps/accounts/templates/accounts/overview.html:27
-msgid "Коротко"
-msgstr "In brief"
-
-#: apps/accounts/templates/accounts/overview.html:42
-msgid "Обращения ждут ответа"
-msgstr "Enquiries awaiting an answer"
-
-#: apps/accounts/templates/accounts/overview.html:48
-msgid "Обращения с ответом"
-msgstr "Answered enquiries"
-
-#: apps/accounts/templates/accounts/overview.html:57
+#: apps/accounts/templates/accounts/overview.html:28
 #: apps/accounts/templates/accounts/partials/_my_region_button.html:16
-#: apps/core/templates/core/home.html:34
+#: apps/catalog/templates/catalog/partials/_region_band.html:9
 #: apps/core/templates/core/partials/_live_card.html:10
 #: apps/core/templates/core/partials/_live_card.html:5
 msgid "Мой регион"
 msgstr "My region"
 
-#: apps/accounts/templates/accounts/overview.html:58
-msgid "Выбрать другой"
-msgstr "Choose another"
-
-#: apps/accounts/templates/accounts/overview.html:69
-#: apps/core/templates/core/home.html:45
-#: apps/exports/constants.py:28
-#: apps/exports/constants.py:66
-#: apps/search/answers.py:369
-msgid "Паспорт региона"
-msgstr "Region profile"
-
-#: apps/accounts/templates/accounts/overview.html:75
-#: apps/catalog/templates/catalog/partials/_indicator_page.html:32
-#: apps/catalog/templates/catalog/territory_detail.html:30
-msgid "Главное"
-msgstr "At a glance"
-
-#: apps/accounts/templates/accounts/overview.html:81
-#: apps/catalog/templates/catalog/territory_detail.html:82
-#: apps/catalog/templates/catalog/territory_detail.html:98
-#: apps/core/templates/core/home.html:50
-msgid "Что сейчас"
-msgstr "What now"
-
-#: apps/accounts/templates/accounts/overview.html:86
-#: apps/catalog/templates/catalog/territory_detail.html:109
-#: apps/catalog/templates/catalog/territory_detail.html:83
-msgid "Главные показатели"
-msgstr "Headline indicators"
-
-#: apps/accounts/templates/accounts/overview.html:119
-#: apps/catalog/templates/catalog/partials/_territory_card.html:39
-msgid "Сведения о регионе пока недоступны."
-msgstr "Information about the region is not available yet."
-
-#: apps/accounts/templates/accounts/overview.html:133
+#: apps/accounts/templates/accounts/overview.html:33
 #: apps/catalog/templates/catalog/partials/_similar.html:40
 #: apps/search/constants.py:22
 #: apps/userdata/templates/userdata/_study_toolbar.html:36
@@ -619,126 +454,57 @@ msgstr "Information about the region is not available yet."
 msgid "Регион"
 msgstr "Region"
 
-#: apps/accounts/templates/accounts/overview.html:135
+#: apps/accounts/templates/accounts/overview.html:35
 msgid "Выберите регион"
 msgstr "Choose a region"
 
-#: apps/accounts/templates/accounts/overview.html:140
+#: apps/accounts/templates/accounts/overview.html:40
 #: apps/accounts/templates/accounts/partials/_my_region_button.html:18
 msgid "Это мой регион"
 msgstr "This is my region"
 
-#: apps/accounts/templates/accounts/overview.html:162
-msgid "новое"
-msgstr "new"
+#: apps/accounts/templates/accounts/overview.html:48
+#: apps/userdata/templates/userdata/_versions.html:21
+#: apps/userdata/templates/userdata/dataset.html:75
+#: apps/userdata/templates/userdata/upload.html:73
+msgid "Продолжить"
+msgstr "Continue"
 
-#: apps/accounts/templates/accounts/overview.html:183
-msgid "Показателей основного набора с новыми значениями:"
-msgstr "Core-set indicators with new values:"
+#: apps/accounts/templates/accounts/overview.html:49
+msgid "Всё сохранённое"
+msgstr "All saved items"
 
-#: apps/accounts/templates/accounts/overview.html:194
-msgid "За последние 90 дней выпусков с новыми значениями по сохранённому не было."
-msgstr "No releases with new values for your saved items in the last 90 days."
-
-#: apps/accounts/templates/accounts/overview.html:210
-msgid "Все мои таблицы"
-msgstr "All my tables"
-
-#: apps/accounts/templates/accounts/overview.html:216
-#: apps/userdata/templates/userdata/index.html:101
-msgid "не собрана"
-msgstr "not built"
-
-#: apps/accounts/templates/accounts/overview.html:227
-msgid "Своя таблица по регионам открывается на той же карте и в тех же видах, что и данные сайта."
-msgstr "Your own table by region opens on the same map and in the same views as the site’s data."
-
-#: apps/accounts/templates/accounts/overview.html:228
+#: apps/accounts/templates/accounts/overview.html:61
 #: apps/core/navigation.py:152
-#: apps/core/templates/core/home.html:185
+#: apps/core/templates/core/home.html:149
 #: apps/userdata/templates/userdata/index.html:26
 #: apps/userdata/views.py:69
 msgid "Загрузить таблицу"
 msgstr "Upload a table"
 
-#: apps/accounts/templates/accounts/overview.html:232
-msgid "Исследования"
-msgstr "Studies"
+#: apps/accounts/templates/accounts/overview.html:86
+msgid "новое"
+msgstr "new"
 
-#: apps/accounts/templates/accounts/overview.html:247
-msgid "Последние открытые виды"
-msgstr "Recently opened views"
+#: apps/accounts/templates/accounts/overview.html:94
+msgid "За последние 90 дней выпусков с новыми значениями по сохранённому не было."
+msgstr "No releases with new values for your saved items in the last 90 days."
 
-#: apps/accounts/templates/accounts/overview.html:247
-msgid "Сохранённые виды"
-msgstr "Saved views"
+#: apps/accounts/templates/accounts/overview.html:74
+msgid "Что считается новым"
+msgstr "What counts as new"
 
-#: apps/accounts/templates/accounts/overview.html:249
-msgid "Всё сохранённое"
-msgstr "All saved items"
+#: apps/accounts/templates/accounts/overview.html:57
+msgid "Кнопка «Сохранить» есть на карте, в рейтинге, динамике и инструментах анализа: сохраняются настройки, а расчёт при открытии выполняется на текущих данных."
+msgstr "The “Save” button is on the map, the ranking, the dynamics and the analysis tools: the settings are saved, and the calculation runs on current data when the view is opened."
 
-#: apps/accounts/templates/accounts/overview.html:263
-#: apps/workspace/templates/workspace/saved.html:139
-msgid "Параметры"
-msgstr "Parameters"
-
-#: apps/accounts/templates/accounts/overview.html:264
-#: apps/workspace/templates/workspace/query_form.html:31
-#: apps/workspace/templates/workspace/saved.html:143
-msgid "параметры по умолчанию"
-msgstr "default parameters"
-
-#: apps/accounts/templates/accounts/overview.html:125
-msgid "Выберите свой регион: кабинет и главная страница будут начинаться с него — главное из паспорта, последние месячные данные и место среди регионов."
-msgstr "Choose your region: the personal account and the home page will start with it, showing the key facts of its profile, the latest monthly data and its place among the regions."
-
-#: apps/accounts/templates/accounts/overview.html:151
+#: apps/accounts/templates/accounts/overview.html:71
 msgid "Новое — полученное после прошлого визита (%(date)s); ниже — выпуски за 90 дней"
 msgstr "New means received after your previous visit (%(date)s); releases of the last 90 days follow"
 
-#: apps/accounts/templates/accounts/overview.html:165
-msgid "выпусков: %(count)s"
-msgstr "releases: %(count)s"
-
-#: apps/accounts/templates/accounts/overview.html:168
-msgid "получен %(date)s"
-msgstr "received %(date)s"
-
-#: apps/accounts/templates/accounts/overview.html:177
-msgid "и ещё показателей: %(count)s"
-msgstr "and more indicators: %(count)s"
-
-#: apps/accounts/templates/accounts/overview.html:198
+#: apps/accounts/templates/accounts/overview.html:98
 msgid "Отметьте регионы и показатели кнопкой «Сохранить» — здесь появятся новые значения по ним из новых версий набора данных и выпусков Росстата, Банка России и ФНС."
 msgstr "Mark regions and indicators with the “Save” button: new values for them from new versions of the dataset and from releases of Rosstat, the Bank of Russia and the Federal Tax Service will appear here."
-
-#: apps/accounts/templates/accounts/overview.html:216
-#: apps/userdata/templates/userdata/_dataset_data.html:27
-#: apps/userdata/templates/userdata/_indicator.html:16
-#: apps/userdata/templates/userdata/dataset.html:30
-#: apps/userdata/templates/userdata/series_step.html:28
-msgid "рядов: %(count)s"
-msgstr "series: %(count)s"
-
-#: apps/accounts/templates/accounts/overview.html:221
-msgid "Таблиц: %(count)s, занято %(used)s."
-msgstr "Tables: %(count)s, %(used)s used."
-
-#: apps/accounts/templates/accounts/overview.html:236
-msgid "карточек и заметок: %(count)s"
-msgstr "cards and notes: %(count)s"
-
-#: apps/accounts/templates/accounts/overview.html:269
-msgid "открыт %(date)s"
-msgstr "opened %(date)s"
-
-#: apps/accounts/templates/accounts/overview.html:271
-msgid "сохранён %(date)s"
-msgstr "saved %(date)s"
-
-#: apps/accounts/templates/accounts/overview.html:280
-msgid "Кнопка «Сохранить вид» есть на карте, в рейтинге, динамике и инструментах анализа: сохраняются настройки, а расчёт при открытии выполняется на текущих данных."
-msgstr "The “Save view” button is on the map, the ranking, the dynamics and the analysis tools: the settings are saved, and the calculation runs on current data when the view is opened."
 
 #: apps/accounts/templates/accounts/partials/_my_region_button.html:13
 msgid "Главная и кабинет открываются с этого региона. Нажмите, чтобы сбросить."
@@ -749,8 +515,8 @@ msgid "Главная и кабинет будут открываться с э�
 msgstr "The home page and the personal account will start with this region"
 
 #: apps/accounts/templates/accounts/password_change.html:6
-#: apps/accounts/views/auth.py:262
-#: apps/accounts/views/auth.py:268
+#: apps/accounts/views/auth.py:265
+#: apps/accounts/views/auth.py:271
 msgid "Смена пароля"
 msgstr "Change of password"
 
@@ -785,7 +551,7 @@ msgid "Укажите адрес электронной почты, на кот�
 msgstr "Enter the email address the account is registered to. If the address is registered on the site, a link for setting a new password will be sent to it."
 
 #: apps/accounts/templates/accounts/password_reset_complete.html:11
-#: apps/accounts/views/auth.py:353
+#: apps/accounts/views/auth.py:356
 msgid "Пароль изменён"
 msgstr "Password changed"
 
@@ -794,8 +560,8 @@ msgid "Теперь можно войти с новым паролем."
 msgstr "You can now sign in with the new password."
 
 #: apps/accounts/templates/accounts/password_reset_confirm.html:13
-#: apps/accounts/views/auth.py:337
-#: apps/accounts/views/auth.py:342
+#: apps/accounts/views/auth.py:340
+#: apps/accounts/views/auth.py:345
 msgid "Новый пароль"
 msgstr "New password"
 
@@ -818,48 +584,6 @@ msgstr "Message sent"
 #: apps/accounts/templates/accounts/password_reset_done.html:13
 msgid "Если указанный адрес зарегистрирован на сайте, письмо со ссылкой уже отправлено. Ссылка действует трое суток. Если письма нет, проверьте папку нежелательной почты."
 msgstr "If the address given is registered on the site, a message with the link has already been sent. The link is valid for three days. If there is no message, check the junk mail folder."
-
-#: apps/accounts/templates/accounts/profile.html:11
-msgid "Сведения о себе"
-msgstr "About yourself"
-
-#: apps/accounts/templates/accounts/profile.html:16
-#: apps/dashboard/templates/dashboard/dataset_version_form.html:51
-#: apps/dashboard/templates/dashboard/user_detail.html:97
-#: apps/userdata/templates/userdata/_study_card_menu.html:73
-#: apps/userdata/templates/userdata/formula.html:182
-msgid "Сохранить"
-msgstr "Save"
-
-#: apps/accounts/templates/accounts/profile.html:22
-#: apps/core/templates/core/terms.html:163
-#: apps/core/templates/core/terms.html:360
-msgid "Учётная запись"
-msgstr "Account"
-
-#: apps/accounts/templates/accounts/profile.html:26
-#: apps/accounts/templates/accounts/security.html:52
-msgid "Адрес почты"
-msgstr "Email address"
-
-#: apps/accounts/templates/accounts/profile.html:30
-#: apps/dashboard/forms.py:22
-#: apps/dashboard/templates/dashboard/user_detail.html:49
-#: apps/dashboard/templates/dashboard/user_list.html:63
-msgid "Роли"
-msgstr "Roles"
-
-#: apps/accounts/templates/accounts/profile.html:39
-msgid "Зарегистрирован"
-msgstr "Registered"
-
-#: apps/accounts/templates/accounts/profile.html:46
-msgid "Пароль, почта и вход с кодом"
-msgstr "Password, email and sign-in code"
-
-#: apps/accounts/templates/accounts/profile.html:52
-msgid "В кабинете помещается до %(views)s видов экрана и до %(marks)s регионов и показателей."
-msgstr "Your account holds up to %(views)s views and up to %(marks)s regions and indicators."
 
 #: apps/accounts/templates/accounts/recovery_codes.html:8
 msgid "Сохраните резервные коды"
@@ -906,115 +630,261 @@ msgstr "I already have an account"
 msgid "Условия использования"
 msgstr "Terms of use"
 
+#: apps/accounts/templates/accounts/register.html:68
+#: apps/accounts/templates/accounts/settings.html:272
+#: apps/core/navigation.py:194
+#: apps/core/templates/core/about.html:128
+#: apps/core/templates/core/privacy.html:20
+msgid "Политика обработки персональных данных"
+msgstr "Personal data processing policy"
+
 #: apps/accounts/templates/accounts/register.html:15
 msgid "Всё открыто и без учётной записи — карта, рейтинги, анализ, выгрузка чисел и документов. Учётная запись нужна, чтобы сохранять и возвращаться."
 msgstr "Everything is open without an account — the map, rankings, analysis, downloads of figures and documents. An account lets you save things and come back to them."
 
-#: apps/accounts/templates/accounts/security.html:11
-msgid "Пароль, адрес почты, вход с одноразовым кодом и сеансы на других устройствах."
-msgstr "Password, email address, sign-in with a one-time code and sessions on other devices."
+#: apps/accounts/templates/accounts/settings.html:13
+msgid "Разделы настроек"
+msgstr "Settings sections"
 
-#: apps/accounts/templates/accounts/security.html:22
+#: apps/accounts/templates/accounts/settings.html:15
+#: apps/accounts/templates/accounts/settings.html:235
+#: apps/accounts/templates/accounts/settings.html:24
+msgid "Профиль"
+msgstr "Profile"
+
+#: apps/accounts/templates/accounts/settings.html:16
+#: apps/accounts/templates/accounts/settings.html:65
+msgid "Вход и безопасность"
+msgstr "Sign-in and security"
+
+#: apps/accounts/templates/accounts/settings.html:17
+#: apps/accounts/templates/accounts/settings.html:227
+#: apps/core/navigation.py:242
+msgid "Персональные данные"
+msgstr "Personal data"
+
+#: apps/accounts/templates/accounts/settings.html:32
+#: apps/dashboard/templates/dashboard/dataset_version_form.html:51
+#: apps/dashboard/templates/dashboard/user_detail.html:97
+#: apps/userdata/templates/userdata/_study_card_menu.html:73
+#: apps/userdata/templates/userdata/formula.html:182
+msgid "Сохранить"
+msgstr "Save"
+
+#: apps/accounts/templates/accounts/settings.html:39
+#: apps/dashboard/forms.py:22
+#: apps/dashboard/templates/dashboard/user_detail.html:49
+#: apps/dashboard/templates/dashboard/user_list.html:63
+msgid "Роли"
+msgstr "Roles"
+
+#: apps/accounts/templates/accounts/settings.html:48
+msgid "Зарегистрирован"
+msgstr "Registered"
+
+#: apps/accounts/templates/accounts/settings.html:70
 msgid "Вход и сеансы"
 msgstr "Sign-in and sessions"
 
-#: apps/accounts/templates/accounts/security.html:25
+#: apps/accounts/templates/accounts/settings.html:73
 #: apps/dashboard/templates/dashboard/user_detail.html:110
 msgid "Последний вход"
 msgstr "Last sign-in"
 
-#: apps/accounts/templates/accounts/security.html:29
+#: apps/accounts/templates/accounts/settings.html:77
 #: apps/dashboard/templates/dashboard/user_detail.html:115
 #: apps/dashboard/templates/dashboard/user_list.html:65
 msgid "Последняя активность"
 msgstr "Last activity"
 
-#: apps/accounts/templates/accounts/security.html:34
+#: apps/accounts/templates/accounts/settings.html:82
 msgid "Сменить пароль"
 msgstr "Change the password"
 
-#: apps/accounts/templates/accounts/security.html:40
+#: apps/accounts/templates/accounts/settings.html:88
 msgid "Выйти на других устройствах"
 msgstr "Sign out on other devices"
 
-#: apps/accounts/templates/accounts/security.html:59
+#: apps/accounts/templates/accounts/settings.html:99
+msgid "Адрес почты"
+msgstr "Email address"
+
+#: apps/accounts/templates/accounts/settings.html:106
 msgid "Ждёт подтверждения"
 msgstr "Awaiting confirmation"
 
-#: apps/accounts/templates/accounts/security.html:67
+#: apps/accounts/templates/accounts/settings.html:114
 msgid "Отменить смену"
 msgstr "Cancel the change"
 
-#: apps/accounts/templates/accounts/security.html:83
+#: apps/accounts/templates/accounts/settings.html:121
+msgid "Сменить адрес"
+msgstr "Change address"
+
+#: apps/accounts/templates/accounts/settings.html:132
 msgid "Отправить ссылку на новый адрес"
 msgstr "Send a link to the new address"
 
-#: apps/accounts/templates/accounts/security.html:99
+#: apps/accounts/templates/accounts/settings.html:148
 msgid "Вход с одноразовым кодом"
 msgstr "Sign-in with a one-time code"
 
-#: apps/accounts/templates/accounts/security.html:105
+#: apps/accounts/templates/accounts/settings.html:154
 #: apps/dashboard/templates/dashboard/user_detail.html:125
 msgid "выключен"
 msgstr "off"
 
-#: apps/accounts/templates/accounts/security.html:121
+#: apps/accounts/templates/accounts/settings.html:170
 msgid "Обязателен для панели управления"
 msgstr "Required for the control panel"
 
-#: apps/accounts/templates/accounts/security.html:122
+#: apps/accounts/templates/accounts/settings.html:171
 msgid "У вас есть права панели: без входа с кодом она не открывается, и выключить его нельзя."
 msgstr "You have control panel rights: the panel does not open without sign-in with a code, and it cannot be turned off."
 
-#: apps/accounts/templates/accounts/security.html:130
-#: apps/accounts/views/security.py:259
-msgid "Резервные коды"
-msgstr "Backup codes"
-
-#: apps/accounts/templates/accounts/security.html:137
+#: apps/accounts/templates/accounts/settings.html:181
 msgid "Каждый код входит один раз вместо шести цифр — на случай, если телефона нет под рукой. Новый набор отменяет прежний."
 msgstr "Each code works once instead of the six digits, in case your phone is not at hand. A new set cancels the previous one."
 
-#: apps/accounts/templates/accounts/security.html:143
+#: apps/accounts/templates/accounts/settings.html:186
 msgid "Выпустить новые коды"
 msgstr "Issue new codes"
 
-#: apps/accounts/templates/accounts/security.html:150
-msgid "Выключить"
-msgstr "Turn off"
+#: apps/accounts/templates/accounts/settings.html:191
+msgid "Выпустить"
+msgstr "Issue"
 
-#: apps/accounts/templates/accounts/security.html:161
+#: apps/accounts/templates/accounts/settings.html:198
 msgid "Выключить вход с кодом"
 msgstr "Turn off sign-in with a code"
 
-#: apps/accounts/templates/accounts/security.html:170
+#: apps/accounts/templates/accounts/settings.html:209
+msgid "Выключить"
+msgstr "Turn off"
+
+#: apps/accounts/templates/accounts/settings.html:218
 msgid "Включить вход с кодом"
 msgstr "Turn on sign-in with a code"
 
-#: apps/accounts/templates/accounts/security.html:42
+#: apps/accounts/templates/accounts/settings.html:232
+msgid "Что хранится"
+msgstr "What is stored"
+
+#: apps/accounts/templates/accounts/settings.html:236
+msgid "адрес почты, имя, мой регион"
+msgstr "email address, name, my region"
+
+#: apps/accounts/templates/accounts/settings.html:247
+#: apps/core/navigation.py:145
+#: apps/core/navigation.py:226
+#: apps/core/templates/core/terms.html:195
+#: apps/core/templates/core/terms.html:361
+msgid "Свои данные"
+msgstr "Your own data"
+
+#: apps/accounts/templates/accounts/settings.html:260
+msgid "хэш пароля, время последнего входа, ключ входа с кодом, если он включён"
+msgstr "password hash, time of the last sign-in, the sign-in code key if it is turned on"
+
+#: apps/accounts/templates/accounts/settings.html:267
+msgid "Выгрузить всё (JSON)"
+msgstr "Download everything (JSON)"
+
+#: apps/accounts/templates/accounts/settings.html:271
+msgid "В файле — профиль, сохранённое с параметрами видов, перечень загруженных таблиц с версиями и закрытыми ссылками, исследования и обращения с ответами. Пароль, ключи входа и адреса закрытых ссылок в файл не попадают; сами таблицы скачиваются на их страницах."
+msgstr "The file contains the profile, saved items with view settings, the list of uploaded tables with their versions and private links, studies and enquiries with answers. The password, sign-in keys and the addresses of private links are not included; the tables themselves are downloaded on their pages."
+
+#: apps/accounts/templates/accounts/settings.html:277
+#: apps/dashboard/templates/dashboard/user_detail.html:129
+msgid "Согласие на обработку"
+msgstr "Consent to processing"
+
+#: apps/accounts/templates/accounts/settings.html:283
+#: apps/core/templates/core/consent.html:28
+msgid "Текст согласия"
+msgstr "Text of the consent"
+
+#: apps/accounts/templates/accounts/settings.html:286
+msgid "Отозвать согласие — значит удалить учётную запись: без согласия сайт не хранит сведения о вас."
+msgstr "To withdraw consent, delete the account: without consent the site keeps no information about you."
+
+#: apps/accounts/templates/accounts/settings.html:295
+msgid "Согласие не записано: учётная запись заведена без него."
+msgstr "No consent is recorded: the account was created without it."
+
+#: apps/accounts/templates/accounts/settings.html:305
+msgid "Дать согласие"
+msgstr "Give consent"
+
+#: apps/accounts/templates/accounts/settings.html:312
+#: apps/accounts/templates/accounts/settings.html:330
+msgid "Удалить учётную запись"
+msgstr "Delete account"
+
+#: apps/accounts/templates/accounts/settings.html:325
+msgid "Это последняя учётная запись администратора: сначала назначьте администратором кого-то ещё."
+msgstr "This is the last administrator account: make someone else an administrator first."
+
+#: apps/accounts/templates/accounts/settings.html:341
+#: apps/dashboard/templates/dashboard/content.html:116
+#: apps/dashboard/templates/dashboard/content_confirm_delete.html:35
+#: apps/userdata/templates/userdata/study.html:96
+msgid "Удалить"
+msgstr "Delete"
+
+#: apps/accounts/templates/accounts/settings.html:182
+#: apps/accounts/views/security.py:238
+msgid "Резервные коды"
+msgstr "Backup codes"
+
+#: apps/accounts/templates/accounts/settings.html:53
+msgid "В кабинете помещается до %(views)s видов экрана и до %(marks)s регионов и показателей."
+msgstr "Your account holds up to %(views)s views and up to %(marks)s regions and indicators."
+
+#: apps/accounts/templates/accounts/settings.html:90
 msgid "Завершает вход на других компьютерах и телефонах; здесь вы останетесь. Смена пароля или адреса почты делает то же самое."
 msgstr "Ends sign-in on other computers and phones; you stay signed in here. Changing the password or email address does the same."
 
-#: apps/accounts/templates/accounts/security.html:61
+#: apps/accounts/templates/accounts/settings.html:108
 msgid "Ссылка отправлена на %(email)s. Адрес сменится, когда вы её откроете."
 msgstr "A link has been sent to %(email)s. The address changes when you open it."
 
-#: apps/accounts/templates/accounts/security.html:86
+#: apps/accounts/templates/accounts/settings.html:135
 msgid "На прежний адрес после смены придёт уведомление. Вход по прежнему адресу перестанет работать."
 msgstr "A notice is sent to the previous address after the change. Signing in with the previous address will stop working."
 
-#: apps/accounts/templates/accounts/security.html:102
+#: apps/accounts/templates/accounts/settings.html:151
 #: apps/dashboard/templates/dashboard/user_detail.html:123
 msgid "включён %(date)s"
 msgstr "on since %(date)s"
 
-#: apps/accounts/templates/accounts/security.html:110
+#: apps/accounts/templates/accounts/settings.html:159
 msgid "После пароля сайт спрашивает шесть цифр из приложения-генератора на телефоне (Яндекс Ключ, Google Authenticator, FreeOTP и другие). Код меняется каждые 30 секунд, поэтому украденного пароля для входа мало."
 msgstr "After the password, the site asks for six digits from an authenticator app on your phone (Yandex Key, Google Authenticator, FreeOTP and others). The code changes every 30 seconds, so a stolen password is not enough to sign in."
 
-#: apps/accounts/templates/accounts/security.html:132
-msgid "Осталось кодов: %(count)s."
-msgstr "Codes left: %(count)s."
+#: apps/accounts/templates/accounts/settings.html:178
+msgid "Резервных кодов осталось: %(count)s."
+msgstr "Backup codes left: %(count)s."
+
+#: apps/accounts/templates/accounts/settings.html:241
+msgid "регионов и показателей — %(marks)s, видов экрана — %(views)s"
+msgstr "regions and indicators: %(marks)s, screen views: %(views)s"
+
+#: apps/accounts/templates/accounts/settings.html:249
+msgid "загруженных таблиц — %(count)s: исходные файлы, их версии и разбор; исследований — %(studies)s"
+msgstr "uploaded tables — %(count)s: source files, their versions and parsing; studies — %(studies)s"
+
+#: apps/accounts/templates/accounts/settings.html:280
+msgid "Дано %(given)s на редакцию от %(revision)s."
+msgstr "Given on %(given)s for the version of %(revision)s."
+
+#: apps/accounts/templates/accounts/settings.html:291
+msgid "Дано на прежнюю редакцию от %(revision)s; текст с тех пор изменился."
+msgstr "Given for the earlier version of %(revision)s; the text has changed since."
+
+#: apps/accounts/templates/accounts/settings.html:314
+msgid "Сохранённое, загруженные таблицы и исследования удаляются сразу и безвозвратно. Обращения остаются у администратора без имени и адреса. На адрес учётной записи придёт письмо об удалении. Удаление учётной записи — отзыв согласия на обработку персональных данных."
+msgstr "Saved items, uploaded tables and studies are deleted at once and for good. Enquiries stay with the administrator without a name or address. A message about the deletion will be sent to the account’s address. Deleting the account withdraws consent to the processing of personal data."
 
 #: apps/accounts/templates/accounts/two_factor_setup.html:11
 msgid "Добавьте ключ в приложение"
@@ -1045,7 +915,7 @@ msgid "После включения сайт покажет резервные 
 msgstr "After it is turned on, the site shows backup codes. Save them: without the phone, they are the only way to sign in. Sessions on other devices will end."
 
 #: apps/accounts/views/auth.py:178
-#: apps/accounts/views/security.py:186
+#: apps/accounts/views/security.py:165
 msgid "Код не подошёл. Проверьте время на телефоне и введите новый код."
 msgstr "The code did not match. Check the time on your phone and enter a new code."
 
@@ -1053,7 +923,7 @@ msgstr "The code did not match. Check the time on your phone and enter a new cod
 msgid "Учётная запись создана"
 msgstr "Account created"
 
-#: apps/accounts/views/auth.py:275
+#: apps/accounts/views/auth.py:278
 msgid "Пароль изменён. Сеансы на других устройствах завершены."
 msgstr "Password changed. Sessions on other devices have been ended."
 
@@ -1065,35 +935,35 @@ msgstr "Too many code attempts. Try again in an hour."
 msgid "Слишком много регистраций подряд. Попробуйте через час."
 msgstr "Too many registrations in a row. Try again in an hour."
 
-#: apps/accounts/views/auth.py:306
+#: apps/accounts/views/auth.py:309
 msgid "Слишком много запросов восстановления. Попробуйте через час."
 msgstr "Too many reset requests. Try again in an hour."
 
 #: apps/accounts/views/auth.py:156
-msgid "Вход по резервному коду; осталось кодов: %(count)d. Новые выпускаются в разделе «Безопасность»."
-msgstr "Signed in with a backup code; codes left: %(count)d. New ones are issued in the Security section."
+msgid "Вход по резервному коду; осталось кодов: %(count)d. Новые выпускаются в «Настройках» кабинета."
+msgstr "Signed in with a backup code; codes left: %(count)d. New ones are issued in the account Settings."
 
 #: apps/accounts/views/auth.py:174
 msgid "Слишком много неверных кодов. Войдите заново."
 msgstr "Too many wrong codes. Sign in again."
 
-#: apps/accounts/views/cabinet.py:115
+#: apps/accounts/views/cabinet.py:125
 msgid "Профиль сохранён"
 msgstr "Profile saved"
 
-#: apps/accounts/views/data.py:67
+#: apps/accounts/views/data.py:54
 msgid "Учётная запись удалена. На её адрес отправлено письмо."
 msgstr "The account has been deleted. A notice has been sent to its address."
 
-#: apps/accounts/views/data.py:78
+#: apps/accounts/views/data.py:65
 msgid "Согласие на обработку персональных данных записано"
 msgstr "Consent to the processing of personal data has been recorded"
 
-#: apps/accounts/views/data.py:80
+#: apps/accounts/views/data.py:67
 msgid "Отметьте флажок согласия"
 msgstr "Tick the consent box"
 
-#: apps/accounts/views/data.py:63
+#: apps/accounts/views/data.py:50
 msgid "Это последняя учётная запись администратора. Сначала назначьте другого."
 msgstr "This is the last administrator account. Make someone else an administrator first."
 
@@ -1109,57 +979,57 @@ msgstr "My region has been reset"
 msgid "«%(name)s» — ваш регион"
 msgstr "“%(name)s” is your region"
 
-#: apps/accounts/views/security.py:158
-#: apps/accounts/views/security.py:174
+#: apps/accounts/views/security.py:137
+#: apps/accounts/views/security.py:153
 #: apps/dashboard/templates/dashboard/user_detail.html:120
 msgid "Вход с кодом"
 msgstr "Sign-in with a code"
 
-#: apps/accounts/views/security.py:92
+#: apps/accounts/views/security.py:71
 msgid "Смена адреса отменена"
 msgstr "The address change has been cancelled"
 
-#: apps/accounts/views/security.py:137
+#: apps/accounts/views/security.py:116
 msgid "Сеансы на других устройствах завершены"
 msgstr "Sessions on other devices have been ended"
 
-#: apps/accounts/views/security.py:190
+#: apps/accounts/views/security.py:169
 msgid "Вход с кодом включён"
 msgstr "Sign-in with a code is on"
 
-#: apps/accounts/views/security.py:223
+#: apps/accounts/views/security.py:202
 msgid "Вход с кодом выключен"
 msgstr "Sign-in with a code is off"
 
-#: apps/accounts/views/security.py:252
+#: apps/accounts/views/security.py:231
 msgid "Выпущены новые резервные коды; прежние не действуют"
 msgstr "New backup codes have been issued; the previous ones no longer work"
 
-#: apps/accounts/views/security.py:70
+#: apps/accounts/views/security.py:49
 msgid "Слишком много запросов смены адреса. Попробуйте через час."
 msgstr "Too many address change requests. Try again in an hour."
 
-#: apps/accounts/views/security.py:76
+#: apps/accounts/views/security.py:55
 msgid "Письмо на новый адрес не ушло: почтовый узел не ответил. Попробуйте позже."
 msgstr "The message to the new address was not sent: the mail server did not respond. Try again later."
 
-#: apps/accounts/views/security.py:81
+#: apps/accounts/views/security.py:60
 msgid "На новый адрес отправлена ссылка. Адрес сменится, когда вы её откроете."
 msgstr "A link has been sent to the new address. The address changes when you open it."
 
-#: apps/accounts/views/security.py:126
+#: apps/accounts/views/security.py:105
 msgid "Адрес почты изменён. Войдите с новым адресом: %(email)s"
 msgstr "The email address has been changed. Sign in with the new address: %(email)s"
 
-#: apps/accounts/views/security.py:217
+#: apps/accounts/views/security.py:196
 msgid "С правами панели управления вход с кодом обязателен."
 msgstr "With control panel rights, sign-in with a code is required."
 
-#: apps/accounts/views/security.py:220
+#: apps/accounts/views/security.py:199
 msgid "Код не подошёл"
 msgstr "The code did not match"
 
-#: apps/accounts/views/security.py:122
+#: apps/accounts/views/security.py:101
 msgid "Адрес почты изменён: %(email)s"
 msgstr "The email address has been changed: %(email)s"
 
@@ -1802,7 +1672,7 @@ msgstr "Relations between indicators"
 #: apps/analytics/templates/analytics/partials/_correlation_results.html:29
 #: apps/analytics/templates/analytics/partials/_index_results.html:49
 #: apps/catalog/templates/catalog/dataset.html:38
-#: apps/catalog/templates/catalog/territory_detail.html:247
+#: apps/catalog/templates/catalog/territory_detail.html:263
 msgid "показателей"
 msgstr "indicators"
 
@@ -2670,7 +2540,7 @@ msgid "значение территории и среднее значение 
 msgstr "the value of the territory and the mean value of its neighbours"
 
 #: apps/analytics/templates/analytics/partials/_spatial_results.html:167
-#: apps/catalog/templates/catalog/territory_detail.html:230
+#: apps/catalog/templates/catalog/territory_detail.html:245
 #: apps/rankings/templates/rankings/partials/_ranking_results.html:151
 #: apps/surface/templates/surface/panels/_table.html:40
 #: apps/userdata/export.py:58
@@ -2766,7 +2636,7 @@ msgstr "How it is calculated"
 #: apps/analytics/templates/analytics/tool.html:44
 #: apps/catalog/templates/catalog/indicator_themes.html:39
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:181
-#: apps/catalog/templates/catalog/territory_detail.html:73
+#: apps/catalog/templates/catalog/territory_detail.html:78
 #: apps/core/templates/core/home.html:23
 msgid "Данные ещё не загружены"
 msgstr "The data have not been loaded yet"
@@ -2774,7 +2644,7 @@ msgstr "The data have not been loaded yet"
 #: apps/analytics/templates/analytics/tool.html:45
 #: apps/catalog/templates/catalog/indicator_themes.html:40
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:182
-#: apps/catalog/templates/catalog/territory_detail.html:74
+#: apps/catalog/templates/catalog/territory_detail.html:79
 #: apps/core/templates/core/home.html:24
 msgid "Страница заработает, когда администратор загрузит набор данных."
 msgstr "The page will work once the administrator loads the dataset."
@@ -3663,7 +3533,11 @@ msgstr "%(share)s lower than in Russia"
 msgid "реальное снижение на %(amount)s"
 msgstr "real decline of %(amount)s"
 
-#: apps/catalog/passport.py:674
+#: apps/catalog/passport.py:582
+msgid "нет ни одного основного показателя"
+msgstr "none of the key indicators"
+
+#: apps/catalog/passport.py:720
 msgid "%(head)s и %(last)s"
 msgstr "%(head)s and %(last)s"
 
@@ -3711,9 +3585,13 @@ msgstr "%(change)s over %(years)s years"
 msgid "%(real)s за %(years)s лет (в рублях — %(nominal)s)"
 msgstr "%(real)s over %(years)s years (in roubles, %(nominal)s)"
 
-#: apps/catalog/passport.py:656
+#: apps/catalog/passport.py:691
 msgid "%(text)s; %(year)s год, расчёт RegionLens."
 msgstr "%(text)s; %(year)s, RegionLens calculation."
+
+#: apps/catalog/passport.py:711
+msgid "%(title)s (%(place)s)"
+msgstr "%(title)s (%(place)s)"
 
 #: apps/catalog/passport.py:162
 msgid "в %(ratio)s раза выше, чем по России"
@@ -3745,7 +3623,7 @@ msgstr "no %(years)s-year comparison: comparability break in %(year)s"
 
 #: apps/catalog/passport.py:436
 #: apps/catalog/passport.py:459
-#: apps/catalog/passport.py:652
+#: apps/catalog/passport.py:687
 msgid "%(own)s (по России — %(country)s)"
 msgstr "%(own)s (Russia: %(country)s)"
 
@@ -3757,45 +3635,48 @@ msgstr "%(change)s in roubles over %(years)s years"
 msgid "%(own)s; по России — %(country)s"
 msgstr "%(own)s; Russia: %(country)s"
 
-#: apps/catalog/passport.py:553
-msgid "Население — %(value)s %(unit)s, %(place)s"
-msgstr "Population: %(value)s %(unit)s, %(place)s"
+#: apps/catalog/passport.py:573
+msgid "%(value)s %(unit)s, %(place)s"
+msgstr "%(value)s %(unit)s, %(place)s"
 
-#: apps/catalog/passport.py:569
-msgid "Ни по одному основному показателю регион не входит в число лучших."
-msgstr "The region is not among the best on any key indicator."
+#: apps/catalog/passport.py:585
+#: apps/catalog/views/territory.py:149
+msgid "В числе лучших"
+msgstr "Among the best"
 
-#: apps/catalog/passport.py:579
-msgid "Ни по одному основному показателю регион не входит в число худших."
-msgstr "The region is not among the worst on any key indicator."
+#: apps/catalog/passport.py:592
+#: apps/catalog/views/territory.py:157
+msgid "В числе худших"
+msgstr "Among the worst"
 
-#: apps/catalog/passport.py:629
+#: apps/catalog/passport.py:664
 msgid "На средний доход можно купить %(income)s фиксированного набора товаров и услуг, на среднюю зарплату — %(wage)s"
 msgstr "The average income buys %(income)s fixed baskets of goods and services, the average wage %(wage)s"
 
-#: apps/catalog/passport.py:642
+#: apps/catalog/passport.py:677
 msgid "На средний доход можно купить %(value)s фиксированного набора товаров и услуг"
 msgstr "The average income buys %(value)s fixed baskets of goods and services"
 
-#: apps/catalog/passport.py:646
+#: apps/catalog/passport.py:681
 msgid "На среднюю зарплату можно купить %(value)s фиксированного набора товаров и услуг"
 msgstr "The average wage buys %(value)s fixed baskets of goods and services"
 
-#: apps/catalog/passport.py:564
-msgid "Сильнее всего регион выглядит по показателям: %(items)s."
-msgstr "The region looks strongest on %(items)s."
+#: apps/catalog/passport.py:580
+msgid "Население"
+msgstr "Population"
 
-#: apps/catalog/passport.py:574
-msgid "Слабее всего — по показателям: %(items)s."
-msgstr "It looks weakest on %(items)s."
+#: apps/catalog/passport.py:601
+#: apps/catalog/templates/catalog/territory_detail.html:359
+msgid "Полнота данных"
+msgstr "Completeness of the data"
 
-#: apps/catalog/passport.py:587
-msgid "Сведения есть по %(count)s из %(total)s основных показателей, самые свежие — за %(year)s год."
-msgstr "Data are available for %(count)s of %(total)s key indicators; the latest are for %(year)s."
-
-#: apps/catalog/passport.py:634
+#: apps/catalog/passport.py:669
 msgid "%(own)s (по России — %(income)s и %(wage)s)"
 msgstr "%(own)s (Russia: %(income)s and %(wage)s)"
+
+#: apps/catalog/passport.py:602
+msgid "по %(count)s из %(total)s основных показателей"
+msgstr "for %(count)s of %(total)s key indicators"
 
 #: apps/catalog/provenance.py:23
 msgid "годовое значение — среднее двенадцати месяцев, расчёт RegionLens"
@@ -4151,7 +4032,7 @@ msgid "Основные социально-экономические показ
 msgstr "Key socio-economic indicators of Russian regions by topic: population, health, income, jobs, economy, small business, housing, credit, education, roads, environment and prices."
 
 #: apps/catalog/templates/catalog/indicator_themes.html:46
-#: apps/catalog/templates/catalog/territory_detail.html:218
+#: apps/catalog/templates/catalog/territory_detail.html:233
 msgid "Темы"
 msgstr "Topics"
 
@@ -4169,19 +4050,19 @@ msgstr "Full list — %(total)s series with filters"
 
 #: apps/catalog/templates/catalog/indicator_themes.html:83
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:99
-#: apps/core/templates/core/home.html:135
+#: apps/core/templates/core/home.html:99
 msgid "реально, %(year)s к %(previous)s; в рублях %(nominal)s"
 msgstr "real, %(year)s on %(previous)s; in roubles %(nominal)s"
 
 #: apps/catalog/templates/catalog/indicator_themes.html:87
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:103
-#: apps/core/templates/core/home.html:139
+#: apps/core/templates/core/home.html:103
 msgid "%(year)s к %(previous)s"
 msgstr "%(year)s vs %(previous)s"
 
 #: apps/catalog/templates/catalog/indicator_themes.html:94
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:110
-#: apps/core/templates/core/home.html:146
+#: apps/core/templates/core/home.html:110
 msgid "к прошлому году не сравнивается: разрыв сопоставимости в %(year)s году"
 msgstr "not compared with the previous year: comparability break in %(year)s"
 
@@ -4206,7 +4087,7 @@ msgid "нет данных за этот год"
 msgstr "no data for this year"
 
 #: apps/catalog/templates/catalog/partials/_indicator_map.html:14
-#: apps/core/templates/core/home.html:81
+#: apps/core/templates/core/home.html:45
 msgid "Где больше, где меньше"
 msgstr "Where it is higher, where lower"
 
@@ -4285,6 +4166,11 @@ msgstr "higher is better"
 msgid "рост — к худшему"
 msgstr "higher is worse"
 
+#: apps/catalog/templates/catalog/partials/_indicator_page.html:32
+#: apps/catalog/templates/catalog/territory_detail.html:30
+msgid "Главное"
+msgstr "At a glance"
+
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:57
 msgid "что изменилось"
 msgstr "what changed"
@@ -4300,7 +4186,7 @@ msgstr "No new values will appear."
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:78
 #: apps/core/navigation.py:217
 #: apps/core/navigation.py:93
-#: apps/core/templates/core/home.html:197
+#: apps/core/templates/core/home.html:161
 #: apps/surface/views.py:85
 msgid "Исследовать"
 msgstr "Explore"
@@ -4324,6 +4210,7 @@ msgstr "Breakdown of the indicator"
 
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:166
 #: apps/dashboard/templates/dashboard/index.html:22
+#: apps/userdata/study_views.py:425
 #: apps/workspace/templates/workspace/query_form.html:38
 msgid "Открыть"
 msgstr "Open"
@@ -4364,7 +4251,7 @@ msgstr "About the series"
 #: apps/catalog/templates/catalog/territory_list.html:20
 #: apps/catalog/views/catalog.py:181
 #: apps/catalog/views/catalog.py:200
-#: apps/catalog/views/territory.py:65
+#: apps/catalog/views/territory.py:70
 msgid "Регионы"
 msgstr "Regions"
 
@@ -4492,7 +4379,7 @@ msgid "Все пересмотры ряда"
 msgstr "All revisions of the series"
 
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:572
-#: apps/catalog/templates/catalog/territory_detail.html:206
+#: apps/catalog/templates/catalog/territory_detail.html:218
 msgid "Все основные показатели"
 msgstr "All key indicators"
 
@@ -4607,7 +4494,7 @@ msgid "Ещё в теме «%(theme)s»"
 msgstr "More in “%(theme)s”"
 
 #: apps/catalog/templates/catalog/partials/_rank_strip.html:14
-#: apps/catalog/templates/catalog/territory_detail.html:249
+#: apps/catalog/templates/catalog/territory_detail.html:265
 #: apps/core/showcase.py:422
 #: apps/core/showcase.py:424
 msgid "хуже"
@@ -4628,6 +4515,24 @@ msgstr "less"
 #: apps/core/templates/core/partials/_live_legend.html:17
 msgid "больше"
 msgstr "more"
+
+#: apps/catalog/templates/catalog/partials/_region_band.html:21
+#: apps/exports/constants.py:28
+#: apps/exports/constants.py:66
+#: apps/search/answers.py:369
+#: apps/surface/templates/surface/partials/_subject.html:73
+msgid "Паспорт региона"
+msgstr "Region profile"
+
+#: apps/catalog/templates/catalog/partials/_region_band.html:24
+msgid "Выбрать другой"
+msgstr "Choose another"
+
+#: apps/catalog/templates/catalog/partials/_region_band.html:28
+#: apps/catalog/templates/catalog/territory_detail.html:103
+#: apps/catalog/templates/catalog/territory_detail.html:87
+msgid "Что сейчас"
+msgstr "What now"
 
 #: apps/catalog/templates/catalog/partials/_series_results.html:11
 #: apps/dashboard/templates/dashboard/content.html:62
@@ -4775,6 +4680,10 @@ msgstr "Regions with incomplete data left out of the calculation: %(skipped)s."
 msgid "Закрыть"
 msgstr "Close"
 
+#: apps/catalog/templates/catalog/partials/_territory_card.html:39
+msgid "Сведения о регионе пока недоступны."
+msgstr "Information about the region is not available yet."
+
 #: apps/catalog/templates/catalog/partials/_territory_card.html:44
 msgid "Открыть паспорт региона"
 msgstr "Open the region profile"
@@ -4808,7 +4717,7 @@ msgid "Примечания Росстата переведены RegionLens и 
 msgstr "Rosstat’s notes are translated by RegionLens and are not the official text; the original is on the <a href=\"%(original_url)s\" hreflang=\"ru\">Russian version of this page</a>."
 
 #: apps/catalog/templates/catalog/series_detail.html:25
-#: apps/core/templates/core/home.html:239
+#: apps/core/templates/core/home.html:203
 msgid "Карточка региона"
 msgstr "Region card"
 
@@ -4961,36 +4870,41 @@ msgstr "capital"
 msgid "км²"
 msgstr "km²"
 
-#: apps/catalog/templates/catalog/territory_detail.html:42
+#: apps/catalog/templates/catalog/territory_detail.html:47
 msgid "Сравнить"
 msgstr "Compare"
 
-#: apps/catalog/templates/catalog/territory_detail.html:47
+#: apps/catalog/templates/catalog/territory_detail.html:52
 msgid "На карте"
 msgstr "On the map"
 
-#: apps/catalog/templates/catalog/territory_detail.html:54
+#: apps/catalog/templates/catalog/territory_detail.html:59
 msgid "Соседние регионы — ссылки на их паспорта."
 msgstr "Neighbouring regions link to their profiles."
 
-#: apps/catalog/templates/catalog/territory_detail.html:63
+#: apps/catalog/templates/catalog/territory_detail.html:68
 msgid "Особенности учёта"
 msgstr "Notes on the data"
 
-#: apps/catalog/templates/catalog/territory_detail.html:80
+#: apps/catalog/templates/catalog/territory_detail.html:85
 msgid "Разделы паспорта"
 msgstr "Profile sections"
 
-#: apps/catalog/templates/catalog/territory_detail.html:85
+#: apps/catalog/templates/catalog/territory_detail.html:114
+#: apps/catalog/templates/catalog/territory_detail.html:88
+msgid "Главные показатели"
+msgstr "Headline indicators"
+
+#: apps/catalog/templates/catalog/territory_detail.html:90
 msgid "Сильные и слабые"
 msgstr "Strengths and weaknesses"
 
-#: apps/catalog/templates/catalog/territory_detail.html:86
+#: apps/catalog/templates/catalog/territory_detail.html:91
 #: apps/userdata/templates/userdata/_dataset_data.html:60
 msgid "Все показатели"
 msgstr "All indicators"
 
-#: apps/catalog/templates/catalog/territory_detail.html:88
+#: apps/catalog/templates/catalog/territory_detail.html:93
 #: apps/catalog/views/series.py:264
 #: apps/core/navigation.py:58
 #: apps/surface/panels.py:82
@@ -4998,111 +4912,115 @@ msgstr "All indicators"
 msgid "Динамика"
 msgstr "Dynamics"
 
-#: apps/catalog/templates/catalog/territory_detail.html:337
-#: apps/catalog/templates/catalog/territory_detail.html:89
+#: apps/catalog/templates/catalog/territory_detail.html:324
+#: apps/catalog/templates/catalog/territory_detail.html:94
 msgid "Похожие регионы"
 msgstr "Similar regions"
 
-#: apps/catalog/templates/catalog/territory_detail.html:356
-#: apps/catalog/templates/catalog/territory_detail.html:90
+#: apps/catalog/templates/catalog/territory_detail.html:343
+#: apps/catalog/templates/catalog/territory_detail.html:95
 msgid "Соседи и данные"
 msgstr "Neighbours and data"
 
-#: apps/catalog/templates/catalog/territory_detail.html:99
+#: apps/catalog/templates/catalog/territory_detail.html:104
 msgid "Последние месяцы и изменение к тому же периоду прошлого года"
 msgstr "Latest months and the change from the same period a year earlier"
 
-#: apps/catalog/templates/catalog/territory_detail.html:110
+#: apps/catalog/templates/catalog/territory_detail.html:115
 msgid "Значение, место среди регионов и ход за двенадцать лет"
 msgstr "Value, place among regions and twelve-year trend"
 
-#: apps/catalog/templates/catalog/territory_detail.html:156
+#: apps/catalog/templates/catalog/territory_detail.html:143
+msgid "фиксированного набора товаров и услуг"
+msgstr "fixed baskets of goods and services"
+
+#: apps/catalog/templates/catalog/territory_detail.html:168
 msgid "Сильные и слабые стороны"
 msgstr "Strong and weak points"
 
-#: apps/catalog/templates/catalog/territory_detail.html:157
+#: apps/catalog/templates/catalog/territory_detail.html:169
 msgid "Показатели, по которым регион в числе 15 %% лучших или худших"
 msgstr "Indicators on which the region is among the best or worst 15%%"
 
-#: apps/catalog/templates/catalog/territory_detail.html:184
+#: apps/catalog/templates/catalog/territory_detail.html:196
 #: apps/userdata/templates/userdata/_dataset_checks.html:93
 msgid "Свернуть"
 msgstr "Collapse"
 
-#: apps/catalog/templates/catalog/territory_detail.html:213
-#: apps/catalog/templates/catalog/territory_detail.html:214
+#: apps/catalog/templates/catalog/territory_detail.html:225
+#: apps/catalog/templates/catalog/territory_detail.html:226
 msgid "Развернуть все"
 msgstr "Expand all"
 
-#: apps/catalog/templates/catalog/territory_detail.html:214
+#: apps/catalog/templates/catalog/territory_detail.html:226
 msgid "Свернуть все"
 msgstr "Collapse all"
 
-#: apps/catalog/templates/catalog/territory_detail.html:231
+#: apps/catalog/templates/catalog/territory_detail.html:228
+msgid "Показать все показатели"
+msgstr "Show all indicators"
+
+#: apps/catalog/templates/catalog/territory_detail.html:246
 msgid "Положение среди регионов"
 msgstr "Position among regions"
 
-#: apps/catalog/templates/catalog/territory_detail.html:232
+#: apps/catalog/templates/catalog/territory_detail.html:247
 msgid "С Россией"
 msgstr "Versus Russia"
 
-#: apps/catalog/templates/catalog/territory_detail.html:233
+#: apps/catalog/templates/catalog/territory_detail.html:248
 msgid "За пять лет"
 msgstr "Over five years"
 
-#: apps/catalog/templates/catalog/territory_detail.html:248
+#: apps/catalog/templates/catalog/territory_detail.html:264
 msgid "лучше большинства"
 msgstr "better than most"
 
-#: apps/catalog/templates/catalog/territory_detail.html:321
+#: apps/catalog/templates/catalog/territory_detail.html:308
 msgid "Динамика на фоне округа и страны"
 msgstr "Dynamics against the district and the country"
 
-#: apps/catalog/templates/catalog/territory_detail.html:339
+#: apps/catalog/templates/catalog/territory_detail.html:326
 msgid "По сочетанию шести ключевых показателей, а не по расположению на карте"
 msgstr "By a combination of six key indicators, not by location on the map"
 
-#: apps/catalog/templates/catalog/territory_detail.html:348
+#: apps/catalog/templates/catalog/territory_detail.html:335
 msgid "Показать похожие регионы"
 msgstr "Show similar regions"
 
-#: apps/catalog/templates/catalog/territory_detail.html:349
+#: apps/catalog/templates/catalog/territory_detail.html:336
 msgid "Скрыть похожие регионы"
 msgstr "Hide similar regions"
 
-#: apps/catalog/templates/catalog/territory_detail.html:359
+#: apps/catalog/templates/catalog/territory_detail.html:346
 msgid "Сопредельные субъекты"
 msgstr "Adjacent regions"
 
-#: apps/catalog/templates/catalog/territory_detail.html:366
+#: apps/catalog/templates/catalog/territory_detail.html:353
 msgid "Сухопутных и морских связей не зарегистрировано"
 msgstr "No land or sea links are registered"
 
-#: apps/catalog/templates/catalog/territory_detail.html:372
-msgid "Полнота данных"
-msgstr "Completeness of the data"
-
-#: apps/catalog/templates/catalog/territory_detail.html:374
+#: apps/catalog/templates/catalog/territory_detail.html:361
 msgid "Рядов с данными"
 msgstr "Series with data"
 
-#: apps/catalog/templates/catalog/territory_detail.html:376
+#: apps/catalog/templates/catalog/territory_detail.html:363
 msgid "из"
 msgstr "of"
 
-#: apps/catalog/templates/catalog/territory_detail.html:379
+#: apps/catalog/templates/catalog/territory_detail.html:366
 msgid "Период наблюдений"
 msgstr "Period of observation"
 
-#: apps/catalog/templates/catalog/territory_detail.html:382
+#: apps/catalog/templates/catalog/territory_detail.html:369
 msgid "Данные доступны с"
 msgstr "Data available from"
 
-#: apps/catalog/templates/catalog/territory_detail.html:386
+#: apps/catalog/templates/catalog/territory_detail.html:373
 msgid "Код ОКАТО"
 msgstr "OKATO code"
 
-#: apps/catalog/templates/catalog/territory_detail.html:389
+#: apps/catalog/templates/catalog/territory_detail.html:376
 msgid "Код ISO 3166-2"
 msgstr "ISO 3166-2 code"
 
@@ -5110,32 +5028,36 @@ msgstr "ISO 3166-2 code"
 msgid "%(name)s: ключевые социально-экономические показатели, позиции в рейтингах регионов, динамика и полнота данных."
 msgstr "%(name)s: key socio-economic indicators, positions in the regional rankings, dynamics and completeness of the data."
 
-#: apps/catalog/templates/catalog/territory_detail.html:178
+#: apps/catalog/templates/catalog/territory_detail.html:145
+msgid "(по России — %(country)s)"
+msgstr "(Russia: %(country)s)"
+
+#: apps/catalog/templates/catalog/territory_detail.html:190
 #: apps/userdata/templates/userdata/_dataset_checks.html:93
 msgid "Ещё %(count)s"
 msgstr "%(count)s more"
 
-#: apps/catalog/templates/catalog/territory_detail.html:194
+#: apps/catalog/templates/catalog/territory_detail.html:206
 msgid "Оценка учитывает направленность показателя: у безработицы, бедности и смертности лучшим считается низкое значение. Показатели без однозначной оценки (доля горожан, цены на жильё) и величины, зависящие от размера региона (численность, объём ВРП, выбросы), в оценку не входят."
 msgstr "The assessment takes the direction of each indicator into account: for unemployment, poverty and mortality a low value is better. Indicators with no clear-cut reading (urban share, housing prices) and values that depend on the size of the region (population, total GRP, emissions) are not assessed."
 
-#: apps/catalog/templates/catalog/territory_detail.html:208
+#: apps/catalog/templates/catalog/territory_detail.html:220
 msgid "%(count)s показателей по темам; место — среди регионов, первое — лучшее"
 msgstr "%(count)s indicators by topic; rank among regions, first is best"
 
-#: apps/catalog/templates/catalog/territory_detail.html:292
+#: apps/catalog/templates/catalog/territory_detail.html:279
 msgid "Изменение за пять лет не считается там, где внутри этого срока Росстат менял методику или круг наблюдения: разность значений до и после такого разрыва означает смену методики, а не перемену в регионе. У темпов роста («%% к прошлому году») изменение за пять лет не приводится."
 msgstr "The five-year change is not shown where Rosstat changed its methodology or coverage within that period: the difference between values before and after such a break reflects a change of method, not a change in the region. Growth rates (“%% of previous year”) have no five-year change."
 
-#: apps/catalog/templates/catalog/territory_detail.html:298
+#: apps/catalog/templates/catalog/territory_detail.html:285
 msgid "Значение по России — не середина списка регионов: зарплаты и доходы по стране поднимают Москва и северные регионы. Поэтому регион может быть лучше большинства и при этом ниже, чем по России."
 msgstr "The value for Russia is not the middle of the regional list: Moscow and the northern regions pull national wages and incomes up. A region can therefore be better than most and still below Russia as a whole."
 
-#: apps/catalog/templates/catalog/territory_detail.html:303
+#: apps/catalog/templates/catalog/territory_detail.html:290
 msgid "Денежные показатели оцениваются по реальному изменению — за вычетом роста цен: по индексам реальной зарплаты и доходов Росстата, физического объёма ВРП, инвестиций и оборота торговли, для остальных — по индексу потребительских цен региона."
 msgstr "Monetary indicators are assessed by the real change, net of price growth: by Rosstat’s indices of real wages and incomes, of the physical volume of GRP, investment and trade, and for the rest by the regional consumer price index."
 
-#: apps/catalog/templates/catalog/territory_detail.html:309
+#: apps/catalog/templates/catalog/territory_detail.html:296
 msgid "По части демографических показателей Росстат прекратил публикацию: их значения больше не обновятся."
 msgstr "Rosstat has stopped publishing some demographic indicators: their values will no longer be updated."
 
@@ -5294,26 +5216,18 @@ msgstr "How Rosstat refined the values from edition to edition"
 msgid "Середина регионов"
 msgstr "Middle of the regions"
 
-#: apps/catalog/views/territory.py:286
+#: apps/catalog/views/territory.py:313
 #: apps/compare/panel.py:194
 #: apps/surface/templates/surface/panels/_distribution.html:70
 #: apps/surface/templates/surface/panels/_table.html:80
 msgid "Российская Федерация"
 msgstr "Russian Federation"
 
-#: apps/catalog/views/territory.py:136
-msgid "В числе лучших"
-msgstr "Among the best"
-
-#: apps/catalog/views/territory.py:141
+#: apps/catalog/views/territory.py:154
 msgid "Ни по одному основному показателю регион не входит в число лучших"
 msgstr "The region is not among the best on any key indicator"
 
-#: apps/catalog/views/territory.py:144
-msgid "В числе худших"
-msgstr "Among the worst"
-
-#: apps/catalog/views/territory.py:149
+#: apps/catalog/views/territory.py:162
 msgid "Ни по одному основному показателю регион не входит в число худших"
 msgstr "The region is not among the worst on any key indicator"
 
@@ -5331,7 +5245,7 @@ msgid "%(year)s = 100"
 msgstr "%(year)s = 100"
 
 #: apps/compare/panel.py:75
-#: apps/workspace/describe.py:184
+#: apps/workspace/describe.py:188
 msgid "сопоставимый отрезок"
 msgstr "comparable span"
 
@@ -5936,8 +5850,8 @@ msgstr "Programmatic access to the data over REST"
 #: apps/core/navigation.py:182
 #: apps/core/navigation.py:239
 #: apps/core/templates/core/about.html:17
-#: apps/core/views.py:149
-#: apps/core/views.py:154
+#: apps/core/views.py:146
+#: apps/core/views.py:151
 msgid "О проекте"
 msgstr "About"
 
@@ -5955,7 +5869,7 @@ msgstr "What information about users is kept, why, for how long and how to delet
 
 #: apps/core/navigation.py:269
 #: apps/core/navigation.py:271
-#: apps/core/views.py:69
+#: apps/core/views.py:66
 msgid "Главная"
 msgstr "Home"
 
@@ -6176,9 +6090,9 @@ msgid "Согласие на обработку персональных дан�
 msgstr "Consent to the processing of personal data on RegionLens: which data, for what purposes, which operations, the term and how to withdraw it."
 
 #: apps/core/templates/core/consent.html:20
-#: apps/core/templates/core/privacy.html:361
+#: apps/core/templates/core/privacy.html:362
 #: apps/core/templates/core/terms.html:371
-#: apps/core/views.py:233
+#: apps/core/views.py:230
 msgid "Согласие на обработку персональных данных"
 msgstr "Consent to the processing of personal data"
 
@@ -6212,89 +6126,89 @@ msgstr "Transfer: the recipient’s address and the text of a message are passed
 msgid "Срок: согласие действует до удаления учётной записи или до отзыва согласия. Сроки хранения отдельных сведений названы в политике обработки персональных данных."
 msgstr "Term: the consent is valid until the account is deleted or the consent is withdrawn. The retention periods of particular information are stated in the personal data processing policy."
 
-#: apps/core/templates/core/consent.html:80
+#: apps/core/templates/core/consent.html:81
 msgid "Отзыв: удаление учётной записи в разделе <a href=\"%(data_url)s\">«Персональные данные»</a> личного кабинета либо письмо на адрес <a href=\"mailto:%(email)s\">%(email)s</a> или обращение через <a href=\"%(feedback_url)s\">форму</a>. После отзыва данные уничтожаются в течение %(days)s дней, если закон не требует их хранить."
 msgstr "Withdrawal: deleting the account in the <a href=\"%(data_url)s\">“Personal data”</a> section of the personal account, or a message to <a href=\"mailto:%(email)s\">%(email)s</a> or an enquiry through the <a href=\"%(feedback_url)s\">form</a>. After withdrawal the data are destroyed within %(days)s days unless the law requires them to be kept."
 
-#: apps/core/templates/core/consent.html:91
+#: apps/core/templates/core/consent.html:93
 msgid "Я ознакомлен(а) с <a href=\"%(privacy_url)s\">политикой обработки персональных данных</a>."
 msgstr "I have read the <a href=\"%(privacy_url)s\">personal data processing policy</a>."
 
-#: apps/core/templates/core/home.html:73
+#: apps/core/templates/core/home.html:37
 msgid "Социально-экономические показатели регионов России"
 msgstr "Socio-economic indicators of the Russian regions"
 
-#: apps/core/templates/core/home.html:82
+#: apps/core/templates/core/home.html:46
 msgid "Все основные показатели по темам"
 msgstr "All key indicators by topic"
 
-#: apps/core/templates/core/home.html:103
+#: apps/core/templates/core/home.html:67
 #: apps/search/answers.py:150
 msgid "Весь рейтинг"
 msgstr "Full ranking"
 
-#: apps/core/templates/core/home.html:118
+#: apps/core/templates/core/home.html:82
 msgid "Россия: главное"
 msgstr "Russia at a glance"
 
-#: apps/core/templates/core/home.html:119
+#: apps/core/templates/core/home.html:83
 msgid "Последний год с данными и изменение к предыдущему"
 msgstr "Latest year with data and change on the previous one"
 
-#: apps/core/templates/core/home.html:177
+#: apps/core/templates/core/home.html:141
 msgid "Своя таблица по регионам — на той же карте"
 msgstr "Your own table by region — on the same map"
 
-#: apps/core/templates/core/home.html:179
+#: apps/core/templates/core/home.html:143
 msgid "Таблица из Excel, CSV, архива или вставка из Word: регионы и годы узнаются сами, таблицу видите только вы."
 msgstr "A table from Excel, CSV, an archive or pasted from Word: regions and years are recognised automatically, and only you can see the table."
 
-#: apps/core/templates/core/home.html:189
+#: apps/core/templates/core/home.html:153
 #: apps/userdata/templates/userdata/index.html:30
 msgid "Попробовать на примере"
 msgstr "Try an example"
 
-#: apps/core/templates/core/home.html:195
+#: apps/core/templates/core/home.html:159
 msgid "Дальше"
 msgstr "Go deeper"
 
-#: apps/core/templates/core/home.html:198
+#: apps/core/templates/core/home.html:162
 msgid "Пять способов посмотреть на показатель"
 msgstr "Five ways to look at an indicator"
 
-#: apps/core/templates/core/home.html:208
+#: apps/core/templates/core/home.html:172
 msgid "Инструменты для исследователя"
 msgstr "Tools for researchers"
 
-#: apps/core/templates/core/home.html:217
+#: apps/core/templates/core/home.html:181
 msgid "О данных"
 msgstr "About the data"
 
-#: apps/core/templates/core/home.html:218
+#: apps/core/templates/core/home.html:182
 msgid "Где данные требуют оговорки"
 msgstr "Where the data need a caveat"
 
-#: apps/core/templates/core/home.html:99
+#: apps/core/templates/core/home.html:63
 msgid "Мой регион: %(place)s"
 msgstr "My region: %(place)s"
 
-#: apps/core/templates/core/home.html:166
+#: apps/core/templates/core/home.html:130
 msgid "Цвет изменения — оценка, а не направление: рост безработицы или бедности отмечен как ухудшение. Изменение процентных величин — в процентных пунктах."
 msgstr "The colour of a change is an assessment, not a direction: a rise in unemployment or poverty is marked as a deterioration. Changes in percentages are given in percentage points."
 
-#: apps/core/templates/core/home.html:200
+#: apps/core/templates/core/home.html:164
 msgid "Карта, динамика, рейтинг, распределение и таблица — над одним выбором показателя, регионов и года. Вид экрана сохраняется в ссылке."
 msgstr "Map, trends, ranking, distribution and table — all over one choice of indicator, regions and year. The view is kept in the link."
 
-#: apps/core/templates/core/home.html:210
+#: apps/core/templates/core/home.html:174
 msgid "Неравенство и сближение регионов, связи показателей, пространственные закономерности, интегральные индексы и пересмотры статистики."
 msgstr "Regional inequality and convergence, relationships between indicators, spatial patterns, composite indices and revisions of statistics."
 
-#: apps/core/templates/core/home.html:221
+#: apps/core/templates/core/home.html:185
 msgid "Отметок о разрывах сопоставимости — %(breaks)s, пересмотренных значений — %(revisions)s. Пропуск не соединяется линией, а сравнение через разрыв не проводится."
 msgstr "Comparability breaks marked: %(breaks)s; revised values: %(revisions)s. A gap is never bridged by a line, and no comparison is drawn across a break."
 
-#: apps/core/templates/core/home.html:226
+#: apps/core/templates/core/home.html:190
 msgid "Отметок о разрывах сопоставимости — %(breaks)s. Пропуск не соединяется линией, а сравнение через разрыв не проводится."
 msgstr "Comparability breaks marked: %(breaks)s. A gap is never bridged by a line, and no comparison is drawn across a break."
 
@@ -6345,7 +6259,7 @@ msgid "меньше всего"
 msgstr "lowest"
 
 #: apps/core/templates/core/partials/_live_map.html:39
-#: apps/workspace/views.py:78
+#: apps/workspace/views.py:93
 msgid "Показать на карте"
 msgstr "Show on the map"
 
@@ -6387,18 +6301,18 @@ msgid "Какие сведения о пользователях обрабат�
 msgstr "What information about users RegionLens processes, why, on what legal ground, how long it is kept and how to delete it."
 
 #: apps/core/templates/core/privacy.html:33
-#: apps/core/templates/core/privacy.html:347
+#: apps/core/templates/core/privacy.html:348
 #: apps/core/templates/core/terms.html:32
 #: apps/core/templates/core/terms.html:356
 msgid "Общие положения"
 msgstr "General provisions"
 
-#: apps/core/templates/core/privacy.html:348
+#: apps/core/templates/core/privacy.html:349
 #: apps/core/templates/core/privacy.html:47
 msgid "Оператор"
 msgstr "Operator"
 
-#: apps/core/templates/core/privacy.html:349
+#: apps/core/templates/core/privacy.html:350
 #: apps/core/templates/core/privacy.html:62
 msgid "Чьи данные обрабатываются"
 msgstr "Whose data are processed"
@@ -6415,7 +6329,7 @@ msgstr "Senders of enquiries through the form on the site, including those witho
 msgid "Посетители сайта — в журнале веб-сервера и при попытках входа."
 msgstr "Site visitors — in the web server log and on sign-in attempts."
 
-#: apps/core/templates/core/privacy.html:350
+#: apps/core/templates/core/privacy.html:351
 #: apps/core/templates/core/privacy.html:80
 msgid "Цели, данные, основания и сроки"
 msgstr "Purposes, data, legal grounds and periods"
@@ -6500,27 +6414,27 @@ msgid "Резервные копии базы делаются ежедневн�
 msgstr "Database backups are made daily; copies in external storage are kept without a time limit."
 
 #: apps/core/templates/core/privacy.html:198
-#: apps/core/templates/core/privacy.html:352
+#: apps/core/templates/core/privacy.html:353
 msgid "Действия с данными"
 msgstr "Operations on data"
 
 #: apps/core/templates/core/privacy.html:212
-#: apps/core/templates/core/privacy.html:353
+#: apps/core/templates/core/privacy.html:354
 msgid "Передача и место хранения"
 msgstr "Transfer and place of storage"
 
 #: apps/core/templates/core/privacy.html:240
-#: apps/core/templates/core/privacy.html:354
+#: apps/core/templates/core/privacy.html:355
 msgid "Кто видит данные"
 msgstr "Who sees the data"
 
 #: apps/core/templates/core/privacy.html:258
-#: apps/core/templates/core/privacy.html:355
+#: apps/core/templates/core/privacy.html:356
 msgid "Загружаемые таблицы"
 msgstr "Uploaded tables"
 
 #: apps/core/templates/core/privacy.html:287
-#: apps/core/templates/core/privacy.html:356
+#: apps/core/templates/core/privacy.html:357
 msgid "Права пользователя"
 msgstr "The user’s rights"
 
@@ -6540,41 +6454,41 @@ msgstr "To withdraw consent to the processing of personal data."
 msgid "Обжаловать действия оператора в Роскомнадзоре или в суде."
 msgstr "To appeal against the operator’s actions to Roskomnadzor or in court."
 
-#: apps/core/templates/core/privacy.html:320
-#: apps/core/templates/core/privacy.html:357
+#: apps/core/templates/core/privacy.html:321
+#: apps/core/templates/core/privacy.html:358
 msgid "Меры защиты"
 msgstr "Security measures"
 
-#: apps/core/templates/core/privacy.html:322
+#: apps/core/templates/core/privacy.html:323
 msgid "Передача данных — только по протоколу HTTPS (шифрование TLS)."
 msgstr "Data are transferred only over HTTPS (TLS encryption)."
 
-#: apps/core/templates/core/privacy.html:323
+#: apps/core/templates/core/privacy.html:324
 msgid "Пароли хранятся только в виде хэшей Argon2; резервные коды входа — тоже хэшами."
 msgstr "Passwords are kept only as Argon2 hashes; backup sign-in codes are hashed too."
 
-#: apps/core/templates/core/privacy.html:324
+#: apps/core/templates/core/privacy.html:325
 msgid "Число неудачных попыток входа ограничено; для панели управления обязателен вход с одноразовым кодом."
 msgstr "The number of failed sign-in attempts is limited; sign-in with a one-time code is mandatory for the control panel."
 
-#: apps/core/templates/core/privacy.html:325
+#: apps/core/templates/core/privacy.html:326
 msgid "Доступ к сведениям о пользователях есть только у администратора; права разделены по ролям."
 msgstr "Only the administrator has access to user information; permissions are divided by role."
 
-#: apps/core/templates/core/privacy.html:326
+#: apps/core/templates/core/privacy.html:327
 msgid "Резервные копии базы делаются ежедневно и хранятся ограниченный срок."
 msgstr "Database backups are made daily and kept for a limited period."
 
-#: apps/core/templates/core/privacy.html:327
+#: apps/core/templates/core/privacy.html:328
 msgid "Письма об ошибках сервера не содержат паролей и содержимого форм."
 msgstr "Server error reports contain no passwords and no form contents."
 
-#: apps/core/templates/core/privacy.html:332
-#: apps/core/templates/core/privacy.html:358
+#: apps/core/templates/core/privacy.html:333
+#: apps/core/templates/core/privacy.html:359
 msgid "Изменение политики"
 msgstr "Changes to the policy"
 
-#: apps/core/templates/core/privacy.html:345
+#: apps/core/templates/core/privacy.html:346
 #: apps/core/templates/core/terms.html:354
 msgid "На странице"
 msgstr "On this page"
@@ -6663,11 +6577,11 @@ msgstr "Tables of accounts are included in backups and disappear from them %(day
 msgid "В личном кабинете, в разделе <a href=\"%(data_url)s\">«Персональные данные»</a>, всё сохранённое о себе выгружается одним файлом JSON, а учётная запись удаляется после подтверждения паролем; имя и мой регион меняются в <a href=\"%(profile_url)s\">профиле</a>. Удаление учётной записи — отзыв согласия: сохранённое удаляется сразу, обращения остаются без имени и адреса."
 msgstr "In the personal account, in the <a href=\"%(data_url)s\">“Personal data”</a> section, everything kept about you is downloaded as one JSON file, and the account is deleted after confirmation with the password; the name and my region are changed in the <a href=\"%(profile_url)s\">profile</a>. Deleting the account withdraws consent: saved items are deleted at once, enquiries remain without the name and address."
 
-#: apps/core/templates/core/privacy.html:308
+#: apps/core/templates/core/privacy.html:309
 msgid "Остальные запросы, в том числе отзыв согласия по обращению без учётной записи, — по адресу <a href=\"mailto:%(email)s\">%(email)s</a> или через <a href=\"%(url)s\">форму обращения</a>. Ответ — в течение 10 рабочих дней; после отзыва согласия данные уничтожаются в течение %(days)s дней, если закон не требует их хранить."
 msgstr "Other requests, including withdrawal of consent for an enquiry sent without an account, go to <a href=\"mailto:%(email)s\">%(email)s</a> or through the <a href=\"%(url)s\">enquiry form</a>. The reply comes within 10 working days; after consent is withdrawn the data are destroyed within %(days)s days unless the law requires them to be kept."
 
-#: apps/core/templates/core/privacy.html:335
+#: apps/core/templates/core/privacy.html:336
 msgid "Новая редакция публикуется на этой странице с датой. Если меняются цели обработки или состав данных, новое согласие запрашивается отдельно."
 msgstr "A new version is published on this page with its date. If the purposes of processing or the set of data change, new consent is requested separately."
 
@@ -6708,6 +6622,11 @@ msgstr "The API is open without a key or sign-in and is read-only."
 #: apps/core/templates/core/terms.html:155
 msgid "Данные интерфейса используются на тех же условиях, что и данные сайта: со ссылкой на источник."
 msgstr "API data are used on the same terms as the site’s data: with the source cited."
+
+#: apps/core/templates/core/terms.html:163
+#: apps/core/templates/core/terms.html:360
+msgid "Учётная запись"
+msgstr "Account"
 
 #: apps/core/templates/core/terms.html:251
 #: apps/core/templates/core/terms.html:362
@@ -6808,8 +6727,8 @@ msgid "Учётная запись нужна, чтобы сохранять р�
 msgstr "An account is needed to save regions, indicators and views and to see your enquiries. Registration asks for an email address, a name and a password."
 
 #: apps/core/templates/core/terms.html:172
-msgid "Пароль хранится только в виде хэша. Вход с одноразовым кодом включается в разделе «Безопасность»; для панели управления он обязателен."
-msgstr "The password is kept only as a hash. Sign-in with a one-time code is turned on in the “Security” section; it is mandatory for the control panel."
+msgid "Пароль хранится только в виде хэша. Вход с одноразовым кодом включается в «Настройках» кабинета; для панели управления он обязателен."
+msgstr "The password is kept only as a hash. Sign-in with a one-time code is turned on in the account Settings; it is mandatory for the control panel."
 
 #: apps/core/templates/core/terms.html:178
 msgid "Пользователь хранит свой пароль в тайне и сообщает автору, если учётной записью воспользовался кто-то другой."
@@ -7435,14 +7354,6 @@ msgstr "no en"
 #: apps/dashboard/templates/dashboard/data.html:214
 msgid "Править"
 msgstr "Edit"
-
-#: apps/dashboard/templates/dashboard/content.html:116
-#: apps/dashboard/templates/dashboard/content_confirm_delete.html:35
-#: apps/userdata/templates/userdata/study.html:96
-#: apps/workspace/templates/workspace/query_confirm_delete.html:25
-#: apps/workspace/templates/workspace/saved.html:153
-msgid "Удалить"
-msgstr "Delete"
 
 #: apps/dashboard/templates/dashboard/content.html:129
 msgid "Записей нет"
@@ -8644,11 +8555,11 @@ msgstr "This is the last active administrator account"
 msgid "Учётная запись разблокирована"
 msgstr "The account has been unblocked"
 
-#: apps/dashboard/views/users.py:183
-msgid "Свой вход с кодом меняется в кабинете, в разделе «Безопасность»"
-msgstr "Your own sign-in code is changed in the personal account, in the Security section"
+#: apps/dashboard/views/users.py:182
+msgid "Свой вход с кодом меняется в «Настройках» кабинета"
+msgstr "Your own sign-in code is changed in the account Settings"
 
-#: apps/dashboard/views/users.py:190
+#: apps/dashboard/views/users.py:188
 msgid "Вход с кодом сброшен, сеансы учётной записи завершены. Настроить его заново пользователь сможет после входа по паролю."
 msgstr "Sign-in with a code has been reset and the account's sessions have been ended. The user can set it up again after signing in with the password."
 
@@ -9722,10 +9633,10 @@ msgstr "“No data in the source” means there was no observation; “value hid
 
 #: apps/surface/templates/surface/panels/_table.html:48
 #: apps/userdata/export.py:60
-#: apps/workspace/templates/workspace/saved.html:53
-#: apps/workspace/templates/workspace/saved.html:61
+#: apps/workspace/templates/workspace/partials/_tile.html:38
+#: apps/workspace/templates/workspace/partials/_tile.html:39
 msgid "Пометка"
-msgstr "Label"
+msgstr "Note"
 
 #: apps/surface/templates/surface/panels/_table.html:86
 msgid "значение по стране, а не сумма по субъектам"
@@ -10958,6 +10869,10 @@ msgstr "There are already %(count)s active links — that is the limit. Revoke t
 msgid "Этот вид в исследование не ставится."
 msgstr "This view cannot be added to a study."
 
+#: apps/userdata/studies.py:305
+msgid "Такого региона нет."
+msgstr "There is no such region."
+
 #: apps/userdata/studies.py:101
 msgid "Исследований уже %(count)s — это предел. Удалите ненужные."
 msgstr "There are already %(count)s studies — that is the limit. Delete the ones you no longer need."
@@ -10972,28 +10887,38 @@ msgstr "The study already has %(count)s cards and notes — that is the limit."
 
 #: apps/userdata/studies.py:103
 #: apps/userdata/templates/userdata/study.html:27
+#: apps/workspace/tiles.py:170
 msgid "Исследование"
 msgstr "Study"
 
-#: apps/userdata/study_views.py:342
+#: apps/userdata/studies.py:310
+msgid "В исследовании уже %(count)s регионов — это предел."
+msgstr "The study already has %(count)s regions, which is the limit."
+
+#: apps/userdata/study_views.py:343
 msgid "Отметьте, что исследование нужно удалить."
 msgstr "Tick the box to confirm that the study should be deleted."
 
-#: apps/userdata/study_views.py:345
+#: apps/userdata/study_views.py:346
 msgid "Исследование «%(title)s» удалено."
 msgstr "The study “%(title)s” has been deleted."
 
-#: apps/userdata/study_views.py:270
-#: apps/userdata/study_views.py:395
-#: apps/userdata/study_views.py:94
+#: apps/userdata/study_views.py:271
+#: apps/userdata/study_views.py:400
+#: apps/userdata/study_views.py:95
+#: apps/workspace/views.py:117
 msgid "Слишком много изменений подряд. Повторите позже."
 msgstr "Too many changes in a row. Try again later."
 
-#: apps/userdata/study_views.py:289
+#: apps/userdata/study_views.py:290
 msgid "Такого действия нет."
 msgstr "There is no such action."
 
-#: apps/userdata/study_views.py:408
+#: apps/userdata/study_views.py:409
+msgid "Регион «%(name)s» добавлен в исследование «%(title)s»."
+msgstr "Region “%(name)s” added to the study “%(title)s”."
+
+#: apps/userdata/study_views.py:415
 msgid "Вид добавлен в исследование «%(title)s»."
 msgstr "The view has been added to the study “%(title)s”."
 
@@ -11172,6 +11097,14 @@ msgstr "This series has no values: the table has only gaps."
 #: apps/userdata/templates/userdata/_dataset_data.html:147
 msgid "Показателей со значениями в таблице нет."
 msgstr "The table has no indicators with values."
+
+#: apps/userdata/templates/userdata/_dataset_data.html:27
+#: apps/userdata/templates/userdata/_indicator.html:16
+#: apps/userdata/templates/userdata/dataset.html:30
+#: apps/userdata/templates/userdata/series_step.html:28
+#: apps/workspace/tiles.py:194
+msgid "рядов: %(count)s"
+msgstr "series: %(count)s"
 
 #: apps/userdata/templates/userdata/_dataset_data.html:99
 #: apps/userdata/templates/userdata/_indicator.html:17
@@ -11537,12 +11470,6 @@ msgstr "Until it is built, the map and the links show the current version of the
 msgid "Нужно ответить"
 msgstr "To answer"
 
-#: apps/userdata/templates/userdata/_versions.html:21
-#: apps/userdata/templates/userdata/dataset.html:75
-#: apps/userdata/templates/userdata/upload.html:73
-msgid "Продолжить"
-msgstr "Continue"
-
 #: apps/userdata/templates/userdata/_versions.html:24
 msgid "Отменить новую версию"
 msgstr "Cancel the new version"
@@ -11903,6 +11830,7 @@ msgstr "there are remarks"
 
 #: apps/userdata/templates/userdata/dataset.html:29
 #: apps/userdata/templates/userdata/series_step.html:27
+#: apps/workspace/updates.py:109
 msgid "показателей: %(count)s"
 msgstr "indicators: %(count)s"
 
@@ -12106,7 +12034,6 @@ msgid "Мои исследования"
 msgstr "My studies"
 
 #: apps/userdata/templates/userdata/index.html:69
-#: apps/workspace/templates/workspace/partials/_save_query.html:49
 msgid "Например: к курсовой"
 msgstr "For example: for my term paper"
 
@@ -12117,6 +12044,11 @@ msgstr "Start a study"
 #: apps/userdata/templates/userdata/index.html:79
 msgid "Войдите, чтобы сохранить его"
 msgstr "Sign in to keep it"
+
+#: apps/userdata/templates/userdata/index.html:101
+#: apps/workspace/tiles.py:196
+msgid "не собрана"
+msgstr "not built"
 
 #: apps/userdata/templates/userdata/index.html:119
 msgid "Войдите, чтобы сохранить их"
@@ -12407,7 +12339,7 @@ msgid "Срок ссылки истёк, владелец её отозвал и
 msgstr "The link has expired, or the owner has revoked it or deleted the table. Ask the owner for a new link."
 
 #: apps/userdata/templates/userdata/study.html:22
-#: apps/workspace/templates/workspace/partials/_favorite_button.html:17
+#: apps/workspace/templates/workspace/partials/_save_menu.html:11
 msgid "Сохранено"
 msgstr "Saved"
 
@@ -12464,6 +12396,7 @@ msgid "Карточка убрана с поля."
 msgstr "The card has been removed from the study."
 
 #: apps/userdata/templates/userdata/study.html:118
+#: apps/workspace/templates/workspace/saved.html:16
 msgid "Вернуть"
 msgstr "Undo"
 
@@ -13081,76 +13014,77 @@ msgstr "Low (under 50 %)"
 msgid "Нет данных по субъектам"
 msgstr "No regional data"
 
-#: apps/workspace/describe.py:228
+#: apps/workspace/describe.py:232
 msgid "свои веса"
 msgstr "custom weights"
 
-#: apps/workspace/describe.py:232
+#: apps/workspace/describe.py:236
 msgid "своя направленность показателей"
 msgstr "custom indicator polarity"
 
-#: apps/workspace/describe.py:147
+#: apps/workspace/describe.py:151
 msgid "шкала — %(method)s"
 msgstr "scale — %(method)s"
 
-#: apps/workspace/describe.py:153
+#: apps/workspace/describe.py:157
 msgid "плиточная карта"
 msgstr "tile map"
 
-#: apps/workspace/describe.py:162
+#: apps/workspace/describe.py:166
 msgid "по возрастанию"
 msgstr "ascending"
 
-#: apps/workspace/describe.py:188
+#: apps/workspace/describe.py:192
 msgid "строки по значению"
 msgstr "rows by value"
 
-#: apps/workspace/describe.py:203
+#: apps/workspace/describe.py:207
 msgid "неприятие неравенства — %(value)s"
 msgstr "inequality aversion — %(value)s"
 
-#: apps/workspace/describe.py:286
+#: apps/workspace/describe.py:290
 msgid "%(names)s и ещё %(count)s"
 msgstr "%(names)s and %(count)s more"
 
-#: apps/workspace/describe.py:143
+#: apps/workspace/describe.py:147
 msgid "шкала — %(method)s, классов: %(count)s"
 msgstr "scale — %(method)s, classes: %(count)s"
 
-#: apps/workspace/describe.py:158
+#: apps/workspace/describe.py:162
 msgid "изменение к %(year)s году"
 msgstr "change since %(year)s"
 
-#: apps/workspace/describe.py:172
+#: apps/workspace/describe.py:176
 msgid "места к %(year)s году"
 msgstr "places compared with %(year)s"
 
-#: apps/workspace/describe.py:199
+#: apps/workspace/describe.py:203
 msgid "веса — %(name)s"
 msgstr "weights — %(name)s"
 
-#: apps/workspace/describe.py:210
+#: apps/workspace/describe.py:214
 msgid "соседи — %(name)s"
 msgstr "neighbours — %(name)s"
 
-#: apps/workspace/describe.py:217
+#: apps/workspace/describe.py:221
 msgid "приведение — %(name)s"
 msgstr "normalisation — %(name)s"
 
-#: apps/workspace/describe.py:224
+#: apps/workspace/describe.py:228
 msgid "свёртка — %(name)s"
 msgstr "aggregation — %(name)s"
 
-#: apps/workspace/describe.py:95
-#: apps/workspace/updates.py:108
+#: apps/workspace/describe.py:99
+#: apps/workspace/updates.py:151
 msgid "%(year)s год"
 msgstr "year %(year)s"
 
-#: apps/workspace/describe.py:134
+#: apps/workspace/describe.py:138
 msgid "коэффициент %(name)s"
 msgstr "%(name)s coefficient"
 
 #: apps/workspace/forms.py:46
+#: apps/workspace/views.py:211
 msgid "Вид с таким названием уже сохранён"
 msgstr "A view with this name is already saved"
 
@@ -13158,45 +13092,64 @@ msgstr "A view with this name is already saved"
 msgid "ряд удалённой таблицы"
 msgstr "series of a deleted table"
 
-#: apps/workspace/templates/workspace/partials/_save_query.html:12
-msgid "Сохранить вид экрана"
-msgstr "Save this view"
+#: apps/workspace/templates/workspace/partials/_save_menu.html:18
+msgid "Войти, чтобы сохранить"
+msgstr "Sign in to save"
 
-#: apps/workspace/templates/workspace/partials/_save_query.html:22
-msgid "Например: неравенство доходов по округам"
-msgstr "For example: income inequality by district"
+#: apps/workspace/templates/workspace/partials/_save_menu.html:34
+#: apps/workspace/templates/workspace/partials/_save_menu.html:51
+msgid "В Сохранённое"
+msgstr "To Saved"
 
-#: apps/workspace/templates/workspace/partials/_save_query.html:24
-msgid "Сохраняются параметры, а не числа: расчёт выполнится заново на текущих данных"
-msgstr "The parameters are saved, not the numbers: the calculation will run again on the current data"
+#: apps/workspace/templates/workspace/partials/_save_menu.html:48
+msgid "Убрать из Сохранённого"
+msgstr "Remove from Saved"
 
-#: apps/workspace/templates/workspace/partials/_save_query.html:40
-msgid "Или в исследование"
-msgstr "Or to a study"
+#: apps/workspace/templates/workspace/partials/_save_menu.html:62
+msgid "Регион — в исследование"
+msgstr "Region to a study"
 
-#: apps/workspace/templates/workspace/partials/_save_query.html:43
-msgid "новое исследование"
-msgstr "new study"
-
-#: apps/workspace/templates/workspace/partials/_save_query.html:47
-msgid "Название нового исследования"
-msgstr "Title of the new study"
-
-#: apps/workspace/templates/workspace/partials/_save_query.html:52
+#: apps/workspace/templates/workspace/partials/_save_menu.html:62
 msgid "В исследование"
 msgstr "To a study"
 
-#: apps/workspace/templates/workspace/partials/_save_query.html:53
-msgid "В исследование и открыть его"
-msgstr "To a study and open it"
+#: apps/workspace/templates/workspace/partials/_save_menu.html:79
+msgid "Новое исследование"
+msgstr "New study"
 
-#: apps/workspace/templates/workspace/query_confirm_delete.html:6
-msgid "Удалить вид"
-msgstr "Delete view"
+#: apps/workspace/templates/workspace/partials/_save_menu.html:23
+msgid "В Сохранённом: «%(title)s»"
+msgstr "In Saved: “%(title)s”"
 
-#: apps/workspace/templates/workspace/query_confirm_delete.html:11
-msgid "Удалить «%(title)s»? Восстановить его будет нельзя, но сам расчёт останется доступен — вид хранил только его параметры."
-msgstr "Delete “%(title)s”? It cannot be restored, but the calculation itself remains available — the view only stored its parameters."
+#: apps/workspace/templates/workspace/partials/_tile.html:16
+#: apps/workspace/templates/workspace/partials/_tile.html:38
+msgid "Не сохранено"
+msgstr "Not saved"
+
+#: apps/workspace/templates/workspace/partials/_tile.html:28
+msgid "Параметры"
+msgstr "Parameters"
+
+#: apps/workspace/templates/workspace/partials/_tile.html:37
+#: apps/workspace/templates/workspace/partials/_tile.html:39
+msgid "Добавить пометку"
+msgstr "Add a note"
+
+#: apps/workspace/templates/workspace/partials/_tile.html:47
+msgid "Переименовать"
+msgstr "Rename"
+
+#: apps/workspace/templates/workspace/partials/_tile.html:53
+msgid "Убрать"
+msgstr "Remove"
+
+#: apps/workspace/templates/workspace/partials/_tile.html:22
+msgid "Нет в данных: %(names)s. Вид откроется без них."
+msgstr "Not in the data: %(names)s. The view will open without them."
+
+#: apps/workspace/templates/workspace/partials/_tile.html:53
+msgid "Убрать «%(title)s» из сохранённого"
+msgstr "Remove “%(title)s” from saved"
 
 #: apps/workspace/templates/workspace/query_form.html:6
 msgid "Переименовать вид"
@@ -13210,143 +13163,146 @@ msgstr "Name and note"
 msgid "Что сохранено"
 msgstr "What is saved"
 
+#: apps/workspace/templates/workspace/query_form.html:31
+msgid "параметры по умолчанию"
+msgstr "default parameters"
+
 #: apps/workspace/templates/workspace/query_form.html:35
 msgid "Параметры меняются на странице расчёта: настройте её и сохраните вид заново."
 msgstr "Parameters are changed on the calculation page: set it up and save the view again."
 
-#: apps/workspace/templates/workspace/saved.html:19
+#: apps/workspace/templates/workspace/saved.html:21
+msgid "Отбор по виду"
+msgstr "Filter by kind"
+
+#: apps/workspace/templates/workspace/saved.html:23
+msgid "Всё"
+msgstr "All"
+
+#: apps/workspace/templates/workspace/saved.html:51
 msgid "Сохранённого пока нет"
 msgstr "Nothing saved yet"
 
-#: apps/workspace/templates/workspace/saved.html:30
+#: apps/workspace/templates/workspace/saved.html:62
 msgid "Исследовать на карте"
 msgstr "Explore on the map"
 
-#: apps/workspace/templates/workspace/saved.html:64
-msgid "Например: сравнить с соседями"
-msgstr "For example: compare with neighbours"
+#: apps/workspace/templates/workspace/saved.html:15
+msgid "«%(title)s» убран из Сохранённого."
+msgstr "“%(title)s” removed from Saved."
 
-#: apps/workspace/templates/workspace/saved.html:65
-msgid "Зачем сохранено; видна только вам. Пустая — убрать."
-msgstr "Why it was saved; only you can see it. Leave empty to remove."
-
-#: apps/workspace/templates/workspace/saved.html:74
-msgid "Убрать из сохранённого"
-msgstr "Remove from saved"
-
-#: apps/workspace/templates/workspace/saved.html:112
-msgid "Карта, рейтинг и инструменты анализа — с теми же настройками"
-msgstr "Map, ranking and analysis tools — with the same settings"
-
-#: apps/workspace/templates/workspace/saved.html:152
-msgid "Переименовать"
-msgstr "Rename"
-
-#: apps/workspace/templates/workspace/saved.html:8
-msgid "Регионы, показатели и виды экрана, к которым вы хотите вернуться. Сохраняются параметры, а не числа: открытый вид считается заново на текущих данных."
-msgstr "Regions, indicators and views you want to return to. Parameters are saved, not figures: an opened view is recalculated on current data."
-
-#: apps/workspace/templates/workspace/saved.html:21
-msgid "Кнопка «Сохранить» есть в паспорте региона, на странице показателя, на карте, в рейтинге и в инструментах анализа. Сохранённый вид вернёт вас к тому же расчёту, но выполненному на актуальных данных."
-msgstr "The “Save” button is on the region profile, the indicator page, the map, the ranking and the analysis tools. A saved view brings you back to the same calculation, run on current data."
-
-#: apps/workspace/templates/workspace/saved.html:52
-#: apps/workspace/templates/workspace/saved.html:57
-msgid "Пометка к «%(title)s»"
-msgstr "Note on “%(title)s”"
-
-#: apps/workspace/templates/workspace/saved.html:73
-msgid "Убрать «%(title)s» из сохранённого"
-msgstr "Remove “%(title)s” from saved"
-
-#: apps/workspace/templates/workspace/saved.html:95
+#: apps/workspace/templates/workspace/saved.html:40
 msgid "Сравниваются первые %(limit)s сохранённых регионов."
 msgstr "The first %(limit)s saved regions are compared."
 
-#: apps/workspace/templates/workspace/saved.html:133
-msgid "Нет в данных: %(names)s. Вид откроется без них."
-msgstr "Not in the data: %(names)s. The view will open without them."
+#: apps/workspace/templates/workspace/saved.html:53
+msgid "Кнопка «Сохранить» есть в паспорте региона, на странице показателя, на карте, в рейтинге и в инструментах анализа. Сохранённый вид вернёт вас к тому же расчёту, но выполненному на актуальных данных."
+msgstr "The “Save” button is on the region profile, the indicator page, the map, the ranking and the analysis tools. A saved view brings you back to the same calculation, run on current data."
 
-#: apps/workspace/templates/workspace/saved.html:149
-msgid "изменён %(date)s"
+#: apps/workspace/tiles.py:72
+msgid "открыт %(date)s"
+msgstr "opened %(date)s"
+
+#: apps/workspace/tiles.py:103
+#: apps/workspace/tiles.py:74
+msgid "сохранён %(date)s"
+msgstr "saved %(date)s"
+
+#: apps/workspace/tiles.py:200
+msgid "Своя таблица"
+msgstr "Own table"
+
+#: apps/workspace/tiles.py:176
+msgid "карточек и заметок: %(count)s"
+msgstr "cards and notes: %(count)s"
+
+#: apps/workspace/tiles.py:177
+msgid "изменено %(date)s"
 msgstr "changed %(date)s"
 
-#: apps/workspace/templates/workspace/saved.html:149
-msgid "открытий: %(count)s"
-msgstr "opened: %(count)s"
+#: apps/workspace/tiles.py:207
+msgid "изменена %(date)s"
+msgstr "changed %(date)s"
 
-#: apps/workspace/updates.py:201
+#: apps/workspace/updates.py:244
 msgid "Показателей основного набора со значениями за последний год:"
 msgstr "Core-set indicators with values for the latest year:"
 
-#: apps/workspace/updates.py:183
+#: apps/workspace/updates.py:226
 msgid "набор данных"
 msgstr "dataset"
 
-#: apps/workspace/updates.py:185
+#: apps/workspace/updates.py:228
 msgid "версия %(code)s от %(date)s"
 msgstr "version %(code)s of %(date)s"
 
-#: apps/workspace/views.py:142
+#: apps/workspace/views.py:190
 msgid "Вид обновлён"
 msgstr "View updated"
 
-#: apps/workspace/views.py:162
-msgid "Вид удалён"
-msgstr "View deleted"
-
-#: apps/workspace/views.py:232
-#: apps/workspace/views.py:266
-msgid "Убрано из сохранённого"
-msgstr "Removed from saved items"
-
-#: apps/workspace/views.py:52
-msgid "Кнопка «Сохранить» — в паспорте региона."
-msgstr "The “Save” button is on the region profile."
-
-#: apps/workspace/views.py:55
-msgid "Кнопка «Сохранить» — на странице показателя."
-msgstr "The “Save” button is on the indicator page."
-
-#: apps/workspace/views.py:76
-msgid "Сравнить отмеченные регионы"
-msgstr "Compare saved regions"
-
-#: apps/workspace/views.py:116
-msgid "Вид «%s» сохранён в кабинете"
-msgstr "View “%s” saved to your account"
-
-#: apps/workspace/views.py:176
-msgid "Страницы этого вида больше нет"
-msgstr "The page of this view no longer exists"
-
-#: apps/workspace/views.py:207
-msgid "Не удалось определить объект"
-msgstr "The object could not be identified"
-
-#: apps/workspace/views.py:232
-msgid "Сохранено в кабинете"
-msgstr "Saved to your account"
-
-#: apps/workspace/views.py:253
+#: apps/workspace/views.py:345
 msgid "Пометка не длиннее 200 знаков"
 msgstr "A note can be at most 200 characters"
 
-#: apps/workspace/views.py:101
-msgid "Вид сохранить не удалось: %s"
-msgstr "The view could not be saved: %s"
+#: apps/workspace/views.py:91
+msgid "Сравнить отмеченные регионы"
+msgstr "Compare saved regions"
 
-#: apps/workspace/views.py:183
-msgid "Этих рядов больше нет в данных, вид открыт без них: %(names)s"
-msgstr "These series are no longer in the data; the view was opened without them: %(names)s"
+#: apps/workspace/views.py:247
+msgid "Страницы этого вида больше нет"
+msgstr "The page of this view no longer exists"
 
-#: apps/workspace/views.py:250
+#: apps/workspace/views.py:273
+msgid "Возвращать нечего"
+msgstr "Nothing to undo"
+
+#: apps/workspace/views.py:302
+msgid "Не удалось определить объект"
+msgstr "The object could not be identified"
+
+#: apps/workspace/views.py:327
+msgid "Сохранено в кабинете"
+msgstr "Saved to your account"
+
+#: apps/workspace/views.py:327
+msgid "Убрано из сохранённого"
+msgstr "Removed from saved items"
+
+#: apps/workspace/views.py:354
 msgid "Пометка сохранена"
 msgstr "Note saved"
 
-#: apps/workspace/views.py:250
+#: apps/workspace/views.py:354
 msgid "Пометка убрана"
 msgstr "Note removed"
+
+#: apps/workspace/views.py:148
+msgid "Вид сохранить не удалось: %s"
+msgstr "The view could not be saved: %s"
+
+#: apps/workspace/views.py:162
+msgid "Вид «%s» сохранён в кабинете"
+msgstr "View “%s” saved to your account"
+
+#: apps/workspace/views.py:164
+msgid "Этот вид уже в «Сохранённом»: «%s»"
+msgstr "This view is already in Saved: “%s”"
+
+#: apps/workspace/views.py:220
+msgid "Нечего менять"
+msgstr "Nothing to change"
+
+#: apps/workspace/views.py:254
+msgid "Этих рядов больше нет в данных, вид открыт без них: %(names)s"
+msgstr "These series are no longer in the data; the view was opened without them: %(names)s"
+
+#: apps/workspace/views.py:281
+msgid "«%s» снова в «Сохранённом»"
+msgstr "“%s” is back in Saved"
+
+#: apps/workspace/views.py:207
+msgid "Название не может быть пустым"
+msgstr "The title cannot be empty"
 
 #: templates/400.html:4
 #: templates/400.html:6
