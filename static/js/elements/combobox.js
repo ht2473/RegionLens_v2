@@ -80,6 +80,9 @@ class Combobox extends HTMLElement {
     if (!this.select) {
       return;
     }
+    this.observer?.disconnect();
+    this.observer = null;
+    this.loadScheduled = false;
     document.removeEventListener("click", this.onDocumentClick);
     this.close({ focus: false });
   }
@@ -344,17 +347,38 @@ class Combobox extends HTMLElement {
     }
   }
 
-  /** Догрузить полный перечень, когда браузер свободен, с пределом ожидания. */
+  /**
+   * Догрузить полный перечень, когда поле подходит к окну и браузер свободен: поле
+   * внизу страницы (динамика в паспорте) не держит в документе тысячи пунктов зря.
+   * Раскрытие поля догружает перечень сразу (open).
+   */
   scheduleLoad() {
     if (this.loaded || this.loadScheduled) {
       return;
     }
     this.loadScheduled = true;
-    if (window.requestIdleCallback) {
-      window.requestIdleCallback(() => this.load(), { timeout: 2000 });
-    } else {
-      window.setTimeout(() => this.load(), 300);
+    const idle = () => {
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(() => this.load(), { timeout: 2000 });
+      } else {
+        window.setTimeout(() => this.load(), 300);
+      }
+    };
+    if (!window.IntersectionObserver) {
+      idle();
+      return;
     }
+    this.observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          this.observer.disconnect();
+          this.observer = null;
+          idle();
+        }
+      },
+      { rootMargin: "400px 0px" },
+    );
+    this.observer.observe(this);
   }
 
   /** Забрать полный перечень рядов; ответ по адресу с отпечатком браузер хранит год. */

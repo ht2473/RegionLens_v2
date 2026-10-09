@@ -258,6 +258,7 @@ class TestAnalysisPages:
         """
         Темы таблицы паспорта свёрнуты до строки со сводкой и раскрываются нажатием,
         «Развернуть все» раскрывает все сразу, ссылка с #якорем темы раскрывает её.
+        Строк тем в странице нет: они приходят при раскрытии.
         """
         page.set_viewport_size({"width": 1440, "height": 900})
         page.goto(f"{site.url}/ru/regions/respublika-tatarstan/")
@@ -267,14 +268,18 @@ class TestAnalysisPages:
         if themes.count() == 0:
             pytest.skip("Склад не собран: таблицы тем нет")
         first = themes.first
+        rows = page.locator("#passport-facts-table .facts-table__title")
+        assert rows.count() == 0
         expect(first).to_have_class(re.compile("is-folded"))
         first.locator("[data-fold-toggle]").click()
         expect(first).not_to_have_class(re.compile("is-folded"))
+        expect(first.locator(".facts-table__title").first).to_be_visible()
 
         expand = page.locator("[data-fold-all]")
         expect(expand).to_be_visible()
         expand.click()
         assert page.locator("#passport-facts-table > tbody.is-folded").count() == 0
+        expect(themes.last.locator(".facts-table__title").first).to_be_visible()
         expand.click()
         assert page.locator("#passport-facts-table > tbody.is-folded").count() == themes.count()
 
@@ -282,6 +287,7 @@ class TestAnalysisPages:
         page.goto(f"{site.url}/ru/regions/respublika-tatarstan/#{anchor}")
         page.wait_for_load_state("networkidle")
         expect(page.locator(f"#{anchor}")).not_to_have_class(re.compile("is-folded"))
+        expect(page.locator(f"#{anchor} .facts-table__title").first).to_be_visible()
 
     def test_more_sides_unfold_below_the_list(
         self, page: Page, site: Any, warehouse_committed: Any

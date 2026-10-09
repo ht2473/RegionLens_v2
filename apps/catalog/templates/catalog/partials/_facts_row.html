@@ -1,0 +1,32 @@
+{% load i18n formatting %}
+{# Строка таблицы «Все основные показатели» паспорта: position и territory. #}
+<tr>
+  <th scope="row" class="facts-table__title">
+    <a href="{% url 'rankings:index' %}?series={{ position.series.key }}&amp;year={{ position.year }}&amp;territory={{ territory.code }}">{{ position.series.short_title }}</a>
+  </th>
+  <td class="facts-table__value">
+    <span class="numeric">{{ position.value|ru_number:position.series.precision }}</span>
+    <span class="facts-table__unit">{{ position.series.unit_label }}, {{ position.year|year }}</span>{% include "catalog/partials/_origin_mark.html" with origin=position.origin %}
+    {% if position.status.is_discontinued %}
+      <span class="facts-table__stopped" title="{{ position.status.detail }}">{{ position.status.label }}</span>
+    {% endif %}
+  </td>
+  <td class="facts-table__standing">
+    <div class="facts-table__position">
+      {% include "catalog/partials/_rank_strip.html" %}
+      <p>
+        <span class="verdict verdict--{{ position.tone }}">{{ position.standing|capfirst }}</span>
+        <span class="facts-table__place">{{ position.place_text }}</span>
+      </p>
+    </div>
+  </td>
+  {# Пустое сравнение — прочерк; на телефоне скрыто (is-empty). #}
+  <td class="facts-table__versus{% if not position.versus_country %} is-empty{% endif %}">{{ position.versus_country|capfirst|default:"—" }}</td>
+  <td class="facts-table__trend{% if not position.trend %} is-empty{% endif %}">
+    {% if position.trend %}
+      <span class="verdict verdict--{{ position.trend_tone }}">{{ position.trend|capfirst }}</span>
+    {% else %}
+      <span class="text-muted">—</span>
+    {% endif %}
+  </td>
+</tr>

@@ -166,7 +166,8 @@ def build_territory_report(parameters: dict[str, Any], *, max_rows: int) -> Repo
     coverage = territory_coverage(code)
     with translation.override("ru"):
         passport = build_passport(code)
-        summary = passport.summary
+        # Доход в фиксированных наборах на странице — у плиток, в документе — строкой главного.
+        summary = [*passport.summary, *([passport.baskets] if passport.baskets else [])]
         rank_rows = [_position_row(position) for position in passport.positions[:max_rows]]
         strength_rows = [_position_row(position) for position in passport.strengths]
         weakness_rows = [_position_row(position) for position in passport.weaknesses]

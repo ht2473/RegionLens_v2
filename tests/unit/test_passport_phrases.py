@@ -17,7 +17,7 @@ from apps.catalog.passport import (
     TONE_NEUTRAL,
     Passport,
     Position,
-    _enumerate,
+    _with_places,
     ordinal,
 )
 from apps.warehouse.queries.common import FeaturedSeries, RealBasis
@@ -296,6 +296,18 @@ class TestBaskets:
     def passport(self, *positions: Position) -> Passport:
         return Passport(positions=list(positions), strengths=[], weaknesses=[], themes=[], total=59)
 
+    def test_facts_for_income_and_wage_tiles(self) -> None:
+        """У плиток дохода и зарплаты — число наборов и то же по России."""
+        found = self.passport(
+            position(series(key=BASKET_COST), value=37_866.0, country_value=23_780.0),
+            position(series(key=BASKET_INCOME), value=187_687.0, country_value=63_959.0),
+            position(series(key=BASKET_WAGE), value=188_561.0, country_value=None),
+        )
+        assert found.basket_facts() == {
+            BASKET_INCOME: {"value": "5,0", "country": "2,7"},
+            BASKET_WAGE: {"value": "5,0", "country": ""},
+        }
+
     def test_income_and_wage_in_baskets(self) -> None:
         """Доход и зарплата делятся на стоимость набора того же года; по России — рядом."""
         found = self.passport(
@@ -345,11 +357,61 @@ class TestWording:
         """Русское порядковое — цифрами с окончанием."""
         assert ordinal(8) == "8-е"
 
-    def test_enumeration_keeps_abbreviations(self) -> None:
-        """В перечне строчная первая буква, кроме сокращений вроде «ВРП»."""
+    def test_places_keep_abbreviations(self) -> None:
+        """
+        В перечне строчная первая буква, кроме сокращений вроде «ВРП»; число регионов —
+        один раз, у первого места.
+        """
         items = [
-            position(series(short_title_ru="ВРП на душу населения")),
-            position(series(short_title_ru="Уровень бедности")),
-            position(series(short_title_ru="Средняя зарплата")),
+            position(series(short_title_ru="ВРП на душу населения"), rank_desc=1),
+            position(series(short_title_ru="Уровень бедности"), rank_desc=2),
+            position(series(short_title_ru="Средняя зарплата"), rank_desc=3),
         ]
-        assert _enumerate(items) == "ВРП на душу населения, уровень бедности и средняя зарплата"
+        assert _with_places(items) == (
+            "ВРП на душу населения (1-е место из 85), уровень бедности (2-е) "
+            "и средняя зарплата (3-е)"
+        )
+
+
+class TestLead:
+    """Вводная паспорта: три строки с числами."""
+
+    def test_three_lines_with_numbers(self) -> None:
+        """Население с местом, лучшие и худшие места; полнота — только когда сведений меньше."""
+        people = series(
+            key="Y001:00",
+            role="population",
+            short_title_ru="Численность населения",
+            unit_label_ru="тыс. чел.",
+            polarity="neutral",
+            absolute=True,
+            precision=1,
+        )
+        strong = position(series(short_title_ru="Уровень бедности"), rank_desc=3)
+        weak = position(series(short_title_ru="Средняя зарплата"), rank_desc=80)
+        population = position(people, value=4003.0, rank_desc=8)
+        found = Passport(
+            positions=[population, strong, weak],
+            strengths=[strong],
+            weaknesses=[weak],
+            themes=[],
+            total=3,
+        )
+        assert [line.label for line in found.lead] == [
+            "Население",
+            "В числе лучших",
+            "В числе худших",
+        ]
+        assert found.summary[0].startswith(f"Население — 4{NBSP}003,0 тыс. чел., 8-е место из 85")
+        assert found.summary[1] == "В числе лучших — уровень бедности (3-е место из 85)."
+        assert found.summary[2] == "В числе худших — средняя зарплата (80-е место из 85)."
+
+    def test_incomplete_data_line(self) -> None:
+        """Сведений меньше, чем показателей в наборе, — четвёртая строка."""
+        found = Passport(positions=[position()], strengths=[], weaknesses=[], themes=[], total=69)
+        assert found.summary[-1] == "Полнота данных — по 1 из 69 основных показателей."
+        assert found.lead[0].text == "нет ни одного основного показателя"
+
+    def test_no_data_no_lead(self) -> None:
+        """Без сведений вводной нет: «ни одного в числе лучших» было бы неправдой."""
+        assert Passport(positions=[], strengths=[], weaknesses=[], themes=[], total=69).lead == []

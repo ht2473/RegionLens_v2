@@ -200,12 +200,12 @@ class TestRealTerms:
 
     def test_passport_counts_baskets(self, warehouse: Any) -> None:
         """Паспорт называет, сколько фиксированных наборов на доход и зарплату."""
-        from apps.catalog.passport import build_passport
+        from apps.catalog.passport import BASKET_INCOME, BASKET_WAGE, build_passport
 
         with translation.override("ru"):
             passport = build_passport("RU-MOW")
         assert "фиксированного набора" in passport.baskets
-        assert passport.baskets in passport.summary
+        assert set(passport.basket_facts()) == {BASKET_INCOME, BASKET_WAGE}
 
     def test_country_tile_shows_real_and_nominal(self, warehouse: Any) -> None:
         """Плитка «Россия» у зарплаты — реально, а в рублях — рядом."""

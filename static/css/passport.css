@@ -17,15 +17,56 @@
   column-gap: var(--space-10);
 }
 
-.passport-head__lead {
+/* Вводная тремя строками: подпись слева, числа справа; на телефоне подпись над строкой. */
+.passport-lead {
   display: grid;
-  gap: var(--space-2);
-  padding: 0;
-  list-style: none;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+  /* Строка текста — в меру абзаца, подпись — сверх неё. */
+  max-width: calc(var(--measure) + 10rem);
+  margin: var(--space-4) 0 0;
+  line-height: var(--leading-snug);
 }
 
-.passport-head__lead li:first-child {
+.passport-lead__line {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: baseline;
+}
+
+.passport-lead__label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
+.passport-lead__label--good {
+  color: var(--positive);
+}
+
+.passport-lead__label--bad {
+  color: var(--negative);
+}
+
+.passport-lead dd {
+  margin: 0;
   color: var(--text-primary);
+}
+
+@media (max-width: 560px) {
+  .passport-lead,
+  .passport-lead__line {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .passport-lead {
+    gap: var(--space-3);
+  }
+
+  .passport-lead__line {
+    gap: 2px;
+  }
 }
 
 /* Карта-указатель в рамке, без подписей значений. */
@@ -241,6 +282,14 @@
 
 /* Ряд, публикацию которого источник прекратил. */
 .facts-table__stopped,
+/* Доход и зарплата в фиксированных наборах — строкой под выводами плитки. */
+.stat-tile__basket {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
 .stat-tile__stopped {
   display: block;
   font-size: var(--text-xs);

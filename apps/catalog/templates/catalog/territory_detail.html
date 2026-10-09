@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n static formatting workspace exports accounts %}
+{% load i18n static formatting workspace exports accounts glossary %}
 
 {% comment %}
   Паспорт территории: где это и главное, плитки, сильные и слабые стороны, основной набор
@@ -25,11 +25,16 @@
     </p>
     <h1 class="page-head__title">{{ territory.name }}</h1>
 
-    {% if warehouse_ready and passport.positions %}
-      {# Главное словами — из тех же чисел, что ниже. #}
-      <ul class="page-head__lead passport-head__lead" aria-label="{% translate 'Главное' %}">
-        {% for line in passport.summary %}<li>{{ line }}</li>{% endfor %}
-      </ul>
+    {% if warehouse_ready and passport.lead %}
+      {# Главное тремя строками с числами — из тех же чисел, что ниже. #}
+      <dl class="passport-lead" aria-label="{% translate 'Главное' %}">
+        {% for line in passport.lead %}
+          <div class="passport-lead__line">
+            <dt class="passport-lead__label{% if line.tone %} passport-lead__label--{{ line.tone }}{% endif %}">{{ line.label }}</dt>
+            <dd>{{ line.text }}</dd>
+          </div>
+        {% endfor %}
+      </dl>
     {% endif %}
 
     <div class="page-head__actions">
@@ -133,6 +138,13 @@
                   {% endif %}
                 </p>
               {% endif %}
+              {% if metric.basket %}
+                {# Доход и зарплата в фиксированных наборах того же года — расчёт RegionLens. #}
+                {% translate "фиксированного набора товаров и услуг" as basket_label %}
+                <p class="stat-tile__basket">
+                  <span class="numeric">{{ metric.basket.value }}</span> {% term "fixed-basket" basket_label %}{% if metric.basket.country %} {% blocktranslate trimmed with country=metric.basket.country %}(по России — {{ country }}){% endblocktranslate %}{% endif %}
+                </p>
+              {% endif %}
               <div class="stat-tile__foot">
                 {% if metric.spark %}
                   <svg class="sparkline" viewBox="0 0 {{ metric.spark.width }} {{ metric.spark.height }}"
@@ -212,6 +224,9 @@
                   aria-expanded="false" hidden
                   data-open-label="{% translate 'Развернуть все' %}"
                   data-close-label="{% translate 'Свернуть все' %}">{% translate "Развернуть все" %}</button>
+          {% if not rows_loaded %}
+            <noscript><a href="?themes=all#passport-all">{% translate "Показать все показатели" %}</a></noscript>
+          {% endif %}
         </p>
       </div>
 
@@ -223,7 +238,7 @@
         </ul>
       </nav>
 
-      <table class="facts-table" id="passport-facts-table">
+      <table class="facts-table" id="passport-facts-table"{% if not rows_loaded %} data-fold-src="?rows=all"{% endif %}>
         <thead>
           <tr>
             <th scope="col">{% translate "Показатель" %}</th>
@@ -234,9 +249,10 @@
           </tr>
         </thead>
         {# Темы свёрнуты (static/js/ui/fold.js): строки не обернуть в details, поэтому #}
-        {# переключатель — кнопка в заголовке; без сценариев таблица видна целиком.    #}
+        {# переключатель — кнопка в заголовке. Строки приходят при раскрытии темы      #}
+        {# (data-fold-src); с ?themes=all — сразу, без сценариев таблица видна целиком. #}
         {% for block in passport.themes %}
-          <tbody class="toc-target" id="theme-{{ block.theme.slug }}" data-fold>
+          <tbody class="toc-target" id="theme-{{ block.theme.slug }}" data-fold{% if not rows_loaded %} data-fold-src="?rows=theme-{{ block.theme.slug }}"{% endif %}>
             <tr class="facts-table__theme">
               <th scope="rowgroup" colspan="5">
                 <span class="facts-table__theme-name">{{ block.theme.title }}</span>
@@ -252,38 +268,9 @@
                 </button>
               </th>
             </tr>
-            {% for position in block.positions %}
-              <tr>
-                <th scope="row" class="facts-table__title">
-                  <a href="{% url 'rankings:index' %}?series={{ position.series.key }}&amp;year={{ position.year }}&amp;territory={{ territory.code }}">{{ position.series.short_title }}</a>
-                </th>
-                <td class="facts-table__value">
-                  <span class="numeric">{{ position.value|ru_number:position.series.precision }}</span>
-                  <span class="facts-table__unit">{{ position.series.unit_label }}, {{ position.year|year }}</span>{% include "catalog/partials/_origin_mark.html" with origin=position.origin %}
-                  {% if position.status.is_discontinued %}
-                    <span class="facts-table__stopped" title="{{ position.status.detail }}">{{ position.status.label }}</span>
-                  {% endif %}
-                </td>
-                <td class="facts-table__standing">
-                  <div class="facts-table__position">
-                    {% include "catalog/partials/_rank_strip.html" %}
-                    <p>
-                      <span class="verdict verdict--{{ position.tone }}">{{ position.standing|capfirst }}</span>
-                      <span class="facts-table__place">{{ position.place_text }}</span>
-                    </p>
-                  </div>
-                </td>
-                {# Пустое сравнение — прочерк; на телефоне скрыто (is-empty). #}
-                <td class="facts-table__versus{% if not position.versus_country %} is-empty{% endif %}">{{ position.versus_country|capfirst|default:"—" }}</td>
-                <td class="facts-table__trend{% if not position.trend %} is-empty{% endif %}">
-                  {% if position.trend %}
-                    <span class="verdict verdict--{{ position.trend_tone }}">{{ position.trend|capfirst }}</span>
-                  {% else %}
-                    <span class="text-muted">—</span>
-                  {% endif %}
-                </td>
-              </tr>
-            {% endfor %}
+            {% if rows_loaded %}
+              {% for position in block.positions %}{% include "catalog/partials/_facts_row.html" %}{% endfor %}
+            {% endif %}
           </tbody>
         {% endfor %}
       </table>

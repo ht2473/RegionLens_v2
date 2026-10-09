@@ -1,0 +1,8 @@
+{# Строки свёрнутых тем паспорта по запросу ?rows=: группа на тему; static/js/ui/fold.js переносит их в таблицу. #}
+<table>
+  {% for block in row_blocks %}
+    <tbody data-rows="theme-{{ block.theme.slug }}">
+      {% for position in block.positions %}{% include "catalog/partials/_facts_row.html" %}{% endfor %}
+    </tbody>
+  {% endfor %}
+</table>

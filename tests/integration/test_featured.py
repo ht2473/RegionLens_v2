@@ -124,7 +124,7 @@ class TestPassport:
         content = response.content.decode()
 
         assert response.status_code == 200
-        assert "passport-head__lead" in content
+        assert 'class="passport-lead"' in content
         assert "Все основные показатели" in content
         assert "место из" in content
         metrics = response.context["metrics"]
@@ -189,20 +189,44 @@ class TestPassport:
     ) -> None:
         """
         Темы таблицы сворачиваются на любой ширине (data-fold), в строке темы — сводка
-        оценок; «Развернуть все» без сценариев скрыта.
+        оценок; «Развернуть все» без сценариев скрыта. Строки тем приходят при раскрытии.
         """
         slug = Territory.objects.get(code=TATARSTAN).slug
         response = client.get(reverse("catalog:territory-detail", kwargs={"slug": slug}))
         content = response.content.decode()
         themes = response.context["passport"].themes
         assert themes
-        assert content.count("data-fold>") == len(themes)
+        assert len(re.findall(r"<tbody[^>]* data-fold[ >]", content)) == len(themes)
+        assert content.count('data-fold-src="?rows=theme-') == len(themes)
+        assert 'class="facts-table__title"' not in content
         assert "data-fold-narrow>" not in content
         assert re.search(r"<button[^>]*data-fold-all[^>]*hidden", content)
         for block in themes:
             assert block.better == sum(1 for p in block.positions if p.tone == "good")
             assert block.worse == sum(1 for p in block.positions if p.tone == "bad")
             assert block.better + block.worse <= len(block.positions)
+
+    def test_theme_rows_come_on_demand(self, client: Client, featured_keys: list[str]) -> None:
+        """
+        Строки темы — по ?rows=theme-<тема>, все — по ?rows=all; ?themes=all отдаёт таблицу
+        целиком в странице (без сценариев).
+        """
+        slug = Territory.objects.get(code=TATARSTAN).slug
+        url = reverse("catalog:territory-detail", kwargs={"slug": slug})
+        themes = client.get(url).context["passport"].themes
+        first = themes[0]
+
+        one = client.get(url, {"rows": f"theme-{first.theme.slug}"}).content.decode()
+        assert one.count("<tbody data-rows=") == 1
+        assert one.count('class="facts-table__title"') == len(first.positions)
+
+        every = client.get(url, {"rows": "all"}).content.decode()
+        assert every.count("<tbody data-rows=") == len(themes)
+
+        full = client.get(url, {"themes": "all"}).content.decode()
+        assert "data-fold-src" not in full
+        total = sum(len(block.positions) for block in themes)
+        assert full.count('class="facts-table__title"') == total
 
     def test_sections_are_listed_in_a_bar(self, client: Client, featured_keys: list[str]) -> None:
         """Полоса-оглавление ведёт к каждому разделу паспорта, и цели на странице есть."""

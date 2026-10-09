@@ -2,7 +2,9 @@
      data-fold-narrow — только на телефоне; data-fold — на любой ширине.
      <details class="fold" data-fold-narrow open> — переключатель summary;
      <tbody data-fold> — переключатель [data-fold-toggle hidden] в строке заголовка.
-   [data-fold-all aria-controls="…" hidden] раскрывает или сворачивает все data-fold блока. */
+   [data-fold-all aria-controls="…" hidden] раскрывает или сворачивает все data-fold блока.
+   <tbody data-fold data-fold-src="?rows=…"> — строки приходят при первом раскрытии: ответ —
+   <table> с <tbody data-rows="id группы">; у таблицы data-fold-src — все группы одним запросом. */
 
 // Граница — как в components.css (.fold > summary).
 const NARROW = window.matchMedia("(max-width: 639px)");
@@ -27,8 +29,52 @@ function syncAll() {
   });
 }
 
+/** Группы, строки которых ещё не пришли. */
+function unloaded(blocks) {
+  return blocks.filter((block) => block.dataset.foldSrc && !("loaded" in block.dataset));
+}
+
+/**
+ * Догрузить строки групп: одной — её адресом, нескольких — адресом таблицы.
+ * Без ответа — та же страница со всей таблицей.
+ */
+function loadRows(blocks) {
+  const pending = unloaded(blocks);
+  if (!pending.length) {
+    return;
+  }
+  const table = pending[0].closest("[data-fold-src]:not(tbody)");
+  const source = pending.length > 1 && table ? table.dataset.foldSrc : pending[0].dataset.foldSrc;
+  pending.forEach((block) => {
+    block.dataset.loaded = "";
+    block.setAttribute("aria-busy", "true");
+  });
+  fetch(new URL(source, window.location.href), { credentials: "same-origin" })
+    .then((response) => (response.ok ? response.text() : Promise.reject(response.status)))
+    .then((markup) => {
+      const template = document.createElement("template");
+      template.innerHTML = markup;
+      template.content.querySelectorAll("tbody[data-rows]").forEach((group) => {
+        const target = document.getElementById(group.dataset.rows);
+        if (target && pending.includes(target)) {
+          target.append(...group.children);
+        }
+      });
+    })
+    .catch(() => {
+      const url = new URL(window.location.href);
+      url.searchParams.set("themes", "all");
+      url.hash = pending[0].id;
+      window.location.assign(url);
+    })
+    .finally(() => pending.forEach((block) => block.removeAttribute("aria-busy")));
+}
+
 /** Раскрыть или свернуть блок любого вида. */
 function setOpen(block, open) {
+  if (open) {
+    loadRows([block]);
+  }
   if (block instanceof HTMLDetailsElement) {
     block.open = open;
   } else {
@@ -82,8 +128,12 @@ function bindAll(root) {
     button.dataset.bound = "";
     button.hidden = false;
     button.addEventListener("click", () => {
-      const open = [...scope.querySelectorAll("[data-fold]")].some(isFolded);
-      scope.querySelectorAll("[data-fold]").forEach((block) => setOpen(block, open));
+      const blocks = [...scope.querySelectorAll("[data-fold]")];
+      const open = blocks.some(isFolded);
+      if (open) {
+        loadRows(blocks);
+      }
+      blocks.forEach((block) => setOpen(block, open));
     });
   });
 }

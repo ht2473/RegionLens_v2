@@ -519,6 +519,19 @@ class ThemeBlock:
         return sum(1 for position in self.positions if position.tone == TONE_BAD)
 
 
+@dataclass(slots=True, frozen=True)
+class LeadLine:
+    """Строка вводной паспорта: подпись и числа; строкой — для сводок и документов."""
+
+    label: str
+    text: str
+    # Модификатор оформления подписи: good, bad или пусто.
+    tone: str = ""
+
+    def __str__(self) -> str:
+        return f"{self.label} — {self.text}."
+
+
 @dataclass(slots=True)
 class Passport:
     """Всё, что паспорт говорит о территории словами."""
@@ -543,83 +556,105 @@ class Passport:
         ]
 
     @property
-    def summary(self) -> list[str]:
-        """Главное о регионе: численность, сильные и слабые стороны, полнота сведений."""
-        lines: list[str] = []
+    def lead(self) -> list[LeadLine]:
+        """
+        Вводная тремя строками с числами: численность, лучшие и худшие места.
+
+        Строка о полноте сведений — только когда сведений меньше, чем показателей в наборе;
+        без сведений вводной нет.
+        """
+        lines: list[LeadLine] = []
+        if not self.positions:
+            return lines
         population = next(
             (position for position in self.positions if position.series.role == "population"), None
         )
         if population is not None:
-            line = gettext("Население — %(value)s %(unit)s, %(place)s") % {
+            text = gettext("%(value)s %(unit)s, %(place)s") % {
                 "value": ru_number(population.value, population.series.precision),
                 "unit": population.series.unit_label,
                 "place": population.place_text,
             }
             if population.trend:
-                line = f"{line}; {population.trend}"
-            lines.append(f"{line}.")
+                text = f"{text}; {population.trend}"
+            lines.append(LeadLine(gettext("Население"), text))
 
-        if self.strengths:
-            lines.append(
-                gettext("Сильнее всего регион выглядит по показателям: %(items)s.")
-                % {"items": _enumerate(self.strengths[:SUMMARY_LIMIT])}
+        none = gettext("нет ни одного основного показателя")
+        lines.append(
+            LeadLine(
+                gettext("В числе лучших"),
+                _with_places(self.strengths[:SUMMARY_LIMIT]) or none,
+                TONE_GOOD if self.strengths else "",
             )
-        else:
-            lines.append(
-                gettext("Ни по одному основному показателю регион не входит в число лучших.")
+        )
+        lines.append(
+            LeadLine(
+                gettext("В числе худших"),
+                _with_places(self.weaknesses[:SUMMARY_LIMIT]) or none,
+                TONE_BAD if self.weaknesses else "",
             )
+        )
 
-        if self.weaknesses:
+        if self.positions and len(self.positions) < self.total:
             lines.append(
-                gettext("Слабее всего — по показателям: %(items)s.")
-                % {"items": _enumerate(self.weaknesses[:SUMMARY_LIMIT])}
-            )
-        else:
-            lines.append(
-                gettext("Ни по одному основному показателю регион не входит в число худших.")
-            )
-
-        if self.baskets:
-            lines.append(self.baskets)
-
-        if self.positions:
-            lines.append(
-                gettext(
-                    "Сведения есть по %(count)s из %(total)s основных показателей, "
-                    "самые свежие — за %(year)s год."
+                LeadLine(
+                    gettext("Полнота данных"),
+                    gettext("по %(count)s из %(total)s основных показателей")
+                    % {"count": len(self.positions), "total": self.total},
                 )
-                % {
-                    "count": len(self.positions),
-                    "total": self.total,
-                    "year": max(position.year for position in self.positions),
-                }
             )
         return lines
 
     @property
-    def baskets(self) -> str:
-        """
-        Доход в фиксированных наборах одной фразой: сколько наборов на доход и зарплату.
+    def summary(self) -> list[str]:
+        """Вводная строками — для главной, карточки региона, ответа поиска и документа."""
+        return [str(line) for line in self.lead]
 
-        Набор Росстата составлен для сравнения регионов; делится значение того же года.
-        Это расчёт проекта, а не показатель Росстата «покупательная способность»: у него
-        товарные эквиваленты дохода по отдельным товарам.
+    def basket_facts(self) -> dict[str, dict[str, str]]:
         """
+        Доход и зарплата в фиксированных наборах — у плиток этих рядов, по ключу ряда:
+        число наборов и то же по России («3,3» и «2,9»); по России может не быть.
+        """
+        return {
+            key: {
+                "value": ru_number(value, BASKET_DIGITS),
+                "country": ru_number(country, BASKET_DIGITS) if country is not None else "",
+            }
+            for key, (value, country) in self._basket_ratios().items()
+        }
+
+    def _basket_ratios(self) -> dict[str, tuple[float, float | None]]:
+        """Доход и зарплата, делённые на стоимость набора того же года: по ключу ряда."""
         by_key = self.by_key()
         basket = by_key.get(BASKET_COST)
         if basket is None or basket.value <= 0:
-            return ""
+            return {}
         found: dict[str, tuple[float, float | None]] = {}
-        for role, key in (("income", BASKET_INCOME), ("wage", BASKET_WAGE)):
+        for key in (BASKET_INCOME, BASKET_WAGE):
             position = by_key.get(key)
             if position is None or position.year != basket.year:
                 continue
             country = None
             if position.country_value and basket.country_value:
                 country = position.country_value / basket.country_value
-            found[role] = (position.value / basket.value, country)
-        if not found:
+            found[key] = (position.value / basket.value, country)
+        return found
+
+    @property
+    def baskets(self) -> str:
+        """
+        Доход в фиксированных наборах одной фразой — для документа паспорта.
+
+        Набор Росстата составлен для сравнения регионов; делится значение того же года.
+        Это расчёт проекта, а не показатель Росстата «покупательная способность»: у него
+        товарные эквиваленты дохода по отдельным товарам.
+        """
+        ratios = self._basket_ratios()
+        if not ratios:
             return ""
+        roles = {BASKET_INCOME: "income", BASKET_WAGE: "wage"}
+        found = {roles[key]: ratio for key, ratio in ratios.items()}
+        basket = self.by_key()[BASKET_COST]
 
         def number(value: float) -> str:
             return ru_number(value, BASKET_DIGITS)
@@ -666,12 +701,23 @@ def _lower_first(title: str) -> str:
     return title[:1].lower() + title[1:]
 
 
-def _enumerate(positions: list[Position]) -> str:
-    """«а, б и в» — перечень названий внутри фразы."""
-    titles = [_lower_first(position.series.short_title) for position in positions]
-    if len(titles) == 1:
-        return titles[0]
-    return gettext("%(head)s и %(last)s") % {"head": ", ".join(titles[:-1]), "last": titles[-1]}
+def _with_places(positions: list[Position]) -> str:
+    """
+    «а (1-е место из 85), б (2-е) и в (3-е)» — названия с местами внутри строки вводной.
+
+    Число регионов называется один раз, у первого места.
+    """
+    items = [
+        gettext("%(title)s (%(place)s)")
+        % {
+            "title": _lower_first(position.series.short_title),
+            "place": position.place_text if index == 0 else ordinal(position.place),
+        }
+        for index, position in enumerate(positions)
+    ]
+    if len(items) <= 1:
+        return "".join(items)
+    return gettext("%(head)s и %(last)s") % {"head": ", ".join(items[:-1]), "last": items[-1]}
 
 
 @dataclass(slots=True)

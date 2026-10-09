@@ -43,6 +43,11 @@ SIMILAR_PARAM = "similar"
 # Глубина ряда на графике паспорта.
 TIMELINE_YEARS = 25
 
+# Строки свёрнутых тем таблицы догружаются при раскрытии: ``?rows=theme-<тема>`` или
+# ``?rows=all``. ``?themes=all`` — вся таблица сразу, для страницы без сценариев.
+ROWS_PARAM = "rows"
+ALL_THEMES = "all"
+
 
 class TerritoryDetailView(BreadcrumbMixin, DetailView):
     """Паспорт субъекта Российской Федерации."""
@@ -73,7 +78,9 @@ class TerritoryDetailView(BreadcrumbMixin, DetailView):
         return self.request.headers.get("HX-Target", TIMELINE_ID)
 
     def get_template_names(self) -> list[str]:
-        """Выбрать полную страницу или один из двух фрагментов."""
+        """Выбрать полную страницу, строки тем таблицы или один из двух фрагментов."""
+        if self.request.GET.get(ROWS_PARAM):
+            return ["catalog/partials/_facts_rows.html"]
         fragment = self.fragment()
         if not fragment:
             return [self.template_name]
@@ -90,6 +97,10 @@ class TerritoryDetailView(BreadcrumbMixin, DetailView):
         context = super().get_context_data(**kwargs)
         territory: Territory = self.object
         fragment = self.fragment()
+
+        if rows := self.request.GET.get(ROWS_PARAM):
+            context.update(_rows_context(territory, rows))
+            return context
 
         if fragment == SIMILAR_ID:
             context.update(_similar_context(self.request, territory))
@@ -116,11 +127,13 @@ class TerritoryDetailView(BreadcrumbMixin, DetailView):
         """Собрать данные, читаемые из аналитического склада."""
         passport = build_passport(territory.code)
         positions = passport.by_key()
+        baskets = passport.basket_facts()
 
         metrics = [
             {
                 **entry,
                 "position": positions.get(entry["series"].key),
+                "basket": baskets.get(entry["series"].key),
                 "spark": sparkline_path([point["value"] for point in entry["sparkline"]]),
             }
             for entry in featured_snapshot(territory.code)
@@ -150,6 +163,8 @@ class TerritoryDetailView(BreadcrumbMixin, DetailView):
                 },
             ],
             "series_options": series_options,
+            # Без ?themes=all строки тем приходят при раскрытии: в странице — только заголовки.
+            "rows_loaded": self.request.GET.get("themes") == ALL_THEMES,
             **_timeline_context(self.request, territory),
         }
 
@@ -201,6 +216,18 @@ class TerritoryCardView(DetailView):
         context["positions"] = rows
         context["chosen"] = chosen
         return context
+
+
+def _rows_context(territory: Territory, wanted: str) -> dict[str, Any]:
+    """Строки таблицы «Все основные показатели»: одной темы (``theme-<тема>``) или всех."""
+    try:
+        passport = build_passport(territory.code)
+    except WarehouseNotBuiltError:
+        return {"row_blocks": []}
+    blocks = [
+        block for block in passport.themes if wanted in (ALL_THEMES, f"theme-{block.theme.slug}")
+    ]
+    return {"row_blocks": blocks}
 
 
 def _neighbours(territory: Territory) -> list[Territory]:
