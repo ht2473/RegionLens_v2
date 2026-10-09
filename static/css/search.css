@@ -29,6 +29,13 @@
   letter-spacing: var(--tracking-tight);
 }
 
+/* В заголовке сравнения ссылки стоят среди текста («Москва и Санкт-Петербург»). */
+.answer__title a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+}
+
 .answer__note,
 .answer__text {
   margin: 0;

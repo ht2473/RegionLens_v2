@@ -44,8 +44,8 @@
     <section class="card" style="margin-top: var(--space-5)">
       <div class="card__header">
         <h2 class="card__title">{% translate "Разбор по таблицам" %}</h2>
-        <span class="text-muted">{% blocktranslate with count=release.row_count|ru_number:0 %}значений: {{ count }}{% endblocktranslate %}</span>
       </div>
+      <p class="text-muted">{% blocktranslate with count=release.row_count|ru_number:0 %}значений: {{ count }}{% endblocktranslate %}</p>
       <div class="admin-table-wrapper">
         <table class="admin-table">
           <thead>

@@ -955,6 +955,11 @@ a.leader-list__name:hover {
   margin-top: 0;
 }
 
+/* Ссылка в подсказке — подчёркнута: по цвету она отличается от текста меньше чем 3 : 1. */
+.field__hint a {
+  text-decoration: underline;
+}
+
 .field__error {
   font-size: var(--text-xs);
   color: var(--negative);
@@ -4155,6 +4160,13 @@ rl-combobox:defined > select {
 
 .answer-list li {
   max-width: none;
+}
+
+/* Регион в строке «Москва — 120 000» — ссылка среди текста: подчёркнута, не только цветом. */
+.answer-list a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
 }
 
 .answer-list .numeric {
