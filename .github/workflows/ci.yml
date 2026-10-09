@@ -35,7 +35,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Установка uv
         uses: astral-sh/setup-uv@v7
@@ -79,7 +79,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Установка uv
         uses: astral-sh/setup-uv@v7
@@ -135,7 +135,7 @@ jobs:
           --health-retries 10
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Установка uv
         uses: astral-sh/setup-uv@v7
@@ -193,7 +193,7 @@ jobs:
           --health-retries 10
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Установка uv
         uses: astral-sh/setup-uv@v7
@@ -237,7 +237,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Подготовка сборщика
         uses: docker/setup-buildx-action@v4
