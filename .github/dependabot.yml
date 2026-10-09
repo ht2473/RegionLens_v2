@@ -1,0 +1,35 @@
+# Обновления зависимостей раз в месяц, одним запросом на экосистему. Исправления
+# уязвимостей приходят отдельно и сразу (настройка репозитория). Django держится
+# на линии 6.1: переход на 6.2 LTS делается вручную, вместе с проверкой сайта.
+version: 2
+updates:
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "Развёртывание:"
+    groups:
+      python:
+        update-types: ["minor", "patch"]
+    ignore:
+      - dependency-name: "django"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "CI:"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: "docker"
+    directory: "/docker"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "Развёртывание:"
