@@ -347,6 +347,115 @@ class TestIndicatorsInColumns:
         assert result.columns[1].role == "skip"
 
 
+class TestOtherAgencies:
+    """Вёрстки других ведомств из проверки 10.10.2026: ФТС, Банк России, Минфин, статьи."""
+
+    def test_region_heading_with_rows_under_it(self) -> None:
+        # ФТС: регион — строка без чисел, под ним строки разреза с числами.
+        rows = [
+            ["Федеральные округа и субъекты РФ", "2020 год", "2021 год"],
+            ["ИТОГО", "", ""],
+            ["Всего", "10", "12"],
+            ["Микро предприятия", "3", "4"],
+            ["Белгородская область", "", ""],
+            ["Всего", "5", "6"],
+            ["Микро предприятия", "1", "2"],
+            ["Брянская область", "", ""],
+            ["Всего", "2", "3"],
+            ["Микро предприятия", "1", "1"],
+            ["Курская область", "", ""],
+            ["Всего", "4", "4"],
+            ["Микро предприятия", "2", "2"],
+        ]
+        result = _recognize(rows)
+        assert result.form == WIDE
+        assert result.row_parts == ["Всего", "Микро предприятия"]
+        assert {row.part for row in result.rows} == {"Всего", "Микро предприятия"}
+        assert result.territories is not None
+        assert {"RU-BEL", "RU-BRY", "RU-KRS"} <= set(result.territories.codes().values())
+        # Регион в каждой строке разреза — не дубль.
+        assert result.duplicates == []
+
+    def test_regions_with_numbers_are_not_headings(self) -> None:
+        rows = [
+            ["Регион", "2020 год", "2021 год"],
+            ["Белгородская область", "5", "6"],
+            ["Всего", "2", "3"],
+            ["Брянская область", "2", "3"],
+            ["Курская область", "4", "4"],
+        ]
+        assert _recognize(rows).row_parts == []
+
+    def test_year_in_long_header_makes_a_value(self) -> None:
+        # Статья: «период» и «год» в названии не делают столбец чисел столбцом периода.
+        rows = [
+            [
+                "Регион",
+                "Период конвергенции в 2018 году (лет)",
+                "Период конвергенции в 2022 году (лет)",
+            ],
+            ["Республика Адыгея", "-22,2", "385,5"],
+            ["Республика Крым", "-23,6", "-20,2"],
+            ["Краснодарский край", "-4,3", "-168,9"],
+        ]
+        result = _recognize(rows)
+        assert result.form == INDICATORS
+        assert [column.stamp["year"] for column in result.value_columns] == [2018, 2022]  # type: ignore[index]
+        assert not result.needs_year
+
+    def test_year_column_stays_a_period(self) -> None:
+        rows = [
+            ["Регион", "Год", "Значение"],
+            ["Москва", "2020", "1"],
+            ["Москва", "2021", "2"],
+            ["Тверская область", "2020", "3"],
+            ["Курская область", "2020", "4"],
+        ]
+        result = _recognize(rows)
+        assert result.form == LONG
+        assert _roles(result)["Год"] == PERIOD
+
+    def test_table_by_federal_districts(self) -> None:
+        rows = [
+            ["Наименование федерального округа", "Объём кредитов"],
+            ["Центральный федеральный округ", "100825"],
+            ["Северо-Западный федеральный округ", "12510"],
+            ["Южный федеральный округ", "445"],
+            ["Приволжский федеральный округ", "186"],
+        ]
+        result = _recognize(rows)
+        assert result.form == recognize.UNKNOWN
+        assert result.districts
+
+    def test_year_hint_from_date_in_file_name(self) -> None:
+        rows = [
+            ["Регион", "Кредиты", "Задолженность"],
+            ["Москва", "13", "25"],
+            ["Тверская область", "1,2", "0,5"],
+            ["Курская область", "1,1", "0,6"],
+        ]
+        table = ingest.TableInfo(key="", name="t", kind=ingest.PASTE, size=0)
+        loaded = Loaded(rows=rows, complete=True, total=len(rows))
+        result = recognize.recognize(loaded, table, file_name="01_03_Loans_corp_20260901.xlsx")
+        assert result.needs_year
+        assert result.year_hint == 2026
+
+    def test_quiet_rows_are_not_asked(self) -> None:
+        from apps.userdata import describe
+
+        rows = [
+            ["Субъект", "Сумма", "Доля"],
+            ["1", "2", "3"],
+            ["Москва", "13", "25"],
+            ["Тверская область", "1,2", "0,5"],
+            ["Курская область", "1,1", "0,6"],
+            ["ВСЕГО:", "15,3", "26,1"],
+            ["Мордор", "1", "1"],
+        ]
+        asked = [label for label, _match, _count in describe.unresolved(_recognize(rows))]
+        assert asked == ["Мордор"]
+
+
 def test_not_a_table_of_regions() -> None:
     result = _recognize([["Товар", "Цена"], ["Хлеб", "50"], ["Молоко", "80"]])
     assert result.form == recognize.UNKNOWN

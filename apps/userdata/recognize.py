@@ -111,8 +111,12 @@ _UNIT_WORDS = re.compile(
     re.I,
 )
 _YEAR_IN_TEXT = re.compile(r"(?<!\d)((?:19|20)\d{2})(?!\d)")
+# Дата слитно в имени файла: «01_03_Loans_corp_20260901».
+_DATE_DIGITS = re.compile(r"(?<!\d)((?:19|20)\d{2})(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])(?!\d)")
 _NAMED_POINT = re.compile(r"на\s+1\s+([а-я]+)\s+((?:19|20)\d{2})")
-_NAMED_YEAR = re.compile(r"(?:в|за)\s+((?:19|20)\d{2})\s*г")
+# «в 2023 г.», «за 2023 год», «в 2018 году», «в 2020 гг.»: слово «год» целиком, иначе
+# от него в названии показателя остаётся «оду».
+_NAMED_YEAR = re.compile(r"(?:в|за)\s+((?:19|20)\d{2})\s*г(?:од[уа]?|г\.?|\.)?")
 _CODE_VALUE = re.compile(r"^\d{8}(\d{3})?(\.0)?$")
 _FOOTNOTE_ROW = re.compile(r"^\s*[\W_]*(\d{1,2})(?:[)\.]\s*|\s+|(?=[^\d\s]))(\S.*)$", re.DOTALL)
 
@@ -144,6 +148,8 @@ class TerritoryRow:
     label: str
     block: int = 0
     merged_from: tuple[int, ...] = ()
+    # Строка разреза под регионом-заголовком: «Микро предприятия» под «Белгородской областью».
+    part: str = ""
 
 
 @dataclass(slots=True)
@@ -171,6 +177,10 @@ class Recognition:
     duplicates: list[dict[str, Any]] = field(default_factory=list)
     same_headers: list[dict[str, Any]] = field(default_factory=list)
     municipal: bool = False
+    # Столбца субъектов нет, а федеральные округа есть: таблица по округам.
+    districts: bool = False
+    # Значения разреза строками под регионом-заголовком (в порядке таблицы).
+    row_parts: list[str] = field(default_factory=list)
 
     def role_of(self, role: str) -> list[ColumnInfo]:
         return [column for column in self.columns if column.role == role]
@@ -208,7 +218,13 @@ def recognize(
         transposed = _transposed(loaded)
         if transposed is not None:
             return transposed
-        return Recognition(form=UNKNOWN, columns=_bare_columns(rows), header_rows=[], data_start=0)
+        return Recognition(
+            form=UNKNOWN,
+            columns=_bare_columns(rows),
+            header_rows=[],
+            data_start=0,
+            districts=_by_districts(loaded),
+        )
     main = territory_columns[0]
     data_start = _data_start(rows, main)
     header_rows, title_lines = _header(rows[:data_start], main)
@@ -229,7 +245,8 @@ def recognize(
         result.year = recipe.get("year") or None
         result.year_hint = _year_hint(result, table, file_name)
     if result.form in {WIDE, INDICATORS} and loaded.complete:
-        _sheet_rows(result, rows)
+        if not _subtitle_rows(result, rows):
+            _sheet_rows(result, rows)
     else:
         result.labels = loaded.column_values(main, data_start)
     codes = _territory_codes(result, loaded)
@@ -268,6 +285,15 @@ def _territory_columns(loaded: Loaded, recipe: Mapping[str, Any]) -> list[int]:
     best = max(found for found, _column in scored)
     # Таблица «в две колонки»: в каждой половине — своя часть субъектов.
     return sorted(column for found, column in scored if found >= max(MIN_REGIONS, best // 4))
+
+
+def _by_districts(loaded: Loaded) -> bool:
+    """В каком-то столбце названы федеральные округа (не меньше трёх), а субъектов нет."""
+    width = min(max((len(row) for row in loaded.rows), default=0), 200)
+    return any(
+        len(matching.districts_in(loaded.column_values(column))) >= MIN_REGIONS
+        for column in range(width)
+    )
 
 
 def _data_start(rows: list[list[Any]], column: int) -> int:
@@ -638,6 +664,10 @@ def _strip_note(text: str) -> str:
 def _role(column: ColumnInfo, form: str) -> str:  # noqa: PLR0911 — таблица правил
     """Роль столбца по названию и профилю ячеек."""
     hint = _hint(column.header)
+    # «Период конвергенции в 2018 году (лет)»: год в названии столбца чисел — значение за этот
+    # год, а не столбец периода («Год» с ячейками 2018, 2019 остаётся периодом).
+    if hint == PERIOD and column.periods < PERIOD_SHARE and _YEAR_IN_TEXT.search(column.header):
+        hint = None
     if column.codes >= PERIOD_SHARE:
         return TERRITORY_CODE if hint in {TERRITORY_CODE, None} else SKIP
     if hint == TERRITORY_CODE:
@@ -757,6 +787,49 @@ def _sheet_rows(result: Recognition, rows: list[list[Any]]) -> None:
         for index, label in pending:
             _add_row(result, labels, TerritoryRow(index, label, block))
     result.labels = dict(labels)
+
+
+def _subtitle_rows(result: Recognition, rows: list[list[Any]]) -> bool:
+    """
+    Регион — строка-заголовок без чисел, под ним строки разреза с числами («Всего», «Микро
+    предприятия», «Малые предприятия» у ФТС): строки становятся разрезом своего региона.
+    Узнаётся, только если у региона самого нет чисел, а подписи под ними повторяются
+    не меньше чем у трёх регионов; иначе — обычный разбор листа.
+    """
+    if len(result.territory_columns) != 1:
+        return False
+    territory = result.territory_columns[0]
+    value_indexes = [column.index for column in result.value_columns]
+    heading = ""
+    found: list[tuple[int, str, str]] = []
+    for index in range(result.data_start, len(rows)):
+        row = rows[index]
+        label = " ".join(cell_text(row[territory]).split()) if territory < len(row) else ""
+        if not label:
+            continue
+        match = matching.quick_match(label)
+        has_values = any(
+            column < len(row) and cell_text(row[column]).strip() for column in value_indexes
+        )
+        if not has_values:
+            if match.is_territory or match.rule == "total":
+                heading = label
+            continue
+        if match.is_territory:
+            return False
+        if heading:
+            found.append((index, heading, label))
+    counts = Counter(part for _index, _heading, part in found)
+    parts = [part for part in dict.fromkeys(counts) if counts[part] >= MIN_REGIONS]
+    headings = {heading for _index, heading, part in found if part in parts}
+    if not parts or sum(matching.quick_match(item).is_territory for item in headings) < MIN_REGIONS:
+        return False
+    result.rows = [
+        TerritoryRow(index, heading, part=part) for index, heading, part in found if part in parts
+    ]
+    result.labels = dict(Counter(row.label for row in result.rows))
+    result.row_parts = parts
+    return True
 
 
 def _continues_last(
@@ -928,7 +1001,7 @@ def _summarize_slices(result: Recognition, loaded: Loaded, recipe: Mapping[str, 
         info["selected"] = (
             [value for value in picked if value in info["values"]] if picked else defaults[index]
         )
-    series = total
+    series = total * max(len(result.row_parts), 1)
     for info in result.slices.values():
         series *= max(len(info["selected"]), 1)
     result.series = series
@@ -970,7 +1043,7 @@ def _year_hint(result: Recognition, table: TableInfo, file_name: str) -> int | N
     if named:
         return named.most_common(1)[0][0]
     for text in (result.title, table.sheet, PurePosixPath(table.member or file_name).stem):
-        years = _YEAR_IN_TEXT.findall(text or "")
+        years = _YEAR_IN_TEXT.findall(text or "") or _DATE_DIGITS.findall(text or "")
         if years:
             return int(years[-1])
     return None
@@ -1007,7 +1080,7 @@ def _find_duplicates(result: Recognition, rows: list[list[Any]]) -> None:
             parsed = cells.parse(raw)
             if parsed.status != cells.VALUE:
                 continue
-            key = (code, headers[column.index], *distinct)
+            key = (code, headers[column.index], row.part, *distinct)
             if (
                 key in seen
                 and seen[key][1] != row.index

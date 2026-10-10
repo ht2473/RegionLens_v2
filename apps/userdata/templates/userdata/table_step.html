@@ -57,7 +57,11 @@
     {% if result.form == "unknown" %}
       <div class="callout callout--warning" role="alert">
         <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
-        <div>{% translate "Столбец с регионами не найден. Отметьте его в перечне столбцов ниже." %}</div>
+        {% if result.districts %}
+          <div>{% translate "В таблице федеральные округа, а не субъекты. Карта и анализ на сайте работают по субъектам РФ. Нужна таблица, где строки — субъекты." %}</div>
+        {% else %}
+          <div>{% translate "Столбец с регионами не найден. Отметьте его в перечне столбцов ниже." %}</div>
+        {% endif %}
       </div>
     {% endif %}
 
@@ -206,6 +210,16 @@
             </div>
           </fieldset>
         {% endfor %}
+      </details>
+    {% endif %}
+
+    {% if result.row_parts %}
+      <details class="question-card question-card--quiet">
+        <summary class="question-card__title">{% translate "Разрез строками под регионом" %}</summary>
+        <p>{% translate "Под каждым регионом идут строки с числами. Каждая такая строка станет отдельным рядом." %}</p>
+        <ul class="compact-list">
+          {% for part in result.row_parts %}<li{% with lang=part|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ part|truncatechars:60 }}</li>{% endfor %}
+        </ul>
       </details>
     {% endif %}
 

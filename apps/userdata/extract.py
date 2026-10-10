@@ -181,6 +181,13 @@ def extract(version: DatasetVersion) -> dict[str, Any]:
 
     started = time.perf_counter()
     loaded, result = describe.load_and_recognize(version, version.dataset.owner)
+    if result.districts:
+        raise ExtractError(
+            _(
+                "В таблице федеральные округа, а не субъекты. "
+                "Карта и анализ работают по субъектам РФ."
+            )
+        )
     if result.form == recognize.UNKNOWN or result.territories is None:
         raise ExtractError(
             _("Столбец с регионами не найден. Отметьте его на шаге «Что в таблице».")
@@ -531,13 +538,15 @@ class _Reader:
             )
         blocks = recognize._blocks(result)
         by_block = {block: set(indexes) for block, (_territory, indexes) in enumerate(blocks)}
-        for block, label, row in self._sheet_rows(blocks):
+        for block, label, row, part in self._sheet_rows(blocks):
             place = self.place(label)
             if place is None:
                 continue
             sliced = self.row_slices(row)
             if sliced is None:
                 continue
+            if part:
+                sliced = (*sliced, ("", part))
             row_indicator = self.text(row, self.indicator_column)
             unit = self.text(row, self.unit_column)
             hidden = self.hidden(row)
@@ -578,12 +587,15 @@ class _Reader:
 
     def _sheet_rows(
         self, blocks: list[tuple[int, list[int]]]
-    ) -> Iterator[tuple[int, str, list[Any] | tuple[Any, ...]]]:
-        """Строки территорий листа: найденные распознаванием или, у большой таблицы, все."""
+    ) -> Iterator[tuple[int, str, list[Any] | tuple[Any, ...], str]]:
+        """
+        Строки территорий листа: найденные распознаванием или, у большой таблицы, все;
+        последнее — значение разреза строкой под регионом-заголовком.
+        """
         if self.result.rows:
             rows = self.loaded.rows
             for item in self.result.rows:
-                yield item.block, item.label, rows[item.index]
+                yield item.block, item.label, rows[item.index], item.part
             return
         territories = [territory for territory, _values in blocks] or [self.territory]
         source: Iterator[Any] = (
@@ -595,7 +607,7 @@ class _Reader:
             for block, territory in enumerate(territories):
                 label = " ".join(cell_text(row[territory]).split()) if territory < len(row) else ""
                 if label:
-                    yield block, label, row
+                    yield block, label, row, ""
 
     # --- Перевёрнутая таблица --------------------------------------------------------------------
 

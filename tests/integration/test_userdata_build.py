@@ -145,6 +145,56 @@ class TestSeriesStep:
         assert version.regions_count == 10
         assert (version.first_year, version.last_year) == (2022, 2023)
 
+    def test_rows_under_region_headings_become_a_slice(
+        self, client: Client, warehouse: Any
+    ) -> None:
+        # Вёрстка ФТС: регион — строка без чисел, под ним «Всего» и «Микро предприятия».
+        rows = ["Федеральные округа и субъекты РФ;2020 год;2021 год", "ИТОГО;;"]
+        rows += ["Всего;10;12", "Микро предприятия;3;4"]
+        for region in ("Белгородская область", "Брянская область", "Курская область"):
+            rows += [f"{region};;", "Всего;5;6", "Микро предприятия;1;2"]
+        content = "\n".join(rows).encode("utf-8")
+        client.post(
+            reverse("userdata:upload"),
+            {"action": "upload", "file": SimpleUploadedFile("экспорт.csv", content)},
+        )
+        dataset = Dataset.objects.latest("created_at")
+        client.post(
+            reverse("userdata:file", args=[dataset.public_id]),
+            {"action": "choose", "table": "", "encoding": ""},
+        )
+        page = client.get(reverse("userdata:table", args=[dataset.public_id]))
+        assert "Разрез строками под регионом" in page.text
+        _describe(client, dataset)
+        _build(client, dataset)
+        version = _version(dataset)
+        assert version.regions_count == 3
+        parts = {
+            tuple(value for _header, value in item["slices"])
+            for item in version.report["extract"]["series"]
+        }
+        assert parts == {("Всего",), ("Микро предприятия",)}
+
+    def test_table_by_districts_is_explained(self, client: Client, warehouse: Any) -> None:
+        rows = [
+            "Наименование федерального округа;Объём кредитов",
+            "Центральный федеральный округ;100825",
+            "Северо-Западный федеральный округ;12510",
+            "Южный федеральный округ;445",
+        ]
+        content = "\n".join(rows).encode("utf-8")
+        client.post(
+            reverse("userdata:upload"),
+            {"action": "upload", "file": SimpleUploadedFile("округа.csv", content)},
+        )
+        dataset = Dataset.objects.latest("created_at")
+        client.post(
+            reverse("userdata:file", args=[dataset.public_id]),
+            {"action": "choose", "table": "", "encoding": ""},
+        )
+        page = client.get(reverse("userdata:table", args=[dataset.public_id]))
+        assert "В таблице федеральные округа, а не субъекты" in page.text
+
     def test_unit_hints(self) -> None:
         assert indicators.guess_kind("Число умерших", "человек") == indicators.SUM
         assert indicators.guess_kind("Доля", "процент") == indicators.RELATIVE
