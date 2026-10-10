@@ -245,6 +245,54 @@
     </div>
   {% endif %}
 
+  {# --- Устойчивость вывода к составу субъектов ---------------------------------------------- #}
+  {% if robustness.rows %}
+    <div class="card" style="margin-top: var(--space-5)">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Устойчивость вывода" %}</h2>
+        <span class="card__meta numeric">{{ year|year }}{% if period_change %} · {{ period_change.first_year|year }}–{{ period_change.last_year|year }}{% endif %}</span>
+      </div>
+      <p>
+        {% if robustness.stable %}
+          {% translate "Направление изменения неравенства не зависит от Москвы с областью и Северного Кавказа." %}
+        {% else %}
+          {% translate "Направление изменения неравенства зависит от состава регионов. Сравните строки таблицы." %}
+        {% endif %}
+      </p>
+      <div class="data-table-wrapper" style="margin-top: var(--space-3)">
+        <table class="data-table">
+          <caption class="visually-hidden">{% translate "Меры неравенства при разном составе субъектов" %}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Состав" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Субъектов" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Коэффициент Джини" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Индекс Тейла" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Различия между округами" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Джини за период" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in robustness.rows %}
+              <tr>
+                <th scope="row">{{ robustness_variants|dict_value:row.variant }}</th>
+                {% if row.available %}
+                  <td class="is-numeric">{{ row.count }}</td>
+                  <td class="is-numeric">{{ row.gini|ru_number:3 }}</td>
+                  <td class="is-numeric">{{ row.theil|ru_number:4 }}</td>
+                  <td class="is-numeric">{{ row.between|percent }}</td>
+                  <td class="is-numeric">{{ row.gini_change|percent_delta }}</td>
+                {% else %}
+                  <td colspan="5" class="text-muted">{% translate "мало субъектов для расчёта" %}</td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
   {# --- Крайние значения --------------------------------------------------------------------- #}
   <div class="grid grid--halves" style="margin-top: var(--space-5)">
     <div class="card">

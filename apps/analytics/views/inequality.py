@@ -26,6 +26,7 @@ from ..core import composition, inequality
 from ..selectors import (
     COMPOSITION_CONSTANT,
     COMPOSITIONS,
+    ROBUSTNESS_VARIANTS,
     break_marks,
     cached_result,
     comparable_from,
@@ -37,8 +38,10 @@ from ..selectors import (
     resolve_float,
     resolve_one,
     resolve_span,
+    robustness_excluded,
     series_breaks,
     too_few_regions,
+    without,
 )
 from .base import AnalyticsView
 
@@ -224,6 +227,28 @@ class InequalityView(AnalyticsView):
             }
         )
         context.update(_decomposition(panel.get(year, {}), weights_panel.get(year, {})))
+        context["robustness"] = cached_result(
+            "inequality-robustness",
+            {
+                "series": series.key,
+                "year": year,
+                "weighting": weighting,
+                "epsilon": round(epsilon, 3),
+                "first": first_year,
+                "last": last_year,
+                "composition": mode,
+            },
+            lambda: _robustness(
+                panel,
+                weights_panel,
+                codes,
+                year=year,
+                epsilon=epsilon,
+                span=(first_year, last_year),
+                mode=mode,
+            ),
+        )
+        context["robustness_variants"] = ROBUSTNESS_VARIANTS
         return context
 
 
@@ -424,3 +449,53 @@ def _extremes(series_key: str, year: int) -> dict[str, Any]:
     ]
     rows.sort(key=lambda row: row["value"], reverse=True)
     return {"top": rows[:EXTREMES_LIMIT], "bottom": rows[-EXTREMES_LIMIT:][::-1]}
+
+
+def _robustness(
+    panel: dict[int, dict[str, float]],
+    weights_panel: dict[int, dict[str, float]],
+    codes: list[str],
+    *,
+    year: int,
+    epsilon: float,
+    span: tuple[int, int],
+    mode: str,
+) -> dict[str, Any]:
+    """
+    Меры за год и изменение Джини за период без Москвы с областью и без Северного Кавказа.
+
+    Вывод устойчив, если направление изменения Джини одинаково во всех составах.
+    """
+    rows: list[dict[str, Any]] = []
+    for variant, excluded in robustness_excluded().items():
+        kept = without(panel, excluded)
+        kept_codes = [code for code in codes if code not in excluded]
+        snapshot = _snapshot(kept.get(year, {}), weights_panel.get(year, {}), kept_codes, epsilon)
+        if not snapshot.get("available"):
+            rows.append({"variant": variant, "available": False})
+            continue
+        dynamics = _dynamics(kept, weights_panel, kept_codes, epsilon=epsilon, span=span, mode=mode)
+        change = _period_change(dynamics["timeline"])
+        gini_change = next(
+            (
+                item["change"]
+                for item in (change or {}).get("measures", [])
+                if item["code"] == "gini"
+            ),
+            None,
+        )
+        decomposition = _decomposition(kept.get(year, {}), weights_panel.get(year, {}))
+        found = decomposition["decomposition"]
+        rows.append(
+            {
+                "variant": variant,
+                "available": True,
+                "count": snapshot["count"],
+                "gini": snapshot["by_code"]["gini"].value,
+                "theil": snapshot["by_code"]["theil"].value,
+                "between": found.between_share if found else None,
+                "gini_change": gini_change,
+            }
+        )
+    directions = {row["gini_change"] > 0 for row in rows if row.get("gini_change") not in (None, 0)}
+    return {"rows": rows, "stable": len(directions) <= 1}

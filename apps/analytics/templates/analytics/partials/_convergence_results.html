@@ -128,6 +128,63 @@
     {% include "analytics/partials/_breaks_warning.html" %}
   </div>
 
+  {# --- Устойчивость вывода к составу субъектов ---------------------------------------------- #}
+  {% if robustness.rows %}
+    <div class="card" style="margin-top: var(--space-5)">
+      <div class="card__header">
+        <h2 class="card__title">{% translate "Устойчивость вывода" %}</h2>
+        <span class="card__meta numeric">{{ first_year|year }}–{{ last_year|year }}</span>
+      </div>
+      <p>
+        {% if robustness.stable %}
+          {% translate "Вывод не меняется без Москвы с областью и без Северного Кавказа." %}
+        {% else %}
+          {% translate "Вывод зависит от состава регионов. Сравните строки таблицы." %}
+        {% endif %}
+      </p>
+      <div class="data-table-wrapper" style="margin-top: var(--space-3)">
+        <table class="data-table">
+          <caption class="visually-hidden">{% translate "Выводы о сближении при разном составе субъектов" %}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Состав" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Субъектов" %}</th>
+              <th scope="col">{% translate "Разброс" %}</th>
+              <th scope="col">{% translate "Догоняющий рост" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Коэффициент β" %}</th>
+              <th scope="col" class="is-numeric">{% translate "Полупериод, лет" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in robustness.rows %}
+              <tr>
+                <th scope="row">{{ robustness_variants|dict_value:row.variant }}</th>
+                <td class="is-numeric">{{ row.count }}</td>
+                <td>
+                  {% if row.sigma == "converging" %}{% translate "сокращается" %}
+                  {% elif row.sigma == "diverging" %}{% translate "растёт" %}
+                  {% elif row.sigma == "none" %}{% translate "без устойчивого изменения" %}
+                  {% else %}<span class="text-muted">{% translate "не оценить" %}</span>{% endif %}
+                </td>
+                <td>
+                  {% if row.beta == "converging" %}{% translate "сближение" %}
+                  {% elif row.beta == "diverging" %}{% translate "разрыв растёт" %}
+                  {% elif row.beta == "none" %}{% translate "связь не подтверждена" %}
+                  {% else %}<span class="text-muted">{% translate "не оценить" %}</span>{% endif %}
+                </td>
+                <td class="is-numeric">
+                  {{ row.beta_value|ru_number:5 }}
+                  {% if row.beta_p is not None %}<span class="text-muted">{{ row.beta_p|p_level:"p" }}</span>{% endif %}
+                </td>
+                <td class="is-numeric">{{ row.half_life|ru_number:1 }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
   {# --- Графики ------------------------------------------------------------------------------ #}
   {% if sigma_option %}
     <div class="chart-frame" style="margin-top: var(--space-5)">

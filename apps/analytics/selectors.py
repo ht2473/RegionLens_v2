@@ -50,6 +50,17 @@ COMPOSITIONS: dict[str, Any] = {
     COMPOSITION_ALL: _("все субъекты, по которым есть значения в каждом году"),
 }
 
+# Составы для проверки устойчивости вывода: меры разброса и сближения сильнее всего сдвигают
+# крайние регионы — Москва с областью и республики Северного Кавказа.
+ROBUSTNESS_ALL = "all"
+ROBUSTNESS_VARIANTS: dict[str, Any] = {
+    ROBUSTNESS_ALL: _("все субъекты"),
+    "no-moscow": _("без Москвы и Московской области"),
+    "no-skfo": _("без Северо-Кавказского округа"),
+}
+MOSCOW_CODES = frozenset({"RU-MOW", "RU-MOS"})
+SKFO_CODE = "FD-SKFO"
+
 # Типы связей матрицы соседства, соответствующие схемам пространственного анализа.
 ADJACENCY_SCHEMES: dict[str, tuple[str, ...]] = {
     "land": ("land",),
@@ -231,6 +242,22 @@ def region_rows() -> list[dict[str, Any]]:
 
     cache.set(key, rows, DIRECTORY_CACHE_TTL)
     return rows
+
+
+def robustness_excluded() -> dict[str, frozenset[str]]:
+    """Коды субъектов, исключаемых в каждом составе проверки устойчивости."""
+    skfo = frozenset(row["code"] for row in region_rows() if row["district_code"] == SKFO_CODE)
+    return {ROBUSTNESS_ALL: frozenset(), "no-moscow": MOSCOW_CODES, "no-skfo": skfo}
+
+
+def without(
+    panel: dict[int, dict[str, float]], excluded: frozenset[str]
+) -> dict[int, dict[str, float]]:
+    """Панель «год → субъект → значение» без исключённых субъектов."""
+    return {
+        year: {code: value for code, value in values.items() if code not in excluded}
+        for year, values in panel.items()
+    }
 
 
 def district_rows() -> list[dict[str, Any]]:

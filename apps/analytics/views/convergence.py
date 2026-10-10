@@ -13,13 +13,14 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.catalog.selectors import series_options
 from apps.core.charts import timeline_option
-from apps.warehouse.queries import MIN_YEAR_COVERAGE, covered_years, paired_years, region_panel
+from apps.warehouse.queries import region_panel
 
-from .. import charts
-from ..core import composition, convergence
+from .. import charts, sigma_beta
+from ..core import convergence
 from ..selectors import (
     COMPOSITION_CONSTANT,
     COMPOSITIONS,
+    ROBUSTNESS_VARIANTS,
     break_marks,
     cached_result,
     comparable_from,
@@ -38,7 +39,7 @@ MODES: dict[str, Any] = {
     "absolute": _("абсолютная: все регионы сходятся к общему уровню"),
     "conditional": _("условная: регионы сходятся к уровню своего округа"),
 }
-DEFAULT_MODE = "absolute"
+DEFAULT_MODE = sigma_beta.DEFAULT_MODE
 
 # Число территорий в перечнях наибольшего и наименьшего роста.
 EXTREMES_LIMIT = 6
@@ -77,7 +78,7 @@ class ConvergenceView(AnalyticsView):
             request.GET.get("first"),
             request.GET.get("last"),
             years,
-            default=_default_span(panel, years),
+            default=sigma_beta.default_span(panel, years),
             min_span=convergence.MIN_SPAN_YEARS,
         )
         mode = resolve_choice(request.GET.get("mode"), MODES, DEFAULT_MODE)
@@ -93,13 +94,18 @@ class ConvergenceView(AnalyticsView):
                 "last": last_year,
                 "composition": membership,
             },
-            lambda: _sigma(panel, first_year, last_year, membership),
+            lambda: sigma_beta.sigma(panel, first_year, last_year, membership),
         )
         window = sigma["points"]
         breaks = series_breaks(series, first_year, last_year)
         methodological = [item for item in breaks if item["methodological"]]
 
-        beta = _beta(series.key, first_year, last_year, mode)
+        beta = sigma_beta.beta(
+            sigma_beta.observations(series.key, first_year, last_year),
+            first_year,
+            last_year,
+            mode,
+        )
         context.update(
             {
                 "years": years,
@@ -125,55 +131,23 @@ class ConvergenceView(AnalyticsView):
                 "beta_option": _beta_option(beta),
                 "growth": _growth(beta),
                 "districts": {item["code"]: item["name"] for item in district_rows()},
+                "robustness": cached_result(
+                    "convergence-robustness",
+                    {
+                        "series": series.key,
+                        "first": first_year,
+                        "last": last_year,
+                        "composition": membership,
+                        "mode": mode,
+                    },
+                    lambda: sigma_beta.robustness(
+                        panel, series.key, (first_year, last_year), membership, mode
+                    ),
+                ),
+                "robustness_variants": ROBUSTNESS_VARIANTS,
             }
         )
         return context
-
-
-def _default_span(panel: dict[int, dict[str, float]], years: list[int]) -> tuple[int, int]:
-    """Отрезок по умолчанию — от первого до последнего полного года, если он не слишком короток."""
-    full = covered_years({year: len(values) for year, values in panel.items()})
-    if full and full[-1] - full[0] >= convergence.MIN_SPAN_YEARS:
-        return full[0], full[-1]
-    return years[0], years[-1]
-
-
-def _sigma(
-    panel: dict[int, dict[str, float]], first_year: int, last_year: int, membership: str
-) -> dict[str, Any]:
-    """Разброс по годам отрезка на постоянном или меняющемся составе субъектов."""
-    found = composition.compose(panel, first_year, last_year, share=MIN_YEAR_COVERAGE)
-    constant_used = membership == COMPOSITION_CONSTANT and found.is_usable
-    if constant_used:
-        chosen = composition.restrict(panel, found)
-    else:
-        chosen = {year: panel[year] for year in panel if first_year <= year <= last_year}
-    points = convergence.sigma_series(
-        {year: list(values.values()) for year, values in chosen.items()}
-    )
-    return {"points": points, "composition": found, "constant_used": constant_used}
-
-
-def _beta(
-    series_key: str, first_year: int, last_year: int, mode: str
-) -> convergence.BetaResult | None:
-    """Оценить бета-конвергенцию на выбранном отрезке."""
-    observations = [
-        {
-            "code": row["territory_code"],
-            "name": row["name"],
-            "district": row["district_code"] or "",
-            "start": row["start_value"],
-            "end": row["end_value"],
-        }
-        for row in paired_years(series_key, first_year, last_year)
-    ]
-    return convergence.beta_convergence(
-        observations,
-        first_year=first_year,
-        last_year=last_year,
-        conditional=mode == "conditional",
-    )
 
 
 def _sigma_option(

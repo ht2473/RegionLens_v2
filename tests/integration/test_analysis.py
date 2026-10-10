@@ -445,6 +445,38 @@ class TestAnalyticsTools:
         assert response.context["sigma"]
         assert response.context["beta"] is not None
 
+    def test_inequality_robustness_to_composition(self, client: Client, series_key: str) -> None:
+        """Меры при всех субъектах, без Москвы с областью и без Северного Кавказа."""
+        response = client.get(
+            reverse("analytics:inequality"),
+            {"series": series_key, "year": 2018, "first": 2005, "last": 2020},
+        )
+        rows = response.context["robustness"]["rows"]
+        assert [row["variant"] for row in rows] == ["all", "no-moscow", "no-skfo"]
+        everyone, no_moscow, no_skfo = rows
+        assert everyone["count"] == no_moscow["count"] + 2
+        assert no_skfo["count"] < everyone["count"]
+        # Строка «все субъекты» — те же меры, что в итоге страницы.
+        assert everyone["gini"] == response.context["snapshot"]["by_code"]["gini"].value
+        assert isinstance(response.context["robustness"]["stable"], bool)
+        assert "Устойчивость вывода" in response.text
+
+    def test_convergence_robustness_to_composition(self, client: Client, series_key: str) -> None:
+        """Выводы о сигма- и бета-сходимости при разном составе субъектов."""
+        response = client.get(
+            reverse("analytics:convergence"),
+            {"series": series_key, "first": 2005, "last": 2020},
+        )
+        robustness = response.context["robustness"]
+        rows = robustness["rows"]
+        assert [row["variant"] for row in rows] == ["all", "no-moscow", "no-skfo"]
+        assert rows[0]["beta_value"] == response.context["beta"].beta
+        verdicts = {"converging", "diverging", "none", "unavailable"}
+        assert all(row["sigma"] in verdicts and row["beta"] in verdicts for row in rows)
+        assert rows[1]["count"] < rows[0]["count"]
+        assert isinstance(robustness["stable"], bool)
+        assert "Устойчивость вывода" in response.text
+
     @pytest.mark.parametrize("method", ["spearman", "pearson", "kendall"])
     def test_correlation_matrix_is_built(
         self, client: Client, series_keys: list[str], method: str
