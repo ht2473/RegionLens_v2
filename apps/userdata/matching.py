@@ -52,6 +52,8 @@ MUNICIPAL = "municipal"
 REMEMBERED = "remembered"
 # Не территория.
 NONE = "none"
+# Код страны в справочнике территорий.
+COUNTRY_CODE = "RU"
 
 # Принятое нечёткое сравнение: сходство не ниже порога и не ближе зазора ко второму кандидату.
 FUZZY_ACCEPT = 0.9
@@ -110,6 +112,11 @@ _ABBREVIATIONS = (
     (re.compile(r"\bфо\b"), "федеральный округ"),
     (re.compile(r"\bfd\b"), "federal district"),
     (re.compile(r"\bao\b"), "autonomous okrug"),
+    # Официальные формы городов (ФТС, Минфин): «Город Москва столица Российской Федерации город
+    # федерального значения», «город федерального значения Севастополь».
+    (re.compile(r"\s+столица российской федерации\b"), ""),
+    (re.compile(r"^(город\s+)?федерального значения\s+(?=\S)"), ""),
+    (re.compile(r"[\s—–-]+(город\s+)?федерального значения$"), ""),
     (re.compile(r"^город\s+"), ""),
     (re.compile(r"\s+(г|город)\.?$"), ""),
 )
@@ -117,8 +124,18 @@ _ABBREVIATIONS = (
 _INNER_NOTE = re.compile(r"(?<=[^\W\d_])\d{1,2}\)|(?<=\s)\d{1,2}\)")
 _ENGLISH_LEAD_IN = re.compile(r"^(including|of which|incl\.?|the)\b\s*:?\s*")
 _EDGE_PUNCTUATION = re.compile(r"^[\s;,.:*–-]+|[\s;,.:*–-]+$")
-# Сноска под таблицей в столбце подписей: «1) Данные…», «——— 1) По данным…».
-_FOOTNOTE = re.compile(r"^[\W_]*\d{1,2}\)\s*\S|^\s*\d{1,2}\s*[А-ЯЁA-Z«\"].{30,}", re.DOTALL)
+# Сноска под таблицей в столбце подписей: «1) Данные…», «——— 1) По данным…», «*рассчитано…».
+_FOOTNOTE = re.compile(
+    r"^[\W_]*\d{1,2}\)\s*\S|^\s*\d{1,2}\s*[А-ЯЁA-Z«\"].{30,}|^\s*\*{1,3}\s*\S.{30,}", re.DOTALL
+)
+# Итоговая строка страны: «Итого по Российской Федерации», «Средний уровень по РФ».
+_COUNTRY_TOTAL = re.compile(
+    r"(итого|всего|в целом|в среднем|средний уровень|среднее значение)\s+(по\s+)?"
+    r"(российской федерации|россии|рф)"
+)
+# Строка без территории, о которой не спрашивают: номер столбца, сноска, итог без названия.
+QUIET_RULES = frozenset({"number", "footnote", "total"})
+_BARE_TOTAL = frozenset({"всего", "итого", "total", "в целом", "итого по субъектам"})
 # Только слова вида и связки — обрывок разорванной подписи, а не территория.
 _GENERIC = re.compile(
     r"\b(республика|область|край|автономн\w*|округ\w*|федеральн\w*|без|кроме|"
@@ -154,7 +171,8 @@ class Match:
     kind: str
     code: str | None = None
     candidates: tuple[str, ...] = ()
-    # У строки вне справочника: merged, new, district, baikonur, composite, organization.
+    # У строки вне справочника: merged, new, district, baikonur, abroad, unallocated,
+    # federal_territory, composite, organization.
     reason: str = ""
     details: tuple[tuple[str, Any], ...] = ()
     rule: str = ""
@@ -260,13 +278,9 @@ class Matcher:
         if by_code is not None:
             return by_code
         text = self.prepare(label)
-        if (
-            _FOOTNOTE.match(label)
-            or not text
-            or re.fullmatch(r"[\d\s.,]+", text)
-            or not _GENERIC.sub(" ", text).strip()
-        ):
-            return Match(NONE)
+        quiet = _quiet_rule(label, text)
+        if quiet is not None or not text or not _GENERIC.sub(" ", text).strip():
+            return Match(NONE, rule=quiet or "")
         if remembered and text in remembered:
             if remembered[text] == OUTSIDE:
                 return Match(OUTSIDE, reason="remembered", rule="remembered")
@@ -342,7 +356,7 @@ class Matcher:
 
     def _by_rules(self, label: str, text: str) -> Match:
         """Правила для подписей, которых нет в перечнях: от уточнения до нечёткого сравнения."""
-        found = self._qualified(label) or self._composite(text)
+        found = self._qualified(label) or self._composite(text) or _country_total(text)
         if found is not None:
             return found
         if (
@@ -359,7 +373,7 @@ class Matcher:
             and len(text) <= COUNTRY_PHRASE_LENGTH
             and label.strip()[:1].isalpha()
         ):
-            return Match(ASK, candidates=("RU",), rule="country")
+            return Match(ASK, candidates=(COUNTRY_CODE,), rule="country")
         if _MUNICIPAL.search(text) or _MUNICIPAL.search(label.strip().lower()):
             return Match(MUNICIPAL, rule="municipal")
         return self._fuzzy(text) if self.on("fuzzy") else Match(NONE)
@@ -603,6 +617,25 @@ def _records(reference: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
+def _quiet_rule(label: str, text: str) -> str | None:
+    """Строка без территории, о которой не спрашивают: сноска, номер столбца, «Всего»."""
+    if _FOOTNOTE.match(label):
+        return "footnote"
+    # Подготовка снимает и сам номер («1» → «»): проверяется и исходная подпись.
+    if re.fullmatch(r"[\d\s.,]+", text or label.strip() or "-"):
+        return "number"
+    if text in _BARE_TOTAL:
+        return "total"
+    return None
+
+
+def _country_total(text: str) -> Match | None:
+    """«Итого по Российской Федерации», «Средний уровень по РФ» — строка страны."""
+    if _COUNTRY_TOTAL.fullmatch(text):
+        return Match(EXACT, code=COUNTRY_CODE, rule="country")
+    return None
+
+
 def _key(text: str) -> str:
     """Дефис и пробел в названиях пишут по-разному: для сравнения они одно и то же."""
     return re.sub(r"[\s,\-]+", " ", text).strip()
@@ -654,6 +687,18 @@ def match(label: str, remembered: Mapping[str, str] | None = None) -> Match:
 def quick_match(label: str) -> Match:
     """Сопоставление без нечёткого сравнения: для поиска столбца территорий по всей таблице."""
     return matcher(frozenset({"fuzzy"})).match(label)
+
+
+def districts_in(values: Iterable[Any]) -> set[str]:
+    """Коды федеральных округов среди значений столбца."""
+    codes = {record["code"] for record in _reference()["federal_districts"]}
+    found = set()
+    for value in values:
+        if isinstance(value, str) and value.strip() and not _NOT_A_LABEL.match(value):
+            result = quick_match(value.strip())
+            if result.is_resolved and result.code and result.code in codes:
+                found.add(result.code)
+    return found
 
 
 def subjects_in(values: Iterable[Any]) -> set[str]:

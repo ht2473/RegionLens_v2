@@ -65,11 +65,10 @@ def unresolved(result: recognize.Recognition) -> list[tuple[str, matching.Match,
     found = []
     for label, count in result.labels.items():
         match = result.territories.matches[label]
-        if match.rule != "chosen" and match.kind in {
-            matching.ASK,
-            matching.NONE,
-            matching.MUNICIPAL,
-        }:
+        # Номер столбца, сноска и «Всего» без названия — не вопрос: территорией они не бывают.
+        if match.rule in {"chosen", *matching.QUIET_RULES}:
+            continue
+        if match.kind in {matching.ASK, matching.NONE, matching.MUNICIPAL}:
             found.append((label, match, count))
     return sorted(found, key=lambda item: (-item[2], item[0]))
 

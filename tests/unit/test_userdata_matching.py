@@ -98,6 +98,17 @@ FROM_TABLES = [
     ("Дальневосточный 2", "FD-DFO"),
     ("Российская Федерация, млн т", "RU"),
 ]
+# Подписи из таблиц других ведомств (проверка 10.10.2026): Минфин, ФТС, Банк России.
+FROM_AGENCIES = [
+    ("город федерального значения Москва", "RU-MOW"),
+    ("город федерального значения Санкт-Петербург", "RU-SPE"),
+    ("город федерального значения Севастополь", "RU-SEV"),
+    ("ГОРОД МОСКВА СТОЛИЦА РОССИЙСКОЙ ФЕДЕРАЦИИ ГОРОД ФЕДЕРАЛЬНОГО ЗНАЧЕНИЯ", "RU-MOW"),
+    ("Москва — город федерального значения", "RU-MOW"),
+    ("Итого по Российской Федерации", "RU"),
+    ("Всего по Российской Федерации", "RU"),
+    ("Средний уровень по Российской Федерации", "RU"),
+]
 TYPOS = [
     ("Нижегородская облать", "RU-NIZ"),
     ("Калинингадская область", "RU-KGD"),
@@ -111,7 +122,7 @@ TYPOS = [
 class TestSingleLabels:
     """Одна подпись: от точного совпадения до исправленного написания."""
 
-    @pytest.mark.parametrize(("label", "code"), HANDWRITTEN + FROM_TABLES)
+    @pytest.mark.parametrize(("label", "code"), HANDWRITTEN + FROM_TABLES + FROM_AGENCIES)
     def test_known_without_question(self, label: str, code: str) -> None:
         found = match(label)
         assert found.kind == EXACT
@@ -143,6 +154,9 @@ class TestSingleLabels:
             ("Санкт-Петербург и Ленинградская область", "composite"),
             ("Республика Крым и Севастополь", "composite"),
             ("Гл. мед. упр. Управления делами Президента РФ", "organization"),
+            ("ЗА ПРЕДЕЛАМИ РФ", "abroad"),
+            ("НЕИЗВЕСТНЫЙ ФЕДЕРАЛЬНЫЙ ОКРУГ", "unallocated"),
+            ('Федеральная территория "Сириус"', "federal_territory"),
         ],
     )
     def test_outside_reference_with_reason(self, label: str, reason: str) -> None:
@@ -172,6 +186,26 @@ class TestSingleLabels:
     )
     def test_not_territories(self, label: str) -> None:
         assert match(label).kind == NONE
+
+    @pytest.mark.parametrize(
+        "label",
+        [
+            "1",
+            "12",
+            "ВСЕГО:",
+            "Итого",
+            "*рассчитано по курсу доллара США к рублю, установленному ЦБ РФ на дату",
+        ],
+    )
+    def test_quiet_rows_are_not_questions(self, label: str) -> None:
+        found = match(label)
+        assert found.kind == NONE
+        assert found.rule in matching.QUIET_RULES
+
+    def test_group_heading_of_cities_is_not_a_territory(self) -> None:
+        found = match("Города федерального значения")
+        assert found.kind == NONE
+        assert found.rule not in matching.QUIET_RULES
 
     @pytest.mark.parametrize("label", ["Казань", "Ленинский район", "г. Тольятти"])
     def test_cities_and_districts_are_named(self, label: str) -> None:
