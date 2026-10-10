@@ -52,6 +52,7 @@ QUESTIONS = (
     "heat",
     "multiples",
     "spread",
+    "convergence",
     "neighbours",
     "related",
 )

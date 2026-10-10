@@ -20,6 +20,7 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 
+from apps.analytics.core.convergence import MIN_SPAN_YEARS as CONVERGENCE_SPAN
 from apps.warehouse import routing
 
 from . import access, build, extract, indicators, jobs, studies
@@ -339,6 +340,8 @@ def actions(
     недоступное — с причиной. ``partners`` — что предложить для сравнения без выбора.
     """
     one_year = _("у показателя один год") if entry.years < 2 else ""  # noqa: PLR2004
+    # Сближение оценивается на отрезке не короче пяти лет — нужно шесть лет значений.
+    short = _("нужно не меньше шести лет значений") if entry.years <= CONVERGENCE_SPAN else ""
     few = (
         _("нужны значения хотя бы по %(count)s регионам") % {"count": FEW_REGIONS}
         if entry.regions < FEW_REGIONS
@@ -369,6 +372,12 @@ def actions(
             "inequality",
             value=f"{ANSWER_PREFIX}spread",
             reason=few,
+        ),
+        Action(
+            _("Сближаются ли регионы"),
+            "convergence",
+            value=f"{ANSWER_PREFIX}convergence",
+            reason=few or short,
         ),
         Action(_("Похожи ли соседи"), "spatial", value=f"{ANSWER_PREFIX}neighbours", reason=few),
         Action(_("С чем связан"), "correlation", value=f"{ANSWER_PREFIX}related", reason=few),

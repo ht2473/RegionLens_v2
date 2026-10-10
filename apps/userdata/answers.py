@@ -1,8 +1,8 @@
 """
 Ответы карточек исследования — числами, без сочинённого текста: лидеры и отстающие, мой
 регион, как изменился показатель, кто вырос сильнее, итоги по округам, насколько различаются
-регионы, похожи ли соседи, с чем связан; тепловая таблица «регионы × годы» и малые графики
-по округам; связь двух показателей и их сравнение.
+регионы, сближаются ли они, похожи ли соседи, с чем связан; тепловая таблица «регионы × годы»
+и малые графики по округам; связь двух показателей и их сравнение.
 
 Ответ строится заново по ряду (своему или сайта) и общему году исследования; у каждого —
 адрес полного вида или инструмента. Ответа нет — ``NoAnswerError`` с причиной словами.
@@ -57,6 +57,7 @@ TITLES = {
     "heat": gettext_lazy("Тепловая таблица"),
     "multiples": gettext_lazy("Малые графики"),
     "spread": gettext_lazy("Насколько различаются регионы"),
+    "convergence": gettext_lazy("Сближаются ли регионы"),
     "neighbours": gettext_lazy("Похожи ли соседи"),
     "related": gettext_lazy("С чем связан"),
     "relation": gettext_lazy("Связь двух показателей"),
@@ -71,6 +72,7 @@ ICONS = {
     "heat": "heat",
     "multiples": "multiples",
     "spread": "inequality",
+    "convergence": "convergence",
     "neighbours": "spatial",
     "related": "correlation",
     "relation": "correlation",
@@ -731,6 +733,63 @@ def _moran(values: dict[str, float]) -> dict[str, Any] | None:
         "direction": found.direction,
         "p_value": found.p_value,
         "observations": found.observations,
+    }
+
+
+# --- Сближаются ли регионы -------------------------------------------------------------------
+
+
+def convergence(asked: Asked) -> dict[str, Any]:
+    """
+    Сигма и бета за полный отрезок ряда — с умолчаниями инструмента «Конвергенция»
+    (постоянный состав, абсолютная постановка) и проверкой устойчивости к составу.
+    """
+    from apps.analytics import sigma_beta
+    from apps.analytics.core import convergence as core
+    from apps.analytics.selectors import COMPOSITION_CONSTANT
+    from apps.warehouse.queries import region_panel
+
+    state = asked.state
+    assert state.series is not None
+    key = state.series.key
+    panel = region_panel(key)
+    years = sorted(panel)
+    span = sigma_beta.default_span(panel, years) if years else (0, 0)
+    if span[1] - span[0] < core.MIN_SPAN_YEARS:
+        raise NoAnswerError(
+            _("Нужно не меньше %(count)s лет между первым и последним годом.")
+            % {"count": core.MIN_SPAN_YEARS}
+        )
+
+    def build() -> dict[str, Any]:
+        points = sigma_beta.sigma(panel, *span, COMPOSITION_CONSTANT)["points"]
+        trend = core.sigma_trend(points)
+        result = sigma_beta.beta(sigma_beta.observations(key, *span), *span)
+        checked = sigma_beta.robustness(
+            panel, key, span, COMPOSITION_CONSTANT, sigma_beta.DEFAULT_MODE
+        )
+        return {
+            "change": trend.get("relative_change") if trend.get("available") else None,
+            "sigma": sigma_beta.sigma_verdict(trend),
+            "beta": sigma_beta.beta_verdict(result),
+            "beta_value": result.beta if result else None,
+            "p_value": result.fit.slope.p_value if result else None,
+            "regions": result.fit.observations if result else (points[-1].count if points else 0),
+            "stable": checked["stable"],
+        }
+
+    found = cached_result("study-convergence", {"series": key, "revision": RESULT_REVISION}, build)
+    if found["sigma"] == sigma_beta.VERDICT_UNAVAILABLE:
+        raise NoAnswerError(
+            _("Нужны положительные значения хотя бы по %(count)s регионам каждый год.")
+            % {"count": core.MIN_TERRITORIES}
+        )
+    return {
+        **found,
+        "beta_value": ru_number(found["beta_value"], 4) if found["beta_value"] is not None else "",
+        "first_year": span[0],
+        "last_year": span[1],
+        "open_url": _url("analytics:convergence", series=key, first=span[0], last=span[1]),
     }
 
 

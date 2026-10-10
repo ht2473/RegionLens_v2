@@ -319,6 +319,7 @@ class TestLab:
             "leaders": "answer-list",
             "change": "answer__value",
             "spread": "Джини",
+            "convergence": "изменение разброса",
             "neighbours": "индекс Морана",
             "related": "Спирмена",
         }
@@ -367,6 +368,33 @@ class TestLab:
         mine = next(block for block in blocks if block["question"] == "mine")
         card = _card(member_client, study, mine)
         assert "Рядом в рейтинге" in card.text or "значения по моему региону нет" in card.text
+
+    def test_convergence_answer_agrees_with_tool(
+        self, member_client: Client, warehouse: Any
+    ) -> None:
+        """«Сближаются ли регионы»: вывод карточки — тот же, что в инструменте, куда она ведёт."""
+        from apps.catalog.models import Series
+        from tests.support import synthetic
+
+        key = Series.objects.get(indicator__code=synthetic.POPULATION_CODE).key
+        study = _study(member_client)
+        _edit(member_client, study, action="add", do="answer:convergence", series=key)
+        study.refresh_from_db()
+        block = studies.blocks_of(study)[0]
+        card = _card(member_client, study, block)
+        assert "изменение разброса" in card.text
+        link = re.search(r'href="([^"]*/analytics/convergence/[^"]*)"', card.text)
+        assert link is not None
+        tool = member_client.get(link.group(1).replace("&amp;", "&"))
+        trend = tool.context["sigma_trend"]
+        expected = (
+            "сокращается"
+            if trend["converging"]
+            else "растёт"
+            if trend["diverging"]
+            else "без устойчивого изменения"
+        )
+        assert f"<b>{expected}</b>" in card.text
 
     def test_small_multiples_by_districts(self, member_client: Client, warehouse: Any) -> None:
         """

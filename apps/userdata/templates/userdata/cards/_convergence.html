@@ -1,0 +1,29 @@
+{% load i18n formatting glossary %}
+{# Сближаются ли регионы: изменение разброса за отрезок, выводы о сигма- и бета-конвергенции, устойчивость к составу. #}
+<div class="answer__figure study-card__answer">
+  <p class="answer__value">
+    <span class="numeric">{{ card.change|percent_delta }}</span>
+    <span class="answer__unit">
+      {% blocktranslate trimmed with first=card.first_year last=card.last_year %}изменение разброса за {{ first }}–{{ last }} годы{% endblocktranslate %}
+    </span>
+  </p>
+</div>
+<p class="answer__meta">
+  <span>
+    {% term "sigma-convergence" _("Разброс") %} —
+    <b>{% if card.sigma == "converging" %}{% translate "сокращается" %}{% elif card.sigma == "diverging" %}{% translate "растёт" %}{% else %}{% translate "без устойчивого изменения" %}{% endif %}</b>
+  </span>
+  <span>
+    {% term "beta-convergence" _("Догоняющий рост") %} —
+    <b>{% if card.beta == "converging" %}{% translate "отстающие догоняют" %}{% elif card.beta == "diverging" %}{% translate "разрыв растёт" %}{% elif card.beta == "none" %}{% translate "связь не подтверждена" %}{% else %}{% translate "не оценить" %}{% endif %}</b>
+    {% if card.beta_value %}(β = <span class="numeric">{{ card.beta_value }}</span>, <span class="numeric">{{ card.p_value|p_level:"p" }}</span>){% endif %}
+  </span>
+  <span>{% blocktranslate trimmed with count=card.regions %}регионов: {{ count }}{% endblocktranslate %}</span>
+  <span>
+    {% if card.stable %}
+      {% translate "Без Москвы с областью и Северного Кавказа вывод тот же." %}
+    {% else %}
+      {% translate "Без Москвы с областью или Северного Кавказа вывод другой." %}
+    {% endif %}
+  </span>
+</p>
