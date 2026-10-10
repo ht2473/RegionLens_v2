@@ -58,9 +58,9 @@
       "title": "Your own data",
       "summary": "The laboratory brings a user’s table to the form “territory × year × indicator” and computes the same on it as on the site’s series.",
       "formula": "per 100,000 inhabitants: <math display=\"block\"><mfrac><mi>x</mi><mi>P</mi></mfrac><mo>×</mo><mn>100,000</mn></math>",
-      "limitations": "Rows outside the directory are kept in the table but do not reach the map or the ranking.\nWith fewer than twenty regions, inequality and spatial analysis are not computed.",
+      "limitations": "Rows outside the directory are kept in the table but do not reach the map or the ranking.\nWith fewer than twenty regions, inequality and spatial analysis are not computed.\nTables of municipal districts, cities and federal districts are not parsed, and a table from Word or PDF is copied into the paste field.",
       "body": "Territory labels are matched against the site’s directory, and the site asks about uncertain ones. Per-inhabitant and per-km² series are offered for regional sums. P is the average annual population. A recalculation is kept as a separate series marked “RegionLens calculation”. How each action works is explained next to it in the laboratory.",
-      "source": "74f7ee7fb0d18fa8cd785d2097cc40419cd64500"
+      "source": "5118348a4d45408cf53f23f68d9ffb0bcb71c7a4"
     },
     "map-classes": {
       "title": "Scale classes on the map",
@@ -146,17 +146,17 @@
       "title": "Measuring inter-regional inequality",
       "summary": "Regional inequality is described by the coefficient of variation, Gini, Theil with a breakdown by districts, Atkinson, the decile ratio and the Lorenz curve.",
       "formula": "Gini: <math display=\"block\"><mi>G</mi><mo>=</mo><mfrac><mrow><munder><mo>∑</mo><mi>i</mi></munder><munder><mo>∑</mo><mi>j</mi></munder><mo>|</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><msub><mi>x</mi><mi>j</mi></msub><mo>|</mo></mrow><mrow><mn>2</mn><msup><mi>n</mi><mn>2</mn></msup><mover><mi>x</mi><mo>¯</mo></mover></mrow></mfrac></math>\nTheil: <math display=\"block\"><mi>T</mi><mo>=</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><munder><mo>∑</mo><mi>i</mi></munder><mfrac><msub><mi>x</mi><mi>i</mi></msub><mover><mi>x</mi><mo>¯</mo></mover></mfrac><mi>ln</mi><mo>⁡</mo><mspace width=\"0.17em\"></mspace><mfrac><msub><mi>x</mi><mi>i</mi></msub><mover><mi>x</mi><mo>¯</mo></mover></mfrac></math>\nAtkinson: <math display=\"block\"><mi>A</mi><mo>=</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy=\"true\">[</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><munder><mo>∑</mo><mi>i</mi></munder><msup><mrow><mo>(</mo><mfrac><msub><mi>x</mi><mi>i</mi></msub><mover><mi>x</mi><mo>¯</mo></mover></mfrac><mo>)</mo></mrow><mrow><mn>1</mn><mo>−</mo><mi>ε</mi></mrow></msup><mo stretchy=\"true\">]</mo></mrow><mrow><mn>1</mn><mo>/</mo><mo>(</mo><mn>1</mn><mo>−</mo><mi>ε</mi><mo>)</mo></mrow></msup></math>",
-      "limitations": "Theil and Atkinson are computed only for positive values, Gini for non-negative ones.\nThe decile ratio relies on two points and misses changes between them.",
+      "limitations": "Theil and Atkinson are computed only for positive values, Gini for non-negative ones.\nThe decile ratio relies on two points and misses changes between them.\nExtreme regions shift the measures, so the conclusion is repeated without Moscow with its oblast and without the North Caucasus.",
       "body": "The measures are sensitive to different parts of the distribution, so a set is shown. Gini reacts mainly to the middle of the distribution. Theil reacts more to the upper part and splits into differences between districts and within them. In Atkinson the parameter ε (0.5 by default) sets how much the lag of the lower part matters.\n\nWithout weighting a measure describes the difference between regions. With population weighting it describes the difference in people’s living conditions. The dynamics of the measures are computed on a constant composition of regions. If some values are withheld, bounds of the measures are shown.",
-      "source": "b480141d5e366f3363e1013750c0450630e1a16b"
+      "source": "8e285ffcc7dcbbb2efc30b79a8b5decba867dac9"
     },
     "convergence": {
       "title": "Sigma and beta convergence",
       "summary": "Convergence shows whether regions are drawing closer in the level of an indicator and how fast.",
       "formula": "beta: <math display=\"block\"><mfrac><mrow><mi>ln</mi><mo>⁡</mo><mspace width=\"0.17em\"></mspace><mo>(</mo><msub><mi>y</mi><mrow><mi>i</mi><mi>T</mi></mrow></msub><mo>/</mo><msub><mi>y</mi><mrow><mi>i</mi><mn>0</mn></mrow></msub><mo>)</mo></mrow><mrow><mi>T</mi></mrow></mfrac><mo>=</mo><mi>α</mi><mo>+</mo><mi>β</mi><mi>ln</mi><mo>⁡</mo><mspace width=\"0.17em\"></mspace><msub><mi>y</mi><mrow><mi>i</mi><mn>0</mn></mrow></msub><mo>+</mo><msub><mi>ε</mi><mi>i</mi></msub></math>\nspeed: <math display=\"block\"><mi>λ</mi><mo>=</mo><mo>−</mo><mfrac><mrow><mi>ln</mi><mo>⁡</mo><mspace width=\"0.17em\"></mspace><mo>(</mo><mn>1</mn><mo>+</mo><mi>β</mi><mi>T</mi><mo>)</mo></mrow><mrow><mi>T</mi></mrow></mfrac></math>\nhalf-life: <math display=\"block\"><msub><mi>t</mi><mrow><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msub><mo>=</mo><mfrac><mrow><mi>ln</mi><mo>⁡</mo><mspace width=\"0.17em\"></mspace><mn>2</mn></mrow><mrow><mi>λ</mi></mrow></mfrac></math>",
-      "limitations": "One measure does not follow from the other: laggards can grow faster while the spread grows.\nThe conclusion depends on the ends of the period, and at least five years and 20 regions are needed.",
+      "limitations": "One measure does not follow from the other: laggards can grow faster while the spread grows.\nThe conclusion depends on the ends of the period, and at least five years and 20 regions are needed.\nMoscow with its oblast and the North Caucasus can change the conclusion, so it is repeated without them.",
       "body": "Sigma convergence is a reduction of the spread over time. The spread is measured by the standard deviation of logarithms. Beta convergence is a negative relationship between the average annual growth rate and the logarithm of the initial level y. Conditional beta convergence adds federal district dummies. It checks convergence towards the level of one’s own district.\n\nThe regression is estimated with HC3 robust errors. The half-life is the number of years in which half of the gap disappears at the same rate. Longer than 200 years it is considered practically infinite.",
-      "source": "92e983f904909d1f41e4944d0add5e805dc83c0d"
+      "source": "2da5468a2b897c5f17aff9a237be4eaf10f22442"
     },
     "spatial": {
       "title": "Spatial autocorrelation",
