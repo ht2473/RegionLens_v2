@@ -8,7 +8,8 @@
     uv run python -X utf8 scripts/userdata_corpus.py build    # путь до карты: сборка и холст
 
 Корпус и эталон лежат вне репозитория (``--corpus``, по умолчанию ``../for work/corpus``):
-архивы ЕБТ — ``ebt/``, «Регионы России» — ``rosstat/``; бюллетень и ВРП — из архива сбора.
+архивы ЕБТ — ``ebt/``, «Регионы России» — ``rosstat/``; бюллетень и ВРП — из архива сбора;
+таблицы других ведомств и страницы сайтов — ``foreign/<ведомство>/`` (перечень — ``sources.csv``).
 Эталон подписей — ``gold.csv``: подпись, источник, число строк, правильный ответ
 (код, ``outside``, ``ask``, ``none``, ``part`` — обрывок разорванной подписи) и отметка проверки.
 """
@@ -22,6 +23,7 @@ import csv
 import io
 import itertools
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -52,12 +54,13 @@ from apps.userdata import matching  # noqa: E402
 
 DEFAULT_CORPUS = ROOT.parent / "for work" / "corpus"
 GOLD_FIELDS = ("source", "label", "rows", "expected", "alternatives", "status", "note")
-SOURCES = ("ebt", "bulletin", "grp", "regions", "variants")
+SOURCES = ("ebt", "bulletin", "grp", "regions", "foreign", "variants")
 SOURCE_TITLES = {
     "ebt": "ЕБТ",
     "bulletin": "бюллетень",
     "grp": "ВРП",
     "regions": "«Регионы России»",
+    "foreign": "чужие файлы",
     "variants": "написания",
 }
 CHECKED = "проверено"
@@ -130,6 +133,25 @@ def docx_tables(corpus: Path) -> Iterator[tuple[str, list[list[str]]]]:
                         cells.extend([text] + [""] * (repeat - 1))
                     rows.append(cells)
                 yield f"{path.name}#{number}", rows
+
+
+def foreign_files(corpus: Path) -> Iterator[tuple[str, Path]]:
+    """Файлы других ведомств и сохранённые страницы: «ведомство/файл», путь."""
+    for path in sorted((corpus / "foreign").glob("*/*")):
+        if path.is_file():
+            yield f"{path.parent.name}/{path.name}", path
+
+
+def page_tables(path: Path) -> Iterator[tuple[int, str, str]]:
+    """Таблицы сохранённой страницы так, как их кладёт в буфер браузер: номер, текст, разметка."""
+    from apps.userdata.html_tables import tables
+
+    page = path.read_text(encoding="utf-8", errors="replace")
+    for number, match in enumerate(re.finditer(r"<table\b.*?</table>", page, re.I | re.S), 1):
+        markup = match.group(0)
+        found = tables(markup)
+        text = "\n".join("\t".join(row) for row in found[0]) if found else ""
+        yield number, text, markup
 
 
 def territory_columns(rows: list[list[Any]]) -> list[int]:
@@ -471,6 +493,9 @@ def command_files(corpus: Path) -> None:
             with contextlib.suppress(ingest.IngestError):
                 ingest.inspect(target, paste.FILE_NAME)
             timings.append((time.perf_counter() - started, tag))
+    print("== Таблицы других ведомств и страницы сайтов")
+    for tag, path in foreign_files(corpus):
+        run(path, tag)
     slowest = sorted(timings, reverse=True)[:5]
     slow = sum(elapsed > TARGET_SECONDS for elapsed, _name in timings)
     print(f"\nфайлов и вставок: {len(timings)}; дольше {TARGET_SECONDS} с: {slow}")
@@ -550,13 +575,13 @@ def describe_table(recognition: Any) -> dict[str, str]:
     }
 
 
-def corpus_tables(corpus: Path) -> Iterator[tuple[str, str, Path, Any, str]]:
+def corpus_tables(corpus: Path, only: str = "") -> Iterator[tuple[str, str, Path, Any, str]]:
     """Таблицы корпуса так, как их примет приём: источник, имя, файл, таблица, имя файла."""
     from apps.userdata import ingest, paste
 
     with tempfile.TemporaryDirectory() as scratch:
         root = Path(scratch)
-        for archive in sorted((corpus / "ebt").glob("*.zip")):
+        for archive in sorted((corpus / "ebt").glob("*.zip")) if only in {"", "ebt"} else []:
             for table in ingest.inspect(archive).tables:
                 target = root / f"{archive.stem}_{Path(table.member).name}"
                 if table.kind in ingest.WORKBOOK_KINDS:
@@ -566,6 +591,8 @@ def corpus_tables(corpus: Path) -> Iterator[tuple[str, str, Path, Any, str]]:
                 ingest.extract_member(archive, table.member, target)
                 yield "ebt", f"{archive.name}/{table.key}", target, table, table.member
         for source in ("grp", "bulletin"):
+            if only not in {"", source}:
+                continue
             for tag, path in _rosstat_files(source, root):
                 try:
                     inspection = ingest.inspect(path, path.name)
@@ -574,13 +601,43 @@ def corpus_tables(corpus: Path) -> Iterator[tuple[str, str, Path, Any, str]]:
                 for table in inspection.tables:
                     yield source, f"{tag}#{table.sheet}", path, table, path.name
         target = root / paste.FILE_NAME
-        for tag, rows in docx_tables(corpus):
+        for tag, rows in docx_tables(corpus) if only in {"", "regions"} else []:
             paste.write(paste.rows_of("\n".join("\t".join(row) for row in rows)), target)
             try:
                 inspection = ingest.inspect(target, paste.FILE_NAME)
             except ingest.IngestError:
                 continue
             yield "regions", tag, target, inspection.tables[0], paste.FILE_NAME
+        if only in {"", "foreign"}:
+            yield from _foreign_tables(corpus, root)
+
+
+def _foreign_tables(corpus: Path, root: Path) -> Iterator[tuple[str, str, Path, Any, str]]:
+    """Таблицы других ведомств: из файла, из архива и вставкой таблиц сохранённых страниц."""
+    from apps.userdata import ingest, paste
+
+    for tag, path in foreign_files(corpus):
+        try:
+            inspection = ingest.inspect(path, path.name)
+        except ingest.IngestError:
+            continue
+        for table in inspection.tables:
+            if table.member:  # таблица внутри архива
+                target = ingest.extract_member(path, table.member, root / Path(table.member).name)
+                yield "foreign", f"{tag}/{table.key}", target, table, table.member
+            else:
+                name = f"{tag}#{table.sheet}" if table.sheet else tag
+                yield "foreign", name, path, table, path.name
+        if path.suffix.lower() in {".html", ".htm"}:
+            target = root / paste.FILE_NAME
+            for number, text, markup in page_tables(path):
+                if not paste.write(paste.rows_of(text, markup), target):
+                    continue
+                try:
+                    pasted = ingest.inspect(target, paste.FILE_NAME)
+                except ingest.IngestError:
+                    continue
+                yield "foreign", f"{tag}~вставка{number}", target, pasted.tables[0], paste.FILE_NAME
 
 
 def _rosstat_files(source: str, root: Path) -> Iterator[tuple[str, Path]]:
@@ -609,9 +666,7 @@ def command_tables(corpus: Path, *, only: str = "") -> None:
             }
     answers: dict[tuple[str, str], dict[str, str]] = {}
     slowest = (0.0, "")
-    for source, tag, file_path, table, file_name in corpus_tables(corpus):
-        if only and source != only:
-            continue
+    for source, tag, file_path, table, file_name in corpus_tables(corpus, only):
         started = time.perf_counter()
         loaded = tables.load(file_path, table)
         recognition = recognize.recognize(loaded, table, file_name=file_name)
@@ -698,6 +753,17 @@ def _paste_start(text: str) -> Callable[[Any], Any]:
 
     def start(client: Any) -> Any:
         data = {"action": "paste", "text": text, "markup": ""}
+        return client.post(reverse("userdata:upload"), data)
+
+    return start
+
+
+def _paste_markup_start(text: str, markup: str) -> Callable[[Any], Any]:
+    """Начало пути: вставка таблицы, скопированной со страницы, — текст и разметка буфера."""
+    from django.urls import reverse
+
+    def start(client: Any) -> Any:
+        data = {"action": "paste", "text": text, "markup": markup}
         return client.post(reverse("userdata:upload"), data)
 
     return start
@@ -852,7 +918,7 @@ def _glance_rows(row: dict[str, Any], dataset: Any, version: Any) -> list[dict[s
     return rows
 
 
-def _build_targets(
+def _build_targets(  # noqa: PLR0912 — по ветви на источник корпуса
     corpus: Path, only: str, limit: int
 ) -> Iterator[tuple[str, str, int, Callable[[Any], Any], str]]:
     """Таблицы корпуса для пути до карты: источник, имя, размер, начало пути, ключ таблицы."""
@@ -883,6 +949,30 @@ def _build_targets(
             yield "regions", tag, len(text.encode()), _paste_start(text), ""
             if limit and count >= limit:
                 break
+    if only in {"", "foreign"}:
+        yield from _foreign_targets(corpus)
+
+
+def _foreign_targets(corpus: Path) -> Iterator[tuple[str, str, int, Callable[[Any], Any], str]]:
+    """Чужие файлы для пути до карты: каждая таблица файла и вставка каждой таблицы страницы."""
+    from apps.userdata import ingest
+
+    for tag, path in foreign_files(corpus):
+        size = path.stat().st_size
+        try:
+            inspection = ingest.inspect(path, path.name)
+        except ingest.IngestError:
+            # Отказ приёма — тоже исход: путь начнётся и остановится на загрузке.
+            yield "foreign", tag, size, _upload_start(path, path.name), ""
+            continue
+        for table in inspection.tables:
+            name = f"{tag}/{table.member}" if table.member else tag
+            name += f"#{table.sheet}" if table.sheet else ""
+            yield "foreign", name, size, _upload_start(path, path.name), table.key
+        if path.suffix.lower() in {".html", ".htm"}:
+            for number, text, markup in page_tables(path):
+                start = _paste_markup_start(text, markup)
+                yield "foreign", f"{tag}~вставка{number}", len(markup.encode()), start, ""
 
 
 def command_build(
@@ -892,7 +982,8 @@ def command_build(
     Путь каждой таблицы корпуса до карты, как у человека: загрузка, «Что в таблице» без
     правок, «Показатели» без правок, сборка, карта первого ряда. Всё — в запросе; итог —
     ``corpus/build.csv`` и время до первой карты; с ``with_glance`` — ещё «первый взгляд»
-    по ведущим рядам (``corpus/glance.csv``).
+    по ведущим рядам (``corpus/glance.csv``). С ``only`` — ``build_<источник>.csv``
+    и ``glance_<источник>.csv``: общий итог прежнего прогона не затирается.
     """
     from apps.userdata import jobs
 
@@ -919,7 +1010,7 @@ def command_build(
             f"  {row['total']:6.2f} с  {row['outcome']:12} {tag[:70]:70} "
             f"рядов {row.get('series', '')}, субъектов {row.get('regions', '')} {row['note'][:60]}"
         )
-    target = corpus / "build.csv"
+    target = corpus / (f"build_{only}.csv" if only else "build.csv")
     with target.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=BUILD_FIELDS)
         writer.writeheader()
@@ -928,12 +1019,12 @@ def command_build(
     _build_summary(results)
     print(f"итог — {target}")
     if looks is not None:
-        _glance_summary(corpus, looks)
+        _glance_summary(corpus, looks, only)
 
 
-def _glance_summary(corpus: Path, looks: list[dict[str, Any]]) -> None:
+def _glance_summary(corpus: Path, looks: list[dict[str, Any]], only: str = "") -> None:
     """Вид величины по данным против описания по подсказкам; перечень расхождений."""
-    target = corpus / "glance.csv"
+    target = corpus / (f"glance_{only}.csv" if only else "glance.csv")
     with target.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=GLANCE_FIELDS)
         writer.writeheader()
@@ -984,7 +1075,7 @@ def main() -> None:
     parser.add_argument("command", choices=("labels", "check", "files", "tables", "build"))
     parser.add_argument("--limit", type=int, default=0, help="не больше стольких вставок")
     parser.add_argument(
-        "--only", default="", help="только один источник: ebt, bulletin, grp, regions"
+        "--only", default="", help="только один источник: ebt, bulletin, grp, regions, foreign"
     )
     parser.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
     parser.add_argument("--verbose", action="store_true", help="показывать и вопросы")
