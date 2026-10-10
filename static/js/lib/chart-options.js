@@ -377,3 +377,152 @@ export function fixTextMeasure(echarts) {
     },
   });
 }
+
+/* --- Текстовая замена: описание графика по настройкам -------------------------------
+   Холст программы чтения с экрана не читают. Короткая подпись — заголовок графика,
+   длинное описание — по данным (W3C WAI, «Complex images»): у линий и столбцов — первое
+   и последнее значение, у полосы точек — крайние, у облака точек — их число и оси. */
+
+// Линий, о которых говорится поимённо; об остальных — только их число.
+const NAMED_LINES = 6;
+// Столбцов одного ряда без названия (вклад округов), перечисляемых поимённо.
+const NAMED_BARS = 12;
+
+/** Слова описания — из разметки страницы, на её языке. */
+export function describeWords() {
+  const data = document.body.dataset;
+  return {
+    chart: data.chartLabel || "График",
+    lines: data.chartLines || "Линий всего",
+    points: data.chartPoints || "Точек",
+    total: data.chartTotal || "Всего значений",
+    lowest: data.chartLowest || "наименьшее",
+    highest: data.chartHighest || "наибольшее",
+    across: data.chartAcross || "по горизонтали",
+    up: data.chartUp || "по вертикали",
+  };
+}
+
+/** Число описания: малые доли («вклад 0,0012») — с четырьмя знаками, иначе «0,00». */
+function figure(value) {
+  if (value === 0) {
+    return format.number(0, 0);
+  }
+  return Math.abs(value) < 0.1 ? format.number(value, 4) : format.auto(value);
+}
+
+/** Значение точки: число, {value}, [x, y] или {value: [x, y]}; ``index`` — координата пары. */
+function valueOf(item, index = 0) {
+  const raw = item !== null && typeof item === "object" && !Array.isArray(item) ? item.value : item;
+  const value = Array.isArray(raw) ? raw[index] : raw;
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function asList(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  return value ? [value] : [];
+}
+
+/** Ось категорий (годы, названия) — та, у которой есть подписи делений. */
+function categories(options) {
+  const axes = [...asList(options.xAxis), ...asList(options.yAxis)];
+  const found = axes.find((axis) => axis && axis.type === "category" && Array.isArray(axis.data));
+  return found ? found.data.map((item) => (item && typeof item === "object" ? item.value : item)) : null;
+}
+
+/** Ряды, которые видит человек: служебные (коридор, подложка) — без названия или «тихие». */
+function visibleSeries(options) {
+  return asList(options.series).filter(
+    (series) => series && series.name && !series.silent && Array.isArray(series.data),
+  );
+}
+
+function describeLines(series, labels, text) {
+  const parts = [];
+  series.slice(0, NAMED_LINES).forEach((line) => {
+    const filled = line.data
+      .map((item, index) => [index, valueOf(item)])
+      .filter(([, value]) => value !== null);
+    if (!filled.length) {
+      return;
+    }
+    const [firstIndex, first] = filled[0];
+    const [lastIndex, last] = filled[filled.length - 1];
+    const start = `${labels[firstIndex] ?? ""} — ${figure(first)}`.trim();
+    parts.push(
+      firstIndex === lastIndex
+        ? `${line.name}: ${start}`
+        : `${line.name}: ${start}, ${labels[lastIndex] ?? ""} — ${figure(last)}`,
+    );
+  });
+  if (series.length > NAMED_LINES) {
+    parts.push(`${text.lines}: ${series.length}`);
+  }
+  return parts;
+}
+
+function describePoints(options, series, text) {
+  const points = series.data.filter((item) => valueOf(item, 0) !== null);
+  if (!points.length) {
+    return [];
+  }
+  const parts = [`${text.points}: ${points.length}`];
+  const vertical = asList(options.yAxis)[0] || {};
+  if (vertical.show === false) {
+    // Полоса точек: значение — по горизонтали; крайние — поимённо.
+    const sorted = [...points].sort((a, b) => valueOf(a, 0) - valueOf(b, 0));
+    const name = (item) => (item && item.name ? ` (${item.name})` : "");
+    const low = sorted[0];
+    const high = sorted[sorted.length - 1];
+    parts.push(`${text.lowest} — ${figure(valueOf(low, 0))}${name(low)}`);
+    parts.push(`${text.highest} — ${figure(valueOf(high, 0))}${name(high)}`);
+    return parts;
+  }
+  const across = (asList(options.xAxis)[0] || {}).name;
+  if (across) {
+    parts.push(`${text.across} — ${across}`);
+  }
+  if (vertical.name) {
+    parts.push(`${text.up} — ${vertical.name}`);
+  }
+  return parts;
+}
+
+function describeBars(bars, labels, text) {
+  const parts = bars.data
+    .map((item, index) => [labels[index], valueOf(item)])
+    .filter(([label, value]) => label !== undefined && value !== null)
+    .map(([label, value]) => `${label} — ${figure(value)}`);
+  if (parts.length > NAMED_BARS) {
+    return [...parts.slice(0, NAMED_BARS), `${text.total}: ${parts.length}`];
+  }
+  return parts;
+}
+
+/** Описание графика по его настройкам; без понятных данных — только подпись. */
+export function describe(options) {
+  const text = describeWords();
+  const series = visibleSeries(options);
+  const labels = categories(options);
+  // Полоса и облако точек бывают и без названия ряда.
+  const scatter = asList(options.series).find(
+    (item) => item && item.type === "scatter" && !item.silent && Array.isArray(item.data),
+  );
+  if (scatter) {
+    return describePoints(options, scatter, text);
+  }
+  if (!labels) {
+    return [];
+  }
+  const lines = series.filter((item) => item.type === "line" || item.type === "bar");
+  if (lines.length) {
+    return describeLines(lines, labels, text);
+  }
+  // Один ряд столбцов без названия: каждая категория — со своим значением.
+  const bars = asList(options.series).filter(
+    (item) => item && item.type === "bar" && Array.isArray(item.data),
+  );
+  return bars.length === 1 ? describeBars(bars[0], labels, text) : [];
+}

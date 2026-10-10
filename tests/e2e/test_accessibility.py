@@ -44,6 +44,17 @@ AUDIT_SCRIPT = r"""() => {
         }
     });
 
+    // График рисуется на холсте, а холст программа чтения не читает: перед ним — абзац
+    // с подписью и описанием по данным (RegionChart.describe в static/js/elements/chart.js).
+    document.querySelectorAll('rl-chart').forEach(el => {
+        const before = el.previousElementSibling;
+        const hidden = before && before.classList.contains('visually-hidden');
+        const text = hidden ? before.textContent : '';
+        if (!text.trim()) {
+            problems.push('график без текстовой замены: ' + (el.dataset.options || ''));
+        }
+    });
+
     // Поле без подписи объявляется как «поле ввода» без указания назначения.
     // Подсказка внутри поля подписью не является: она исчезает при вводе.
     document.querySelectorAll('input, select, textarea').forEach(el => {

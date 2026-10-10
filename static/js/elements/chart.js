@@ -2,7 +2,13 @@
    Строится, когда подходит к окну (и во фрагменте HTMX): библиотека не грузится ради графиков
    ниже первого экрана. Освобождается, когда уносят; перед печатью строятся все. */
 
-import { fixTextMeasure, isNarrow, prepare } from "../lib/chart-options.js";
+import {
+  describe,
+  describeWords,
+  fixTextMeasure,
+  isNarrow,
+  prepare,
+} from "../lib/chart-options.js";
 import { follow } from "../lib/highlight.js";
 import {
   captionOf,
@@ -121,10 +127,29 @@ function singleQuotedFonts(value) {
   return copy;
 }
 
+/** Настройки графика из {{ option|json_script }}; нет или не разобрать — null. */
+function readOptions(element) {
+  const source = document.getElementById(element.dataset.options);
+  if (!source) {
+    return null;
+  }
+  try {
+    return JSON.parse(source.textContent);
+  } catch (error) {
+    window.console.error("Не удалось разобрать настройки графика", element.dataset.options);
+    return null;
+  }
+}
+
 class RegionChart extends HTMLElement {
   connectedCallback() {
     // Настройки после элемента могут быть ещё не вставлены — построение откладывается.
     queueMicrotask(() => {
+      // Текстовая замена — сразу, а не при подходе к окну: программа чтения идёт по тексту.
+      const options = this.isConnected ? readOptions(this) : null;
+      if (options) {
+        this.describe(options);
+      }
       if (watcher && this.isConnected && !this.instance) {
         waiting.add(this);
         watcher.observe(this);
@@ -136,6 +161,11 @@ class RegionChart extends HTMLElement {
 
   disconnectedCallback() {
     mounted.delete(this);
+    // Унесли один график, а не фрагмент целиком, — его описание уносится вместе с ним.
+    if (this.description && !this.isConnected) {
+      this.description.remove();
+      this.description = null;
+    }
     if (watcher) {
       watcher.unobserve(this);
       waiting.delete(this);
@@ -153,20 +183,37 @@ class RegionChart extends HTMLElement {
     }
   }
 
+  /**
+   * Поставить перед графиком скрытый абзац с подписью и описанием по данным (один раз).
+   * Не роль «img» на самом элементе: без строки заголовка рамки кнопки сохранения
+   * встают внутрь него и стали бы недоступны программе чтения.
+   */
+  describe(options) {
+    if (this.description && this.description.isConnected) {
+      return;
+    }
+    const caption = captionOf(this);
+    const head = [caption.title, caption.subtitle].filter(Boolean).join(", ");
+    const body = describe(options);
+    const paragraph = document.createElement("p");
+    paragraph.className = "visually-hidden";
+    paragraph.textContent = [
+      `${describeWords().chart}: ${head}.`,
+      body.length ? `${body.join("; ")}.` : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    this.before(paragraph);
+    this.description = paragraph;
+  }
+
   /** Построить график, если он ещё не построен и стоит в документе. */
   async mount() {
     if (this.instance || this.mounting || !this.isConnected) {
       return;
     }
-    const source = document.getElementById(this.dataset.options);
-    if (!source) {
-      return;
-    }
-    let options;
-    try {
-      options = JSON.parse(source.textContent);
-    } catch (error) {
-      window.console.error("Не удалось разобрать настройки графика", this.dataset.options);
+    const options = readOptions(this);
+    if (!options) {
       return;
     }
 

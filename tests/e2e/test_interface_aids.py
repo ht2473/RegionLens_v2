@@ -430,6 +430,15 @@ class TestTakeAway:
         )
         assert page.locator(".chart-save-group").count() == charts.count()
 
+        # Текстовая замена каждого графика: подпись и описание по данным — у линий годы
+        # с первым и последним значением.
+        described = page.evaluate(
+            """() => [...document.querySelectorAll('rl-chart')].map(
+                (el) => el.previousElementSibling ? el.previousElementSibling.textContent : '')"""
+        )
+        assert all(text.startswith("График: ") for text in described), described
+        assert any(re.search(r"\d{4} — .+, \d{4} — ", text) for text in described), described
+
         group = page.locator(".chart-save-group").first
         for kind in ("png", "svg"):
             with page.expect_download() as download:
