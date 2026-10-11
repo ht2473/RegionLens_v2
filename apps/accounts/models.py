@@ -25,6 +25,8 @@ from .managers import UserManager
 
 # Минимальное число частей ФИО, при котором имеет смысл строить инициалы.
 MIN_NAME_PARTS_FOR_INITIALS = 2
+# Назначение зашифрованного ключа кодов входа (AAD); к нему добавляется номер пользователя.
+TOTP_CONTEXT = "accounts.User.totp_secret"
 
 
 class User(AbstractBaseUser, PermissionsMixin, PublicIdentifierModel, TimeStampedModel):
@@ -69,8 +71,10 @@ class User(AbstractBaseUser, PermissionsMixin, PublicIdentifierModel, TimeStampe
     consent_at = models.DateTimeField("согласие на обработку дано", null=True, blank=True)
     consent_revision = models.DateField("редакция согласия", null=True, blank=True)
 
-    # Второй фактор входа — одноразовые коды по времени (RFC 6238).
-    totp_secret = models.CharField("ключ кодов входа", max_length=64, blank=True)
+    # Второй фактор входа — одноразовые коды по времени (RFC 6238). Ключ хранится
+    # зашифрованным (AES-256-GCM, apps/core/secretbox): копии базы без ключей сервера мало,
+    # чтобы считать коды. Открытый ключ — ``totp_key``, запись — ``set_totp_key``.
+    totp_secret = models.CharField("ключ кодов входа (зашифрован)", max_length=255, blank=True)
     totp_enabled_at = models.DateTimeField("вход с кодом включён", null=True, blank=True)
     # Последний принятый шаг времени: тот же код второй раз не принимается.
     totp_last_step = models.BigIntegerField("последний принятый шаг", default=0)
@@ -148,6 +152,28 @@ class User(AbstractBaseUser, PermissionsMixin, PublicIdentifierModel, TimeStampe
     def two_factor_enabled(self) -> bool:
         """Вход требует одноразового кода."""
         return self.totp_enabled_at is not None and bool(self.totp_secret)
+
+    # --- Ключ кодов входа -------------------------------------------------------------------
+
+    @property
+    def totp_context(self) -> str:
+        """Назначение записи ключа: шифротекст другой строки или поля не расшифруется."""
+        return f"{TOTP_CONTEXT}:{self.pk}"
+
+    @property
+    def totp_key(self) -> str:
+        """Ключ кодов входа в base32; без второго фактора — пустая строка."""
+        from apps.core.secretbox import unseal
+
+        return unseal(self.totp_secret, self.totp_context) if self.totp_secret else ""
+
+    def set_totp_key(self, secret: str) -> None:
+        """Записать ключ кодов входа зашифрованным; пустая строка стирает его."""
+        from apps.core.secretbox import seal
+
+        if secret and self.pk is None:
+            raise ValueError("ключ кодов входа записывается сохранённому пользователю")
+        self.totp_secret = seal(secret, self.totp_context) if secret else ""
 
     @property
     def has_current_consent(self) -> bool:

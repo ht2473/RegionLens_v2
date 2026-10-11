@@ -151,7 +151,7 @@ def make_user(db: None) -> Callable[..., Any]:
             **extra,
         )
         if two_factor:
-            user.totp_secret = TEST_TOTP_SECRET
+            user.set_totp_key(TEST_TOTP_SECRET)
             user.totp_enabled_at = timezone.now()
             user.save(update_fields=["totp_secret", "totp_enabled_at"])
         return user

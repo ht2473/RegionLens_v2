@@ -71,7 +71,7 @@ def pending_secret(request: HttpRequest) -> str:
 def enable_two_factor(request: HttpRequest, user: User, secret: str, step: int) -> list[str]:
     """Включить вход с кодом; вернуть резервные коды для показа один раз."""
     codes = totp.new_recovery_codes()
-    user.totp_secret = secret
+    user.set_totp_key(secret)
     user.totp_enabled_at = timezone.now()
     user.totp_last_step = step
     user.recovery_codes = [totp.recovery_hash(code) for code in codes]
@@ -120,7 +120,7 @@ def renew_recovery_codes(user: User) -> list[str]:
 
 def verify_code(user: User, code: str) -> bool:
     """Проверить код приложения или резервный код; принятый код второй раз не пройдёт."""
-    step = totp.matching_step(user.totp_secret, code, after=user.totp_last_step)
+    step = totp.matching_step(user.totp_key, code, after=user.totp_last_step)
     if step is not None:
         # Условие в запросе: из двух одновременных входов с одним кодом пройдёт один.
         updated = User.objects.filter(pk=user.pk, totp_last_step__lt=step).update(

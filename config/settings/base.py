@@ -71,6 +71,14 @@ CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
 # Заголовок с адресом посетителя от обратного прокси (apps/core/client_ip); пусто — прокси нет.
 CLIENT_IP_HEADER = env.str("CLIENT_IP_HEADER", default="")
 
+# Ключи AES-256-GCM для секретов в базе — ключа кодов входа (apps/core/secretbox):
+# «номер:ключ» через запятую, новый ключ — manage.py crypto_keys --field. Записи шифруются
+# ключом FIELD_ENCRYPTION_KEY_ID (пусто — первым), прежние ключи нужны для чтения, пока
+# записи не перешифрованы (manage.py reencrypt_secrets). Пусто — ключ выводится
+# из SECRET_KEY: годится для разработки, на стенде нужны свои ключи.
+FIELD_ENCRYPTION_KEYS = env.list("FIELD_ENCRYPTION_KEYS", default=[])
+FIELD_ENCRYPTION_KEY_ID = env.str("FIELD_ENCRYPTION_KEY_ID", default="")
+
 # ---------------------------------------------------------------------------------------
 # Приложения
 # ---------------------------------------------------------------------------------------
