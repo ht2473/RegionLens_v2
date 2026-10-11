@@ -154,14 +154,19 @@ class SearchView(BreadcrumbMixin, TemplateView):
         reading = refine(parse.parse(query), self.request.GET)
         answer = answers.build(reading, _home_code(self.request))
         groups = results.collect(reading)
+        if answer is not None:
+            # Места запроса уже в ответе и в строке «понято как»: группа их только повторила бы.
+            groups["regions"] = []
         codes = [code for place in reading.places for code in place.codes]
         names = {row.code: row.name for row in Territory.objects.filter(code__in=codes)}
+        found = answer is not None or any(groups.values())
         context.update(
             reading=reading,
             answer=answer,
             groups=groups,
             chips=chips(reading, self.request.GET, names) if answer else [],
-            found=answer is not None or any(groups.values()),
+            found=found,
+            examples=() if found else EXAMPLES,
         )
         if (
             answer is None
@@ -185,4 +190,7 @@ def suggest(request: HttpRequest) -> HttpResponse:
             groups={name: rows[:SUGGEST_LIMIT] for name, rows in groups.items()},
             results_url=reverse("search:results") + "?" + urlencode({"q": query}),
         )
+        # Поле «Показателей» отбирает плитки тем же разбором, что и поиск.
+        if request.GET.get("filter"):
+            context["keys"] = results.featured_keys(reading)
     return render(request, "search/_suggest.html", context)

@@ -1,15 +1,24 @@
 {% load i18n %}
 {% comment %}
   Поле поиска — одно на сайт: шапка (быстрый переход), главная, «Показатели» и страница
-  результатов ведут на одну страницу; Enter — поиск, кнопки нет. ``examples`` — примеры вопросов.
+  результатов ведут на одну страницу; Enter — поиск, кнопки нет. По мере ввода под полем —
+  подсказки быстрого перехода (стрелки, Enter, Esc). ``examples`` — примеры вопросов;
+  ``filter`` — набранное ещё и отбирает плитки страницы (``data-find-key``).
 {% endcomment %}
-<form class="find-form" method="get" action="{% url 'search:results' %}" role="search">
+<form class="find-form" method="get" action="{% url 'search:results' %}" role="search"
+      data-find{% if filter %} data-find-filter{% endif %}>
   <label class="find-field">
     <svg aria-hidden="true"><use href="#icon-search"></use></svg>
     <span class="visually-hidden">{% translate "Регион, показатель или вопрос" %}</span>
     <input type="search" name="q" value="{{ query|default:'' }}" autocomplete="off" spellcheck="false"
-           enterkeyhint="search" placeholder="{% translate 'Регион, показатель или вопрос' %}">
+           enterkeyhint="search" placeholder="{% translate 'Регион, показатель или вопрос' %}"
+           role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="find-suggest"
+           hx-get="{% url 'search:suggest' %}{% if filter %}?filter=1{% endif %}"
+           hx-trigger="input changed delay:200ms, search"
+           hx-target="#find-suggest" hx-sync="this:replace">
   </label>
+  <div class="find-suggest palette__results" id="find-suggest" hidden
+       aria-label="{% translate 'Подсказки' %}"></div>
 </form>
 {% if examples %}
   <p class="find-form__hint">

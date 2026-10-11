@@ -130,6 +130,18 @@ class TestResultsPage:
         assert refined.context["reading"].kind == kinds.RANK
         assert refined.context["reading"].codes == []
 
+    def test_answered_place_is_not_repeated(self, client: Client, warehouse: Any) -> None:
+        """Регион из ответа не повторяется отдельной группой «Регионы»."""
+        response = client.get(reverse("search:results"), {"q": "зарплата в Татарстане"})
+        assert response.context["answer"] is not None
+        assert response.context["groups"]["regions"] == []
+
+    def test_nothing_found_offers_examples(self, client: Client, warehouse: Any) -> None:
+        """Пустая выдача — с примерами вопросов под полем и ссылкой на все показатели."""
+        response = client.get(reverse("search:results"), {"q": "кхщзъ ыйцу"})
+        assert not response.context["found"]
+        assert "find-form__hint" in response.content.decode()
+
     def test_series_replaced_by_chip(self, client: Client, warehouse: Any) -> None:
         """Чип «или …» заменяет показатель; чужой ключ отбрасывается."""
         response = client.get(
@@ -258,6 +270,15 @@ class TestSuggest:
         body = response.content.decode()
         assert response.status_code == 200
         assert reverse("search:results") in body
+
+    def test_filter_lists_matching_featured_series(self, client: Client, warehouse: Any) -> None:
+        """Поле «Показателей» получает ключи подходящих плиток; место без слов — не отбор."""
+        body = client.get(reverse("search:suggest"), {"q": "зарплата", "filter": "1"})
+        assert WAGE in body.content.decode().split("data-find-keys=")[1].split(">")[0]
+        place = client.get(reverse("search:suggest"), {"q": "Татарстан", "filter": "1"})
+        assert "data-find-keys" not in place.content.decode()
+        plain = client.get(reverse("search:suggest"), {"q": "зарплата"})
+        assert "data-find-keys" not in plain.content.decode()
 
     def test_short_query_gives_nothing(self, client: Client) -> None:
         """Одной буквы мало: подсказок нет, журнал не пополняется."""

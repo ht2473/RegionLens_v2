@@ -309,6 +309,47 @@ class TestHeaderMenus:
         page.wait_for_timeout(300)
         expect(page.locator("#palette")).to_be_hidden()
 
+    def test_page_field_suggests_while_typing(self, page: Page, site: Any) -> None:
+        """
+        Поле поиска на странице подсказывает по мере ввода, как быстрый переход: раньше
+        подсказок не было, и найденное становилось видно только на странице результатов.
+        Поле одно на сайт; без склада на главной его нет, поэтому — страница поиска.
+        """
+        page.goto(f"{site.url}/ru/search/")
+        field = page.locator("[data-find] input[name='q']")
+        field.click()
+        field.press_sequentially("Тат", delay=50)
+        page.wait_for_timeout(900)
+        box = page.locator("#find-suggest")
+        expect(box).to_be_visible()
+        assert field.get_attribute("aria-expanded") == "true"
+
+        field.press("ArrowDown")
+        assert box.locator(".palette__item.is-selected").count() == 1
+        field.press("Escape")
+        expect(box).to_be_hidden()
+        assert field.get_attribute("aria-expanded") == "false"
+
+    def test_indicators_field_filters_tiles(self, page: Page, site: Any) -> None:
+        """В «Показателях» набранное отбирает плитки тем же разбором, что и поиск."""
+        page.goto(f"{site.url}/ru/indicators/")
+        tiles = page.locator("[data-find-key]")
+        total = tiles.count()
+        if total == 0:
+            pytest.skip("Склад не собран: плиток нет")
+        field = page.locator("[data-find] input[name='q']")
+        field.click()
+        field.press_sequentially("зарплата", delay=30)
+        page.wait_for_timeout(1200)
+        shown = page.locator("[data-find-key]:not([hidden])").count()
+        assert 0 < shown < total
+        expect(page.locator("[data-find-status]")).to_contain_text(str(shown))
+
+        field.fill("")
+        field.dispatch_event("search")
+        page.wait_for_timeout(1200)
+        assert page.locator("[data-find-key]:not([hidden])").count() == total
+
     def test_palette_is_a_modal_window(self, page: Page, site: Any) -> None:
         """
         Палитра — модальное окно: страница под ней не прокручивается, нажатие

@@ -32,6 +32,25 @@ def collect(reading: Reading) -> dict[str, list[dict[str, Any]]]:
     }
 
 
+def featured_keys(reading: Reading) -> list[str] | None:
+    """
+    Показатели основного набора, подходящие к запросу, — отбор плиток «Показателей».
+
+    Без содержательных слов («Татарстан», пустое поле) — ``None``: отбирать нечего.
+    """
+    from apps.warehouse.queries import featured_set
+
+    content = list(reading.content)
+    if not content:
+        return None
+    unique = len(set(content))
+    return [
+        hit.key
+        for hit in series_index().search(content, len(featured_set().series))
+        if hit.score >= MIN_SCORE and len(hit.matched) / unique >= MIN_COVERAGE
+    ]
+
+
 def _links(keys: list[str]) -> dict[str, dict[str, Any]]:
     """Адреса страниц рядов и их названия из каталога."""
     from apps.catalog.models import Series

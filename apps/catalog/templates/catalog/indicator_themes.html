@@ -21,7 +21,10 @@
       {% endblocktranslate %}
     </p>
 
-    {% include "search/_field.html" with examples=search_examples %}
+    {% include "search/_field.html" with examples=search_examples filter=True %}
+    <p class="catalog__found" data-find-status aria-live="polite" hidden
+       data-found="{% translate 'Показателей по запросу:' %}"
+       data-empty="{% translate 'Среди основных показателей такого нет. Посмотрите подсказки под полем или полный перечень.' %}"></p>
     <p class="catalog__all">
       <a href="{% url 'catalog:indicator-list' %}?view=all">
         {% blocktranslate trimmed with total=total_series|ru_number:0 %}
@@ -56,7 +59,7 @@
   </nav>
 
   {% for block in themes %}
-    <section class="page-section catalog-theme toc-target" id="theme-{{ block.theme.slug }}"
+    <section class="page-section catalog-theme toc-target" id="theme-{{ block.theme.slug }}" data-find-section
              aria-labelledby="theme-{{ block.theme.slug }}-title">
       <div class="page-section__head">
         <h2 class="page-section__title" id="theme-{{ block.theme.slug }}-title">{{ block.theme.title }}</h2>
@@ -66,7 +69,7 @@
       <ul class="catalog-grid card-row">
         {% for row in block.rows %}
           {# Ссылка растянута на всю плитку. #}
-          <li class="stat-tile catalog-tile">
+          <li class="stat-tile catalog-tile" data-find-key="{{ row.item.key }}">
             <a class="catalog-tile__title"
                href="{% url 'catalog:series-detail' slug=row.series.indicator.slug %}?series={{ row.item.key }}">{{ row.item.short_title }}</a>
             {% if row.tile %}

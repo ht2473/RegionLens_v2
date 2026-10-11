@@ -1783,9 +1783,23 @@ a.leader-list__name:hover {
 /* --- Поиск полем-пилюлей; кнопка «Найти» — только при переходе на другую страницу ---------- */
 
 .find-form {
+  position: relative;
   display: flex;
   gap: var(--space-2);
   max-width: 44rem;
+}
+
+/* Подсказки под полем — те же строки, что в быстром переходе (.palette__item). */
+.find-suggest {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  inset-inline: 0;
+  z-index: var(--z-overlay);
+  max-height: min(60vh, 28rem);
+  background-color: var(--surface-overlay);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
 }
 
 .find-field {

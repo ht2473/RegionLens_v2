@@ -59,6 +59,12 @@
           {% if found %}{% translate "Ближе всего — ниже." %}{% endif %}
           <a href="{% url 'content:methodology' %}">{% translate "Как устроены данные" %}</a>
         </p>
+        {% if not found %}
+          <p class="answer__note">
+            {% translate "Назовите показатель, регион или год — примеры под полем." %}
+            <a href="{% url 'catalog:indicator-list' %}">{% translate "Все показатели по темам" %}</a>
+          </p>
+        {% endif %}
       </section>
     {% endif %}
 

@@ -20,7 +20,7 @@
       <a class="palette__item" href="{{ row.href }}">
         <svg aria-hidden="true"><use href="#icon-list"></use></svg>
         <span class="palette__item-title">{{ row.title }}</span>
-        <span class="palette__item-hint">{% if row.subtitle %}{{ row.subtitle }}{% else %}{{ row.unit }}{% endif %}</span>
+        <span class="palette__item-hint">{% if row.subtitle %}{{ row.subtitle }}{% elif row.unit %}{{ row.unit }}{% else %}{{ row.years }}{% endif %}</span>
       </a>
     {% endfor %}
   {% endif %}
@@ -55,4 +55,9 @@
       </a>
     {% endfor %}
   {% endif %}
+{% endif %}
+
+{% if keys is not None %}
+  {# Отбор плиток «Показателей»: ключи подходящих показателей основного набора. #}
+  <template data-find-keys="{{ keys|join:' ' }}"></template>
 {% endif %}

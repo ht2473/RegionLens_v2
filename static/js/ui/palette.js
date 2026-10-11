@@ -1,5 +1,5 @@
-/* Быстрый переход: перебор найденного стрелками, переход по Enter; список приходит
-   с сервера, поэтому отмеченная строка ищется в разметке заново. */
+/* Быстрый переход и подсказки поля поиска: перебор найденного стрелками, переход по Enter;
+   список приходит с сервера, поэтому отмеченная строка ищется в разметке заново. */
 
 import * as dialogs from "./dialogs.js";
 
@@ -84,15 +84,14 @@ const recent = {
   },
 };
 
-/** Перечень найденного. */
-function items() {
-  const panel = document.getElementById(PALETTE_ID);
-  return panel ? [...panel.querySelectorAll(".palette__item")] : [];
+/** Перечень найденного в палитре или в подсказках поля. */
+function items(box = document.getElementById(PALETTE_ID)) {
+  return box ? [...box.querySelectorAll(".palette__item")] : [];
 }
 
 /** Отметить строку под номером классом is-selected, не выходя за границы списка. */
-function mark(index) {
-  const found = items();
+function mark(index, box) {
+  const found = items(box);
   if (!found.length) {
     return;
   }
@@ -102,8 +101,111 @@ function mark(index) {
 }
 
 /** Номер отмеченной строки или −1. */
-function current() {
-  return items().findIndex((item) => item.classList.contains("is-selected"));
+function current(box) {
+  return items(box).findIndex((item) => item.classList.contains("is-selected"));
+}
+
+/** Стрелки — перебор строк, Enter — переход по отмеченной; true — клавиша обработана. */
+function navigate(event, box) {
+  const found = items(box);
+  if (!found.length) {
+    return false;
+  }
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    event.preventDefault();
+    const step = event.key === "ArrowDown" ? 1 : -1;
+    const at = current(box);
+    const start = step > 0 ? 0 : found.length - 1;
+    mark(at === -1 ? start : at + step, box);
+    return true;
+  }
+  if (event.key === "Enter") {
+    const at = current(box);
+    if (at !== -1) {
+      event.preventDefault();
+      found[at].click();
+      return true;
+    }
+  }
+  return false;
+}
+
+/* --- Поле поиска на странице: подсказки под полем и отбор плиток -------------------- */
+
+/** Показать или скрыть плитки по ключам подходящих показателей; без ключей — все. */
+function filterTiles(box) {
+  const holder = box.querySelector("[data-find-keys]");
+  const keys = holder ? new Set(holder.dataset.findKeys.split(" ").filter(Boolean)) : null;
+  let shown = 0;
+  document.querySelectorAll("[data-find-key]").forEach((tile) => {
+    const on = !keys || keys.has(tile.dataset.findKey);
+    tile.hidden = !on;
+    shown += on ? 1 : 0;
+  });
+  document.querySelectorAll("[data-find-section]").forEach((section) => {
+    section.hidden = !section.querySelector("[data-find-key]:not([hidden])");
+  });
+  // Оглавление тем — только по темам, где что-то осталось.
+  document.querySelectorAll("[data-toc] a[href^='#']").forEach((link) => {
+    const target = document.getElementById(link.hash.slice(1));
+    link.parentElement.hidden = Boolean(target && target.hidden);
+  });
+  const status = document.querySelector("[data-find-status]");
+  if (status) {
+    status.hidden = !keys;
+    status.textContent = !keys ? "" : shown ? `${status.dataset.found} ${shown}` : status.dataset.empty;
+  }
+}
+
+/** Подсказки под полем: раскрываются по мере ввода, закрываются по Esc и уходу фокуса. */
+function initField(form) {
+  const field = form.querySelector("input[name='q']");
+  const box = form.querySelector(".find-suggest");
+  if (!field || !box) {
+    return;
+  }
+  const show = (open) => {
+    const visible = open && items(box).length > 0;
+    box.hidden = !visible;
+    field.setAttribute("aria-expanded", String(visible));
+  };
+
+  form.addEventListener("htmx:afterSwap", () => {
+    show(document.activeElement === field);
+    if (form.hasAttribute("data-find-filter")) {
+      filterTiles(box);
+    }
+  });
+  field.addEventListener("focus", () => show(true));
+  field.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !box.hidden) {
+      event.preventDefault();
+      show(false);
+      return;
+    }
+    if (box.hidden && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+      show(true);
+    }
+    // Enter без отмеченной строки отправляет форму — страница результатов.
+    if (!box.hidden) {
+      navigate(event, box);
+    }
+  });
+  form.addEventListener("focusout", (event) => {
+    if (!form.contains(event.relatedTarget)) {
+      show(false);
+    }
+  });
+  // Исправление опечатки подставляется в поле.
+  box.addEventListener("click", (event) => {
+    const suggestion = event.target.closest("[data-palette-suggest]");
+    if (suggestion) {
+      event.preventDefault();
+      field.value = suggestion.dataset.paletteSuggest;
+      field.focus();
+      field.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  });
 }
 
 /** Раскрыть палитру, перенеся в её поле знак, набранный на кнопке вызова. */
@@ -129,6 +231,8 @@ export function init() {
       dialogs.open(PALETTE_ID);
     }
   });
+
+  document.querySelectorAll("[data-find]").forEach(initField);
 
   const panel = document.getElementById(PALETTE_ID);
   if (!panel) {
@@ -168,23 +272,7 @@ export function init() {
       panel.close();
       return;
     }
-    const found = items();
-    if (!found.length) {
-      return;
-    }
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      event.preventDefault();
-      const step = event.key === "ArrowDown" ? 1 : -1;
-      const at = current();
-      const start = step > 0 ? 0 : found.length - 1;
-      mark(at === -1 ? start : at + step);
-    } else if (event.key === "Enter") {
-      const at = current();
-      if (at !== -1) {
-        event.preventDefault();
-        found[at].click();
-      }
-    }
+    navigate(event, panel);
   });
 
   // Исправление опечатки подставляется в поле, палитра остаётся раскрытой.
