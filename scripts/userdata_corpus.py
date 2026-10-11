@@ -9,7 +9,8 @@
 
 Корпус и эталон лежат вне репозитория (``--corpus``, по умолчанию ``../for work/corpus``):
 архивы ЕБТ — ``ebt/``, «Регионы России» — ``rosstat/``; бюллетень и ВРП — из архива сбора;
-таблицы других ведомств и страницы сайтов — ``foreign/<ведомство>/`` (перечень — ``sources.csv``).
+таблицы других ведомств и страницы сайтов — ``foreign/<ведомство>/`` (перечень — ``sources.csv``);
+отложенная выборка — ``heldout/<ведомство>/``: замеряется только явно (``--only heldout``).
 Эталон подписей — ``gold.csv``: подпись, источник, число строк, правильный ответ
 (код, ``outside``, ``ask``, ``none``, ``part`` — обрывок разорванной подписи) и отметка проверки.
 """
@@ -54,13 +55,14 @@ from apps.userdata import matching  # noqa: E402
 
 DEFAULT_CORPUS = ROOT.parent / "for work" / "corpus"
 GOLD_FIELDS = ("source", "label", "rows", "expected", "alternatives", "status", "note")
-SOURCES = ("ebt", "bulletin", "grp", "regions", "foreign", "variants")
+SOURCES = ("ebt", "bulletin", "grp", "regions", "foreign", "heldout", "variants")
 SOURCE_TITLES = {
     "ebt": "ЕБТ",
     "bulletin": "бюллетень",
     "grp": "ВРП",
     "regions": "«Регионы России»",
     "foreign": "чужие файлы",
+    "heldout": "отложенная выборка",
     "variants": "написания",
 }
 CHECKED = "проверено"
@@ -135,9 +137,9 @@ def docx_tables(corpus: Path) -> Iterator[tuple[str, list[list[str]]]]:
                 yield f"{path.name}#{number}", rows
 
 
-def foreign_files(corpus: Path) -> Iterator[tuple[str, Path]]:
+def foreign_files(corpus: Path, folder: str = "foreign") -> Iterator[tuple[str, Path]]:
     """Файлы других ведомств и сохранённые страницы: «ведомство/файл», путь."""
-    for path in sorted((corpus / "foreign").glob("*/*")):
+    for path in sorted((corpus / folder).glob("*/*")):
         if path.is_file():
             yield f"{path.parent.name}/{path.name}", path
 
@@ -610,13 +612,17 @@ def corpus_tables(corpus: Path, only: str = "") -> Iterator[tuple[str, str, Path
             yield "regions", tag, target, inspection.tables[0], paste.FILE_NAME
         if only in {"", "foreign"}:
             yield from _foreign_tables(corpus, root)
+        if only == "heldout":
+            yield from _foreign_tables(corpus, root, "heldout")
 
 
-def _foreign_tables(corpus: Path, root: Path) -> Iterator[tuple[str, str, Path, Any, str]]:
+def _foreign_tables(
+    corpus: Path, root: Path, source: str = "foreign"
+) -> Iterator[tuple[str, str, Path, Any, str]]:
     """Таблицы других ведомств: из файла, из архива и вставкой таблиц сохранённых страниц."""
     from apps.userdata import ingest, paste
 
-    for tag, path in foreign_files(corpus):
+    for tag, path in foreign_files(corpus, source):
         try:
             inspection = ingest.inspect(path, path.name)
         except ingest.IngestError:
@@ -624,10 +630,10 @@ def _foreign_tables(corpus: Path, root: Path) -> Iterator[tuple[str, str, Path, 
         for table in inspection.tables:
             if table.member:  # таблица внутри архива
                 target = ingest.extract_member(path, table.member, root / Path(table.member).name)
-                yield "foreign", f"{tag}/{table.key}", target, table, table.member
+                yield source, f"{tag}/{table.key}", target, table, table.member
             else:
                 name = f"{tag}#{table.sheet}" if table.sheet else tag
-                yield "foreign", name, path, table, path.name
+                yield source, name, path, table, path.name
         if path.suffix.lower() in {".html", ".htm"}:
             target = root / paste.FILE_NAME
             for number, text, markup in page_tables(path):
@@ -637,7 +643,7 @@ def _foreign_tables(corpus: Path, root: Path) -> Iterator[tuple[str, str, Path, 
                     pasted = ingest.inspect(target, paste.FILE_NAME)
                 except ingest.IngestError:
                     continue
-                yield "foreign", f"{tag}~вставка{number}", target, pasted.tables[0], paste.FILE_NAME
+                yield source, f"{tag}~вставка{number}", target, pasted.tables[0], paste.FILE_NAME
 
 
 def _rosstat_files(source: str, root: Path) -> Iterator[tuple[str, Path]]:
@@ -951,28 +957,32 @@ def _build_targets(  # noqa: PLR0912 — по ветви на источник �
                 break
     if only in {"", "foreign"}:
         yield from _foreign_targets(corpus)
+    if only == "heldout":
+        yield from _foreign_targets(corpus, "heldout")
 
 
-def _foreign_targets(corpus: Path) -> Iterator[tuple[str, str, int, Callable[[Any], Any], str]]:
+def _foreign_targets(
+    corpus: Path, source: str = "foreign"
+) -> Iterator[tuple[str, str, int, Callable[[Any], Any], str]]:
     """Чужие файлы для пути до карты: каждая таблица файла и вставка каждой таблицы страницы."""
     from apps.userdata import ingest
 
-    for tag, path in foreign_files(corpus):
+    for tag, path in foreign_files(corpus, source):
         size = path.stat().st_size
         try:
             inspection = ingest.inspect(path, path.name)
         except ingest.IngestError:
             # Отказ приёма — тоже исход: путь начнётся и остановится на загрузке.
-            yield "foreign", tag, size, _upload_start(path, path.name), ""
+            yield source, tag, size, _upload_start(path, path.name), ""
             continue
         for table in inspection.tables:
             name = f"{tag}/{table.member}" if table.member else tag
             name += f"#{table.sheet}" if table.sheet else ""
-            yield "foreign", name, size, _upload_start(path, path.name), table.key
+            yield source, name, size, _upload_start(path, path.name), table.key
         if path.suffix.lower() in {".html", ".htm"}:
             for number, text, markup in page_tables(path):
                 start = _paste_markup_start(text, markup)
-                yield "foreign", f"{tag}~вставка{number}", len(markup.encode()), start, ""
+                yield source, f"{tag}~вставка{number}", len(markup.encode()), start, ""
 
 
 def command_build(
@@ -1075,7 +1085,9 @@ def main() -> None:
     parser.add_argument("command", choices=("labels", "check", "files", "tables", "build"))
     parser.add_argument("--limit", type=int, default=0, help="не больше стольких вставок")
     parser.add_argument(
-        "--only", default="", help="только один источник: ebt, bulletin, grp, regions, foreign"
+        "--only",
+        default="",
+        help="только один источник: ebt, bulletin, grp, regions, foreign, heldout",
     )
     parser.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
     parser.add_argument("--verbose", action="store_true", help="показывать и вопросы")
