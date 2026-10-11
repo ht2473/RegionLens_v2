@@ -402,6 +402,13 @@ DATASET_UPLOAD_MAX_BYTES = env.int("DATASET_UPLOAD_MAX_BYTES", default=200 * 102
 BACKUP_RETENTION_DAYS = env.int("BACKUP_RETENTION_DAYS", default=14)
 BACKUP_REMOTE = env.str("BACKUP_REMOTE", default="")
 BACKUP_REMOTE_RETENTION_DAYS = env.int("BACKUP_REMOTE_RETENTION_DAYS", default=30)
+# Шифрование и подпись копий (apps/core/backup_crypto, manage.py crypto_keys --backup):
+# закрытый ключ подписи Ed25519 и открытый ключ проверки — на сервере; открытый ключ
+# получателя X25519 — на сервере, закрытый ключ расшифровки — только вне сервера.
+# Пусто — копия не шифруется (панель и проверка развёртывания это показывают).
+BACKUP_SIGNING_KEY = env.str("BACKUP_SIGNING_KEY", default="")
+BACKUP_VERIFY_KEY = env.str("BACKUP_VERIFY_KEY", default="")
+BACKUP_RECIPIENT_KEY = env.str("BACKUP_RECIPIENT_KEY", default="")
 
 # Каталог справочников, подготовленных вручную (территории, смежность, единицы измерения).
 REFERENCE_DIR = DATA_DIR / "reference"

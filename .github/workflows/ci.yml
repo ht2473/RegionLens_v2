@@ -70,6 +70,11 @@ jobs:
           DJANGO_ADMINS: admin@example.org
           EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
           EMAIL_HOST: smtp.example.org
+          # Ключи только для проверки: на стенде — свои (manage.py crypto_keys).
+          FIELD_ENCRYPTION_KEYS: ci:xY3uXt5wMK1303NcroudM5JFrO7UV0JGtK7baBL6J84
+          BACKUP_SIGNING_KEY: a27oXzpmw1mMxB3onp1cd3Y_nlt5SXe6waxfPVlr_6U
+          BACKUP_VERIFY_KEY: irjLoV75sTkfrVrXGJdZOk7xEf59yFxWYSpY00BIs8A
+          BACKUP_RECIPIENT_KEY: 2PHeqXhdmKtcLZZrGNfEavJlpsxtDgkyppnB-Pm4WEw
         run: uv run python manage.py check --deploy --fail-level WARNING
 
   # --- Безопасность -----------------------------------------------------------------------------

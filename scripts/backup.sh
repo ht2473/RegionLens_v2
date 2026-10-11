@@ -91,10 +91,25 @@ $COMPOSE run --rm --no-deps -T \
             --exclude='*.duckdb.tmp' --exclude='.duckdb-tmp' \
             data/uploads data/archive data/visits data/userdata"
 
+# --- Шифрование и подпись -----------------------------------------------------------------------
+# Файлы шифруются открытым ключом получателя (X25519 + AES-256-GCM), открытые удаляются,
+# опись с SHA-256 файлов подписывается Ed25519. Закрытый ключ расшифровки хранится вне
+# сервера: сервер свою копию прочитать не может. Без ключей копия остаётся открытой,
+# команда предупреждает (ключи — manage.py crypto_keys --backup ФАЙЛ).
+say "Шифрование и подпись копии…"
+$COMPOSE run --rm --no-deps -T \
+    --volume "${HOST_TARGET_DIR}:/backup" \
+    web python manage.py backup_seal /backup --stamp "$stamp"
+DB_NAME="db-${stamp}.dump"
+if [ -f "${TARGET_DIR}/${DB_NAME}.enc" ]; then
+    DB_NAME="${DB_NAME}.enc"
+fi
+
 # --- Ротация --------------------------------------------------------------------------------------
 say "Удаление копий старше ${RETENTION_DAYS} суток…"
 find "$TARGET_DIR" -maxdepth 1 -type f \
-    \( -name 'db-*.dump' -o -name 'files-*.tar.gz' \) \
+    \( -name 'db-*.dump' -o -name 'files-*.tar.gz' -o -name '*.enc' \
+    -o -name 'manifest-*.json' -o -name 'manifest-*.sig' \) \
     -mtime "+${RETENTION_DAYS}" -delete
 
 # --- Вывоз за пределы сервера ------------------------------------------------------------------
@@ -111,20 +126,25 @@ if [ -n "${BACKUP_REMOTE:-}" ]; then
     if [ "$remote_days" -gt 0 ]; then
         say "Удаление копий старше ${remote_days} суток в ${BACKUP_REMOTE}…"
         rclone delete "${BACKUP_REMOTE}" --min-age "${remote_days}d" \
-            --include "db-*.dump" --include "files-*.tar.gz"
+            --include "db-*.dump" --include "files-*.tar.gz" --include "*.enc" \
+            --include "manifest-*"
     fi
 fi
 
 # --- Отметка для панели управления -------------------------------------------------------------
-size="$(stat -c %s "${TARGET_DIR}/db-${stamp}.dump")"
+size="$(stat -c %s "${TARGET_DIR}/${DB_NAME}")"
 # shellcheck disable=SC2086 — пустой признак не должен стать отдельным аргументом.
 $COMPOSE exec -T web python manage.py record_backup \
-    --file "db-${stamp}.dump" --size "$size" $OFFSITE >/dev/null
+    --file "$DB_NAME" --size "$size" $OFFSITE >/dev/null
 
 # --- Итог -------------------------------------------------------------------------------------------
 if [ "$QUIET" -eq 0 ]; then
     printf '\nСозданные файлы:\n'
     ls -lh "${TARGET_DIR}"/*-"${stamp}".* | awk '{printf "  %s  %s\n", $5, $9}'
-    printf '\nПроверьте восстановимость копии: ./scripts/restore.sh --check %s\n' \
-        "${TARGET_DIR}/db-${stamp}.dump"
+    if [ -f "${TARGET_DIR}/manifest-${stamp}.json" ]; then
+        printf '\nПроверьте копию: ./scripts/restore.sh --check %s [--key ФАЙЛ]\n' "$stamp"
+    else
+        printf '\nПроверьте восстановимость копии: ./scripts/restore.sh --check %s\n' \
+            "${TARGET_DIR}/db-${stamp}.dump"
+    fi
 fi
