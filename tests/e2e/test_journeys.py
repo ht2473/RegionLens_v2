@@ -59,11 +59,18 @@ class TestPublicPages:
         """
         page.set_viewport_size({"width": 1600, "height": 900})
         page.goto(f"{site.url}/ru/about/")
-        page.locator(".language-link", has_text="EN").click()
+        page.click(".language-menu__trigger")
+        page.locator("#language-menu-panel a[hreflang='en']").click()
         page.wait_for_load_state("networkidle")
 
         assert "/en/" in page.url
         assert page.locator("html").get_attribute("lang") == "en"
+        # Выбранный язык отмечен в меню и запомнен для адреса без префикса.
+        assert page.locator(".language-menu__trigger").inner_text().strip().endswith("EN")
+        current = page.locator("#language-menu-panel a[aria-current='true']")
+        assert current.get_attribute("hreflang") == "en"
+        page.goto(site.url)
+        assert "/en/" in page.url
 
     def test_theme_toggle_persists(self, page: Page, site: Any) -> None:
         """
@@ -480,7 +487,7 @@ class TestResponsiveLayout:
         page.set_viewport_size({"width": 1440, "height": 900})
         page.goto(site.url)
 
-        for selector in (".language-link", ".theme-menu__trigger"):
+        for selector in (".language-menu__trigger", ".theme-menu__trigger"):
             box = page.locator(selector).first.bounding_box()
             assert box is not None
             topmost = page.evaluate(

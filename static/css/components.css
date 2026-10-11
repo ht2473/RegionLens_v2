@@ -3276,16 +3276,39 @@ details[open] > .rail-more__summary {
   display: block;
 }
 
-/* Другая языковая версия — ссылкой с кодом языка. */
-.language-link {
+/* Меню языка: на кнопке — код текущего языка, выбранный пункт отмечен как в меню оформления. */
+.language-menu__trigger {
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-wide);
-  text-decoration: none;
 }
 
-.language-link:hover {
-  text-decoration: none;
+.menu-popover.language-menu__panel {
+  width: 11rem;
+}
+
+.menu-popover.language-menu__panel:popover-open {
+  gap: 0;
+  padding: var(--space-2);
+}
+
+.language-menu__code {
+  min-width: 1.5rem;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-muted);
+}
+
+.menu-item[aria-current="true"] {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.menu-item[aria-current="true"]::after {
+  content: "✓";
+  margin-left: auto;
+  color: var(--accent);
 }
 
 /* --- Поле выбора с поиском <rl-combobox>; select скрывается, только когда элемент определён -- */

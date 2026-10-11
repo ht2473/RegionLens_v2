@@ -78,15 +78,30 @@
     </button>
     {% endif %}
 
-    {# Другая языковая версия той же страницы (тег switch_language_url). #}
+    {% comment %}
+      Язык: на кнопке — текущий; в меню — та же страница на каждом языке (switch_language_url).
+      Выбор запоминается в cookie (core.middleware), адрес остаётся с префиксом языка.
+    {% endcomment %}
     {% get_available_languages as languages %}
-    {% for code, name in languages %}
-      {% if code != LANGUAGE_CODE %}
-        {% switch_language_url code as language_url %}
-        <a class="icon-button language-link" href="{{ language_url }}" hreflang="{{ code }}"
-           lang="{{ code }}" title="{{ name }}" aria-label="{{ name }}">{{ code|upper }}</a>
-      {% endif %}
-    {% endfor %}
+    {% get_language_info_list for languages as language_infos %}
+    <div class="language-menu">
+      <button type="button" class="icon-button language-menu__trigger"
+              popovertarget="language-menu-panel" aria-haspopup="true"
+              title="{% translate 'Язык' %}">
+        <span class="visually-hidden">{% translate "Язык:" %}</span>
+        {{ LANGUAGE_CODE|upper }}
+      </button>
+      <div class="menu-popover language-menu__panel" id="language-menu-panel" popover data-anchor-fixed>
+        {% for language in language_infos %}
+          {% switch_language_url language.code as language_url %}
+          <a class="menu-item" href="{{ language_url }}" hreflang="{{ language.code }}"
+             lang="{{ language.code }}"{% if language.code == LANGUAGE_CODE %} aria-current="true"{% endif %}>
+            <span class="language-menu__code" aria-hidden="true">{{ language.code|upper }}</span>
+            {{ language.name_local|capfirst }}
+          </a>
+        {% endfor %}
+      </div>
+    </div>
 
     {# Оформление: значок кнопки — выбранное; в меню — три варианта, выбранный отмечен. #}
     <div class="theme-menu no-print">
