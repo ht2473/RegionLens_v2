@@ -486,6 +486,29 @@ class TestCrossHighlight:
         assert option is not None
         assert codes[0] in option["territories"].values()
 
+    def test_rank_table_is_ordered_by_last_year(
+        self, client: Client, series_key: str, codes: list[str]
+    ) -> None:
+        """
+        Таблица мест: строки — по месту последнего года, отмеченный регион выделен, без
+        отметок по умолчанию показана таблица, а не клубок из 85 линий.
+        """
+        plain = client.get(reverse("rankings:index"), {"series": series_key})
+        table = plain.context["rank_table"]
+        last = [row["cells"][-1]["rank"] for row in table["rows"]]
+        ranked = [rank for rank in last if rank is not None]
+        assert ranked == sorted(ranked)
+        # Регионы без места в последнем году — в конце.
+        assert last[: len(ranked)] == ranked
+        assert 'value="table" checked' in plain.content.decode()
+
+        marked = client.get(
+            reverse("rankings:index"), {"series": series_key, "territory": codes[0]}
+        )
+        rows = {row["code"]: row for row in marked.context["rank_table"]["rows"]}
+        assert rows[codes[0]]["marked"]
+        assert 'value="lines" checked' in marked.content.decode()
+
 
 class TestSharing:
     """Ссылка на текущий вид и запрос к программному интерфейсу."""

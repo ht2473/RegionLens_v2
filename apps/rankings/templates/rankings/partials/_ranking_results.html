@@ -80,24 +80,68 @@
     </div>
   {% endif %}
 
-  {# --- Места по годам: все линии серые, цветные — отмеченные и мой регион ------------------- #}
+  {% comment %}
+    Места по годам двумя видами. Таблица мест — по умолчанию: 85 линий без выделения
+    читаются как клубок. Линии — когда отмечены регионы или задан мой регион: их линии цветные.
+    Переключатель — радиокнопки, вид показывает правило оформления без сценария.
+  {% endcomment %}
   {% if bump_option %}
-    <div class="chart-frame">
+    <div class="chart-frame places-views">
       <div class="chart-frame__header">
         <div>
-          <div class="chart-frame__title">{% translate "Места по годам" %}</div>
+          <div class="chart-frame__title" id="places-title">{% translate "Места по годам" %}</div>
           <div class="chart-frame__subtitle">
-            {% translate "Первое место — вверху" %} ·
+            <span class="places-views__note--lines">{% translate "Первое место — вверху" %} ·</span>
             {{ ranking_years.0|year }}–{{ ranking_years|last|year }}
-            {% if not bump_marked %}· {% translate "наведите на линию, чтобы выделить регион" %}{% endif %}
-            {% translate "Обрыв линии — в этом году региона нет в рейтинге: значения по нему в источнике нет." as bump_hint %}
+            <span class="places-views__note--table">· {% translate "по месту последнего года; цвет — группа мест, шкала под таблицей" %}</span>
+            {% if not bump_marked %}<span class="places-views__note--lines">· {% translate "наведите на линию, чтобы выделить регион" %}</span>{% endif %}
+            {% translate "Обрыв линии или прочерк — в этом году региона нет в рейтинге: значения по нему в источнике нет." as bump_hint %}
             {% include "partials/_hint.html" with hint_id="hint-bump" hint_text=bump_hint hint_label=_("Что значит обрыв линии") %}
           </div>
         </div>
+        <div class="segmented" role="radiogroup" aria-labelledby="places-title">
+          <label class="segmented__option">
+            <input type="radio" name="places-view" value="table"{% if not bump_marked %} checked{% endif %}>
+            {% translate "Таблица мест" %}
+          </label>
+          <label class="segmented__option">
+            <input type="radio" name="places-view" value="lines"{% if bump_marked %} checked{% endif %}>
+            {% translate "Линии" %}
+          </label>
+        </div>
       </div>
       {% if finding %}<p class="chart-frame__finding">{{ finding }}</p>{% endif %}
-      <rl-chart class="chart chart--tall" data-options="ranking-bump-option"></rl-chart>
-      {{ bump_option|json_script:"ranking-bump-option" }}
+      <div class="places-views__lines">
+        <rl-chart class="chart chart--tall" data-options="ranking-bump-option"></rl-chart>
+        {{ bump_option|json_script:"ranking-bump-option" }}
+      </div>
+      <div class="places-views__table">
+        <div class="data-table-wrapper heat-table-wrapper" tabindex="0"
+             aria-label="{% translate 'Места по годам — прокрутка' %}">
+          <table class="heat-table">
+            <caption class="visually-hidden">{% translate "Места регионов по годам" %}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{% translate "Регион" %}</th>
+                {% for year in rank_table.years %}<th scope="col" class="numeric">{{ year|year }}</th>{% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in rank_table.rows %}
+                <tr{% if row.marked %} class="is-marked"{% endif %}>
+                  <th scope="row">{{ row.name }}</th>
+                  {% for cell in row.cells %}<td class="numeric{% if cell.light %} is-light{% endif %}"{% if cell.step %} data-step="{{ cell.step }}"{% endif %}>{{ cell.rank|default:"—" }}</td>{% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <ol class="scale-legend" aria-label="{% translate 'Шкала цвета: места' %}">
+          {% for item in rank_table.legend %}
+            <li class="scale-legend__step"><span class="scale-legend__swatch" data-step="{{ item.step }}" aria-hidden="true"></span><span class="numeric">{{ item.lower }}–{{ item.upper }}</span></li>
+          {% endfor %}
+        </ol>
+      </div>
     </div>
   {% endif %}
 

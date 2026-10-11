@@ -32,6 +32,9 @@ MOVERS_LIMIT = 5
 # Наименьшее число лет для графика движения позиций.
 MIN_BUMP_YEARS = 2
 
+# Ступеней цвета в тепловой таблице мест — как у последовательной шкалы (--scale-seq-1…7).
+RANK_STEPS = 7
+
 # «Было — стало»: первые и последние места рейтинга и отмеченные территории.
 DUMBBELL_EDGE = 10
 
@@ -99,7 +102,7 @@ def build(request: HttpRequest, state: SurfaceState) -> dict[str, Any]:
         "rows": rows,
         "movers": movers,
         "finding": ranking_finding(movers, period),
-        "bump_option": _bump_chart(series.key, rows, years, ascending, selected | {mine} - {""}),
+        **_places_by_year(series.key, rows, years, ascending, selected | {mine} - {""}),
         "bump_marked": bool(selected or mine),
         "dumbbell_option": _dumbbell_chart(series, rows, year, previous_year, selected)
         if previous_year
@@ -203,27 +206,30 @@ def _dumbbell_chart(
     )
 
 
-def _bump_chart(
+def _places_by_year(
     series_key: str,
     rows: list[dict[str, Any]],
     years: list[int],
     ascending: bool,
     marked: set[str],
-) -> dict[str, Any] | None:
+) -> dict[str, Any]:
     """
-    Построить график мест по годам: все регионы рейтинга серыми линиями, отмеченные
-    и мой регион — цветными, в порядке мест года.
+    Места по годам двумя видами из одной истории мест: линии (все регионы серыми,
+    отмеченные и мой регион — цветными) и тепловая таблица мест.
     """
     if not rows or len(years) < MIN_BUMP_YEARS:
-        return None
+        return {"bump_option": None, "rank_table": None}
 
     codes = [row["territory_code"] for row in rows]
     history = rank_history(series_key, codes, first_year=years[0], last_year=years[-1])
 
     column = "rank_asc" if ascending else "rank_desc"
+    places = {
+        code: {item["year"]: item[column] for item in points} for code, points in history.items()
+    }
     lines = []
     for row in rows:
-        points = {item["year"]: item[column] for item in history.get(row["territory_code"], [])}
+        points = places.get(row["territory_code"], {})
         lines.append(
             {
                 "name": row["name"],
@@ -237,7 +243,61 @@ def _bump_chart(
         )
 
     max_rank = max(
-        (item[column] for points in history.values() for item in points if item[column]),
+        (rank for points in places.values() for rank in points.values() if rank),
         default=len(rows),
     )
-    return bump_option(years, lines, max_rank=max_rank)
+    return {
+        "bump_option": bump_option(years, lines, max_rank=max_rank),
+        "rank_table": _rank_table(rows, years, places, max_rank, marked),
+    }
+
+
+def _rank_step(rank: int, max_rank: int) -> int:
+    """Ступень цвета места: первые места — самая тёмная ступень, последние — самая светлая."""
+    return RANK_STEPS - min((rank - 1) * RANK_STEPS // max_rank, RANK_STEPS - 1)
+
+
+def _rank_table(
+    rows: list[dict[str, Any]],
+    years: list[int],
+    places: dict[str, dict[int, int]],
+    max_rank: int,
+    marked: set[str],
+) -> dict[str, Any]:
+    """
+    Тепловая таблица мест: регионы × годы, число — место, цвет — группа мест по равным
+    долям. Порядок — по месту последнего года; без места в нём — в конце.
+    """
+    last = years[-1]
+    table = []
+    for row in rows:
+        points = places.get(row["territory_code"], {})
+        cells = []
+        for year in years:
+            rank = points.get(year)
+            step = _rank_step(rank, max_rank) if rank else None
+            # Две тёмные ступени — подпись светлая, как в тепловой таблице значений.
+            cells.append(
+                {"rank": rank, "step": step, "light": bool(step and step >= RANK_STEPS - 1)}
+            )
+        table.append(
+            {
+                "code": row["territory_code"],
+                "name": row["name"],
+                "marked": row["territory_code"] in marked,
+                "sort": points.get(last),
+                "cells": cells,
+            }
+        )
+    table.sort(key=lambda item: (item["sort"] is None, item["sort"] or 0))
+    size = -(-max_rank // RANK_STEPS)
+    legend = [
+        {
+            "step": RANK_STEPS - index,
+            "lower": index * size + 1,
+            "upper": min((index + 1) * size, max_rank),
+        }
+        for index in range(RANK_STEPS)
+        if index * size < max_rank
+    ]
+    return {"years": years, "rows": table, "legend": legend}

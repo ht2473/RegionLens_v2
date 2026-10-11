@@ -4247,6 +4247,102 @@ rl-combobox:defined > select {
   color: var(--text-secondary);
 }
 
+/* --- Тепловая таблица: регионы × годы, цвет клетки — ступень последовательной шкалы ---------
+   Значения в «Своих данных», места в рейтинге. */
+
+.heat-table-wrapper {
+  max-height: 28rem;
+  overflow: auto;
+}
+
+.heat-table {
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 2px;
+  font-family: var(--font-narrow);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.heat-table th,
+.heat-table td {
+  padding: 2px var(--space-2);
+  white-space: nowrap;
+}
+
+.heat-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-weight: var(--weight-medium);
+  text-align: right;
+}
+
+.heat-table th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  max-width: 13rem;
+  overflow: hidden;
+  background: var(--surface-raised);
+  font-weight: var(--weight-regular);
+  text-align: left;
+  text-overflow: ellipsis;
+}
+
+.heat-table thead th:first-child {
+  z-index: 3;
+}
+
+.heat-table td {
+  border-radius: 2px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.heat-table td[data-step] {
+  color: var(--map-label-on-low);
+}
+
+.heat-table td[data-step].is-light {
+  color: var(--map-label-on-high);
+}
+
+.heat-table__country > * {
+  font-weight: var(--weight-semibold);
+}
+
+.heat-table td[data-step="1"] { background: var(--scale-seq-1); }
+.heat-table td[data-step="2"] { background: var(--scale-seq-2); }
+.heat-table td[data-step="3"] { background: var(--scale-seq-3); }
+.heat-table td[data-step="4"] { background: var(--scale-seq-4); }
+.heat-table td[data-step="5"] { background: var(--scale-seq-5); }
+.heat-table td[data-step="6"] { background: var(--scale-seq-6); }
+.heat-table td[data-step="7"] { background: var(--scale-seq-7); }
+
+/* Отмеченный регион и мой регион в таблице мест — полужирным названием. */
+.heat-table tr.is-marked th {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+/* Места по годам двумя видами: показан тот, чья радиокнопка выбрана (без сценария). */
+.places-views .chart-frame__header {
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.places-views:has(input[value="table"]:checked) :is(.places-views__lines, .places-views__note--lines),
+.places-views:has(input[value="lines"]:checked) :is(.places-views__table, .places-views__note--table) {
+  display: none;
+}
+
+.places-views__table .heat-table-wrapper {
+  max-height: 32rem;
+}
+
 /* --- Шкала цвета строкой: ступени последовательной шкалы с границами ---------------------
    Тепловая таблица исследования и предпросмотр формулы. */
 
