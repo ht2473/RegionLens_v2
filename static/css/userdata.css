@@ -640,6 +640,55 @@ legend.question-card__title ~ * {
   list-style: none;
 }
 
+/* Примеры ведомств: карточки с источником, что показывает пример и о чём спросит мастер. */
+.own-examples {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+  gap: var(--space-4);
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.own-examples__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.own-examples__item p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.own-examples__title {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+
+.own-examples__item .own-examples__source {
+  font-size: var(--text-xs);
+}
+
+.own-examples__asks span {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.own-examples__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding-top: var(--space-2);
+}
+
 .table-forms__title {
   margin: 0 0 var(--space-2);
   font-size: var(--text-base);

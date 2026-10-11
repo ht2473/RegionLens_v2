@@ -175,6 +175,44 @@
     </ul>
   </section>
 
+  {% if examples %}
+    <section class="page-section" aria-labelledby="own-examples">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="own-examples">{% translate "Примеры таблиц ведомств" %}</h2>
+      </div>
+      <p class="page-section__lead">
+        {% blocktranslate trimmed %}
+          Файлы как их публикуют ведомства. Пример открывается в мастере как своя таблица:
+          видно, что сайт узнал сам и о чём спросит.
+        {% endblocktranslate %}
+      </p>
+      <ul class="own-examples">
+        {% for item in examples %}
+          <li class="own-examples__item">
+            <h3 class="own-examples__title" lang="ru">{{ item.title }}</h3>
+            <p class="own-examples__source" lang="ru">
+              <a href="{{ item.source_url }}" rel="noopener noreferrer" target="_blank">{{ item.source }}</a>
+            </p>
+            <p class="own-examples__shows" lang="ru">{{ item.shows }}</p>
+            {% if item.asks %}
+              <p class="own-examples__asks" lang="ru"><span>{% translate "Мастер спросит:" %}</span> {{ item.asks }}</p>
+            {% endif %}
+            <div class="own-examples__actions">
+              <form method="post" action="{% url 'userdata:example-file' item.slug %}">
+                {% csrf_token %}
+                <button class="button button--secondary button--sm" type="submit">{% translate "Открыть в мастере" %}</button>
+              </form>
+              <a class="button button--ghost button--sm" href="{% url 'userdata:example-file' item.slug %}" download>
+                <svg aria-hidden="true"><use href="#icon-download"></use></svg>
+                {% translate "Скачать файл" %}
+              </a>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
   <section class="page-section" aria-labelledby="own-storage">
     <div class="page-section__head">
       <h2 class="page-section__title" id="own-storage">{% translate "Кто видит таблицу, где и сколько она хранится" %}</h2>

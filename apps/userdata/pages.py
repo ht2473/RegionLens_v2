@@ -24,7 +24,7 @@ from apps.core.navigation import Crumb
 from apps.core.views import BreadcrumbMixin
 from apps.warehouse import queries
 
-from . import access, export, glance, ingest, monthly, scope, services, studies
+from . import access, examples, export, glance, ingest, monthly, scope, services, studies
 from .models import Dataset, DatasetSeries, DatasetVersion
 from .series import FEW_REGIONS, UserSeries
 
@@ -84,6 +84,7 @@ class SectionView(BreadcrumbMixin, TemplateView):
             guest_hours=settings.USERDATA_GUEST_HOURS,
             retention_days=backup_retention_days(),
             studies=list(studies.owned(self.request)),
+            examples=examples.examples(),
         )
         return context
 
@@ -103,6 +104,28 @@ class ExampleView(View):
         version = dataset.current_version
         assert version is not None
         return redirect(after_build_url(version, request))
+
+
+class ExampleFileView(View):
+    """Пример ведомства: POST — в мастер как своя таблица, GET — скачать файл как опубликован."""
+
+    def get(self, request: HttpRequest, slug: str) -> HttpResponseBase:  # noqa: ARG002
+        item = examples.example(slug)
+        if item is None:
+            raise Http404
+        return FileResponse(item.path.open("rb"), as_attachment=True, filename=item.name)
+
+    def post(self, request: HttpRequest, slug: str) -> HttpResponse:
+        item = examples.example(slug)
+        if item is None:
+            raise Http404
+        try:
+            services.check_limits(request)
+            dataset = examples.create(request, item)
+        except ingest.IngestError as error:
+            messages.error(request, str(error))
+            return redirect("userdata:index")
+        return redirect("userdata:file", public_id=dataset.public_id)
 
 
 class DatasetMixin:

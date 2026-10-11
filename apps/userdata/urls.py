@@ -21,6 +21,7 @@ urlpatterns = [
     path("own-data/", pages.SectionView.as_view(), name="index"),
     path("own-data/new/", views.UploadView.as_view(), name="upload"),
     path("own-data/example/", pages.ExampleView.as_view(), name="example"),
+    path("own-data/examples/<slug:slug>/", pages.ExampleFileView.as_view(), name="example-file"),
     path("own-data/studies/new/", study_views.StudyCreateView.as_view(), name="study-new"),
     path("own-data/studies/add/", study_views.StudyAddView.as_view(), name="study-add"),
     path("own-data/studies/<uuid:public_id>/", study_views.StudyView.as_view(), name="study"),

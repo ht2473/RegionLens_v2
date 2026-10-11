@@ -24,3 +24,6 @@
 *.po      text diff
 *.json    text diff
 *.geojson text diff
+
+# Примеры ведомств хранятся байт в байт, как опубликованы.
+data/examples/*.csv  -text

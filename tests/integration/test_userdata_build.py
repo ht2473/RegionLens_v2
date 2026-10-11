@@ -591,6 +591,43 @@ class TestDatasetPage:
 
 
 @pytest.mark.django_db
+class TestAgencyExamples:
+    """Примеры ведомств (data/examples): открываются в мастере и скачиваются как опубликованы."""
+
+    def test_every_example_is_listed_and_present(self, client: Client) -> None:
+        from apps.userdata.examples import examples
+
+        items = examples()
+        assert len(items) >= 5
+        body = client.get(reverse("userdata:index")).content.decode()
+        for item in items:
+            assert item.path.is_file(), item.file
+            assert reverse("userdata:example-file", args=[item.slug]) in body
+
+    def test_example_opens_in_the_wizard(self, client: Client, warehouse: Any) -> None:
+        from apps.userdata.examples import example
+
+        item = example("sfr-pension-supplement-2023")
+        assert item is not None
+        response = client.post(reverse("userdata:example-file", args=[item.slug]))
+        dataset = Dataset.objects.get()
+        assert response["Location"] == reverse("userdata:file", args=[dataset.public_id])
+        assert dataset.title == f"Пример: {item.title}"
+        assert dataset.source_url == item.source_url
+
+    def test_example_file_downloads(self, client: Client) -> None:
+        response = client.get(reverse("userdata:example-file", args=["fts-export-2021"]))
+        assert response.status_code == 200
+        assert "attachment" in response["Content-Disposition"]
+        assert not Dataset.objects.exists()
+
+    def test_unknown_example_is_not_found(self, client: Client) -> None:
+        url = reverse("userdata:example-file", args=["nothing-here"])
+        assert client.get(url).status_code == 404
+        assert client.post(url).status_code == 404
+
+
+@pytest.mark.django_db
 class TestGuestsAndLimits:
     """Гость: три таблицы на сутки, перенос при входе; пределы частоты и места."""
 
