@@ -66,7 +66,7 @@ def refine(reading: parse.Reading, params: QueryDict) -> parse.Reading:
         return reading
     refined = replace(reading, **changes)
     kind = params.get("kind", "")
-    if kind in KIND_LABELS:
+    if kind in KIND_LABELS and parse.feasible(refined, kind):
         return replace(refined, kind=kind)
     return replace(refined, kind=parse.reconsider(refined))
 

@@ -42,7 +42,7 @@ def build(reading: Reading, home_code: str | None = None) -> dict[str, Any] | No
         kinds.METHOD: _method,
     }
     builder = builders.get(reading.kind)
-    if builder is None:
+    if builder is None or not kinds.feasible(reading):
         return None
     try:
         answer = _rank(reading, home_code) if reading.kind == kinds.RANK else builder(reading)

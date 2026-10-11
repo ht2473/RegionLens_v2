@@ -164,6 +164,23 @@ def _plain(reading: Reading, text: str) -> Reading:
     return replace(reading, kind=DEFINE, target=target) if target else reading
 
 
+def feasible(reading: Reading, kind: str | None = None) -> bool:
+    """Хватает ли понятого для вида ответа: рейтингу нужен показатель, сравнению — два места."""
+    kind = reading.kind if kind is None else kind
+    series, places = len(reading.series), len(reading.places)
+    needs = {
+        RANK: series >= 1,
+        VALUE: series >= 1 and places >= 1,
+        COMPARE: places >= PAIR,
+        TREND: series >= 1,
+        RELATION: series >= PAIR,
+        REGION: places >= 1,
+        DEFINE: bool(reading.target),
+        METHOD: bool(reading.target),
+    }
+    return needs.get(kind, True)
+
+
 def reconsider(reading: Reading) -> str:
     """Вид ответа после уточнения показателя или мест: динамика остаётся динамикой."""
     if len(reading.series) >= PAIR:
@@ -176,7 +193,7 @@ def reconsider(reading: Reading) -> str:
         return VALUE if reading.places else RANK
     if reading.places:
         return REGION
-    return reading.kind
+    return reading.kind if feasible(reading) else NONE
 
 
 def _series_hits(content: tuple[str, ...]) -> list[Hit]:

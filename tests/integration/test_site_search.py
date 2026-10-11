@@ -138,6 +138,78 @@ class TestResultsPage:
         assert response.context["reading"].series == (WAGE,)
 
 
+def _refinements(reading: kinds.Reading) -> list[list[tuple[str, str]]]:
+    """Уточнения, которые даёт или может подставить чип: снять, заменить, чужое значение."""
+    from apps.search.constants import KIND_LABELS
+
+    found: list[list[tuple[str, str]]] = [
+        [("region", "")],
+        [("region", "RU-XXX")],
+        [("series", "")],
+        [("series", ""), ("region", "")],
+        [("year", "")],
+        [("year", "abc")],
+    ]
+    codes = reading.codes
+    found += [[("region", code) for code in codes if code != gone] for gone in codes]
+    found += [[("series", key)] for key in reading.alternatives]
+    found += [[("kind", kind)] for kind in KIND_LABELS] + [[("kind", "нет-такого")]]
+    return found
+
+
+class TestRefineNeverFails:
+    """Любое уточнение чипом даёт ответ или честное «не нашлось», но не ошибку."""
+
+    def test_every_chip_of_every_benchmark_query(self, content: None, warehouse: Any) -> None:
+        """Мерило × все уточнения и все ссылки чипов уточнённой страницы."""
+        from urllib.parse import urlsplit
+
+        from django.http import QueryDict
+
+        from apps.search import answers
+        from apps.search.views import chips, refine
+
+        rows = json.loads(BENCHMARK.read_text(encoding="utf-8"))["queries"]
+        checked = 0
+        for row in rows:
+            reading = parse(row["q"])
+            for pairs in _refinements(reading):
+                params = QueryDict(mutable=True)
+                params["q"] = row["q"]
+                for key, value in pairs:
+                    params.appendlist(key, value)
+                refined = refine(reading, params)
+                assert kinds.feasible(refined), (row["q"], pairs, refined.kind)
+                answer = answers.build(refined)
+                links = [
+                    link
+                    for chip in (chips(refined, params, {}) if answer else [])
+                    for link in [chip.get("remove")] + [o["href"] for o in chip.get("options", [])]
+                    if link
+                ]
+                for link in links:
+                    again = refine(reading, QueryDict(urlsplit(link).query))
+                    assert kinds.feasible(again), (row["q"], link, again.kind)
+                    answers.build(again)
+                checked += 1 + len(links)
+        assert checked > len(rows) * 10
+
+    def test_page_survives_odd_refinements(self, client: Client, warehouse: Any) -> None:
+        """Случаи, падавшие с ошибкой 500: снятые места, показатель, вид без данных."""
+        cases = [
+            {"q": "Питер", "region": ""},
+            {"q": "Москва и Татарстан", "region": ""},
+            {"q": "где самые высокие зарплаты", "series": ""},
+            {"q": "рождаемость", "kind": kinds.VALUE},
+            {"q": "рождаемость", "kind": kinds.REGION},
+            {"q": "рождаемость", "kind": kinds.RELATION},
+            {"q": "Питер", "region": "RU-XXX"},
+            {"q": "Москва", "kind": kinds.TREND},
+        ]
+        for case in cases:
+            assert client.get(reverse("search:results"), case).status_code == 200, case
+
+
 class TestMisses:
     """Журнал запросов без ответа."""
 
