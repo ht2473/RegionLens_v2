@@ -203,16 +203,6 @@
   color: var(--text-secondary);
 }
 
-.own-data-strip__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-}
-
-.own-data-strip__actions form {
-  margin: 0;
-}
-
 /* Три входа вглубь. */
 .entry-grid {
   display: grid;

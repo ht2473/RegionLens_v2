@@ -143,14 +143,16 @@
         {% translate "Таблица из Excel, CSV, архива или вставка из Word: регионы и годы узнаются сами, таблицу видите только вы." %}
       </p>
     </div>
-    <div class="own-data-strip__actions">
+    <div class="own-data-strip__actions button-pair">
       <a class="button button--primary button--sm" href="{% url 'userdata:upload' %}">
         <svg aria-hidden="true"><use href="#icon-upload"></use></svg>
         {% translate "Загрузить таблицу" %}
       </a>
       <form method="post" action="{% url 'userdata:example' %}">
         {% csrf_token %}
-        <button class="button button--secondary button--sm" type="submit">{% translate "Попробовать на примере" %}</button>
+        <button class="button button--secondary button--sm" type="submit">
+          {% translate "Попробовать на примере" %}
+        </button>
       </form>
     </div>
   </section>

@@ -97,6 +97,34 @@
   width: 100%;
 }
 
+/* Пара равных кнопок: ширина по длинной, на узком экране — одна под другой. */
+.button-pair {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--space-3);
+  /* В сетке шапки страницы пара не растягивается на всю ширину. */
+  justify-self: start;
+  width: max-content;
+  max-width: 100%;
+}
+
+.button-pair > form {
+  display: grid;
+  margin: 0;
+}
+
+.button-pair .button {
+  justify-content: center;
+}
+
+@media (max-width: 479px) {
+  .button-pair {
+    display: grid;
+    grid-auto-flow: row;
+  }
+}
+
 .icon-button {
   display: inline-flex;
   align-items: center;
@@ -342,8 +370,14 @@ a.stat-tile__title:hover {
   margin: var(--space-2) 0 0;
 }
 
+/* Плитка в сетке — мерило для своего числа: узкая плитка (четыре в узком ответе поиска)
+   набирает его мельче, чтобы семь-одиннадцать знаков не выходили за край. */
+.stat-grid > .stat-tile {
+  container-type: inline-size;
+}
+
 .stat-tile__value .numeric {
-  font-size: var(--text-3xl);
+  font-size: clamp(var(--text-xl), 14cqi, var(--text-3xl));
   font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-tight);
   line-height: 1.1;
@@ -1246,6 +1280,38 @@ a.leader-list__name:hover {
   background-attachment: local, local, scroll, scroll;
 }
 
+/* Шапка таблицы при прокрутке (ui/scroll.js). Помещается по ширине — обёртка не прокручивается,
+   шапка закрепляется у страницы под шапкой сайта и строкой пути. */
+.data-table-wrapper[data-fits] {
+  overflow: clip;
+}
+
+.data-table-wrapper[data-fits] thead th {
+  top: var(--table-head-top, 0px);
+}
+
+/* Широкая и длинная — в рамке высотой в экран: шапка закреплена в самой рамке. */
+.data-table-wrapper[data-tall] {
+  max-height: calc(100dvh - var(--table-head-top, 0px) - var(--space-4));
+  overflow: auto;
+}
+
+.data-table-wrapper[data-tall] thead th {
+  top: 0;
+}
+
+/* На бумаге — вся таблица: без рамки высотой в экран и без отступа под шапку сайта. */
+@media print {
+  .data-table-wrapper[data-tall] {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .data-table-wrapper[data-fits] thead th {
+    top: 0;
+  }
+}
+
 /* Таблица — узким начертанием: оно отдаёт 16 % ширины; числа остаются моноширинными. */
 .data-table {
   width: 100%;
@@ -1311,6 +1377,11 @@ a.leader-list__name:hover {
 .data-table tbody tr.is-selected {
   background-color: var(--surface-accent-soft);
   box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* Действие в строке («Показать на диаграмме») — одной строкой. */
+.data-table td.data-table__action {
+  white-space: nowrap;
 }
 
 /* Ячейка значения со столбиком: число, справа — доля наибольшего значения. */
@@ -3663,6 +3734,18 @@ rl-combobox:defined > select {
 }
 
 /* Образец цвета шкалы в строке таблицы: связывает число с классом на карте. */
+/* Знак и название в ячейке: перенос длинного названия не отрывает знак на свою строку. */
+.name-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.name-line > .table-swatch {
+  flex: none;
+  margin-right: 0;
+}
+
 .table-swatch {
   display: inline-block;
   width: 10px;
@@ -4328,19 +4411,99 @@ rl-combobox:defined > select {
   color: var(--text-primary);
 }
 
-/* Места по годам двумя видами: показан тот, чья радиокнопка выбрана (без сценария). */
-.places-views .chart-frame__header {
-  flex-wrap: wrap;
-  gap: var(--space-3);
+/* --- Таблица рейтинга: общее место, мини-график мест за последние годы --------------------- */
+
+.rank-table__tie {
+  margin-left: 1px;
+  color: var(--text-muted);
 }
 
-.places-views:has(input[value="table"]:checked) :is(.places-views__lines, .places-views__note--lines),
-.places-views:has(input[value="lines"]:checked) :is(.places-views__table, .places-views__note--table) {
-  display: none;
+.rank-table__history {
+  white-space: nowrap;
 }
 
-.places-views__table .heat-table-wrapper {
-  max-height: 32rem;
+.rank-table__history .movement {
+  margin-left: var(--space-1);
+}
+
+/* Мини-график мест: нарисован сервером (apps/rankings/panel.py, _spark), первое место
+   вверху, пропуск года разрывает линию. */
+.rank-spark {
+  display: inline-block;
+  width: 84px;
+  height: 22px;
+  overflow: visible;
+  vertical-align: middle;
+}
+
+.rank-spark__line {
+  fill: none;
+  stroke: var(--text-secondary);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.rank-spark__dot {
+  fill: var(--text-primary);
+}
+
+/* Списки «Поднялись» и «Опустились»: линия мест за годы истории — цветом направления
+   (зелёный и оранжевый различимы и при нарушениях цветового зрения), у сдвига — стрелка. */
+.leader-list--ranked .mover {
+  align-items: center;
+}
+
+.rank-spark--up .rank-spark__line {
+  stroke: var(--rank-up);
+}
+
+.rank-spark--down .rank-spark__line {
+  stroke: var(--rank-down);
+}
+
+.rank-spark--up .rank-spark__dot {
+  fill: var(--rank-up);
+}
+
+.rank-spark--down .rank-spark__dot {
+  fill: var(--rank-down);
+}
+
+/* Изменение значения рядом со сдвигом места в списках. */
+.movement__change {
+  margin-left: var(--space-1);
+  color: var(--text-muted);
+}
+
+/* На телефоне в таблице — место, субъект, значение и сдвиг: без прокрутки вбок.
+   В списках линия мест уходит под название. */
+@media (max-width: 639px) {
+  .leader-list--ranked .mover {
+    grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+  }
+
+  .mover .mover__spark {
+    grid-column: 2;
+    grid-row: 2;
+    margin-top: var(--space-1);
+  }
+
+  .rank-table .rank-table__minor,
+  .rank-table .rank-table__history,
+  .rank-table .value-cell__bar {
+    display: none;
+  }
+
+  .data-table.rank-table thead th,
+  .data-table.rank-table td {
+    padding-inline: var(--space-2);
+  }
+
+  /* «2023→2024» переносится после стрелки, а не выталкивает столбец за край. */
+  .data-table.rank-table thead th {
+    white-space: normal;
+  }
 }
 
 /* --- Шкала цвета строкой: ступени последовательной шкалы с границами ---------------------

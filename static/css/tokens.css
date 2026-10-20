@@ -48,6 +48,10 @@
   --positive-soft: light-dark(#e3efe1, #1d2a1d);
   --negative: light-dark(#b33025, #e8897a);
   --negative-soft: light-dark(#f8e6e1, #33201c);
+  /* Линии поднявшихся и опустившихся регионов на графике мест: зелёный и оранжевый
+     различимы и при нарушениях цветового зрения (проверено по CVD ΔE, у подписей — стрелки). */
+  --rank-up: light-dark(#11704a, #3d9a72);
+  --rank-down: light-dark(#d96a2c, #d9773c);
   --neutral-soft: light-dark(#efe9df, #2a261f);
   /* Края полоски места: зоны 15 % худших и лучших. */
   --zone-bad: light-dark(#f6c3bb, #59302b);
