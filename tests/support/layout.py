@@ -187,6 +187,20 @@ LAYOUT_SCRIPT = r"""([maxLineChars, minEmptyHeight]) => {
         }
     }
 
+    // 6. Плитка с числом: содержимое не выходит за её край (четыре плитки в узком ответе).
+    main.querySelectorAll('.stat-tile').forEach((tile) => {
+        if (!visible(tile)) return;
+        const edge = tile.getBoundingClientRect();
+        const out = [...tile.querySelectorAll('*')].find((el) => {
+            const r = el.getBoundingClientRect();
+            return r.width > 0 && (r.right > edge.right + 1 || r.left < edge.left - 1);
+        });
+        if (out) {
+            const text = tile.innerText.replace(/\s+/g, ' ').trim();
+            problems.push(`выход за плитку: ${name(out)} «${text.slice(0, 40)}»`);
+        }
+    });
+
     // Числа страницы. Объём стилей — по разобранным правилам: размер из сведений
     // о загрузке у взятого из кэша файла равен нулю.
     const scripts = performance.getEntriesByType('resource')
@@ -220,6 +234,50 @@ LAYOUT_SCRIPT = r"""([maxLineChars, minEmptyHeight]) => {
 def audit(page: Any) -> dict[str, Any]:
     """Нарушения раскладки и числа открытой страницы."""
     return page.evaluate(LAYOUT_SCRIPT, [MAX_LINE_CHARS, MIN_EMPTY_HEIGHT])
+
+
+# Строк, начиная с которых шапка таблицы данных должна быть видна при прокрутке.
+STICKY_ROWS = 15
+
+# Шапка длинной таблицы при прокрутке: помещается по ширине — держится под шапкой сайта
+# и строкой пути (ui/scroll.js ставит --table-head-top); широкая — у верха своей рамки.
+# Таблица прокручивается до середины, и шапка должна стоять на своём месте.
+STICKY_SCRIPT = r"""async (minRows) => {
+    const problems = [];
+    const tables = [...document.querySelectorAll('main .data-table-wrapper > table')]
+        .filter((t) => t.tBodies[0] && t.tBodies[0].rows.length >= minRows);
+    for (const table of tables) {
+        const head = table.querySelector('thead th');
+        if (!head || !head.offsetHeight) continue;
+        const wrap = table.parentElement;
+        const framed = wrap.hasAttribute('data-tall');
+        if (framed) {
+            window.scrollTo(0, scrollY + wrap.getBoundingClientRect().top - 120);
+            wrap.scrollTop = wrap.scrollHeight / 2;
+        } else {
+            const r = table.getBoundingClientRect();
+            window.scrollTo(0, scrollY + r.top + r.height / 2);
+        }
+        await new Promise((done) => requestAnimationFrame(() => setTimeout(done, 100)));
+        const top = parseFloat(
+            getComputedStyle(document.documentElement).getPropertyValue('--table-head-top')) || 0;
+        const expected = framed ? wrap.getBoundingClientRect().top + wrap.clientTop : top;
+        const actual = head.getBoundingClientRect().top;
+        if (Math.abs(actual - expected) > 2) {
+            const caption = (table.caption?.textContent || head.textContent).trim().slice(0, 40);
+            problems.push(`шапка таблицы не держится (${Math.round(actual)} вместо `
+                + `${Math.round(expected)}): «${caption}»`);
+        }
+        wrap.scrollTop = 0;
+    }
+    window.scrollTo(0, 0);
+    return problems;
+}"""
+
+
+def sticky_heads(page: Any) -> list[str]:
+    """Длинные таблицы, у которых шапка не видна при прокрутке."""
+    return page.evaluate(STICKY_SCRIPT, STICKY_ROWS)
 
 
 def html_kb(body: bytes) -> tuple[int, int]:

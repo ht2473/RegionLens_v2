@@ -9,7 +9,7 @@ import pytest
 from django.urls import reverse
 from playwright.sync_api import Page
 
-from tests.support.layout import audit
+from tests.support.layout import audit, sticky_heads
 from tests.support.routes import PUBLIC_PAGES
 
 pytestmark = [pytest.mark.e2e, pytest.mark.django_db(transaction=True)]
@@ -59,6 +59,7 @@ def test_layout_rules_and_budget(
         assert page.title(), path
         result = audit(page)
         failures += [f"{path}: {problem}" for problem in result["problems"]]
+        failures += [f"{path}: {problem}" for problem in sticky_heads(page)]
         metrics = result["metrics"]
         if metrics["scripts"] > MAX_SCRIPTS:
             failures.append(f"{path}: сценариев {metrics['scripts']} > {MAX_SCRIPTS}")
