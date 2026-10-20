@@ -73,6 +73,16 @@ class TestEndLabels:
         assert option["legend"]["show"] is False
         assert option["series"][0]["endLabel"]["show"] is True
 
+    def test_rank_axis_marks_first_tens_and_last(self) -> None:
+        """Ось мест — первое место, круглые десятки и последнее, без сетки."""
+        from apps.core.charts import rank_ticks
+
+        option = bump_option(YEARS, [line("Москва", [3, 2, 2, 1], primary=True)], max_rank=85)
+        assert option["yAxis"]["axisLabel"]["customValues"] == rank_ticks(85)
+        assert rank_ticks(85) == [1, 10, 20, 30, 40, 50, 60, 70, 80, 85]
+        # Десяток вплотную к последнему месту не ставится: подписи налезли бы.
+        assert rank_ticks(83) == [1, 10, 20, 30, 40, 50, 60, 70, 83]
+
     def test_label_takes_the_colour_of_its_line(self) -> None:
         """Цвет подписи задан явно — текстовой ступенью цвета своей линии, без обводки."""
         option = timeline_option(YEARS, [line("Москва", [1, 2, 3, 4]), line("Тула", [4, 3, 2, 1])])

@@ -5,11 +5,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from django.utils.html import escape
 from django.utils.translation import gettext_lazy as _
 
 from apps.core import chart_layout as layout
-from apps.core.templatetags.formatting import ru_number
 
 # Цвет линии страны — ориентира среди сравниваемых.
 COUNTRY_COLOUR = "var(--text-secondary)"
@@ -36,6 +34,12 @@ STRIP_NO_CLASS = "var(--text-muted)"
 # Линии окружения на графике мест — серые; линия под указателем — цвета акцента.
 CONTEXT_COLOUR = "var(--border-strong)"
 HOVER_COLOUR = "var(--text-accent)"
+
+# Непрозрачность серых линий окружения на графике мест.
+CONTEXT_OPACITY = 0.45
+
+# Подписи оси мест: первое место, круглые десятки и последнее место.
+RANK_TICK_STEP = 10
 
 # Длина ряда, начиная с которой точки на линии не показываются: на ширине карточки
 # точки в 5 px сливаются в полосу уже на полутора десятках лет.
@@ -346,6 +350,12 @@ def strip_option(
     }
 
 
+def rank_ticks(max_rank: int) -> list[int]:
+    """Подписи оси мест: 1, 10, 20 … и последнее место; десяток вплотную к нему не ставится."""
+    tens = range(RANK_TICK_STEP, max_rank - RANK_TICK_STEP // 2 + 1, RANK_TICK_STEP)
+    return sorted({1, *tens, max_rank})
+
+
 def bump_option(
     years: list[int],
     lines: list[dict[str, Any]],
@@ -371,14 +381,19 @@ def bump_option(
             "symbolSize": 6 if primary else 3,
             "showSymbol": primary,
             "connectNulls": False,
-            "lineStyle": {"color": colour, "width": PRIMARY_WIDTH if primary else 1},
+            # Окружение — фоном: 85 линий во всю силу сливаются в штриховку.
+            "lineStyle": {
+                "color": colour,
+                "width": PRIMARY_WIDTH if primary else 1,
+                "opacity": 1 if primary else CONTEXT_OPACITY,
+            },
             "itemStyle": {"color": colour},
             "endLabel": label,
             "labelLayout": {"moveOverlap": "shiftY"},
             # Под указателем серая линия получает цвет и подпись, остальные бледнеют.
             "emphasis": {
                 "focus": "series",
-                "lineStyle": {"color": hover, "width": PRIMARY_WIDTH},
+                "lineStyle": {"color": hover, "width": PRIMARY_WIDTH, "opacity": 1},
                 "itemStyle": {"color": hover},
                 "endLabel": {"show": True},
             },
@@ -417,87 +432,14 @@ def bump_option(
             min=1,
             max=max_rank,
             minInterval=1,
+            axisLabel={"customValues": rank_ticks(max_rank)},
+            axisTick={"customValues": rank_ticks(max_rank)},
+            splitLine={"show": False},
         ),
         "series": series,
         # Образец оформления серых линий (chart-options.js раскладывает его по рядам).
         "seriesTemplate": styled(CONTEXT_COLOUR, HOVER_COLOUR, primary=False),
         **_territory_links(lines),
-    }
-
-
-def dumbbell_option(
-    rows: list[dict[str, Any]],
-    *,
-    before: int,
-    after: int,
-    precision: int | None = None,
-    unit: str = "",
-) -> dict[str, Any] | None:
-    """
-    «Было — стало»: значения двух лет у каждого субъекта — точки, соединённые отрезком.
-
-    Строка — ``{"name", "short", "before", "after"}`` в порядке показа (сверху вниз).
-    Подсказки — готовым текстом с экранированными названиями.
-    """
-    shown = [row for row in rows if row["before"] is not None and row["after"] is not None]
-    if not shown:
-        return None
-
-    def tip(row: dict[str, Any]) -> str:
-        return (
-            f"{escape(row['name'])}<br>{before}: {ru_number(row['before'], precision)}"
-            f"<br>{after}: <strong>{ru_number(row['after'], precision)}</strong>"
-        )
-
-    return {
-        "grid": layout.grid(legend=True, bottom_name=bool(unit), right=24),
-        "legend": layout.legend(scroll=False),
-        "tooltip": {"trigger": "item"},
-        "xAxis": {
-            "type": "value",
-            "scale": True,
-            "splitLine": {"lineStyle": {"type": "dashed"}},
-            **(layout.bottom_axis_name(unit) if unit else {}),
-        },
-        "yAxis": {
-            "type": "category",
-            "data": [row["short"] or row["name"] for row in shown],
-            "inverse": True,
-            "axisTick": {"show": False},
-        },
-        "series": [
-            {
-                "name": str(before),
-                "type": "scatter",
-                "symbolSize": 9,
-                "itemStyle": {"color": MARK_COLOUR},
-                "data": [
-                    {"value": [row["before"], index], "tooltip": {"formatter": tip(row)}}
-                    for index, row in enumerate(shown)
-                ],
-                # Отрезки «было — стало» — парами точек отметок: вида «lines» в сборке нет.
-                "markLine": {
-                    "symbol": "none",
-                    "silent": True,
-                    "label": {"show": False},
-                    "lineStyle": {"color": MARK_COLOUR, "type": "solid", "width": 2},
-                    "data": [
-                        [{"coord": [row["before"], index]}, {"coord": [row["after"], index]}]
-                        for index, row in enumerate(shown)
-                    ],
-                },
-            },
-            {
-                "name": str(after),
-                "type": "scatter",
-                "symbolSize": 11,
-                "itemStyle": {"color": layout.palette_colour(0)},
-                "data": [
-                    {"value": [row["after"], index], "tooltip": {"formatter": tip(row)}}
-                    for index, row in enumerate(shown)
-                ],
-            },
-        ],
     }
 
 

@@ -299,20 +299,6 @@
   gap: var(--space-6) var(--space-10);
 }
 
-/* --- Таблицы рейтинга и значений ---------------------------------------------------- */
-
-/* На широком экране обёртка — overflow: clip, чтобы шапка таблицы залипала под строкой пути;
-   уже 1180 точек обёртка прокручивается. */
-@media (min-width: 1180px) {
-  .surface-canvas .data-table-wrapper {
-    overflow: clip;
-  }
-
-  .surface-canvas .data-table thead th {
-    top: calc(var(--header-height) + var(--breadcrumbs-height));
-  }
-}
-
 /* --- Год в рейле --------------------------------------------------------------------- */
 
 .filter-rail .time-slider__head {
@@ -812,6 +798,58 @@
   .view-settings__now {
     display: none;
   }
+}
+
+/* --- Таблица значений по годам ------------------------------------------------------- */
+
+/* Столбцы лет узкие, место отдано названиям: на широком экране таблица помещается целиком
+   и шапка держится у страницы. Уже холста — прокрутка вбок, название закреплено слева. */
+.year-table thead th,
+.year-table tbody th,
+.year-table tbody td,
+.year-table tfoot th,
+.year-table tfoot td {
+  padding: var(--space-2);
+}
+
+.year-table thead th:first-child,
+.year-table tbody th,
+.year-table tfoot th {
+  padding-left: var(--space-3);
+}
+
+.year-table tbody th {
+  min-width: 12rem;
+}
+
+.year-table thead th:first-child,
+.year-table tbody th,
+.year-table tfoot th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background-color: var(--surface-raised);
+  font-weight: var(--weight-regular);
+}
+
+/* Угол — над закреплёнными шапкой и столбцом: при прокрутке вбок годы уходят под него. */
+.year-table thead th:first-child {
+  z-index: calc(var(--z-sticky) + 1);
+  background-color: var(--surface-sunken);
+}
+
+.year-table tfoot th {
+  background-color: var(--surface-sunken);
+  font-weight: var(--weight-semibold);
+}
+
+/* Год из рейла — заливкой столбца. */
+.year-table .is-current {
+  background-color: var(--surface-accent-soft);
+}
+
+.year-table thead th.is-current {
+  color: var(--text-primary);
 }
 
 }

@@ -22,7 +22,10 @@ from apps.core.templatetags.formatting import position_share, ru_number
 from apps.maps.panel import build_values
 from apps.surface.findings import distribution_finding
 from apps.surface.state import SurfaceState
-from apps.warehouse.queries import series_statistics
+from apps.warehouse.queries import available_years, series_statistics, series_year_grid
+
+# Сколько последних лет до года рейла показывает таблица значений.
+TABLE_YEARS = 10
 
 # Способы упорядочивания таблицы значений.
 SORT_NAME = "name"
@@ -150,7 +153,11 @@ def _positions(rows: list[dict[str, Any]], codes: list[str]) -> list[dict[str, A
 
 
 def build_table(request: HttpRequest, state: SurfaceState) -> dict[str, Any]:
-    """Собрать полную таблицу значений по всем субъектам."""
+    """
+    Собрать таблицу значений всех субъектов по годам: последние ``TABLE_YEARS`` лет до года
+    рейла, год рейла выделен. Места и их изменение — в «Рейтинге», здесь — числа для сверки
+    и выписки; пропуск назван причиной.
+    """
     context = build_values(request, state)
     sort = request.GET.get("sort", SORT_NAME)
     if sort not in SORTS:
@@ -174,15 +181,44 @@ def build_table(request: HttpRequest, state: SurfaceState) -> dict[str, Any]:
         # Субъекты без значения — внизу.
         rows.sort(key=lambda row: (row["value"] is None, -(row["value"] or 0.0)))
 
+    years = [year for year in available_years(state.series.key) if year <= state.year]
+    years = years[-TABLE_YEARS:] or [state.year]
+    if state.year not in years:
+        years.append(state.year)
+    grid = series_year_grid(state.series.key, years[0], years[-1])
+    for row in rows:
+        row["cells"] = _year_cells(years, grid["regions"].get(row["code"], {}))
+
     context.update(
         {
             "table_rows": rows,
+            "table_years": years,
+            "country_cells": [grid["country"].get(year) for year in years],
+            "current_index": years.index(state.year),
             "districts": list(Territory.objects.federal_districts().order_by("display_order")),
             "statistics": series_statistics(state.series.key, state.year),
             "missing_count": sum(1 for row in rows if row["value"] is None),
         }
     )
     return context
+
+
+def _year_cells(years: list[int], points: dict[int, dict[str, Any]]) -> list[dict[str, Any]]:
+    """Клетки строки по годам: значение или причина пропуска словами (для подсказки)."""
+    cells: list[dict[str, Any]] = []
+    for year in years:
+        point = points.get(year)
+        if point is None:
+            cells.append({"year": year, "value": None, "note": _("нет в источнике за этот год")})
+            continue
+        quality = point["quality"]
+        note = (
+            ""
+            if point["value"] is not None
+            else QUALITY_LABELS.get(quality, _("значение неизвестно"))
+        )
+        cells.append({"year": year, "value": point["value"], "note": note})
+    return cells
 
 
 def _full_table(

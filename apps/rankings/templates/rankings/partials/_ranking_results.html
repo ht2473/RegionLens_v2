@@ -1,5 +1,8 @@
 {% load i18n formatting %}
-{# Представление «рейтинг»: наибольшее движение, места по годам и полная таблица. #}
+{% comment %}
+  Представление «рейтинг»: кто сдвинулся (списки), как они к этому шли (места по годам —
+  те же регионы цветом), где каждый и куда шёл (таблица с местами за последние годы).
+{% endcomment %}
 
 {% if not series or not rows %}
   <div class="empty-state">
@@ -27,8 +30,27 @@
     </div>
   {% endif %}
 
-  {# --- Наибольшее движение: перечнями на бумаге, без карточек ------------------------ #}
+  {% if breaks %}
+    {# Смена методики между годами: сдвиг мест может быть её следствием. #}
+    <div class="callout callout--warning">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+      <div>
+        <div class="callout__title">
+          {% blocktranslate trimmed with start=period_start|year end=period_end|year %}
+            Между {{ start }} и {{ end }} годом значения считались по-разному
+          {% endblocktranslate %}
+        </div>
+        <p style="margin: 0">
+          {% for item in breaks %}{{ item.year|year }} — {{ item.kind|lower }}{% if item.territory %} ({{ item.territory }}){% endif %}{% if not forloop.last %}; {% endif %}{% endfor %}.
+          {% translate "Сдвиг мест может быть следствием этого, а не перемены в регионах." %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  {# --- Кто сдвинулся: перечнями на бумаге, без карточек --------------------------------- #}
   {% if movers.risen or movers.fallen %}
+    {% if finding %}<p class="chart-frame__finding">{{ finding }}</p>{% endif %}
     <div class="surface-columns">
       <section aria-labelledby="ranking-risen-title">
         <div class="surface-block__head">
@@ -37,21 +59,16 @@
         </div>
         <ol class="leader-list leader-list--ranked">
           {% for item in movers.risen %}
-            <li class="leader-list__item" data-rank="{{ item.rank_desc }}" data-territory="{{ item.territory_code }}">
-              {% if item.slug %}
-                <a class="leader-list__name" href="{% url 'catalog:territory-detail' slug=item.slug %}">{{ item.name }}</a>
-              {% else %}
-                <span class="leader-list__name">{{ item.name }}</span>
-              {% endif %}
-              <span class="leader-list__value numeric">{{ item.value|ru_number:precision }}</span>
-              <span class="movement movement--up">
-                <svg aria-hidden="true"><use href="#icon-arrow-up"></use></svg>{{ item.movement }}
-              </span>
-            </li>
+            {% include "rankings/partials/_mover.html" with direction="up" %}
           {% empty %}
             <li class="text-muted">{% translate "Изменений нет" %}</li>
           {% endfor %}
         </ol>
+        {% if movers.risen_more %}
+          <p class="surface-block__footnote">
+            {% blocktranslate trimmed with count=movers.risen_more %}С тем же сдвигом — ещё регионов: {{ count }}.{% endblocktranslate %}
+          </p>
+        {% endif %}
       </section>
 
       <section aria-labelledby="ranking-fallen-title">
@@ -61,110 +78,50 @@
         </div>
         <ol class="leader-list leader-list--ranked">
           {% for item in movers.fallen %}
-            <li class="leader-list__item" data-rank="{{ item.rank_desc }}" data-territory="{{ item.territory_code }}">
-              {% if item.slug %}
-                <a class="leader-list__name" href="{% url 'catalog:territory-detail' slug=item.slug %}">{{ item.name }}</a>
-              {% else %}
-                <span class="leader-list__name">{{ item.name }}</span>
-              {% endif %}
-              <span class="leader-list__value numeric">{{ item.value|ru_number:precision }}</span>
-              <span class="movement movement--down">
-                <svg aria-hidden="true"><use href="#icon-arrow-down"></use></svg>{{ item.movement_abs }}
-              </span>
-            </li>
+            {% include "rankings/partials/_mover.html" with direction="down" %}
           {% empty %}
             <li class="text-muted">{% translate "Изменений нет" %}</li>
           {% endfor %}
         </ol>
+        {% if movers.fallen_more %}
+          <p class="surface-block__footnote">
+            {% blocktranslate trimmed with count=movers.fallen_more %}С тем же сдвигом — ещё регионов: {{ count }}.{% endblocktranslate %}
+          </p>
+        {% endif %}
       </section>
     </div>
+    {% if mover_years|length > 1 %}
+      <p class="surface-block__footnote">
+        {% blocktranslate trimmed with start=mover_years.0|year end=mover_years|last|year %}
+          Линия у региона — его места за {{ start }}–{{ end }} годы, первое место вверху.
+        {% endblocktranslate %}
+        {% if not bump_option %}
+          {% translate "Выберите регионы в блоке «Регионы» — ниже появится график их мест по годам." %}
+        {% endif %}
+      </p>
+    {% endif %}
   {% endif %}
 
-  {% comment %}
-    Места по годам двумя видами. Таблица мест — по умолчанию: 85 линий без выделения
-    читаются как клубок. Линии — когда отмечены регионы или задан мой регион: их линии цветные.
-    Переключатель — радиокнопки, вид показывает правило оформления без сценария.
-  {% endcomment %}
+  {# --- Отмеченные регионы: их места по годам --------------------------------------------- #}
   {% if bump_option %}
-    <div class="chart-frame places-views">
-      <div class="chart-frame__header">
-        <div>
-          <div class="chart-frame__title" id="places-title">{% translate "Места по годам" %}</div>
-          <div class="chart-frame__subtitle">
-            <span class="places-views__note--lines">{% translate "Первое место — вверху" %} ·</span>
-            {{ ranking_years.0|year }}–{{ ranking_years|last|year }}
-            <span class="places-views__note--table">· {% translate "по месту последнего года; цвет — группа мест, шкала под таблицей" %}</span>
-            {% if not bump_marked %}<span class="places-views__note--lines">· {% translate "наведите на линию, чтобы выделить регион" %}</span>{% endif %}
-            {% translate "Обрыв линии или прочерк — в этом году региона нет в рейтинге: значения по нему в источнике нет." as bump_hint %}
-            {% include "partials/_hint.html" with hint_id="hint-bump" hint_text=bump_hint hint_label=_("Что значит обрыв линии") %}
-          </div>
-        </div>
-        <div class="segmented" role="radiogroup" aria-labelledby="places-title">
-          <label class="segmented__option">
-            <input type="radio" name="places-view" value="table"{% if not bump_marked %} checked{% endif %}>
-            {% translate "Таблица мест" %}
-          </label>
-          <label class="segmented__option">
-            <input type="radio" name="places-view" value="lines"{% if bump_marked %} checked{% endif %}>
-            {% translate "Линии" %}
-          </label>
-        </div>
-      </div>
-      {% if finding %}<p class="chart-frame__finding">{{ finding }}</p>{% endif %}
-      <div class="places-views__lines">
-        <rl-chart class="chart chart--tall" data-options="ranking-bump-option"></rl-chart>
-        {{ bump_option|json_script:"ranking-bump-option" }}
-      </div>
-      <div class="places-views__table">
-        <div class="data-table-wrapper heat-table-wrapper" tabindex="0"
-             aria-label="{% translate 'Места по годам — прокрутка' %}">
-          <table class="heat-table">
-            <caption class="visually-hidden">{% translate "Места регионов по годам" %}</caption>
-            <thead>
-              <tr>
-                <th scope="col">{% translate "Регион" %}</th>
-                {% for year in rank_table.years %}<th scope="col" class="numeric">{{ year|year }}</th>{% endfor %}
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in rank_table.rows %}
-                <tr{% if row.marked %} class="is-marked"{% endif %}>
-                  <th scope="row">{{ row.name }}</th>
-                  {% for cell in row.cells %}<td class="numeric{% if cell.light %} is-light{% endif %}"{% if cell.step %} data-step="{{ cell.step }}"{% endif %}>{{ cell.rank|default:"—" }}</td>{% endfor %}
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        <ol class="scale-legend" aria-label="{% translate 'Шкала цвета: места' %}">
-          {% for item in rank_table.legend %}
-            <li class="scale-legend__step"><span class="scale-legend__swatch" data-step="{{ item.step }}" aria-hidden="true"></span><span class="numeric">{{ item.lower }}–{{ item.upper }}</span></li>
-          {% endfor %}
-        </ol>
-      </div>
-    </div>
-  {% endif %}
-
-  {# --- Было — стало: значения двух лет ---------------------------------------------------- #}
-  {% if dumbbell_option %}
     <div class="chart-frame">
       <div class="chart-frame__header">
         <div>
-          <div class="chart-frame__title">{% translate "Было — стало" %}</div>
+          <div class="chart-frame__title">{% translate "Места отмеченных регионов по годам" %}</div>
           <div class="chart-frame__subtitle">
-            {{ period_start|year }} → {{ period_end|year }} ·
-            {% blocktranslate trimmed with count=dumbbell_edge %}первые и последние {{ count }} мест{% endblocktranslate %}{% if selected_codes %} {% translate "и отмеченные территории" %}{% endif %}
-            {% translate "Серая точка — значение года сравнения, цветная — года рейтинга; длина отрезка — насколько изменилось значение. Год сравнения — в «Настроить вид»." as dumbbell_hint %}
-            {% include "partials/_hint.html" with hint_id="hint-dumbbell" hint_text=dumbbell_hint hint_label=_("Как читать «Было — стало»") %}
+            {{ history_years.0|year }}–{{ history_years|last|year }} · {% translate "первое место вверху" %} ·
+            {% translate "серым — остальные регионы" %}
+            {% translate "Наведите на серую линию, чтобы выделить её. Выберите округ — останутся только его регионы. Обрыв линии — в этом году региона нет в рейтинге." as bump_hint %}
+            {% include "partials/_hint.html" with hint_id="hint-bump" hint_text=bump_hint hint_label=_("Как читать места по годам") %}
           </div>
         </div>
       </div>
-      <rl-chart class="chart chart--tall" data-options="ranking-dumbbell-option"></rl-chart>
-      {{ dumbbell_option|json_script:"ranking-dumbbell-option" }}
+      <rl-chart class="chart chart--tall" data-options="ranking-bump-option"></rl-chart>
+      {{ bump_option|json_script:"ranking-bump-option" }}
     </div>
   {% endif %}
 
-  {# --- Таблица рейтинга -------------------------------------------------------------------- #}
+  {# --- Где каждый и куда шёл: таблица рейтинга ------------------------------------------ #}
   <section aria-labelledby="ranking-table-title">
     <div class="surface-block__head">
       <h2 class="surface-block__title" id="ranking-table-title">
@@ -175,13 +132,13 @@
           {% blocktranslate trimmed with cv=statistics.coef_variation|percent decile=statistics.decile_ratio|ru_number:1 %}
             коэффициент вариации — {{ cv }}, децильный — {{ decile }}
           {% endblocktranslate %}
-          {% translate "Чем выше коэффициент вариации и децильный коэффициент, тем сильнее различаются регионы: между соседними местами может лежать и двукратная разница, и доли процента." as spread_hint %}
-          {% include "partials/_hint.html" with hint_id="hint-ranking-spread" hint_text=spread_hint hint_label=_("Что значат коэффициенты") %}
+          {% translate "Чем выше коэффициент вариации и децильный коэффициент, тем сильнее различаются регионы: между соседними местами может лежать и двукратная разница, и доли процента. Место меняется и тогда, когда сдвинулись соседи; при близких значениях сдвиг на несколько мест мало что значит." as spread_hint %}
+          {% include "partials/_hint.html" with hint_id="hint-ranking-spread" hint_text=spread_hint hint_label=_("Как читать места") %}
         </span>
       {% endif %}
     </div>
     <div class="data-table-wrapper">
-      <table class="data-table">
+      <table class="data-table rank-table">
         <caption class="visually-hidden">
           {% blocktranslate trimmed with total=ranked_total %}
             Позиции субъектов: {{ total }} строк
@@ -191,23 +148,26 @@
           <tr>
             <th scope="col" class="is-numeric">{% translate "Место" %}</th>
             <th scope="col">{% translate "Субъект" %}</th>
-            <th scope="col">{% translate "Округ" %}</th>
+            {% if district %}
+              <th scope="col" class="is-numeric" title="{% translate 'Место среди регионов выбранного округа' %}">{% translate "В округе" %}</th>
+            {% else %}
+              <th scope="col" class="data-table__aside">{% translate "Округ" %}</th>
+            {% endif %}
             <th scope="col" class="is-numeric">{% translate "Значение" %}</th>
-            <th scope="col" class="is-numeric"
-                title="{% translate 'Отношение к значению по Российской Федерации' %}">
-              {% translate "К РФ" %}
-            </th>
-            {# Доля в сумме — только у складываемых величин. #}
+            {# Складываемая величина — доля в сумме; прочие — отношение к России. #}
             {% if additive %}
-              <th scope="col" class="is-numeric"
-                  title="{% translate 'Доля субъекта в сумме по всем субъектам' %}">
-                {% translate "Доля" %}
-              </th>
+              <th scope="col" class="is-numeric rank-table__minor" title="{% translate 'Доля субъекта в сумме по всем субъектам' %}">{% translate "Доля" %}</th>
+            {% else %}
+              <th scope="col" class="is-numeric rank-table__minor" title="{% translate 'Отношение к значению по Российской Федерации' %}">{% translate "К РФ" %}</th>
             {% endif %}
             {% if previous_year %}
-              <th scope="col" class="is-numeric"
-                  title="{% translate 'Изменение позиции за период' %}">
-                {% translate "Изменение" %} {{ period_start|year }}→{{ period_end|year }}
+              <th scope="col" class="is-numeric" title="{% translate 'Изменение позиции за период' %}">
+                {{ period_start|year }}→<wbr>{{ period_end|year }}
+              </th>
+            {% endif %}
+            {% if history_years|length > 1 %}
+              <th scope="col" class="rank-table__history">
+                {% blocktranslate trimmed with start=history_years.0|year end=history_years|last|year %}Места {{ start }}–{{ end }}{% endblocktranslate %}
               </th>
             {% endif %}
           </tr>
@@ -216,40 +176,43 @@
           {% for row in rows %}
             <tr data-territory="{{ row.territory_code }}"{% if row.selected or row.mine %} class="{% if row.selected %}is-selected{% endif %}{% if row.mine %} is-mine{% endif %}"{% endif %}>
               <td class="is-numeric data-table__rank">
-                {% if ascending %}{{ row.rank_asc }}{% else %}{{ row.rank_desc }}{% endif %}
+                {{ row.place }}{% if row.tied %}<span class="rank-table__tie" title="{% translate 'Равное значение — общее место' %}">=</span>{% endif %}
               </td>
               <td>
                 <a href="{% url 'catalog:territory-detail' slug=row.slug %}">{{ row.name }}</a>
                 {% if row.mine %}<span class="mine-mark">{% translate "мой регион" %}</span>{% endif %}
               </td>
-              <td class="text-secondary text-small">
-                {{ row.district_name|default:"—" }}
-              </td>
+              {% if district %}
+                <td class="is-numeric">{{ row.district_place }}</td>
+              {% else %}
+                <td class="data-table__aside text-secondary text-small" title="{{ row.district_name|default:'' }}">{{ row.district_short|default:"—" }}</td>
+              {% endif %}
               <td class="is-numeric value-cell">
                 <span class="value-cell__number">{{ row.value|ru_number:precision }}</span>{% if row.bar %}<span class="value-cell__bar" style="--share: {{ row.bar }}" aria-hidden="true"></span>{% endif %}
               </td>
-              <td class="is-numeric text-secondary">
-                {% if row.ratio_to_country %}×{{ row.ratio_to_country|ru_number:2 }}{% else %}—{% endif %}
-              </td>
-              {% if additive %}
-                <td class="is-numeric text-secondary">
+              <td class="is-numeric text-secondary rank-table__minor">
+                {% if additive %}
                   {% if row.share_of_total %}{{ row.share_of_total|percent:1 }}{% else %}—{% endif %}
-                </td>
-              {% endif %}
+                {% else %}
+                  {% if row.ratio_to_country %}×{{ row.ratio_to_country|ru_number:2 }}{% else %}—{% endif %}
+                {% endif %}
+              </td>
               {% if previous_year %}
                 <td class="is-numeric">
-                  {% if row.movement is None %}
-                    <span class="movement movement--flat">—</span>
-                  {% elif row.movement > 0 %}
-                    <span class="movement movement--up">
-                      <svg aria-hidden="true"><use href="#icon-arrow-up"></use></svg>{{ row.movement }}
-                    </span>
-                  {% elif row.movement < 0 %}
-                    <span class="movement movement--down">
-                      <svg aria-hidden="true"><use href="#icon-arrow-down"></use></svg>{{ row.movement_abs }}
-                    </span>
+                  {% include "rankings/partials/_movement.html" with movement=row.movement movement_abs=row.movement_abs %}
+                </td>
+              {% endif %}
+              {% if history_years|length > 1 %}
+                <td class="rank-table__history"{% if row.spark %} title="{{ row.spark.text }}"{% endif %}>
+                  {% if row.spark %}
+                    <svg class="rank-spark" viewBox="0 0 84 22" aria-hidden="true">
+                      <path class="rank-spark__line" d="{{ row.spark.path }}"></path>
+                      <circle class="rank-spark__dot" cx="{{ row.spark.dot_x|stringformat:'s' }}" cy="{{ row.spark.dot_y|stringformat:'s' }}" r="2.5"></circle>
+                    </svg>
+                    {% include "rankings/partials/_movement.html" with movement=row.spark.change movement_abs=row.spark.change_abs %}
+                    <span class="visually-hidden">{% translate "места по годам:" %} {{ row.spark.text }}</span>
                   {% else %}
-                    <span class="movement movement--flat">0</span>
+                    <span class="text-muted">—</span>
                   {% endif %}
                 </td>
               {% endif %}
@@ -258,7 +221,12 @@
         </tbody>
       </table>
     </div>
-
+    {% if missing %}
+      <p class="surface-block__footnote">
+        {% blocktranslate trimmed with year=ranking_year|year %}Нет значения за {{ year }}:{% endblocktranslate %}
+        {{ missing|join:", " }}.
+      </p>
+    {% endif %}
   </section>
 
 {% endif %}

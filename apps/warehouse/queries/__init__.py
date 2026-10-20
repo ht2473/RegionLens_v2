@@ -63,6 +63,7 @@ from .series import (
     series_values,
     series_values_by_territory,
     series_vintages,
+    series_year_grid,
     year_counts,
 )
 from .summary import (
@@ -139,6 +140,7 @@ __all__ = [
     "series_values",
     "series_values_by_territory",
     "series_vintages",
+    "series_year_grid",
     "series_years",
     "territory_coverage",
     "territory_positions",

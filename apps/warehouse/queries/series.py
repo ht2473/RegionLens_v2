@@ -249,6 +249,42 @@ def series_values_by_territory(
 
 
 @by_key()
+@by_generation("series_year_grid")
+def series_year_grid(
+    series_key: str,
+    first_year: int,
+    last_year: int,
+    *,
+    level: str = LEVEL_REGION,
+) -> dict[str, Any]:
+    """
+    Значения ряда за годы окна: по субъектам — с признаком качества (пропуск — с причиной),
+    по стране — значение. ``{"regions": {код: {год: {value, quality}}}, "country": {год: value}}``.
+    """
+    rows = fetch_dicts(
+        """
+        SELECT territory_code, territory_level, year, value, quality
+        FROM fact_observation
+        WHERE series_key = ? AND year BETWEEN ? AND ?
+          AND ((territory_level = ? AND NOT is_aggregate) OR territory_code = 'RU')
+        """,
+        [series_key, first_year, last_year, level],
+    )
+    regions: dict[str, dict[int, dict[str, Any]]] = {}
+    country: dict[int, float | None] = {}
+    for row in rows:
+        year = int(row["year"])
+        if row["territory_code"] == "RU":
+            country[year] = row["value"]
+            continue
+        regions.setdefault(row["territory_code"], {})[year] = {
+            "value": row["value"],
+            "quality": row["quality"],
+        }
+    return {"regions": regions, "country": country}
+
+
+@by_key()
 @by_generation("series_leaders")
 def series_leaders(
     series_key: str,

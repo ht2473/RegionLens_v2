@@ -1,0 +1,21 @@
+{% load i18n formatting %}
+{# Строка списка «Поднялись» или «Опустились»: место, регион, линия его мест за годы истории и сдвиг за период. #}
+<li class="leader-list__item mover" data-rank="{{ item.rank }}" data-territory="{{ item.territory_code }}">
+  {% if item.slug %}
+    <a class="leader-list__name" href="{% url 'catalog:territory-detail' slug=item.slug %}">{{ item.name }}</a>
+  {% else %}
+    <span class="leader-list__name">{{ item.name }}</span>
+  {% endif %}
+  {% if item.spark %}
+    <svg class="rank-spark rank-spark--{{ direction }} mover__spark" viewBox="0 0 84 22" role="img"
+         aria-label="{% translate 'места по годам:' %} {{ item.spark.text }}">
+      <path class="rank-spark__line" d="{{ item.spark.path }}"></path>
+      <circle class="rank-spark__dot" cx="{{ item.spark.dot_x|stringformat:'s' }}" cy="{{ item.spark.dot_y|stringformat:'s' }}" r="2.5"></circle>
+    </svg>
+  {% else %}
+    <span class="mover__spark" aria-hidden="true"></span>
+  {% endif %}
+  <span class="movement movement--{{ direction }}">
+    {% if direction == "up" %}<svg aria-hidden="true"><use href="#icon-arrow-up"></use></svg>{% else %}<svg aria-hidden="true"><use href="#icon-arrow-down"></use></svg>{% endif %}{{ item.movement_abs }}{% if direction == "up" %}<span class="visually-hidden"> {% translate "вверх" %}</span>{% else %}<span class="visually-hidden"> {% translate "вниз" %}</span>{% endif %}{% if item.change %} <span class="movement__change">· {{ item.change }}</span>{% endif %}
+  </span>
+</li>

@@ -340,11 +340,21 @@ class TestMyRegionAndBars:
         assert re.search(rf'<tr data-territory="{codes[0]}" class="[^"]*\bis-mine\b', content)
         assert content.count('class="mine-mark"') == 1
 
-    @pytest.mark.parametrize("route", ["rankings:index", "surface:table"])
-    def test_value_has_a_bar(self, client: Client, series_key: str, route: str) -> None:
+    def test_value_has_a_bar(self, client: Client, series_key: str) -> None:
         """У положительных значений — столбик в доле наибольшего; у наибольшего он полный."""
-        content = client.get(reverse(route), {"series": series_key}).content.decode("utf-8")
+        content = client.get(reverse("rankings:index"), {"series": series_key}).content.decode()
         assert 'class="value-cell__bar" style="--share: 1.000"' in content
+
+    def test_table_shows_years(self, client: Client, series_key: str, year: int) -> None:
+        """«Таблица» — значения по годам: год рейла выделен, строка России — по годам."""
+        response = client.get(reverse("surface:table"), {"series": series_key, "year": year})
+        years = response.context["table_years"]
+        assert years[-1] == year
+        assert len(years) <= 10
+        row = response.context["table_rows"][0]
+        assert [cell["year"] for cell in row["cells"]] == years
+        assert len(response.context["country_cells"]) == len(years)
+        assert 'class="is-numeric is-current"' in response.content.decode()
 
     def test_table_has_no_position_column(self, client: Client, series_key: str) -> None:
         """Столбца «Положение» нет: доля регионов ниже повторяла место."""
@@ -486,28 +496,90 @@ class TestCrossHighlight:
         assert option is not None
         assert codes[0] in option["territories"].values()
 
-    def test_rank_table_is_ordered_by_last_year(
+    def test_movers_carry_their_place_history(
         self, client: Client, series_key: str, codes: list[str]
     ) -> None:
         """
-        Таблица мест: строки — по месту последнего года, отмеченный регион выделен, без
-        отметок по умолчанию показана таблица, а не клубок из 85 линий.
+        Места по годам: без отметок графика нет — 85 линий разом не читаются, история мест
+        у каждого региона списков своей линией; с отметкой — график отмеченных.
         """
         plain = client.get(reverse("rankings:index"), {"series": series_key})
-        table = plain.context["rank_table"]
-        last = [row["cells"][-1]["rank"] for row in table["rows"]]
-        ranked = [rank for rank in last if rank is not None]
-        assert ranked == sorted(ranked)
-        # Регионы без места в последнем году — в конце.
-        assert last[: len(ranked)] == ranked
-        assert 'value="table" checked' in plain.content.decode()
+        assert plain.context["bump_option"] is None
+        movers = plain.context["movers"]
+        listed = [*movers["risen"], *movers["fallen"]]
+        assert listed
+        assert all(item["spark"] and item["spark"]["path"].startswith("M") for item in listed)
+        page = plain.content.decode()
+        assert "rank-spark--up" in page
+        assert "ниже появится график их мест" in page
 
         marked = client.get(
             reverse("rankings:index"), {"series": series_key, "territory": codes[0]}
         )
-        rows = {row["code"]: row for row in marked.context["rank_table"]["rows"]}
-        assert rows[codes[0]]["marked"]
-        assert 'value="lines" checked' in marked.content.decode()
+        option = marked.context["bump_option"]
+        # История — не больше десяти лет до года рейтинга.
+        assert len(option["xAxis"]["data"]) <= 10
+        primary = [entry for entry in option["series"] if entry.get("endLabel", {}).get("show")]
+        assert [entry["name"] for entry in primary] == [
+            row["name"] for row in marked.context["rows"] if row["territory_code"] == codes[0]
+        ]
+
+    def test_rows_carry_place_history(self, client: Client, series_key: str) -> None:
+        """У строки таблицы — мини-график мест и сдвиг за годы истории."""
+        response = client.get(reverse("rankings:index"), {"series": series_key})
+        rows = response.context["rows"]
+        spark = rows[0]["spark"]
+        assert spark is not None
+        assert spark["path"].startswith("M")
+        assert spark["text"].count("—") == len(response.context["history_years"])
+        assert 'class="rank-spark"' in response.content.decode()
+
+
+class TestRankingLists:
+    """Списки поднявшихся и опустившихся согласованы с таблицей рейтинга."""
+
+    @pytest.mark.parametrize("order", ["desc", "asc"])
+    def test_lists_follow_the_table_order(
+        self, client: Client, series_key: str, order: str
+    ) -> None:
+        response = client.get(reverse("rankings:index"), {"series": series_key, "order": order})
+        movement = {row["territory_code"]: row["movement"] for row in response.context["rows"]}
+        places = {row["territory_code"]: row["place"] for row in response.context["rows"]}
+        movers = response.context["movers"]
+        for item in movers["risen"]:
+            assert item["movement"] > 0
+            assert movement[item["territory_code"]] == item["movement"]
+            assert places[item["territory_code"]] == item["rank"]
+        for item in movers["fallen"]:
+            assert item["movement"] < 0
+            assert movement[item["territory_code"]] == item["movement"]
+
+    def test_lists_follow_the_district(self, client: Client, series_key: str) -> None:
+        from apps.catalog.models import Territory
+
+        district = Territory.objects.federal_districts().order_by("display_order").first()
+        assert district is not None
+        response = client.get(
+            reverse("rankings:index"), {"series": series_key, "district": district.code}
+        )
+        inside = {row["territory_code"] for row in response.context["rows"]}
+        movers = response.context["movers"]
+        assert {item["territory_code"] for item in (*movers["risen"], *movers["fallen"])} <= inside
+        # Место в округе — от первого подряд.
+        assert min(row["district_place"] for row in response.context["rows"]) == 1
+
+    def test_first_place_follows_the_meaning(self, client: Client, warehouse: Any) -> None:
+        """Рост безработицы — к худшему: первое место по умолчанию у наименьшего значения."""
+        from apps.catalog.models import Series
+
+        key = Series.objects.get(indicator__code=synthetic.UNEMPLOYMENT_CODE).key
+        response = client.get(reverse("rankings:index"), {"series": key})
+        assert response.context["ascending"] is True
+        values = [row["value"] for row in response.context["rows"]]
+        assert values == sorted(values)
+        # Явный выбор в адресе сильнее.
+        chosen = client.get(reverse("rankings:index"), {"series": key, "order": "desc"})
+        assert chosen.context["ascending"] is False
 
 
 class TestSharing:

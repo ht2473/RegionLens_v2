@@ -12,8 +12,9 @@ from .common import by_generation
 ORDER_COLUMNS = frozenset({"rank_desc", "rank_asc"})
 
 
+# Новый вид строки — новый ключ кэша («-2»): прежние ответы хранятся до суток.
 @by_key()
-@by_generation("ranking_table")
+@by_generation("ranking_table-2")
 def ranking_table(
     series_key: str,
     year: int,
@@ -34,6 +35,7 @@ def ranking_table(
             t.district_code,
             d.name_ru       AS district_name_ru,
             d.name_en       AS district_name_en,
+            d.abbreviation  AS district_abbreviation,
             r.value,
             r.rank_desc,
             r.rank_asc,
@@ -101,49 +103,76 @@ def rank_history(
 
 
 @by_key()
-@by_generation("rank_movers")
+@by_generation("rank_movers-2")
 def rank_movers(
     series_key: str,
     year: int,
     previous_year: int,
     *,
     limit: int = 5,
-) -> dict[str, list[dict[str, Any]]]:
+    ascending: bool = False,
+    district: str = "",
+) -> dict[str, Any]:
     """
-    Найти поднявшиеся и опустившиеся сильнее всего территории.
+    Найти поднявшиеся и опустившиеся сильнее всего территории — в том же порядке мест,
+    что и таблица рейтинга (``ascending`` — первое место у наименьшего), и в своём округе.
 
-    Территории без ранга в одном из годов не участвуют.
+    ``year`` — поздний год, ``previous_year`` — ранний. Территории без ранга в одном из годов
+    не участвуют. Если у последнего показанного тот же сдвиг, что у следующих, их число —
+    в ``risen_more``/``fallen_more``: граница списка проходит внутри равных.
     """
+    column = validate_identifier("rank_asc" if ascending else "rank_desc", ORDER_COLUMNS)
+    where = "r.series_key = ? AND r.year = ?"
+    params: list[Any] = [previous_year, series_key, year]
+    if district:
+        where += " AND t.district_code = ?"
+        params.append(district)
     rows = fetch_dicts(
-        """
+        f"""
         SELECT
             r.territory_code,
             t.name_ru,
             t.name_en,
             t.abbreviation,
             r.value,
-            r.rank_desc,
-            p.rank_desc AS previous_rank_desc,
-            p.rank_desc - r.rank_desc AS movement
+            p.value          AS previous_value,
+            r.{column}       AS rank,
+            p.{column}       AS previous_rank,
+            p.{column} - r.{column} AS movement
         FROM mart_rank     AS r
         JOIN mart_rank     AS p
              ON p.series_key = r.series_key
             AND p.territory_code = r.territory_code
             AND p.year = ?
         JOIN dim_territory AS t ON t.territory_code = r.territory_code
-        WHERE r.series_key = ? AND r.year = ?
-        ORDER BY movement DESC
-        """,
-        [previous_year, series_key, year],
+        WHERE {where}
+        ORDER BY movement DESC, r.{column}
+        """,  # noqa: S608 - имя столбца проверено по белому списку
+        params,
     )
 
-    moved = [row for row in rows if row["movement"]]
     # Направление показывает значок, поэтому в подписи — модуль: не «↓ −24».
-    for row in moved:
+    for row in rows:
         row["movement_abs"] = abs(row["movement"])
+    risen = [row for row in rows if row["movement"] > 0]
+    fallen = sorted(
+        (row for row in rows if row["movement"] < 0),
+        key=lambda row: (row["movement"], row["rank"]),
+    )
+
+    def tied_after(items: list[dict[str, Any]]) -> int:
+        if len(items) <= limit:
+            return 0
+        edge = items[limit - 1]["movement"]
+        return sum(1 for item in items[limit:] if item["movement"] == edge)
+
     return {
-        "risen": moved[:limit],
-        "fallen": list(reversed(moved[-limit:])) if len(moved) > limit else [],
+        "risen": risen[:limit],
+        "fallen": fallen[:limit],
+        "risen_more": tied_after(risen),
+        "fallen_more": tied_after(fallen),
+        "moved": len(risen) + len(fallen),
+        "compared": len(rows),
     }
 
 

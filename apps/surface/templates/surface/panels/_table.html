@@ -1,5 +1,5 @@
 {% load i18n formatting %}
-{# Представление «таблица»: все субъекты справочника; причина пропуска названа пометкой. #}
+{# Представление «таблица»: значения всех субъектов по годам; пропуск назван причиной в подсказке. #}
 
 {% if not series %}
   <div class="empty-state">
@@ -17,81 +17,67 @@
 
   <div class="surface-block__head">
     <h2 class="surface-block__title">
-      {% blocktranslate trimmed with shown=table_rows|length %}Все регионы · {{ shown }}{% endblocktranslate %}
+      {% blocktranslate trimmed with shown=table_rows|length start=table_years.0|year end=table_years|last|year %}Все регионы · {{ shown }} · {{ start }}–{{ end }}{% endblocktranslate %}
     </h2>
     {% if missing_count %}
       <span class="surface-block__note">
-        {% blocktranslate trimmed with missing=missing_count %}
-          без значения: {{ missing }} — они в таблице, с пометкой почему
+        {% blocktranslate trimmed with missing=missing_count year=year|year %}
+          без значения за {{ year }}: {{ missing }} — причина в подсказке у прочерка
         {% endblocktranslate %}
         {% translate "«Нет данных в источнике» — наблюдения не было; «значение скрыто» — его не публикуют; «нет в источнике за этот год» — региона за этот год в источнике нет вовсе. Ни один из трёх случаев не равен нулю." as missing_hint %}
-        {% include "partials/_hint.html" with hint_id="hint-table-missing" hint_text=missing_hint hint_label=_("Чем различаются пометки") %}
+        {% include "partials/_hint.html" with hint_id="hint-table-missing" hint_text=missing_hint hint_label=_("Чем различаются пропуски") %}
       </span>
     {% endif %}
   </div>
 
-  <div class="data-table-wrapper">
-    <table class="data-table">
+  <div class="data-table-wrapper year-table-wrapper">
+    <table class="data-table year-table">
+      <caption class="visually-hidden">
+        {% blocktranslate trimmed with year=year|year %}Значения субъектов по годам; выделен {{ year }} год{% endblocktranslate %}
+      </caption>
       <thead>
         <tr>
           <th scope="col">{% translate "Субъект" %}</th>
-          {# Округ — второстепенный столбец, на телефоне скрыт (data-table__aside). #}
-          <th scope="col" class="data-table__aside">{% translate "Округ" %}</th>
-          <th scope="col" class="is-numeric">{% translate "Значение" %}</th>
-          <th scope="col" class="is-numeric">{% translate "Место" %}</th>
-          {% if not additive %}
-            <th scope="col" class="is-numeric"
-                title="{% translate 'Отношение к значению по Российской Федерации' %}">
-              {% translate "К РФ" %}
-            </th>
-          {% endif %}
-          <th scope="col">{% translate "Пометка" %}</th>
+          {% for item in table_years %}
+            <th scope="col" class="is-numeric{% if item == year %} is-current{% endif %}">{{ item|year }}</th>
+          {% endfor %}
         </tr>
       </thead>
       <tbody>
         {% for row in table_rows %}
           <tr data-territory="{{ row.code }}"{% if row.selected or row.mine %} class="{% if row.selected %}is-selected{% endif %}{% if row.mine %} is-mine{% endif %}"{% endif %}>
-            <td class="data-table__name">
-              <span class="table-swatch"
-                    style="background-color: var({{ row.colour|default:'--no-data-fill' }})"
-                    aria-hidden="true"></span>
-              <a href="{% url 'catalog:territory-detail' slug=row.slug %}">{{ row.name }}</a>
-              {% if row.mine %}<span class="mine-mark">{% translate "мой регион" %}</span>{% endif %}
-            </td>
-            <td class="data-table__aside text-secondary text-small">
-              {{ row.district_name|default:"—" }}
-            </td>
-            <td class="is-numeric value-cell">
-              <span class="value-cell__number">{% if row.value is not None %}{{ row.value|ru_number:precision }}{% else %}—{% endif %}</span>{% if row.bar %}<span class="value-cell__bar" style="--share: {{ row.bar }}" aria-hidden="true"></span>{% endif %}
-            </td>
-            <td class="is-numeric text-secondary">{{ row.rank|default:"—" }}</td>
-            {% if not additive %}
-              <td class="is-numeric text-secondary">
-                {% if row.ratio_to_country %}×{{ row.ratio_to_country|ru_number:2 }}{% else %}—{% endif %}
-              </td>
-            {% endif %}
-            <td class="text-muted text-small">{{ row.note|default:"" }}</td>
+            <th scope="row" class="data-table__name">
+              {# Знак класса не отрывается от названия: длинное название переносится рядом с ним. #}
+              <span class="name-line">
+                <span class="table-swatch"
+                      style="background-color: var({{ row.colour|default:'--no-data-fill' }})"
+                      aria-hidden="true"></span>
+                <span><a href="{% url 'catalog:territory-detail' slug=row.slug %}">{{ row.name }}</a>{% if row.mine %} <span class="mine-mark">{% translate "мой регион" %}</span>{% endif %}</span>
+              </span>
+            </th>
+            {% for cell in row.cells %}
+              <td class="is-numeric{% if cell.year == year %} is-current{% endif %}">{% if cell.value is not None %}{{ cell.value|ru_number:precision }}{% else %}<span class="text-muted" title="{{ cell.note }}">—</span><span class="visually-hidden">{{ cell.note }}</span>{% endif %}</td>
+            {% endfor %}
           </tr>
         {% endfor %}
       </tbody>
-      {% if statistics %}
-        <tfoot>
-          <tr>
-            <th scope="row">{% translate "Российская Федерация" %}</th>
-            <td class="data-table__aside text-secondary text-small">—</td>
-            <td class="is-numeric">{{ statistics.country_value|ru_number:precision }}</td>
-            <td class="is-numeric text-secondary">—</td>
-            {% if not additive %}<td class="is-numeric text-secondary">×1,00</td>{% endif %}
-            <td class="text-muted text-small">
-              {% translate "значение по стране, а не сумма по субъектам" %}
-            </td>
-          </tr>
-        </tfoot>
-      {% endif %}
+      <tfoot>
+        <tr>
+          <th scope="row">
+            {% translate "Российская Федерация" %}
+            {% translate "Значение по стране, а не сумма по субъектам." as country_hint %}
+            {% include "partials/_hint.html" with hint_id="hint-table-country" hint_text=country_hint hint_label=_("Что в строке России") %}
+          </th>
+          {% for value in country_cells %}
+            <td class="is-numeric{% if forloop.counter0 == current_index %} is-current{% endif %}">{% if value is not None %}{{ value|ru_number:precision }}{% else %}—{% endif %}</td>
+          {% endfor %}
+        </tr>
+      </tfoot>
     </table>
   </div>
 
   <p class="surface-block__footnote">
+    {% translate "Места и их изменение — во вкладке «Рейтинг»; цвет у названия — класс шкалы карты за выбранный год." %}
     {# Разбор пометок пропусков. #}
     <a href="{% url 'catalog:dataset' %}">{% translate "Полнота и проверки по всему набору" %}</a>
   </p>
