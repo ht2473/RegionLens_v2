@@ -247,6 +247,9 @@ STICKY_SCRIPT = r"""async (minRows) => {
     await document.fonts.ready;
     await new Promise((done) => requestAnimationFrame(() => setTimeout(done, 100)));
     const problems = [];
+    // Прокрутка мгновенная: у страницы scroll-behavior: smooth, и в браузере, который её
+    // анимирует (Linux на сервере проверок), шапка мерилась бы на полпути.
+    const scrollTo = (top) => window.scrollTo({top, behavior: 'instant'});
     const tables = [...document.querySelectorAll('main .data-table-wrapper > table')]
         .filter((t) => t.tBodies[0] && t.tBodies[0].rows.length >= minRows);
     for (const table of tables) {
@@ -255,11 +258,11 @@ STICKY_SCRIPT = r"""async (minRows) => {
         const wrap = table.parentElement;
         const framed = wrap.hasAttribute('data-tall');
         if (framed) {
-            window.scrollTo(0, scrollY + wrap.getBoundingClientRect().top - 120);
+            scrollTo(scrollY + wrap.getBoundingClientRect().top - 120);
             wrap.scrollTop = wrap.scrollHeight / 2;
         } else {
             const r = table.getBoundingClientRect();
-            window.scrollTo(0, scrollY + r.top + r.height / 2);
+            scrollTo(scrollY + r.top + r.height / 2);
         }
         await new Promise((done) => requestAnimationFrame(() => setTimeout(done, 100)));
         const top = parseFloat(
@@ -273,7 +276,7 @@ STICKY_SCRIPT = r"""async (minRows) => {
         }
         wrap.scrollTop = 0;
     }
-    window.scrollTo(0, 0);
+    scrollTo(0);
     return problems;
 }"""
 
