@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-11 17:32+0000\n"
+"POT-Creation-Date: 2026-10-19 13:36+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -196,31 +196,31 @@ msgstr "This address is already used by another account"
 msgid "Пароль не подходит"
 msgstr "The password is incorrect"
 
-#: apps/accounts/models.py:34
+#: apps/accounts/models.py:36
 msgid "адрес электронной почты"
 msgstr "email address"
 
-#: apps/accounts/models.py:40
+#: apps/accounts/models.py:42
 msgid "фамилия, имя, отчество"
 msgstr "full name"
 
-#: apps/accounts/models.py:37
+#: apps/accounts/models.py:39
 msgid "Используется для входа на сайт и служебных писем"
 msgstr "Used to sign in to the site and for service emails"
 
-#: apps/accounts/models.py:42
+#: apps/accounts/models.py:44
 msgid "Отображается в интерфейсе и в колонтитулах выгружаемых отчётов"
 msgstr "Shown in the interface and in the footers of exported reports"
 
-#: apps/accounts/models.py:50
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:223
+#: apps/accounts/models.py:52
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:183
 #: apps/surface/picks.py:112
-#: apps/surface/templates/surface/panels/_table.html:59
+#: apps/surface/templates/surface/panels/_table.html:55
 #: apps/userdata/templates/userdata/cards/_multiples.html:39
 msgid "мой регион"
 msgstr "my region"
 
-#: apps/accounts/models.py:51
+#: apps/accounts/models.py:53
 msgid "С него открываются главная страница и кабинет"
 msgstr "The home page and the personal account start with it"
 
@@ -448,9 +448,9 @@ msgstr "My region"
 
 #: apps/accounts/templates/accounts/overview.html:33
 #: apps/catalog/templates/catalog/partials/_similar.html:40
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:125
 #: apps/search/constants.py:22
 #: apps/userdata/templates/userdata/_study_toolbar.html:36
+#: apps/userdata/templates/userdata/cards/_heat.html:9
 msgid "Регион"
 msgstr "Region"
 
@@ -466,7 +466,7 @@ msgstr "This is my region"
 #: apps/accounts/templates/accounts/overview.html:48
 #: apps/userdata/templates/userdata/_versions.html:21
 #: apps/userdata/templates/userdata/dataset.html:75
-#: apps/userdata/templates/userdata/upload.html:73
+#: apps/userdata/templates/userdata/upload.html:85
 msgid "Продолжить"
 msgstr "Continue"
 
@@ -1042,19 +1042,19 @@ msgstr "cumulative share of the quantity, %"
 msgid "первый год = 100"
 msgstr "first year = 100"
 
-#: apps/analytics/charts.py:303
+#: apps/analytics/charts.py:304
 msgid "субъекты"
 msgstr "regions"
 
-#: apps/analytics/charts.py:361
+#: apps/analytics/charts.py:362
 msgid "коэффициент"
 msgstr "coefficient"
 
-#: apps/analytics/charts.py:398
+#: apps/analytics/charts.py:399
 msgid "среднее у соседей, σ"
 msgstr "mean of its neighbours, σ"
 
-#: apps/analytics/charts.py:451
+#: apps/analytics/charts.py:452
 msgid "вклад в оценку"
 msgstr "contribution to the score"
 
@@ -1070,7 +1070,7 @@ msgstr "equal distribution"
 msgid "вклад в индекс"
 msgstr "contribution to the index"
 
-#: apps/analytics/charts.py:219
+#: apps/analytics/charts.py:220
 #: apps/search/templates/search/answers/_relation.html:8
 #: apps/userdata/templates/userdata/_related_table.html:20
 #: apps/userdata/templates/userdata/cards/_comparison.html:21
@@ -1078,7 +1078,7 @@ msgstr "contribution to the index"
 msgid "прямая"
 msgstr "direct"
 
-#: apps/analytics/charts.py:219
+#: apps/analytics/charts.py:220
 #: apps/search/templates/search/answers/_relation.html:8
 #: apps/userdata/templates/userdata/_related_table.html:20
 #: apps/userdata/templates/userdata/cards/_comparison.html:21
@@ -1086,15 +1086,15 @@ msgstr "direct"
 msgid "обратная"
 msgstr "inverse"
 
-#: apps/analytics/charts.py:359
+#: apps/analytics/charts.py:360
 msgid "сдвиг, лет"
 msgstr "lag, years"
 
-#: apps/analytics/charts.py:396
+#: apps/analytics/charts.py:397
 msgid "значение территории, σ"
 msgstr "value of the territory, σ"
 
-#: apps/analytics/charts.py:414
+#: apps/analytics/charts.py:415
 msgid "линия индекса"
 msgstr "index line"
 
@@ -1102,15 +1102,15 @@ msgstr "index line"
 msgid "фактическое распределение"
 msgstr "actual distribution"
 
-#: apps/analytics/charts.py:253
+#: apps/analytics/charts.py:254
 #: apps/analytics/templates/analytics/partials/_convergence_results.html:172
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:120
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:124
 #: apps/userdata/templates/userdata/cards/_convergence.html:18
 msgid "связь не подтверждена"
 msgstr "the relation is not confirmed"
 
-#: apps/analytics/charts.py:323
-#: apps/analytics/views/correlation.py:216
+#: apps/analytics/charts.py:324
+#: apps/analytics/views/correlation.py:221
 msgid "линия связи"
 msgstr "fitted line"
 
@@ -1191,7 +1191,7 @@ msgid "логарифмическая"
 msgstr "logarithmic"
 
 #: apps/analytics/core/regression.py:140
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:166
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:170
 msgid "Свободный член"
 msgstr "Intercept"
 
@@ -1373,7 +1373,7 @@ msgstr "Every result states the number of observations, the significance level a
 
 #: apps/analytics/templates/analytics/index_builder.html:12
 #: apps/analytics/templates/analytics/inequality.html:14
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:263
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:267
 #: apps/analytics/templates/analytics/partials/_index_results.html:249
 #: apps/analytics/templates/analytics/partials/_inequality_results.html:351
 msgid "Год"
@@ -1516,7 +1516,6 @@ msgstr "No steady change in the spread was found."
 #: apps/analytics/templates/analytics/partials/_convergence_results.html:55
 #: apps/analytics/templates/analytics/partials/_revisions_results.html:198
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:500
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:210
 #: apps/userdata/templates/userdata/version.html:109
 msgid "Изменение"
 msgstr "Change"
@@ -1579,12 +1578,12 @@ msgid "не определён"
 msgstr "not determined"
 
 #: apps/analytics/templates/analytics/partials/_convergence_results.html:112
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:168
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:172
 msgid "Доля объяснённого разброса"
 msgstr "Share of explained spread"
 
 #: apps/analytics/templates/analytics/partials/_convergence_results.html:114
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:170
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:174
 msgid "Субъектов в расчёте"
 msgstr "Regions in the calculation"
 
@@ -1708,7 +1707,7 @@ msgid "Оценённая модель"
 msgstr "Estimated model"
 
 #: apps/analytics/templates/analytics/partials/_convergence_results.html:284
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:157
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:161
 msgid "робастные стандартные ошибки (HC3)"
 msgstr "robust standard errors (HC3)"
 
@@ -1788,7 +1787,7 @@ msgstr "The most pronounced relations"
 msgid "только значимые с поправкой"
 msgstr "significant after correction only"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:261
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:265
 #: apps/analytics/templates/analytics/partials/_correlation_results.html:68
 #: apps/analytics/templates/analytics/partials/_correlation_results.html:69
 #: apps/analytics/templates/analytics/partials/_index_results.html:246
@@ -1805,82 +1804,86 @@ msgid "Пар"
 msgstr "Pairs"
 
 #: apps/analytics/templates/analytics/partials/_correlation_results.html:75
-msgid "Разбор"
-msgstr "Examine"
+msgid "Пара на диаграмме"
+msgstr "Pair on the chart"
 
 #: apps/analytics/templates/analytics/partials/_correlation_results.html:94
-msgid "Разобрать"
-msgstr "Examine"
+msgid "Показана ниже"
+msgstr "Shown below"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:110
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:97
+msgid "Показать на диаграмме"
+msgstr "Show on the chart"
+
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:114
 #: apps/search/templates/search/answers/_compare_table.html:4
 #: apps/search/templates/search/answers/_relation.html:3
 msgid "и"
 msgstr "and"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:116
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:120
 msgid "пар"
 msgstr "pairs"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:118
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:122
 msgid "с поправкой"
 msgstr "adjusted"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:123
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:127
 msgid "коэффициент не рассчитан: слишком мало пар наблюдений"
 msgstr "the coefficient was not calculated: too few pairs of observations"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:131
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:135
 msgid "Логарифмическая шкала: равные расстояния — равные отношения значений."
 msgstr "Logarithmic scale: equal distances mean equal ratios of values."
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:133
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:137
 msgid "Обычная шкала"
 msgstr "Linear scale"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:137
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:141
 msgid "Несколько регионов далеко от остальных, и точки сжаты у начала оси."
 msgstr "A few regions lie far from the rest, and the points are squeezed near the start of the axis."
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:139
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:143
 msgid "Логарифмическая шкала"
 msgstr "Logarithmic scale"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:155
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:159
 msgid "Линейная зависимость"
 msgstr "Linear dependence"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:161
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:165
 msgid "Наклон"
 msgstr "Slope"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:189
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:193
 msgid "Связь при сдвиге во времени"
 msgstr "Relation under a time lag"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:215
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:219
 #: apps/analytics/templates/analytics/partials/_inequality_results.html:24
 msgid "субъектов"
 msgstr "regions"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:216
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:220
 msgid "исключено влияние остальных показателей"
 msgstr "the influence of the other indicators is removed"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:221
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:225
 msgid "Частная корреляция"
 msgstr "Partial correlation"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:245
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:249
 msgid "В расчёт входят субъекты с данными по всем выбранным рядам."
 msgstr "Only regions with data on all the selected series enter the calculation."
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:253
 #: apps/analytics/templates/analytics/partials/_correlation_results.html:257
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:261
 msgid "Показатели в расчёте"
 msgstr "Indicators in the calculation"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:262
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:266
 #: apps/analytics/templates/analytics/partials/_index_results.html:247
 #: apps/catalog/templates/catalog/partials/_series_results.html:35
 #: apps/userdata/export.py:59
@@ -1888,7 +1891,7 @@ msgstr "Indicators in the calculation"
 msgid "Единица"
 msgstr "Unit"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:264
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:268
 msgid "Субъектов с данными"
 msgstr "Regions with data"
 
@@ -1908,23 +1911,23 @@ msgstr "At least %(least)s series are required: the relation is computed between
 msgid "Серая клетка — коэффициент не удалось отличить от нуля на уровне значимости 5 %% с поправкой Бенджамини — Хохберга: при многих парах часть выходит «значимой» случайно, и поправка сдерживает долю таких находок."
 msgstr "A grey cell means the coefficient could not be told apart from zero at the 5 %% significance level with the Benjamini–Hochberg correction: with many pairs some come out “significant” by chance, and the correction limits the share of such findings."
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:145
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:149
 msgid "На диаграмме видно, держится ли связь на всех регионах или её создают несколько выделяющихся; подписаны крайние."
 msgstr "The chart shows whether the relationship holds across all regions or is created by a few outliers; the extreme ones are labelled."
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:174
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:178
 msgid "Наклон читается так: при увеличении показателя «%(x)s» на единицу показатель «%(y)s» в среднем меняется на величину коэффициента. Это описание совместного движения, а не утверждение о воздействии."
 msgstr "The slope reads as follows: when the indicator “%(x)s” increases by one unit, the indicator “%(y)s” changes on average by the value of the coefficient. This is a description of joint movement, not a statement about influence."
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:191
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:195
 msgid "«%(x)s» за более ранние годы и «%(y)s» за %(target)s год"
 msgstr "“%(x)s” for earlier years and “%(y)s” for %(target)s"
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:200
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:204
 msgid "Если связь заметно сильнее при сдвиге в несколько лет, чем при нулевом, это довод в пользу того, что первый показатель предшествует второму, но не доказательство: одновременное движение обоих вслед за третьим даёт ту же картину."
 msgstr "If the relation is noticeably stronger at a lag of several years than at zero lag, that is an argument for the first indicator preceding the second, but not a proof: simultaneous movement of both following a third gives the same picture."
 
-#: apps/analytics/templates/analytics/partials/_correlation_results.html:287
+#: apps/analytics/templates/analytics/partials/_correlation_results.html:291
 msgid "Год, отличающийся от выбранного (%(target)s), выделен цветом: у показателя нет данных за этот год, и взят ближайший доступный."
 msgstr "A year differing from the selected one (%(target)s) is marked with colour: the indicator has no data for that year and the nearest available one was taken."
 
@@ -2027,8 +2030,7 @@ msgid "Рейтинг регионов по индексу"
 msgstr "Regional ranking by the index"
 
 #: apps/analytics/templates/analytics/partials/_index_results.html:182
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:192
-#: apps/surface/templates/surface/panels/_table.html:41
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:149
 #: apps/userdata/templates/userdata/cards/_rankings.html:9
 msgid "Место"
 msgstr "Place"
@@ -2036,8 +2038,8 @@ msgstr "Place"
 #: apps/analytics/templates/analytics/partials/_index_results.html:183
 #: apps/analytics/templates/analytics/partials/_revisions_results.html:194
 #: apps/analytics/templates/analytics/partials/_spatial_results.html:166
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:193
-#: apps/surface/templates/surface/panels/_table.html:37
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:150
+#: apps/surface/templates/surface/panels/_table.html:40
 msgid "Субъект"
 msgstr "Region"
 
@@ -2657,9 +2659,9 @@ msgstr "the value of the territory and the mean value of its neighbours"
 
 #: apps/analytics/templates/analytics/partials/_spatial_results.html:167
 #: apps/catalog/templates/catalog/territory_detail.html:245
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:195
-#: apps/surface/templates/surface/panels/_table.html:40
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:156
 #: apps/userdata/export.py:58
+#: apps/userdata/templates/userdata/cards/_rankings.html:11
 msgid "Значение"
 msgstr "Value"
 
@@ -2858,6 +2860,7 @@ msgstr "Moran index · LISA · adjacency matrix · permutation estimates"
 #: apps/analytics/tools.py:90
 #: apps/core/navigation.py:118
 #: apps/core/navigation.py:224
+#: apps/search/templates/search/results.html:61
 #: apps/workspace/constants.py:34
 msgid "Интегральные индексы"
 msgstr "Composite indices"
@@ -3236,7 +3239,7 @@ msgid "По заданным условиям месячных значений 
 msgstr "No monthly values match these conditions"
 
 #: apps/api/views.py:194
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:7
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:10
 msgid "Рейтинг по этому ряду не рассчитан"
 msgstr "No ranking has been calculated for this series"
 
@@ -3941,7 +3944,7 @@ msgid "выпусков изданий"
 msgstr "editions of publications"
 
 #: apps/catalog/templates/catalog/dataset.html:54
-#: apps/userdata/views.py:528
+#: apps/userdata/views.py:537
 msgid "период"
 msgstr "period"
 
@@ -4302,7 +4305,7 @@ msgstr "No new values will appear."
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:78
 #: apps/core/navigation.py:217
 #: apps/core/navigation.py:93
-#: apps/core/templates/core/home.html:161
+#: apps/core/templates/core/home.html:164
 #: apps/surface/views.py:85
 msgid "Исследовать"
 msgstr "Explore"
@@ -4438,7 +4441,7 @@ msgstr "in the API"
 
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:414
 #: apps/search/templates/search/_suggest.html:40
-#: apps/search/templates/search/results.html:108
+#: apps/search/templates/search/results.html:114
 msgid "Термины"
 msgstr "Terms"
 
@@ -4451,7 +4454,7 @@ msgid "Источник и методика"
 msgstr "Source and methodology"
 
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:445
-#: apps/search/templates/search/results.html:60
+#: apps/search/templates/search/results.html:66
 msgid "Как устроены данные"
 msgstr "How the data are organised"
 
@@ -4635,7 +4638,7 @@ msgstr "more"
 #: apps/catalog/templates/catalog/partials/_region_band.html:21
 #: apps/exports/constants.py:28
 #: apps/exports/constants.py:66
-#: apps/search/answers.py:369
+#: apps/search/answers.py:377
 #: apps/surface/templates/surface/partials/_subject.html:73
 msgid "Паспорт региона"
 msgstr "Region profile"
@@ -4668,7 +4671,7 @@ msgid "по свежести данных"
 msgstr "by freshness of the data"
 
 #: apps/catalog/templates/catalog/partials/_series_results.html:23
-#: apps/surface/builders.py:31
+#: apps/surface/builders.py:34
 msgid "по названию"
 msgstr "by name"
 
@@ -4833,7 +4836,7 @@ msgid "Примечания Росстата переведены RegionLens и 
 msgstr "Rosstat’s notes are translated by RegionLens and are not the official text; the original is on the <a href=\"%(original_url)s\" hreflang=\"ru\">Russian version of this page</a>."
 
 #: apps/catalog/templates/catalog/series_detail.html:25
-#: apps/core/templates/core/home.html:203
+#: apps/core/templates/core/home.html:206
 msgid "Карточка региона"
 msgstr "Region card"
 
@@ -5335,7 +5338,7 @@ msgstr "Middle of the regions"
 #: apps/catalog/views/territory.py:313
 #: apps/compare/panel.py:194
 #: apps/surface/templates/surface/panels/_distribution.html:70
-#: apps/surface/templates/surface/panels/_table.html:80
+#: apps/surface/templates/surface/panels/_table.html:67
 msgid "Российская Федерация"
 msgstr "Russian Federation"
 
@@ -5462,7 +5465,7 @@ msgid "РФ"
 msgstr "RF"
 
 #: apps/compare/templates/compare/partials/_compare_results.html:237
-#: apps/core/charts.py:415
+#: apps/core/charts.py:430
 msgid "место"
 msgstr "place"
 
@@ -5504,7 +5507,6 @@ msgid "Год указан у каждой величины отдельно: п
 msgstr "The year is stated for each quantity separately: the latest available year differs between series, and bringing all the values to a single year would mean discarding fresher data."
 
 #: apps/compare/templates/compare/partials/_view.html:9
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:109
 #: apps/userdata/templates/userdata/cards/_comparison.html:7
 msgid "Линии"
 msgstr "Lines"
@@ -5834,15 +5836,15 @@ msgstr "The list of publications is on the <a href=\"%(url)s\">“Data sources�
 #: apps/core/navigation.py:159
 #: apps/dashboard/templates/dashboard/content.html:50
 #: apps/search/constants.py:24
-#: apps/userdata/templates/userdata/index.html:242
+#: apps/userdata/templates/userdata/index.html:245
 msgid "Методика"
 msgstr "Methodology"
 
-#: apps/core/charts.py:74
+#: apps/core/charts.py:78
 msgid "Нижняя граница"
 msgstr "Lower bound"
 
-#: apps/core/charts.py:87
+#: apps/core/charts.py:91
 msgid "Половина субъектов"
 msgstr "Half of the regions"
 
@@ -6260,7 +6262,7 @@ msgid "Все основные показатели по темам"
 msgstr "All key indicators by topic"
 
 #: apps/core/templates/core/home.html:67
-#: apps/search/answers.py:150
+#: apps/search/answers.py:158
 msgid "Весь рейтинг"
 msgstr "Full ranking"
 
@@ -6280,28 +6282,28 @@ msgstr "Your own table by region — on the same map"
 msgid "Таблица из Excel, CSV, архива или вставка из Word: регионы и годы узнаются сами, таблицу видите только вы."
 msgstr "A table from Excel, CSV, an archive or pasted from Word: regions and years are recognised automatically, and only you can see the table."
 
-#: apps/core/templates/core/home.html:153
-#: apps/userdata/templates/userdata/index.html:30
+#: apps/core/templates/core/home.html:155
+#: apps/userdata/templates/userdata/index.html:32
 msgid "Попробовать на примере"
 msgstr "Try an example"
 
-#: apps/core/templates/core/home.html:159
+#: apps/core/templates/core/home.html:162
 msgid "Дальше"
 msgstr "Go deeper"
 
-#: apps/core/templates/core/home.html:162
+#: apps/core/templates/core/home.html:165
 msgid "Пять способов посмотреть на показатель"
 msgstr "Five ways to look at an indicator"
 
-#: apps/core/templates/core/home.html:172
+#: apps/core/templates/core/home.html:175
 msgid "Инструменты для исследователя"
 msgstr "Tools for researchers"
 
-#: apps/core/templates/core/home.html:181
+#: apps/core/templates/core/home.html:184
 msgid "О данных"
 msgstr "About the data"
 
-#: apps/core/templates/core/home.html:182
+#: apps/core/templates/core/home.html:185
 msgid "Где данные требуют оговорки"
 msgstr "Where the data need a caveat"
 
@@ -6313,19 +6315,19 @@ msgstr "My region: %(place)s"
 msgid "Цвет изменения — оценка, а не направление: рост безработицы или бедности отмечен как ухудшение. Изменение процентных величин — в процентных пунктах."
 msgstr "The colour of a change is an assessment, not a direction: a rise in unemployment or poverty is marked as a deterioration. Changes in percentages are given in percentage points."
 
-#: apps/core/templates/core/home.html:164
+#: apps/core/templates/core/home.html:167
 msgid "Карта, динамика, рейтинг, распределение и таблица — над одним выбором показателя, регионов и года. Вид экрана сохраняется в ссылке."
 msgstr "Map, trends, ranking, distribution and table — all over one choice of indicator, regions and year. The view is kept in the link."
 
-#: apps/core/templates/core/home.html:174
+#: apps/core/templates/core/home.html:177
 msgid "Неравенство и сближение регионов, связи показателей, пространственные закономерности, интегральные индексы и пересмотры статистики."
 msgstr "Regional inequality and convergence, relationships between indicators, spatial patterns, composite indices and revisions of statistics."
 
-#: apps/core/templates/core/home.html:185
+#: apps/core/templates/core/home.html:188
 msgid "Отметок о разрывах сопоставимости — %(breaks)s, пересмотренных значений — %(revisions)s. Пропуск не соединяется линией, а сравнение через разрыв не проводится."
 msgstr "Comparability breaks marked: %(breaks)s; revised values: %(revisions)s. A gap is never bridged by a line, and no comparison is drawn across a break."
 
-#: apps/core/templates/core/home.html:190
+#: apps/core/templates/core/home.html:193
 msgid "Отметок о разрывах сопоставимости — %(breaks)s. Пропуск не соединяется линией, а сравнение через разрыв не проводится."
 msgstr "Comparability breaks marked: %(breaks)s. A gap is never bridged by a line, and no comparison is drawn across a break."
 
@@ -7438,7 +7440,7 @@ msgstr "Kinds of content"
 #: apps/userdata/templates/userdata/_indicator_field.html:9
 #: apps/userdata/templates/userdata/_study_card_menu.html:64
 #: apps/userdata/templates/userdata/formula.html:39
-#: apps/userdata/templates/userdata/index.html:67
+#: apps/userdata/templates/userdata/index.html:70
 msgid "Название"
 msgstr "Title"
 
@@ -7800,7 +7802,7 @@ msgstr "Type"
 
 #: apps/dashboard/templates/dashboard/etl_run.html:170
 #: apps/dashboard/templates/dashboard/quality.html:59
-#: apps/userdata/forms.py:89
+#: apps/userdata/forms.py:109
 #: apps/userdata/templates/userdata/study.html:87
 msgid "Описание"
 msgstr "Description"
@@ -8486,7 +8488,7 @@ msgstr "Page requests without static files, of all time."
 
 #: apps/dashboard/templates/dashboard/visits.html:154
 #: apps/search/templates/search/_suggest.html:50
-#: apps/search/templates/search/results.html:124
+#: apps/search/templates/search/results.html:130
 msgid "Страницы"
 msgstr "Pages"
 
@@ -8544,7 +8546,7 @@ msgid "Термин глоссария"
 msgstr "Glossary term"
 
 #: apps/dashboard/views/content.py:204
-#: apps/search/answers.py:397
+#: apps/search/answers.py:405
 msgid "Раздел методики"
 msgstr "Methodology section"
 
@@ -9075,8 +9077,7 @@ msgid "изменение"
 msgstr "change"
 
 #: apps/maps/templates/maps/partials/_leaders.html:9
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:197
-#: apps/surface/templates/surface/panels/_table.html:44
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:161
 msgid "Отношение к значению по Российской Федерации"
 msgstr "Ratio to the value for the Russian Federation"
 
@@ -9154,144 +9155,162 @@ msgstr "How the map views differ"
 msgid "Что даёт сравнение лет"
 msgstr "What comparing years shows"
 
-#: apps/rankings/panel.py:114
+#: apps/rankings/panel.py:225
+msgid "п. п."
+msgstr "pp"
+
+#: apps/rankings/panel.py:157
 msgid "первое место у наименьшего"
 msgstr "first place for the smallest"
 
-#: apps/rankings/panel.py:114
+#: apps/rankings/panel.py:157
 msgid "первое место у наибольшего"
 msgstr "first place for the largest"
 
-#: apps/rankings/panel.py:116
+#: apps/rankings/panel.py:159
 msgid "места сравниваются с %(year)s годом"
 msgstr "places compared with %(year)s"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:9
+#: apps/rankings/templates/rankings/partials/_movement.html:1
+#: apps/rankings/templates/rankings/partials/_mover.html:19
+msgid "вверх"
+msgstr "up"
+
+#: apps/rankings/templates/rankings/partials/_movement.html:1
+#: apps/rankings/templates/rankings/partials/_mover.html:19
+msgid "вниз"
+msgstr "down"
+
+#: apps/rankings/templates/rankings/partials/_mover.html:11
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:213
+msgid "места по годам:"
+msgstr "ranks by year:"
+
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:12
 msgid "Выберите другой ряд наблюдений или другой год."
 msgstr "Choose another series of observations or another year."
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:19
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:22
 msgid "Показан ближайший рассчитанный год"
 msgstr "The nearest calculated year is shown"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:35
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:45
+msgid "Сдвиг мест может быть следствием этого, а не перемены в регионах."
+msgstr "The change in ranks may come from this rather than from changes in the regions."
+
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:57
 msgid "Поднялись"
 msgstr "Rose"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:52
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:76
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:64
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:83
 msgid "Изменений нет"
 msgstr "No change"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:59
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:76
 msgid "Опустились"
 msgstr "Fell"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:92
-msgid "Места по годам"
-msgstr "Places by year"
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:99
+msgid "Выберите регионы в блоке «Регионы» — ниже появится график их мест по годам."
+msgstr "Choose regions in the “Regions” block, and a chart of their places by year will appear below."
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:94
-msgid "Первое место — вверху"
-msgstr "First place is at the top"
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:110
+msgid "Места отмеченных регионов по годам"
+msgstr "Places of the marked regions by year"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:96
-msgid "по месту последнего года; цвет — группа мест, шкала под таблицей"
-msgstr "by rank in the latest year; colour shows the rank group, scale below the table"
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:112
+msgid "первое место вверху"
+msgstr "first place at the top"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:97
-msgid "наведите на линию, чтобы выделить регион"
-msgstr "point at a line to highlight a region"
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:113
+msgid "серым — остальные регионы"
+msgstr "other regions in grey"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:98
-msgid "Обрыв линии или прочерк — в этом году региона нет в рейтинге: значения по нему в источнике нет."
-msgstr "A gap in the line or a dash means the region is not ranked that year: the source has no value for it."
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:114
+msgid "Наведите на серую линию, чтобы выделить её. Выберите округ — останутся только его регионы. Обрыв линии — в этом году региона нет в рейтинге."
+msgstr "Hover over a grey line to highlight it. Choose a district to keep only its regions. A gap in a line means the region is not ranked that year."
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:105
-msgid "Таблица мест"
-msgstr "Rank table"
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:135
+msgid "Чем выше коэффициент вариации и децильный коэффициент, тем сильнее различаются регионы: между соседними местами может лежать и двукратная разница, и доли процента. Место меняется и тогда, когда сдвинулись соседи; при близких значениях сдвиг на несколько мест мало что значит."
+msgstr "The higher the coefficient of variation and the decile ratio, the more the regions differ: neighbouring ranks may be twofold apart or within a fraction of a percent. A rank also changes when neighbours move; with close values a shift of a few places means little."
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:120
-msgid "Места по годам — прокрутка"
-msgstr "Ranks by year — scrollable"
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:152
+msgid "Место среди регионов выбранного округа"
+msgstr "Rank among the regions of the selected district"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:122
-msgid "Места регионов по годам"
-msgstr "Regional ranks by year"
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:152
+msgid "В округе"
+msgstr "In district"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:139
-msgid "Шкала цвета: места"
-msgstr "Colour scale: ranks"
-
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:153
-msgid "Было — стало"
-msgstr "Before and after"
-
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:156
-msgid "и отмеченные территории"
-msgstr "and the selected territories"
-
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:157
-msgid "Серая точка — значение года сравнения, цветная — года рейтинга; длина отрезка — насколько изменилось значение. Год сравнения — в «Настроить вид»."
-msgstr "The grey dot is the value in the comparison year, the coloured one in the ranking year; the length of the segment is how much the value changed. The comparison year is in “Adjust view”."
-
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:178
-msgid "Чем выше коэффициент вариации и децильный коэффициент, тем сильнее различаются регионы: между соседними местами может лежать и двукратная разница, и доли процента."
-msgstr "The higher the coefficient of variation and the decile ratio, the more the regions differ: neighbouring places may be separated by a twofold difference or by fractions of a percent."
-
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:194
-#: apps/surface/templates/surface/panels/_table.html:39
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:154
 msgid "Округ"
 msgstr "District"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:198
-#: apps/surface/templates/surface/panels/_table.html:45
-msgid "К РФ"
-msgstr "To the RF"
-
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:203
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:159
 msgid "Доля субъекта в сумме по всем субъектам"
 msgstr "The share of the region in the total across all regions"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:204
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:159
 msgid "Доля"
 msgstr "Share"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:209
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:161
+msgid "К РФ"
+msgstr "To the RF"
+
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:164
 msgid "Изменение позиции за период"
 msgstr "Change of position over the period"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:99
-msgid "Что значит обрыв линии"
-msgstr "What a break in a line means"
-
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:158
-msgid "Как читать «Было — стало»"
-msgstr "How to read “Before and after”"
-
 #: apps/rankings/templates/rankings/partials/_ranking_results.html:179
-msgid "Что значат коэффициенты"
-msgstr "What the coefficients mean"
+msgid "Равное значение — общее место"
+msgstr "Equal value — shared rank"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:21
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:115
+msgid "Как читать места по годам"
+msgstr "How to read ranks by year"
+
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:136
+msgid "Как читать места"
+msgstr "How to read the ranks"
+
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:24
 msgid "За %(chosen)s год рейтинг не рассчитан, поэтому показан %(shown)s. Карта и таблица при этом остаются на выбранном году."
 msgstr "The ranking is not calculated for %(chosen)s, so %(shown)s is shown. The map and the table stay on the chosen year."
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:156
-msgid "первые и последние %(count)s мест"
-msgstr "top and bottom %(count)s places"
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:39
+msgid "Между %(start)s и %(end)s годом значения считались по-разному"
+msgstr "Values were calculated differently between %(start)s and %(end)s"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:171
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:69
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:88
+msgid "С тем же сдвигом — ещё регионов: %(count)s."
+msgstr "Other regions with the same shift: %(count)s."
+
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:95
+msgid "Линия у региона — его места за %(start)s–%(end)s годы, первое место вверху."
+msgstr "The line next to a region shows its places in %(start)s–%(end)s, first place at the top."
+
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:128
 msgid "Все места · %(total)s"
 msgstr "All places · %(total)s"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:175
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:132
 msgid "коэффициент вариации — %(cv)s, децильный — %(decile)s"
 msgstr "coefficient of variation %(cv)s, decile ratio %(decile)s"
 
-#: apps/rankings/templates/rankings/partials/_ranking_results.html:186
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:143
 msgid "Позиции субъектов: %(total)s строк"
 msgstr "Positions of the regions: %(total)s rows"
+
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:170
+msgid "Места %(start)s–%(end)s"
+msgstr "Ranks %(start)s–%(end)s"
+
+#: apps/rankings/templates/rankings/partials/_ranking_results.html:226
+msgid "Нет значения за %(year)s:"
+msgstr "No value for %(year)s:"
 
 #: apps/rankings/templates/rankings/partials/_view.html:6
 msgid "Для показателей, где рост — к худшему (безработица, бедность), первым осмысленно ставить наименьшее значение."
@@ -9313,28 +9332,28 @@ msgstr "Compare places with year"
 msgid "Какой порядок выбрать"
 msgstr "Which order to choose"
 
-#: apps/search/answers.py:194
+#: apps/search/answers.py:202
 msgid "Место среди регионов"
 msgstr "Place among regions"
 
-#: apps/search/answers.py:259
+#: apps/search/answers.py:267
 msgid "Сравнить подробно"
 msgstr "Compare in detail"
 
-#: apps/search/answers.py:298
+#: apps/search/answers.py:306
 msgid "Динамика полностью"
 msgstr "Full dynamics"
 
-#: apps/search/answers.py:351
+#: apps/search/answers.py:359
 msgid "Связи показателей"
 msgstr "Relations between indicators"
 
-#: apps/search/answers.py:383
+#: apps/search/answers.py:391
 #: templates/partials/_term.html:4
 msgid "В глоссарии"
 msgstr "In the glossary"
 
-#: apps/search/answers.py:236
+#: apps/search/answers.py:244
 msgid "Динамика рядом"
 msgstr "Dynamics side by side"
 
@@ -9450,27 +9469,35 @@ msgstr "Understood as"
 msgid "или"
 msgstr "or"
 
-#: apps/search/templates/search/results.html:52
+#: apps/search/templates/search/results.html:42
+msgid "Показатель из полного перечня рядов: числа как в источнике, без оценки «лучше» или «хуже»."
+msgstr "An indicator from the full list of series: figures as in the source, without a better or worse judgement."
+
+#: apps/search/templates/search/results.html:55
 msgid "В данных ответа нет"
 msgstr "The data holds no answer"
 
-#: apps/search/templates/search/results.html:55
+#: apps/search/templates/search/results.html:58
 msgid "Сайт показывает числа и их изменение, но не объясняет причины."
 msgstr "The site shows figures and how they change, but does not explain causes."
 
-#: apps/search/templates/search/results.html:57
+#: apps/search/templates/search/results.html:60
+msgid "Одним показателем на это не ответить: «где лучше» складывается из многих. Сравнить регионы по нескольким показателям сразу можно в интегральном индексе."
+msgstr "No single indicator answers this: “where it is better” is made of many. A composite index compares regions on several indicators at once."
+
+#: apps/search/templates/search/results.html:63
 msgid "Вопрос не похож ни на один из показателей и терминов сайта."
 msgstr "The question does not match any indicator or term on the site."
 
-#: apps/search/templates/search/results.html:59
+#: apps/search/templates/search/results.html:65
 msgid "Ближе всего — ниже."
 msgstr "The closest matches are below."
 
-#: apps/search/templates/search/results.html:64
+#: apps/search/templates/search/results.html:70
 msgid "Назовите показатель, регион или год — примеры под полем."
 msgstr "Name an indicator, a region or a year — examples are under the field."
 
-#: apps/search/templates/search/results.html:65
+#: apps/search/templates/search/results.html:71
 msgid "Все показатели по темам"
 msgstr "All indicators by topic"
 
@@ -9487,31 +9514,33 @@ msgstr "Parsing failed"
 msgid "%(title)s, опубликован %(date)s"
 msgstr "%(title)s, published %(date)s"
 
-#: apps/surface/builders.py:32
+#: apps/surface/builders.py:35
 msgid "по значению"
 msgstr "by value"
 
-#: apps/surface/builders.py:37
+#: apps/surface/builders.py:40
 msgid "нет данных в источнике"
 msgstr "no data in the source"
 
-#: apps/surface/builders.py:38
+#: apps/surface/builders.py:41
 msgid "значение скрыто"
 msgstr "the value is withheld"
 
-#: apps/surface/builders.py:39
+#: apps/surface/builders.py:42
 msgid "неприменимо"
 msgstr "not applicable"
 
-#: apps/surface/builders.py:239
+#: apps/surface/builders.py:212
+#: apps/surface/builders.py:275
 msgid "нет в источнике за этот год"
 msgstr "not in the source for this year"
 
-#: apps/surface/builders.py:242
+#: apps/surface/builders.py:218
+#: apps/surface/builders.py:278
 msgid "значение неизвестно"
 msgstr "the value is unknown"
 
-#: apps/surface/builders.py:110
+#: apps/surface/builders.py:113
 msgid "медиана"
 msgstr "median"
 
@@ -9597,8 +9626,8 @@ msgid "Как устроен разброс значений: где на шка
 msgstr "How the values are spread: where each region stands on the scale, where the quartiles lie and in which part of the distribution the selected territories are."
 
 #: apps/surface/panels.py:128
-msgid "Все субъекты подряд, включая те, по которым значения нет; в рейтинге — только участники ранжирования."
-msgstr "Every region in a row, including those with no value; the ranking lists only the ranked regions."
+msgid "Значения всех субъектов за последние годы — числа для сверки и выписки; пропуск назван причиной. Места и их изменение — в «Рейтинге»."
+msgstr "Values for all regions over recent years — figures to check and copy; each gap states its reason. Ranks and their change are in Ranking."
 
 #: apps/surface/picks.py:95
 msgid "отмечено сколько можно"
@@ -9777,32 +9806,37 @@ msgstr "Remove the filter by federal district."
 msgid "«Нет данных в источнике» — наблюдения не было; «значение скрыто» — его не публикуют; «нет в источнике за этот год» — региона за этот год в источнике нет вовсе. Ни один из трёх случаев не равен нулю."
 msgstr "“No data in the source” means there was no observation; “value hidden” means it is not published; “not in the source for this year” means the region is missing from the source for that year altogether. None of the three equals zero."
 
-#: apps/surface/templates/surface/panels/_table.html:48
-#: apps/userdata/export.py:60
-#: apps/workspace/templates/workspace/partials/_tile.html:38
-#: apps/workspace/templates/workspace/partials/_tile.html:39
-msgid "Пометка"
-msgstr "Note"
+#: apps/surface/templates/surface/panels/_table.html:68
+msgid "Значение по стране, а не сумма по субъектам."
+msgstr "The national value, not the sum of the regions."
 
-#: apps/surface/templates/surface/panels/_table.html:86
-msgid "значение по стране, а не сумма по субъектам"
-msgstr "the value for the country, not the sum over the regions"
+#: apps/surface/templates/surface/panels/_table.html:80
+msgid "Места и их изменение — во вкладке «Рейтинг»; цвет у названия — класс шкалы карты за выбранный год."
+msgstr "Ranks and their change are in the Ranking tab; the colour by the name is the map scale class for the selected year."
 
-#: apps/surface/templates/surface/panels/_table.html:96
+#: apps/surface/templates/surface/panels/_table.html:82
 msgid "Полнота и проверки по всему набору"
 msgstr "Completeness and checks across the dataset"
 
 #: apps/surface/templates/surface/panels/_table.html:28
-msgid "Чем различаются пометки"
-msgstr "How the notes differ"
+msgid "Чем различаются пропуски"
+msgstr "How the gaps differ"
+
+#: apps/surface/templates/surface/panels/_table.html:69
+msgid "Что в строке России"
+msgstr "What the Russia row shows"
 
 #: apps/surface/templates/surface/panels/_table.html:20
-msgid "Все регионы · %(shown)s"
-msgstr "All regions · %(shown)s"
+msgid "Все регионы · %(shown)s · %(start)s–%(end)s"
+msgstr "All regions · %(shown)s · %(start)s–%(end)s"
 
 #: apps/surface/templates/surface/panels/_table.html:24
-msgid "без значения: %(missing)s — они в таблице, с пометкой почему"
-msgstr "without a value: %(missing)s — they are in the table, with a note saying why"
+msgid "без значения за %(year)s: %(missing)s — причина в подсказке у прочерка"
+msgstr "without a value for %(year)s: %(missing)s — the reason is in the tooltip on the dash"
+
+#: apps/surface/templates/surface/panels/_table.html:36
+msgid "Значения субъектов по годам; выделен %(year)s год"
+msgstr "Regional values by year; %(year)s is highlighted"
 
 #: apps/surface/templates/surface/panels/_view_table.html:4
 msgid "Порядок строк"
@@ -10156,7 +10190,7 @@ msgstr "This gives %(count)s recalculations and folds — more than %(limit)s. S
 msgid "Нет значений показателей: %(names)s."
 msgstr "No values for indicators: %(names)s."
 
-#: apps/userdata/examples.py:65
+#: apps/userdata/examples.py:80
 msgid "Пример: %(title)s"
 msgstr "Example: %(title)s"
 
@@ -10167,6 +10201,12 @@ msgstr "Territory code (ISO 3166-2 for federal subjects)"
 #: apps/userdata/export.py:52
 msgid "ОКАТО"
 msgstr "OKATO"
+
+#: apps/userdata/export.py:60
+#: apps/workspace/templates/workspace/partials/_tile.html:38
+#: apps/workspace/templates/workspace/partials/_tile.html:39
+msgid "Пометка"
+msgstr "Note"
 
 #: apps/userdata/export.py:83
 msgid "страна"
@@ -10187,7 +10227,7 @@ msgstr "Group"
 
 #: apps/userdata/export.py:196
 #: apps/userdata/templates/userdata/_shares.html:66
-#: apps/userdata/templates/userdata/index.html:142
+#: apps/userdata/templates/userdata/index.html:145
 msgid "год"
 msgstr "year"
 
@@ -10211,93 +10251,98 @@ msgstr "withheld by the source"
 msgid "вне справочника"
 msgstr "not in the reference list"
 
-#: apps/userdata/extract.py:746
+#: apps/userdata/extract.py:788
 msgid "Разобрать таблицу не удалось. Мы получили сообщение об ошибке; сам файл не пересылался."
 msgstr "The table could not be parsed. We have received an error report; the file itself was not sent."
 
-#: apps/userdata/extract.py:186
+#: apps/userdata/extract.py:187
 msgid "В таблице федеральные округа, а не субъекты. Карта и анализ работают по субъектам РФ."
 msgstr "The table lists federal districts, not regions. The map and analysis work with the regions of Russia."
 
-#: apps/userdata/extract.py:193
+#: apps/userdata/extract.py:194
 msgid "Столбец с регионами не найден. Отметьте его на шаге «Что в таблице»."
 msgstr "No column with regions was found. Mark it at the “What is in the table” step."
 
-#: apps/userdata/extract.py:201
+#: apps/userdata/extract.py:202
 msgid "Годы в таблице не найдены. Укажите год на шаге «Что в таблице»."
 msgstr "No years were found in the table. Enter the year at the “What is in the table” step."
 
-#: apps/userdata/extract.py:209
+#: apps/userdata/extract.py:210
 msgid "В таблице не нашлось ни одного значения по территориям."
 msgstr "The table contains no values by territory."
 
-#: apps/userdata/extract.py:197
-#: apps/userdata/extract.py:212
+#: apps/userdata/extract.py:198
+#: apps/userdata/extract.py:213
 #: apps/userdata/templates/userdata/table_step.html:200
 msgid "Получается %(count)s рядов — больше %(limit)s. Выберите значения разрезов."
 msgstr "This gives %(count)s series — more than %(limit)s. Choose the breakdown values."
 
-#: apps/userdata/extract.py:453
+#: apps/userdata/extract.py:454
 msgid "Столбец значений не найден. Отметьте его на шаге «Что в таблице»."
 msgstr "No value column was found. Mark it at the “What is in the table” step."
 
-#: apps/userdata/extract.py:457
+#: apps/userdata/extract.py:458
 msgid "Столбец с годами не найден. Отметьте его на шаге «Что в таблице»."
 msgstr "No column with years was found. Mark it at the “What is in the table” step."
 
-#: apps/userdata/extract.py:537
+#: apps/userdata/extract.py:545
 msgid "Столбцы значений не найдены. Отметьте их на шаге «Что в таблице»."
 msgstr "No value columns were found. Mark them at the “What is in the table” step."
 
-#: apps/userdata/extract.py:132
+#: apps/userdata/extract.py:133
 msgid "Получается больше %(limit)s значений. Выберите меньше значений разрезов или загрузите часть таблицы."
 msgstr "That makes more than %(limit)s values. Select fewer breakdown values or upload part of the table."
 
-#: apps/userdata/forms.py:22
+#: apps/userdata/forms.py:25
 msgid "Файл таблицы"
 msgstr "Table file"
 
-#: apps/userdata/forms.py:30
+#: apps/userdata/forms.py:33
 msgid "CSV, TXT, XLSX, XLS, ODS, Parquet или архив ZIP с ними, до %(limit)s МБ"
 msgstr "CSV, TXT, XLSX, XLS, ODS, Parquet or a ZIP archive with them, up to %(limit)s MB"
 
-#: apps/userdata/forms.py:41
+#: apps/userdata/forms.py:44
 msgid "Вставить таблицу"
 msgstr "Paste a table"
 
-#: apps/userdata/forms.py:42
+#: apps/userdata/forms.py:45
 msgid "Скопируйте таблицу целиком вместе с шапкой. Из PDF столбцы при вставке теряются — такую таблицу лучше взять в виде файла."
 msgstr "Copy the whole table together with its header. Columns are lost when pasting from a PDF — take such a table as a file."
 
-#: apps/userdata/forms.py:72
+#: apps/userdata/forms.py:75
 msgid "Кодировка текста"
 msgstr "Text encoding"
 
-#: apps/userdata/forms.py:86
-msgid "Название таблицы"
-msgstr "Table title"
-
-#: apps/userdata/forms.py:87
-msgid "Источник данных"
-msgstr "Data source"
-
-#: apps/userdata/forms.py:88
+#: apps/userdata/forms.py:96
 msgid "Адрес источника"
 msgstr "Source address"
 
-#: apps/userdata/forms.py:92
+#: apps/userdata/forms.py:99
+msgid "Страница, откуда взята таблица, можно без https://. Необязательно."
+msgstr "The page the table was taken from, https:// may be omitted. Optional."
+
+#: apps/userdata/forms.py:107
+msgid "Название таблицы"
+msgstr "Table title"
+
+#: apps/userdata/forms.py:108
+msgid "Источник данных"
+msgstr "Data source"
+
+#: apps/userdata/forms.py:112
 msgid "Кто опубликовал данные: «Росстат», «МВД России», своё исследование."
 msgstr "Who published the data: Rosstat, the Ministry of Internal Affairs, your own research."
 
-#: apps/userdata/forms.py:95
-msgid "Страница, откуда взята таблица; необязательно."
-msgstr "The page the table was taken from; optional."
+#: apps/userdata/forms.py:130
+#: apps/workspace/tiles.py:200
+msgid "Своя таблица"
+msgstr "Own table"
 
-#: apps/userdata/forms.py:60
+#: apps/userdata/forms.py:63
 msgid "Вставка больше %(limit)s МБ. Загрузите таблицу файлом."
 msgstr "The pasted text is larger than %(limit)s MB. Upload the table as a file."
 
-#: apps/userdata/forms.py:74
+#: apps/userdata/forms.py:77
 msgid "определить по тексту"
 msgstr "detect from the text"
 
@@ -10629,6 +10674,14 @@ msgstr "at least six years of values are needed"
 msgid "Такой карточки нет."
 msgstr "There is no such card."
 
+#: apps/userdata/lab.py:614
+msgid "Таблица «%(table)s» собрана, её карта — в новом исследовании."
+msgstr "The table “%(table)s” is built, its map is in a new study."
+
+#: apps/userdata/lab.py:616
+msgid "Таблица «%(table)s» собрана, её карта добавлена в исследование «%(study)s»."
+msgstr "The table “%(table)s” is built, its map has been added to the study “%(study)s”."
+
 #: apps/userdata/lab.py:346
 msgid "нужны значения хотя бы по %(count)s регионам"
 msgstr "values for at least %(count)s regions are needed"
@@ -10835,12 +10888,12 @@ msgid "по полугодиям"
 msgstr "by half-year"
 
 #: apps/userdata/monthly.py:143
-#: apps/userdata/views.py:543
+#: apps/userdata/views.py:552
 msgid "с начала года"
 msgstr "year to date"
 
 #: apps/userdata/monthly.py:145
-#: apps/userdata/views.py:545
+#: apps/userdata/views.py:554
 msgid "на начало месяца"
 msgstr "at the start of the month"
 
@@ -10912,11 +10965,11 @@ msgstr "Checks"
 msgid "Файл и версии"
 msgstr "File and versions"
 
-#: apps/userdata/pages.py:515
+#: apps/userdata/pages.py:524
 msgid "Отметьте, что таблицу нужно удалить."
 msgstr "Tick the box to confirm that the table should be deleted."
 
-#: apps/userdata/pages.py:519
+#: apps/userdata/pages.py:528
 msgid "Таблица «%(title)s» удалена."
 msgstr "The table “%(title)s” has been deleted."
 
@@ -11003,7 +11056,7 @@ msgstr "Pasted table"
 
 #: apps/userdata/services.py:123
 #: apps/userdata/services.py:70
-#: apps/userdata/templates/userdata/upload.html:62
+#: apps/userdata/templates/userdata/upload.html:73
 msgid "Вставка из буфера"
 msgstr "Paste from the clipboard"
 
@@ -11581,12 +11634,12 @@ msgid "Данные исследования"
 msgstr "Study data"
 
 #: apps/userdata/templates/userdata/_study_panel.html:35
-#: apps/userdata/templates/userdata/index.html:86
+#: apps/userdata/templates/userdata/index.html:89
 msgid "Мои таблицы"
 msgstr "My tables"
 
 #: apps/userdata/templates/userdata/_study_panel.html:36
-#: apps/userdata/templates/userdata/upload.html:56
+#: apps/userdata/templates/userdata/upload.html:67
 msgid "Загрузить"
 msgstr "Upload"
 
@@ -12025,8 +12078,8 @@ msgid "Разделы таблицы"
 msgstr "Table sections"
 
 #: apps/userdata/templates/userdata/dataset.html:84
-msgid "есть замечания"
-msgstr "there are remarks"
+msgid "замечаний"
+msgstr "remarks"
 
 #: apps/userdata/templates/userdata/dataset.html:29
 #: apps/userdata/templates/userdata/series_step.html:27
@@ -12229,138 +12282,142 @@ msgstr "Calculated for <b class=\"numeric\">%(count)s</b> of %(total)s"
 msgid "годы %(first)s–%(last)s"
 msgstr "years %(first)s–%(last)s"
 
-#: apps/userdata/templates/userdata/index.html:43
+#: apps/userdata/templates/userdata/index.html:46
 msgid "Мои исследования"
 msgstr "My studies"
 
-#: apps/userdata/templates/userdata/index.html:69
+#: apps/userdata/templates/userdata/index.html:72
 msgid "Например: к курсовой"
 msgstr "For example: for my term paper"
 
-#: apps/userdata/templates/userdata/index.html:73
+#: apps/userdata/templates/userdata/index.html:76
 msgid "Начать исследование"
 msgstr "Start a study"
 
-#: apps/userdata/templates/userdata/index.html:79
+#: apps/userdata/templates/userdata/index.html:82
 msgid "Войдите, чтобы сохранить его"
 msgstr "Sign in to keep it"
 
-#: apps/userdata/templates/userdata/index.html:101
+#: apps/userdata/templates/userdata/index.html:104
 #: apps/workspace/tiles.py:196
 msgid "не собрана"
 msgstr "not built"
 
-#: apps/userdata/templates/userdata/index.html:119
+#: apps/userdata/templates/userdata/index.html:104
+msgid "продолжить или удалить"
+msgstr "continue or delete"
+
+#: apps/userdata/templates/userdata/index.html:122
 msgid "Войдите, чтобы сохранить их"
 msgstr "Sign in to keep them"
 
-#: apps/userdata/templates/userdata/index.html:123
+#: apps/userdata/templates/userdata/index.html:126
 msgid "Загруженных таблиц пока нет."
 msgstr "No uploaded tables yet."
 
-#: apps/userdata/templates/userdata/index.html:129
-#: apps/userdata/templates/userdata/upload.html:80
+#: apps/userdata/templates/userdata/index.html:132
+#: apps/userdata/templates/userdata/upload.html:92
 msgid "Какие таблицы подходят"
 msgstr "Which tables fit"
 
-#: apps/userdata/templates/userdata/index.html:140
-#: apps/userdata/templates/userdata/upload.html:83
+#: apps/userdata/templates/userdata/index.html:143
+#: apps/userdata/templates/userdata/upload.html:95
 msgid "Длинная"
 msgstr "Long"
 
-#: apps/userdata/templates/userdata/index.html:141
-#: apps/userdata/templates/userdata/index.html:150
-#: apps/userdata/templates/userdata/index.html:159
-#: apps/userdata/templates/userdata/index.html:168
+#: apps/userdata/templates/userdata/index.html:144
+#: apps/userdata/templates/userdata/index.html:153
+#: apps/userdata/templates/userdata/index.html:162
+#: apps/userdata/templates/userdata/index.html:171
 msgid "Схема таблицы"
 msgstr "Table layout"
 
-#: apps/userdata/templates/userdata/index.html:142
-#: apps/userdata/templates/userdata/index.html:151
-#: apps/userdata/templates/userdata/index.html:160
-#: apps/userdata/templates/userdata/index.html:169
-#: apps/userdata/views.py:525
+#: apps/userdata/templates/userdata/index.html:145
+#: apps/userdata/templates/userdata/index.html:154
+#: apps/userdata/templates/userdata/index.html:163
+#: apps/userdata/templates/userdata/index.html:172
+#: apps/userdata/views.py:534
 msgid "регион"
 msgstr "region"
 
-#: apps/userdata/templates/userdata/index.html:142
+#: apps/userdata/templates/userdata/index.html:145
 #: apps/userdata/templates/userdata/table_step.html:246
-#: apps/userdata/views.py:533
+#: apps/userdata/views.py:542
 msgid "значение"
 msgstr "value"
 
-#: apps/userdata/templates/userdata/index.html:146
+#: apps/userdata/templates/userdata/index.html:149
 msgid "Регион, год, показатель, разрезы и значение — в своих столбцах. Так выгружают открытые наборы."
 msgstr "Region, year, indicator, breakdowns and value are each in their own column. This is how open datasets are published."
 
-#: apps/userdata/templates/userdata/index.html:149
-#: apps/userdata/templates/userdata/upload.html:87
+#: apps/userdata/templates/userdata/index.html:152
+#: apps/userdata/templates/userdata/upload.html:99
 msgid "Годы в столбцах"
 msgstr "Years in columns"
 
-#: apps/userdata/templates/userdata/index.html:155
+#: apps/userdata/templates/userdata/index.html:158
 msgid "Как в статистических сборниках. Шапка может быть в несколько строк."
 msgstr "As in statistical yearbooks. The header may span several rows."
 
-#: apps/userdata/templates/userdata/index.html:158
-#: apps/userdata/templates/userdata/upload.html:91
+#: apps/userdata/templates/userdata/index.html:161
+#: apps/userdata/templates/userdata/upload.html:103
 msgid "Периоды в столбцах"
 msgstr "Periods in columns"
 
-#: apps/userdata/templates/userdata/index.html:160
+#: apps/userdata/templates/userdata/index.html:163
 msgid "январь–июль"
 msgstr "January–July"
 
-#: apps/userdata/templates/userdata/index.html:164
+#: apps/userdata/templates/userdata/index.html:167
 msgid "Месяцы, кварталы, «с начала года»: каждый период года — свой ряд по годам."
 msgstr "Months, quarters, “year to date”: each period of the year is its own series over the years."
 
-#: apps/userdata/templates/userdata/index.html:167
-#: apps/userdata/templates/userdata/upload.html:95
+#: apps/userdata/templates/userdata/index.html:170
+#: apps/userdata/templates/userdata/upload.html:107
 msgid "Показатели в столбцах"
 msgstr "Indicators in columns"
 
-#: apps/userdata/templates/userdata/index.html:169
+#: apps/userdata/templates/userdata/index.html:172
 msgid "ДТП"
 msgstr "accidents"
 
-#: apps/userdata/templates/userdata/index.html:169
+#: apps/userdata/templates/userdata/index.html:172
 msgid "погибло"
 msgstr "killed"
 
-#: apps/userdata/templates/userdata/index.html:173
+#: apps/userdata/templates/userdata/index.html:176
 msgid "Несколько показателей за один год; год, если его нет в таблице, сайт спросит."
 msgstr "Several indicators for one year; if the year is not in the table, the site will ask for it."
 
-#: apps/userdata/templates/userdata/index.html:181
+#: apps/userdata/templates/userdata/index.html:184
 msgid "Примеры таблиц ведомств"
 msgstr "Sample tables from government agencies"
 
-#: apps/userdata/templates/userdata/index.html:198
+#: apps/userdata/templates/userdata/index.html:201
 msgid "Мастер спросит:"
 msgstr "The wizard will ask:"
 
-#: apps/userdata/templates/userdata/index.html:203
+#: apps/userdata/templates/userdata/index.html:206
 msgid "Открыть в мастере"
 msgstr "Open in the wizard"
 
-#: apps/userdata/templates/userdata/index.html:207
+#: apps/userdata/templates/userdata/index.html:210
 msgid "Скачать файл"
 msgstr "Download file"
 
-#: apps/userdata/templates/userdata/index.html:218
+#: apps/userdata/templates/userdata/index.html:221
 msgid "Кто видит таблицу, где и сколько она хранится"
 msgstr "Who sees the table, where and how long it is kept"
 
-#: apps/userdata/templates/userdata/index.html:221
+#: apps/userdata/templates/userdata/index.html:224
 msgid "Таблицу и её виды видите только вы. Поисковики их не индексируют; в панели управления видно только число таблиц и занятое место."
 msgstr "Only you can see the table and its views. Search engines do not index them; the control panel shows only the number of tables and the space used."
 
-#: apps/userdata/templates/userdata/index.html:234
+#: apps/userdata/templates/userdata/index.html:237
 msgid "Удалённая таблица сразу исчезает с сайта."
 msgstr "A deleted table disappears from the site at once."
 
-#: apps/userdata/templates/userdata/index.html:237
+#: apps/userdata/templates/userdata/index.html:240
 msgid "Не загружайте таблицы со сведениями о конкретных людях: сайт рассчитан на значения по регионам."
 msgstr "Do not upload tables with information about specific people: the site is designed for values by region."
 
@@ -12368,51 +12425,51 @@ msgstr "Do not upload tables with information about specific people: the site is
 msgid "Своя таблица по регионам России открывается на той же карте и в тех же видах, что и данные сайта. Регионы, годы и показатели узнаются по таблице; что не узнано, можно выбрать. Таблицу видите только вы."
 msgstr "Your own table by region of Russia opens on the same map and in the same views as the site’s data. Regions, years and indicators are recognised from the table; whatever is not recognised can be chosen. Only you can see the table."
 
-#: apps/userdata/templates/userdata/index.html:34
+#: apps/userdata/templates/userdata/index.html:37
 msgid "Пример — набор «Если быть точным» о загрязнении воздуха в городах, архивом, как он скачивается с сайта набора."
 msgstr "The example is the “To Be Precise” dataset on air pollution in cities, as an archive, just as it is downloaded from the dataset’s website."
 
-#: apps/userdata/templates/userdata/index.html:46
+#: apps/userdata/templates/userdata/index.html:49
 msgid "Исследование — рабочее поле: ваши таблицы и показатели сайта, а из них — карты, линии, рейтинги и ответы числами с вашими заметками. Его можно распечатать и показать по закрытой ссылке."
 msgstr "A study is a workspace: your tables and site indicators, and from them maps, lines, rankings and answers in numbers with your notes. It can be printed and shown by a private link."
 
-#: apps/userdata/templates/userdata/index.html:58
+#: apps/userdata/templates/userdata/index.html:61
 msgid "карточек и заметок: %(count)s · изменено %(moment)s"
 msgstr "cards and notes: %(count)s · changed %(moment)s"
 
-#: apps/userdata/templates/userdata/index.html:78
+#: apps/userdata/templates/userdata/index.html:81
 msgid "Без входа исследование хранится %(hours)s ч."
 msgstr "Without signing in a study is kept for %(hours)s h."
 
-#: apps/userdata/templates/userdata/index.html:96
+#: apps/userdata/templates/userdata/index.html:99
 msgid "рядов: %(series)s · субъектов: %(regions)s"
 msgstr "series: %(series)s · federal subjects: %(regions)s"
 
-#: apps/userdata/templates/userdata/index.html:104
+#: apps/userdata/templates/userdata/index.html:107
 msgid "хранится до %(moment)s"
 msgstr "kept until %(moment)s"
 
-#: apps/userdata/templates/userdata/index.html:112
+#: apps/userdata/templates/userdata/index.html:115
 msgid "Занято %(used)s из %(quota)s; таблиц %(count)s из %(limit)s."
 msgstr "%(used)s of %(quota)s used; %(count)s of %(limit)s tables."
 
-#: apps/userdata/templates/userdata/index.html:116
+#: apps/userdata/templates/userdata/index.html:119
 msgid "Таблиц %(count)s из %(limit)s. Без входа таблицы хранятся %(hours)s ч."
 msgstr "%(count)s of %(limit)s tables. Without signing in tables are kept for %(hours)s h."
 
-#: apps/userdata/templates/userdata/index.html:132
+#: apps/userdata/templates/userdata/index.html:135
 msgid "CSV, TXT, XLSX, XLS, ODS, Parquet и архив ZIP с ними. Таблицу из Word или PDF можно скопировать и вставить в поле «Вставить таблицу». Нужен столбец или строка с названиями субъектов РФ; значения по районам и городам на карту сайта не попадут."
 msgstr "CSV, TXT, XLSX, XLS, ODS, Parquet and a ZIP archive with them. A table from Word or PDF can be copied and pasted into the “Paste a table” field. A column or row with the names of federal subjects is required; values by district and city will not appear on the site’s map."
 
-#: apps/userdata/templates/userdata/index.html:184
+#: apps/userdata/templates/userdata/index.html:187
 msgid "Файлы как их публикуют ведомства. Пример открывается в мастере как своя таблица: видно, что сайт узнал сам и о чём спросит."
 msgstr "Files as the agencies publish them. A sample opens in the wizard like your own table: you see what the site recognised and what it asks."
 
-#: apps/userdata/templates/userdata/index.html:223
+#: apps/userdata/templates/userdata/index.html:226
 msgid "Без входа таблица хранится %(hours)s ч, затем удаляется. После входа таблицы переходят в учётную запись и хранятся, пока вы их не удалите."
 msgstr "Without signing in a table is kept for %(hours)s h and then deleted. After signing in, tables move to the account and are kept until you delete them."
 
-#: apps/userdata/templates/userdata/index.html:230
+#: apps/userdata/templates/userdata/index.html:233
 msgid "Удалённая таблица сразу исчезает с сайта, а из резервных копий — через %(days)s сут."
 msgstr "A deleted table disappears from the site at once, and from backups after %(days)s days."
 
@@ -12512,6 +12569,10 @@ msgstr "Table page"
 msgid "Назад к описанию таблицы"
 msgstr "Back to the table description"
 
+#: apps/userdata/templates/userdata/series_step.html:188
+msgid "Карта собранной таблицы откроется в новом исследовании."
+msgstr "The map of the built table will open in a new study."
+
 #: apps/userdata/templates/userdata/series_step.html:19
 msgid "Как называются показатели и что означают их значения. Описание действует на все ряды показателя — по разрезам и периодам года."
 msgstr "What the indicators are called and what their values mean. The description applies to all series of an indicator — across breakdowns and periods of the year."
@@ -12539,6 +12600,10 @@ msgstr "Other indicators: %(count)s"
 #: apps/userdata/templates/userdata/series_step.html:165
 msgid "Показатели: %(count)s"
 msgstr "Indicators: %(count)s"
+
+#: apps/userdata/templates/userdata/series_step.html:186
+msgid "Карта собранной таблицы добавится в исследование «%(study)s»."
+msgstr "The map of the built table will be added to the study “%(study)s”."
 
 #: apps/userdata/templates/userdata/share_gone.html:6
 #: apps/userdata/templates/userdata/share_gone.html:8
@@ -12666,8 +12731,8 @@ msgid "изменено %(moment)s"
 msgstr "changed %(moment)s"
 
 #: apps/userdata/templates/userdata/table_step.html:17
-#: apps/userdata/views.py:245
-#: apps/userdata/views.py:268
+#: apps/userdata/views.py:251
+#: apps/userdata/views.py:274
 #: apps/userdata/views.py:39
 msgid "Что в таблице"
 msgstr "What is in the table"
@@ -12853,22 +12918,30 @@ msgid "Своя таблица по регионам"
 msgstr "Your own table by region"
 
 #: apps/userdata/templates/userdata/upload.html:33
+msgid "Открыть в новом исследовании"
+msgstr "Open in a new study instead"
+
+#: apps/userdata/templates/userdata/upload.html:35
+msgid "Собранная таблица откроется картой в новом исследовании."
+msgstr "The built table will open as a map in a new study."
+
+#: apps/userdata/templates/userdata/upload.html:43
 msgid "Таблица не принята"
 msgstr "The table was not accepted"
 
-#: apps/userdata/templates/userdata/upload.html:84
+#: apps/userdata/templates/userdata/upload.html:96
 msgid "— регион, год, показатель и значение в своих столбцах; могут быть разрезы: пол, возраст."
 msgstr "— region, year, indicator and value in their own columns; breakdowns such as sex or age are possible."
 
-#: apps/userdata/templates/userdata/upload.html:88
+#: apps/userdata/templates/userdata/upload.html:100
 msgid "— регионы в строках, по столбцу на год."
 msgstr "— regions in rows, one column per year."
 
-#: apps/userdata/templates/userdata/upload.html:92
+#: apps/userdata/templates/userdata/upload.html:104
 msgid "— месяцы, кварталы или «с начала года» под общей шапкой с годами."
 msgstr "— months, quarters or “year to date” under a common header with years."
 
-#: apps/userdata/templates/userdata/upload.html:96
+#: apps/userdata/templates/userdata/upload.html:108
 msgid "— по столбцу на показатель за один год."
 msgstr "— one column per indicator for a single year."
 
@@ -12876,7 +12949,11 @@ msgstr "— one column per indicator for a single year."
 msgid "Таблица со значениями по субъектам России — файлом, архивом ZIP или вставкой из буфера. Регионы, годы и показатели узнаются по таблице; что не узнано, можно выбрать на следующем шаге."
 msgstr "A table with values for the regions of Russia — as a file, a ZIP archive or pasted from the clipboard. Regions, years and indicators are recognised from the table; whatever is not recognised can be chosen at the next step."
 
-#: apps/userdata/templates/userdata/upload.html:100
+#: apps/userdata/templates/userdata/upload.html:32
+msgid "Собранная таблица добавится картой в исследование «%(title)s»."
+msgstr "The built table will be added as a map to the study “%(title)s”."
+
+#: apps/userdata/templates/userdata/upload.html:112
 msgid "Регионы — субъекты Российской Федерации. Районы и города на карту сайта не попадут. Таблицу видите только вы."
 msgstr "Regions are the constituent entities of the Russian Federation. Districts and cities will not appear on the site map. Only you can see the table."
 
@@ -12982,99 +13059,99 @@ msgstr "The file has several tables: choose the one used in the previous version
 msgid "Таблица снова в версии %(number)s."
 msgstr "The table is back at version %(number)s."
 
-#: apps/userdata/views.py:539
+#: apps/userdata/views.py:548
 msgid "годы"
 msgstr "years"
 
-#: apps/userdata/views.py:540
+#: apps/userdata/views.py:549
 msgid "месяцы"
 msgstr "months"
 
-#: apps/userdata/views.py:541
+#: apps/userdata/views.py:550
 msgid "кварталы"
 msgstr "quarters"
 
-#: apps/userdata/views.py:542
+#: apps/userdata/views.py:551
 msgid "полугодия"
 msgstr "half-years"
 
-#: apps/userdata/views.py:544
+#: apps/userdata/views.py:553
 msgid "скользящие месяцы"
 msgstr "rolling months"
 
-#: apps/userdata/views.py:548
+#: apps/userdata/views.py:557
 msgid "Длинная таблица: регион, период и значение — в своих столбцах."
 msgstr "A long table: region, period and value in their own columns."
 
-#: apps/userdata/views.py:549
+#: apps/userdata/views.py:558
 msgid "Годы или периоды — в столбцах, регионы — в строках."
 msgstr "Years or periods in columns, regions in rows."
 
-#: apps/userdata/views.py:550
+#: apps/userdata/views.py:559
 msgid "Показатели — в столбцах, регионы — в строках; года в таблице нет."
 msgstr "Indicators in columns, regions in rows; the table has no year."
 
-#: apps/userdata/views.py:551
+#: apps/userdata/views.py:560
 msgid "Регионы — в столбцах, годы — в строках."
 msgstr "Regions in columns, years in rows."
 
-#: apps/userdata/views.py:552
+#: apps/userdata/views.py:561
 msgid "Регионы в таблице не найдены."
 msgstr "No regions were found in the table."
 
-#: apps/userdata/views.py:526
+#: apps/userdata/views.py:535
 msgid "код региона"
 msgstr "region code"
 
-#: apps/userdata/views.py:527
+#: apps/userdata/views.py:536
 msgid "уровень территории"
 msgstr "territory level"
 
-#: apps/userdata/views.py:529
+#: apps/userdata/views.py:538
 msgid "показатель"
 msgstr "indicator"
 
-#: apps/userdata/views.py:530
+#: apps/userdata/views.py:539
 msgid "код показателя"
 msgstr "indicator code"
 
-#: apps/userdata/views.py:531
+#: apps/userdata/views.py:540
 msgid "единица"
 msgstr "unit"
 
-#: apps/userdata/views.py:532
+#: apps/userdata/views.py:541
 msgid "разрез"
 msgstr "breakdown"
 
-#: apps/userdata/views.py:534
+#: apps/userdata/views.py:543
 msgid "причина пропуска"
 msgstr "reason for a missing value"
 
-#: apps/userdata/views.py:535
+#: apps/userdata/views.py:544
 msgid "примечание"
 msgstr "note"
 
-#: apps/userdata/views.py:536
+#: apps/userdata/views.py:545
 msgid "пропустить"
 msgstr "skip"
 
-#: apps/userdata/views.py:313
+#: apps/userdata/views.py:319
 msgid "Описание таблицы сохранено."
 msgstr "The table description has been saved."
 
-#: apps/userdata/views.py:348
+#: apps/userdata/views.py:354
 msgid "Сначала сохраните описание таблицы."
 msgstr "Save the table description first."
 
-#: apps/userdata/views.py:166
+#: apps/userdata/views.py:172
 msgid "Файл: %(name)s"
 msgstr "File: %(name)s"
 
-#: apps/userdata/views.py:213
+#: apps/userdata/views.py:219
 msgid "Новых строк во вставке нет."
 msgstr "The pasted text has no new rows."
 
-#: apps/userdata/views.py:211
+#: apps/userdata/views.py:217
 msgid "Строк добавлено: %(count)s."
 msgstr "Rows added: %(count)s."
 
@@ -13435,10 +13512,6 @@ msgstr "opened %(date)s"
 #: apps/workspace/tiles.py:74
 msgid "сохранён %(date)s"
 msgstr "saved %(date)s"
-
-#: apps/workspace/tiles.py:200
-msgid "Своя таблица"
-msgstr "Own table"
 
 #: apps/workspace/tiles.py:176
 msgid "карточек и заметок: %(count)s"
