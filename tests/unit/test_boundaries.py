@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import itertools
+
 import pytest
 
 from apps.maps.management.commands.build_boundaries import (
@@ -16,7 +18,7 @@ from apps.maps.management.commands.build_boundaries import (
     _ring_area,
     _round_geometry,
     _shift_longitudes,
-    _simplify_geometry,
+    _simplify_shared,
 )
 
 pytestmark = pytest.mark.unit
@@ -109,7 +111,7 @@ class TestSimplification:
     def test_ring_stays_closed(self) -> None:
         """Упрощённое кольцо остаётся замкнутым."""
         geometry = {"type": "Polygon", "coordinates": square(30.0, 60.0, 5.0)}
-        result = _simplify_geometry(geometry, tolerance=0.1)
+        result = _simplify_shared([geometry], tolerance=0.1)[0]
         ring = result["coordinates"][0]
         assert ring[0] == ring[-1]
 
@@ -120,7 +122,7 @@ class TestSimplification:
         Пустой контур означал бы незакрашенный субъект, что хуже грубого контура.
         """
         geometry = {"type": "Polygon", "coordinates": square(30.0, 60.0, 0.2)}
-        result = _simplify_geometry(geometry, tolerance=100.0)
+        result = _simplify_shared([geometry], tolerance=100.0)[0]
         assert _count_points(result) >= 4
 
     def test_reduces_point_count(self) -> None:
@@ -143,9 +145,50 @@ class TestSimplification:
         ring.append(ring[0])
 
         geometry = {"type": "Polygon", "coordinates": [ring]}
-        result = _simplify_geometry(geometry, tolerance=0.1)
+        result = _simplify_shared([geometry], tolerance=0.1)[0]
         assert _count_points(result) < _count_points(geometry)
         assert _count_points(result) <= 6
+
+
+class TestSharedBorders:
+    """Общая граница соседей упрощается один раз — между ними нет щелей фона."""
+
+    @staticmethod
+    def neighbours() -> tuple[dict, dict]:
+        """Два прямоугольника с извилистой общей границей по x = 1."""
+        wiggle = [[1.0 + 0.02 * ((index % 3) - 1), index / 20] for index in range(21)]
+        left = [[0.0, 0.0], *wiggle, [0.0, 1.0], [0.0, 0.0]]
+        right = [*wiggle[::-1], [2.0, 0.0], [2.0, 1.0], wiggle[-1]]
+        return (
+            {"type": "Polygon", "coordinates": [left]},
+            {"type": "Polygon", "coordinates": [right]},
+        )
+
+    @staticmethod
+    def border(ring: list[list[float]]) -> set[tuple[float, ...]]:
+        """Точки кольца у общей границы."""
+        return {tuple(point) for point in ring if 0.9 < point[0] < 1.1}
+
+    @staticmethod
+    def signed_area(ring: list[list[float]]) -> float:
+        """Площадь со знаком: знак — направление обхода."""
+        return sum(a[0] * b[1] - b[0] * a[1] for a, b in itertools.pairwise(ring))
+
+    def test_shared_border_is_the_same_on_both_sides(self) -> None:
+        """Точки общей границы после упрощения у обоих соседей одни и те же."""
+        left, right = _simplify_shared(list(self.neighbours()), tolerance=0.015)
+        assert self.border(left["coordinates"][0]) == self.border(right["coordinates"][0])
+        # Упрощение было: из 21 точки извилины осталась часть.
+        assert len(self.border(left["coordinates"][0])) < 21
+
+    def test_ring_direction_is_kept(self) -> None:
+        """Направление обхода кольца не меняется: от него зависит заливка дыр."""
+        left, right = self.neighbours()
+        result = _simplify_shared([left, right], tolerance=0.015)
+        for before, after in zip((left, right), result, strict=True):
+            assert (self.signed_area(before["coordinates"][0]) > 0) == (
+                self.signed_area(after["coordinates"][0]) > 0
+            )
 
 
 class TestGeometryShape:

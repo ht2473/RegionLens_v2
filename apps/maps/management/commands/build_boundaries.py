@@ -117,19 +117,28 @@ class Command(BaseCommand):
         self._check_composition(features, reference)
 
         output: list[dict[str, Any]] = []
-        points_before = 0
         points_after = 0
 
-        for feature in features:
+        shifted = [_shift_longitudes(feature["geometry"]) for feature in features]
+        points_before = sum(_count_points(geometry) for geometry in shifted)
+        # Эксклав (Зеленоград у Москвы) мельче порога, но под ним дыра в соседе: без него
+        # дыра осталась бы белой.
+        holes = {
+            frozenset(_ring_points(ring))
+            for geometry in shifted
+            for polygon in _polygons(geometry)
+            for ring in polygon[1:]
+        }
+        prepared = [
+            _drop_small_parts(geometry, options["min_area"], keep=holes) for geometry in shifted
+        ]
+        # Упрощение — всех субъектов сразу: общая граница соседей упрощается один раз.
+        simplified = _simplify_shared(prepared, options["tolerance"])
+
+        for feature, shape in zip(features, simplified, strict=True):
             code = self._code_of(feature)
             record = reference[code]
-
-            geometry = _shift_longitudes(feature["geometry"])
-            points_before += _count_points(geometry)
-
-            geometry = _drop_small_parts(geometry, options["min_area"])
-            geometry = _simplify_geometry(geometry, options["tolerance"])
-            geometry = _round_geometry(geometry, options["precision"])
+            geometry = _round_geometry(shape, options["precision"])
             points_after += _count_points(geometry)
 
             output.append(
@@ -263,6 +272,7 @@ class Command(BaseCommand):
         path.write_text(
             json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
             encoding="utf-8",
+            newline="\n",
         )
         return path
 
@@ -294,7 +304,10 @@ class Command(BaseCommand):
             },
             "regions": regions,
         }
-        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        # Перевод строки — явно: в Windows write_text пишет CRLF, и справочник менялся бы целиком.
+        path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8", newline="\n"
+        )
         self.stdout.write(f"Обновлён справочник координат: {path.name}")
 
     def _print_tile_draft(
@@ -368,8 +381,15 @@ def _ring_area(ring: list[list[float]]) -> float:
     return abs(total) / 2
 
 
-def _drop_small_parts(geometry: dict[str, Any], min_area: float) -> dict[str, Any]:
-    """Отбросить мелкие острова, всегда сохраняя наибольшую часть территории."""
+def _drop_small_parts(
+    geometry: dict[str, Any],
+    min_area: float,
+    keep: set[frozenset[tuple[float, float]]] | None = None,
+) -> dict[str, Any]:
+    """
+    Отбросить мелкие острова, всегда сохраняя наибольшую часть территории. Часть, чей
+    контур — дыра в соседнем субъекте (``keep``), сохраняется при любой площади.
+    """
     polygons = _polygons(geometry)
     areas = [_ring_area(polygon[0]) for polygon in polygons]
     largest = areas.index(max(areas))
@@ -377,7 +397,9 @@ def _drop_small_parts(geometry: dict[str, Any], min_area: float) -> dict[str, An
     kept = [
         polygon
         for index, polygon in enumerate(polygons)
-        if index == largest or areas[index] >= min_area
+        if index == largest
+        or areas[index] >= min_area
+        or (keep is not None and frozenset(_ring_points(polygon[0])) in keep)
     ]
     return _rebuild(kept)
 
@@ -433,44 +455,147 @@ def _douglas_peucker(
     return [point for point, flag in zip(points, keep, strict=True) if flag]
 
 
-def _simplify_ring(ring: list[list[float]], tolerance: float) -> list[list[float]] | None:
-    """Упростить одно кольцо, сохранив его замкнутость."""
-    latitudes = [point[1] for point in ring]
-    scale = math.cos(math.radians(sum(latitudes) / len(latitudes)))
-
-    simplified = _douglas_peucker(ring, tolerance, max(scale, 0.1))
-    if len(simplified) < MIN_RING_POINTS:
-        return None
-
-    if simplified[0] != simplified[-1]:
-        simplified.append(simplified[0])
-    return simplified
+Point = tuple[float, float]
 
 
-def _simplify_geometry(geometry: dict[str, Any], tolerance: float) -> dict[str, Any]:
-    """Упростить все кольца геометрии, отбросив выродившиеся."""
-    polygons: list[list[list[list[float]]]] = []
+def _arc_scale(points: list[Point] | tuple[Point, ...]) -> float:
+    """Множитель сжатия долготы для участка: cos средней широты, не меньше 0,1."""
+    latitudes = [point[1] for point in points]
+    return max(math.cos(math.radians(sum(latitudes) / len(latitudes))), 0.1)
 
-    for polygon in _polygons(geometry):
-        rings = [_simplify_ring(ring, tolerance) for ring in polygon]
-        if rings and rings[0] is not None:
-            polygons.append([ring for ring in rings if ring is not None])
 
-    if not polygons:
+def _simplify_arc(arc: tuple[Point, ...], tolerance: float) -> list[Point]:
+    """
+    Упростить участок границы между двумя узлами, сохранив концы. Участок, сжатый до
+    отрезка, сохраняет самую далёкую точку: иначе кольцо из двух участков выродится.
+    """
+    points = [list(point) for point in arc]
+    scale = _arc_scale(arc)
+    kept = _douglas_peucker(points, tolerance, scale)
+    if len(kept) == MIN_SIMPLIFIABLE_POINTS and len(points) > MIN_SIMPLIFIABLE_POINTS:
+        farthest = max(
+            range(1, len(points) - 1),
+            key=lambda index: _perpendicular_distance(points[index], points[0], points[-1], scale),
+        )
+        kept = [points[0], points[farthest], points[-1]]
+    return [(point[0], point[1]) for point in kept]
+
+
+def _canonical(sequence: tuple[Point, ...]) -> tuple[tuple[Point, ...], bool]:
+    """Одно написание участка для обоих соседей: прямое или обратное; второе — «перевёрнут ли»."""
+    backward = sequence[::-1]
+    return (backward, True) if backward < sequence else (sequence, False)
+
+
+def _canonical_ring(points: list[Point]) -> tuple[tuple[Point, ...], bool]:
+    """Одно написание замкнутого кольца без узлов: с наименьшей точки, в одну из сторон."""
+    start = points.index(min(points))
+    forward = tuple(points[start:] + points[:start])
+    backward = (forward[0], *forward[1:][::-1])
+    return (backward, True) if backward < forward else (forward, False)
+
+
+def _split_at_junctions(points: list[Point], junctions: set[Point]) -> list[tuple[Point, ...]]:
+    """Разрезать кольцо (без замыкающей точки) на участки от узла до узла."""
+    cuts = [index for index, point in enumerate(points) if point in junctions]
+    rotated = points[cuts[0] :] + points[: cuts[0]]
+    offsets = [index - cuts[0] for index in cuts]
+    arcs = []
+    for number, start in enumerate(offsets):
+        if number + 1 < len(offsets):
+            arcs.append(tuple(rotated[start : offsets[number + 1] + 1]))
+        else:
+            # Последний участок замыкается на первом узле.
+            arcs.append((*rotated[start:], rotated[0]))
+    return arcs
+
+
+def _simplify_shared(geometries: list[dict[str, Any]], tolerance: float) -> list[dict[str, Any]]:
+    """
+    Упростить контуры всех субъектов так, чтобы общая граница соседей упрощалась один раз.
+
+    Кольца режутся на участки в узлах — там, где у точки разные соседи по контурам (сходятся
+    три субъекта или расходятся два). Участок упрощается однажды и достаётся обоим соседям
+    в их направлении обхода. Упрощённая у каждого по-своему граница расходится, и между
+    соседями остаются щели фона — во врезках Москвы и Петербурга они видны глазом.
+    Кольцо без узлов (остров, анклав целиком в соседе) упрощается целиком, тоже однажды.
+    """
+    layouts = [
+        [[_ring_points(ring) for ring in polygon] for polygon in _polygons(geometry)]
+        for geometry in geometries
+    ]
+    neighbours: dict[Point, set[frozenset[Point]]] = {}
+    for layout in layouts:
+        for polygon in layout:
+            for points in polygon:
+                for index, point in enumerate(points):
+                    pair = frozenset((points[index - 1], points[(index + 1) % len(points)]))
+                    neighbours.setdefault(point, set()).add(pair)
+    junctions = {point for point, pairs in neighbours.items() if len(pairs) > 1}
+
+    done: dict[tuple[Point, ...], list[Point]] = {}
+
+    def simplified_ring(points: list[Point]) -> list[list[float]] | None:
+        if not any(point in junctions for point in points):
+            canonical, flipped = _canonical_ring(points)
+            if canonical not in done:
+                done[canonical] = _simplify_arc((*canonical, canonical[0]), tolerance)
+            ring = done[canonical]
+            ring = ring[::-1] if flipped else ring
+        else:
+            ring = []
+            for arc in _split_at_junctions(points, junctions):
+                canonical, flipped = _canonical(arc)
+                if canonical not in done:
+                    done[canonical] = _simplify_arc(canonical, tolerance)
+                part = done[canonical][::-1] if flipped else done[canonical]
+                ring.extend(part if not ring else part[1:])
+        if len(ring) < MIN_RING_POINTS:
+            return None
+        if ring[0] != ring[-1]:
+            ring.append(ring[0])
+        return [list(point) for point in ring]
+
+    result = []
+    for geometry, layout in zip(geometries, layouts, strict=True):
+        polygons: list[list[list[list[float]]]] = []
+        for polygon in layout:
+            rings = [simplified_ring(points) for points in polygon]
+            if rings and rings[0] is not None:
+                polygons.append([ring for ring in rings if ring is not None])
         # Ни одно кольцо не пережило упрощения — остаётся исходная геометрия.
-        return geometry
-    return _rebuild(polygons)
+        result.append(_rebuild(polygons) if polygons else geometry)
+    return result
+
+
+def _ring_points(ring: list[list[float]]) -> list[Point]:
+    """Точки кольца без замыкающей и без повторов подряд."""
+    points: list[Point] = []
+    for point in ring:
+        current = (point[0], point[1])
+        if not points or points[-1] != current:
+            points.append(current)
+    if len(points) > 1 and points[0] == points[-1]:
+        points.pop()
+    return points
 
 
 def _round_geometry(geometry: dict[str, Any], precision: int) -> dict[str, Any]:
-    """Округлить координаты: избыточная точность увеличивает файл, но не карту."""
-    polygons = [
-        [
-            [[round(point[0], precision), round(point[1], precision)] for point in ring]
-            for ring in polygon
-        ]
-        for polygon in _polygons(geometry)
-    ]
+    """
+    Округлить координаты: избыточная точность увеличивает файл, но не карту. Точки,
+    совпавшие после округления подряд, сливаются.
+    """
+    polygons = []
+    for polygon in _polygons(geometry):
+        rings = []
+        for ring in polygon:
+            rounded: list[list[float]] = []
+            for point in ring:
+                current = [round(point[0], precision), round(point[1], precision)]
+                if not rounded or rounded[-1] != current:
+                    rounded.append(current)
+            rings.append(rounded)
+        polygons.append(rings)
     return _rebuild(polygons)
 
 
