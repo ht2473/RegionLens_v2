@@ -168,8 +168,12 @@ class SearchView(BreadcrumbMixin, TemplateView):
             found=found,
             examples=() if found else EXAMPLES,
         )
+        # «Почему…» и вопросы без одного показателя остаются без ответа по замыслу — это
+        # не промах словаря.
         if (
             answer is None
+            and not reading.why
+            and not reading.composite
             and "series" not in self.request.GET
             and allow(self.request, "search-miss", limit=MISSES_PER_HOUR, window=3600)
         ):

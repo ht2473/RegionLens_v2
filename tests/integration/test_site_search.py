@@ -23,6 +23,9 @@ from apps.search.parse import parse
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]
 
 BENCHMARK = Path(__file__).resolve().parents[1] / "fixtures" / "search" / "benchmark.json"
+# Второе мерило — формулировки, которых нет в первом: правки разбора не подгоняются
+# под один набор.
+BLIND = BENCHMARK.with_name("blind.json")
 # Пороги этапа 2 плана: нужный ряд в первых трёх и верный вид ответа.
 SERIES_SHARE = 0.90
 KIND_SHARE = 0.85
@@ -59,9 +62,10 @@ def _kind_found(row: dict[str, Any], reading: kinds.Reading) -> bool:
 class TestBenchmark:
     """Мерило: сто пятьдесят вопросов с ожидаемыми рядами, местами и видом ответа."""
 
-    def test_thresholds(self, content: None) -> None:
+    @pytest.mark.parametrize("path", [BENCHMARK, BLIND], ids=["benchmark", "blind"])
+    def test_thresholds(self, content: None, path: Path) -> None:
         """Ряд в первых трёх — не реже 90 %, вид ответа — не реже 85 %."""
-        rows = json.loads(BENCHMARK.read_text(encoding="utf-8"))["queries"]
+        rows = json.loads(path.read_text(encoding="utf-8"))["queries"]
         with_series = [row for row in rows if row["series"]]
         series_hits = sum(_series_found(row, parse(row["q"])) for row in with_series)
         kind_hits = sum(_kind_found(row, parse(row["q"])) for row in rows)
@@ -227,10 +231,18 @@ class TestMisses:
 
     def test_miss_is_recorded(self, client: Client, warehouse: Any) -> None:
         """Запрос без ответа записан без адреса и учётной записи."""
-        client.get(reverse("search:results"), {"q": "почему падает рождаемость"})
+        client.get(reverse("search:results"), {"q": "где много бездомных"})
         miss = SearchMiss.objects.get()
-        assert miss.text == "почему падает рождаемость"
+        assert miss.text == "где много бездомных"
         assert miss.language == "ru"
+
+    def test_questions_without_answer_by_design_are_not_misses(
+        self, client: Client, warehouse: Any
+    ) -> None:
+        """«Почему…» и «где лучше жить» без ответа по замыслу: словарь тут ни при чём."""
+        for query in ("почему падает рождаемость", "где лучше жить"):
+            client.get(reverse("search:results"), {"q": query})
+        assert not SearchMiss.objects.exists()
 
     def test_misses_are_rate_limited(
         self, client: Client, warehouse: Any, monkeypatch: Any
@@ -243,7 +255,7 @@ class TestMisses:
         cache.clear()
         monkeypatch.setattr(views, "MISSES_PER_HOUR", 2)
         for number in range(3):
-            client.get(reverse("search:results"), {"q": f"почему падает рождаемость {number}"})
+            client.get(reverse("search:results"), {"q": f"где много бездомных {number}"})
         assert SearchMiss.objects.count() == 2
 
     def test_answered_query_is_not_recorded(self, client: Client, warehouse: Any) -> None:

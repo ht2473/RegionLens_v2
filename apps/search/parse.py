@@ -51,6 +51,37 @@ _TREND = re.compile(
 )
 _YEAR = re.compile(r"\b(19[89]\d|20[0-4]\d)\b")
 _SPAN = re.compile(r"\bза\s+\d+\s+(?:лет|год\w*)|\b\d+\s+(?:years?)\b")
+# Отрезок лет — «с 2015 по 2023», «2015–2023», «from 2015 to 2023»: вопрос о динамике,
+# год ответа — конец отрезка.
+_RANGE = re.compile(
+    r"\b(?:с|from)\s+(19[89]\d|20[0-4]\d)\s+(?:по|до|to)\s+(19[89]\d|20[0-4]\d)\b"
+    r"|\b(19[89]\d|20[0-4]\d)\s*[–—-]\s*(19[89]\d|20[0-4]\d)\b"
+)
+# Вопрос без одного показателя: «где лучше жить», «качество жизни» — ответа одним рядом нет,
+# есть интегральный индекс из нескольких.
+_COMPOSITE = re.compile(
+    r"\bлучше\s+(?:всего\s+)?жить\b|\bкачеств\w*\s+жизн\w*|\bлучш\w+\s+регион\w*"
+    r"|\bbest\s+(?:place|region)s?\s+to\s+live\b|\bquality\s+of\s+life\b"
+)
+# Общие слова: сами по себе показателя не называют — «средняя пенсия» не про средний бизнес,
+# «количество туристов» не про уловленные вещества. Основы — как у ``text.stem``.
+GENERIC = frozenset(
+    {
+        "количеств",
+        "числ",
+        "средн",
+        "уровен",
+        "дол",
+        "показател",
+        "значен",
+        "данн",
+        "статистик",
+        # «сколько стоит» — не про стоимость набора товаров.
+        "сто",
+    }
+)
+# Наименьшая оценка ряда полного перечня: совпадение одним названием раздела ниже.
+CATALOG_MIN_SCORE = 5.0
 
 # Слова признаков: в отбор показателя не идут.
 _MARKER_WORD = re.compile(
@@ -62,7 +93,10 @@ _MARKER_WORD = re.compile(
     r"сравн\w*|против|vs|versus|compar\w*|"
     r"менял\w*|изменял\w*|изменил\w*|поменял\w*|изменени\w*|динамик\w*|тренд\w*|trends?|changed?|over|time|"
     r"росл\w*|рос|падал\w*|снижал\w*|увеличивал\w*|сокращал\w*|"
-    r"has|have|did|grow|grew|fall|fell|evolv\w*|кто)$"
+    r"has|have|did|grow|grew|fall|fell|evolv\w*|кто|"
+    # «На каком месте», «какое место», «позиция», «рейтинг» — о месте региона, не о показателе
+    # («места в детских садах» — во множественном числе — остаются словами показателя).
+    r"место|месте|местом|позици\w*|рейтинг\w*|топ|rank\w*|position)$"
 )
 # Связки, делящие запрос о связи на два показателя.
 _CONNECTORS = frozenset({"и", "с", "со", "от", "между", "and", "with", "to", "vs", "против"})
@@ -82,6 +116,10 @@ class Reading:
     # «Почему…» — ответа в данных нет; найденное показывается как «ближе всего».
     why: bool = False
     content: tuple[str, ...] = field(default=())
+    # Показатель найден в полном перечне, а не в основном наборе: без оценки «лучше/хуже».
+    catalog: bool = False
+    # Вопрос без одного показателя («где лучше жить»): предлагается интегральный индекс.
+    composite: bool = False
 
     @property
     def codes(self) -> list[str]:
@@ -99,15 +137,24 @@ def parse(query: str) -> Reading:
     content = tuple(stemmed[index] for index in positions)
     hits = _series_hits(content)
     found = _confident(hits, content)
+    catalog = False
+    if not found and not _COMPOSITE.search(text):
+        # Основной набор молчит — уверенное совпадение в полном перечне рядов.
+        found = _catalog_series(content)
+        catalog = bool(found)
+    span = _RANGE.search(text)
     year = _YEAR.search(text)
     reading = Reading(
         query=query,
         kind=NONE,
         series=found,
-        alternatives=tuple(hit.key for hit in hits[:ALTERNATIVES]) if found else (),
+        alternatives=tuple(hit.key for hit in hits[:ALTERNATIVES]) if found and not catalog else (),
         places=places,
-        year=int(year.group(1)) if year else None,
+        year=int([part for part in span.groups() if part][-1])
+        if span
+        else (int(year.group(1)) if year else None),
         content=content,
+        catalog=catalog,
     )
     return _special(reading, text, tokens, stemmed, positions) or _plain(reading, text)
 
@@ -134,6 +181,8 @@ def _special(
     content = reading.content
     if _WHY.search(text):
         return replace(reading, why=True)
+    if _COMPOSITE.search(text):
+        return replace(reading, composite=True, series=(), alternatives=(), catalog=False)
     if _METHOD.search(text):
         target = _best(methodology_index().search(list(content)), content)
         if target:
@@ -154,7 +203,7 @@ def _plain(reading: Reading, text: str) -> Reading:
     if len(reading.places) >= PAIR:
         return replace(reading, kind=COMPARE)
     if reading.series:
-        if _TREND.search(text):
+        if _TREND.search(text) or _RANGE.search(text):
             return replace(reading, kind=TREND)
         return replace(reading, kind=VALUE if reading.places else RANK)
     if reading.places and not reading.content:
@@ -204,14 +253,39 @@ def _series_hits(content: tuple[str, ...]) -> list[Hit]:
 
 
 def _confident(hits: list[Hit], content: tuple[str, ...]) -> tuple[str, ...]:
-    """Первый показатель, если он покрывает запрос достаточно и оценён не случайно."""
+    """
+    Первый показатель, если он покрывает запрос достаточно, оценён не случайно и совпал
+    не одними общими словами.
+    """
     if not hits or not content:
         return ()
     top = hits[0]
     coverage = len(top.matched) / len(set(content))
-    if coverage >= MIN_COVERAGE and top.score >= MIN_SCORE:
+    if coverage >= MIN_COVERAGE and top.score >= MIN_SCORE and set(top.matched) - GENERIC:
         return (top.key,)
     return ()
+
+
+def _catalog_series(content: tuple[str, ...]) -> tuple[str, ...]:
+    """
+    Ряд полного перечня, когда основной набор не нашёлся: только пригодный к сравнению
+    регионов и совпавший не одними общими словами.
+    """
+    from apps.catalog.models import Series
+    from apps.search.index import catalog_index
+
+    if not content:
+        return ()
+    hits = catalog_index().search(list(content), ALTERNATIVES * 2)
+    ready = set(
+        Series.objects.filter(
+            key__in=[hit.key for hit in hits], is_analysis_ready=True
+        ).values_list("key", flat=True)
+    )
+    # Совпадение одним названием раздела («Культура, отдых и туризм») оценивается низко —
+    # библиотеки не ответ на «туризм».
+    strong = [hit for hit in hits if hit.key in ready and hit.score >= CATALOG_MIN_SCORE]
+    return _confident(strong, content)
 
 
 def _best(hits: list[Hit], content: tuple[str, ...], *, strict: bool = False) -> str:

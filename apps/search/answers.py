@@ -57,10 +57,18 @@ def build(reading: Reading, home_code: str | None = None) -> dict[str, Any] | No
 
 
 def _item(key: str) -> Any:
-    """Показатель основного набора по ключу."""
+    """
+    Показатель основного набора по ключу; ряд полного перечня описывается источником —
+    без оценки «лучше/хуже».
+    """
+    from apps.catalog.indicator import describe_series
+    from apps.catalog.models import Series
     from apps.warehouse.queries import featured_set
 
-    return featured_set().by_key()[key]
+    featured = featured_set().by_key().get(key)
+    if featured is not None:
+        return featured
+    return describe_series(Series.objects.select_related("indicator").get(key=key))
 
 
 def _territories(codes: list[str]) -> dict[str, Any]:

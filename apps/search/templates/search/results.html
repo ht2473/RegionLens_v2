@@ -38,6 +38,9 @@
             </span>
           {% endfor %}
         </div>
+        {% if reading.catalog %}
+          <p class="answer__note">{% translate "Показатель из полного перечня рядов: числа как в источнике, без оценки «лучше» или «хуже»." %}</p>
+        {% endif %}
         {% include answer.template with a=answer %}
         <p class="answer__more">
           <a class="button button--secondary button--sm" href="{{ answer.link }}">
@@ -53,6 +56,9 @@
         <p class="answer__note">
           {% if reading.why %}
             {% translate "Сайт показывает числа и их изменение, но не объясняет причины." %}
+          {% elif reading.composite %}
+            {% translate "Одним показателем на это не ответить: «где лучше» складывается из многих. Сравнить регионы по нескольким показателям сразу можно в интегральном индексе." %}
+            <a href="{% url 'analytics:index-builder' %}">{% translate "Интегральные индексы" %}</a>.
           {% else %}
             {% translate "Вопрос не похож ни на один из показателей и терминов сайта." %}
           {% endif %}
