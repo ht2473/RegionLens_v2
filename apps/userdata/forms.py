@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from django import forms
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
@@ -76,8 +79,26 @@ class ChooseTableForm(forms.Form):
     )
 
 
+# Адрес с протоколом и адрес без него: «rosstat.gov.ru/folder» — тоже адрес.
+_SCHEME = re.compile(r"^[a-z][a-z0-9+.-]*://", re.IGNORECASE)
+_HOST = re.compile(r"^[\w-]+(\.[\w-]+)+(:\d+)?(/\S*)?$")
+
+
 class DatasetMetaForm(forms.ModelForm):
-    """Название таблицы, её источник и описание — для страницы таблицы и документов."""
+    """
+    Название таблицы, её источник и описание — для страницы таблицы и документов.
+
+    Формальности сборку не останавливают: пустое название остаётся прежним, адрес без
+    https:// дополняется, а текст вместо адреса («Росстат, бюллетень») уходит в источник.
+    """
+
+    source_url = forms.CharField(
+        label=_("Адрес источника"),
+        required=False,
+        max_length=500,
+        help_text=_("Страница, откуда взята таблица, можно без https://. Необязательно."),
+        widget=forms.TextInput(attrs={"class": "input", "inputmode": "url"}),
+    )
 
     class Meta:
         model = Dataset
@@ -85,18 +106,52 @@ class DatasetMetaForm(forms.ModelForm):
         labels = {
             "title": _("Название таблицы"),
             "source_title": _("Источник данных"),
-            "source_url": _("Адрес источника"),
             "description": _("Описание"),
         }
         help_texts = {
             "source_title": _(
                 "Кто опубликовал данные: «Росстат», «МВД России», своё исследование."
             ),
-            "source_url": _("Страница, откуда взята таблица; необязательно."),
         }
         widgets = {
             "title": forms.TextInput(attrs={"class": "input"}),
             "source_title": forms.TextInput(attrs={"class": "input"}),
-            "source_url": forms.URLInput(attrs={"class": "input"}),
             "description": forms.Textarea(attrs={"class": "textarea", "rows": 3}),
         }
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields["title"].required = False
+        # Текст из поля адреса, который адресом не оказался.
+        self.source_note = ""
+
+    def clean_title(self) -> str:
+        title = (self.cleaned_data.get("title") or "").strip()
+        return title or self.instance.title or gettext("Своя таблица")
+
+    def clean_source_url(self) -> str:
+        text = (self.cleaned_data.get("source_url") or "").strip()
+        if not text:
+            return ""
+        candidate = ""
+        if _SCHEME.match(text):
+            candidate = text
+        elif _HOST.match(text):
+            candidate = f"https://{text}"
+        if candidate:
+            try:
+                URLValidator(schemes=["http", "https"])(candidate)
+            except ValidationError:
+                pass
+            else:
+                return candidate
+        self.source_note = text
+        return ""
+
+    def clean(self) -> dict[str, Any]:
+        cleaned = super().clean() or {}
+        if self.source_note:
+            source = (cleaned.get("source_title") or "").strip()
+            joined = f"{source}, {self.source_note}" if source else self.source_note
+            cleaned["source_title"] = joined[: Dataset._meta.get_field("source_title").max_length]
+        return cleaned

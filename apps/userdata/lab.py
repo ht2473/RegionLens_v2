@@ -24,7 +24,7 @@ from apps.analytics.core.convergence import MIN_SPAN_YEARS as CONVERGENCE_SPAN
 from apps.warehouse import routing
 
 from . import access, build, extract, indicators, jobs, studies
-from .models import DatasetSeries, DatasetVersion, Study
+from .models import Dataset, DatasetSeries, DatasetVersion, Study
 from .series import FEW_REGIONS, UserSeries
 
 BUILD, COMPUTE, LEARN, PAIR = "build", "compute", "learn", "pair"
@@ -541,48 +541,80 @@ def _mark(version: DatasetVersion, name: str, recount: str) -> None:
 
 # --- Собранная таблица — в исследование -------------------------------------------------
 
-# Исследование, из панели которого начата загрузка таблицы.
-STUDY_SESSION_KEY = "userdata_study"
+# Набор → исследование, из панели которого начата его загрузка. По набору, а не одно на
+# сеанс: запомненное раз исследование забирало и таблицы, загруженные потом не из него.
+STUDY_SESSION_KEY = "userdata_study_for"
+# Сколько незаконченных загрузок помнить.
+STUDY_MEMORY = 20
 
 
-def remember_study(request: HttpRequest, public_id: str) -> None:
-    """Запомнить исследование, в которое вернётся собранная таблица; чужое — нет."""
+def chosen_study(request: HttpRequest, public_id: str) -> Study | None:
+    """Своё исследование по адресу ``?study=``; чужое и неизвестное — ``None``."""
     try:
         identifier = UUID(public_id)
     except ValueError:
+        return None
+    return studies.owned(request).filter(public_id=identifier).first()
+
+
+def remember_study(request: HttpRequest, dataset: Dataset, study: Study | None) -> None:
+    """Запомнить, что собранная таблица вернётся в исследование, откуда начата загрузка."""
+    if study is None:
         return
-    if studies.owned(request).filter(public_id=identifier).exists():
-        request.session[STUDY_SESSION_KEY] = str(identifier)
+    memory = dict(request.session.get(STUDY_SESSION_KEY) or {})
+    memory[str(dataset.public_id)] = str(study.public_id)
+    request.session[STUDY_SESSION_KEY] = dict(list(memory.items())[-STUDY_MEMORY:])
+
+
+def destination(request: HttpRequest, dataset: Dataset) -> Study | None:
+    """Исследование, куда откроется собранная таблица; ``None`` — в новое."""
+    remembered = (request.session.get(STUDY_SESSION_KEY) or {}).get(str(dataset.public_id), "")
+    return chosen_study(request, remembered) if remembered else None
 
 
 def open_in_study(request: HttpRequest, version: DatasetVersion) -> str | None:
     """
     Адрес исследования с картой первого ряда собранной таблицы: того, откуда начата
     загрузка, иначе того, где ряды таблицы уже есть (без новой карточки), иначе нового.
-    Исследования не завести (предел) — ``None``.
+    Куда попала таблица, говорит сообщение на странице исследования. Исследования
+    не завести (предел) — ``None``.
     """
+    from django.contrib import messages
+
     from .views import first_key
 
     key = first_key(version)
     if key is None:
         return None
-    owned = studies.owned(request)
-    remembered = request.session.pop(STUDY_SESSION_KEY, "")
-    study = owned.filter(public_id=remembered).first() if remembered else None
+    dataset = version.dataset
+    study = destination(request, dataset)
+    memory = dict(request.session.get(STUDY_SESSION_KEY) or {})
+    if memory.pop(str(dataset.public_id), None) is not None:
+        request.session[STUDY_SESSION_KEY] = memory
     if study is None:
-        code = version.dataset.code
         existing = next(
-            (item for item in owned.order_by("-updated_at") if code in studies.dataset_codes(item)),
+            (
+                item
+                for item in studies.owned(request).order_by("-updated_at")
+                if dataset.code in studies.dataset_codes(item)
+            ),
             None,
         )
         if existing is not None:
             url = reverse("userdata:study", args=[existing.public_id])
             return f"{url}?{urlencode({'series': key})}"
+    created = study is None
     try:
         if study is None:
-            study = studies.create(request, version.dataset.title)
+            study = studies.create(request, dataset.title)
         block = studies.add_view(study, "map", urlencode({"series": key}))
     except studies.StudyError:
         return None
+    text = (
+        _("Таблица «%(table)s» собрана, её карта — в новом исследовании.")
+        if created
+        else _("Таблица «%(table)s» собрана, её карта добавлена в исследование «%(study)s».")
+    )
+    messages.success(request, text % {"table": dataset.title, "study": study.title})
     url = reverse("userdata:study", args=[study.public_id])
     return f"{url}?{urlencode({'series': key, 'added': block['id']})}#block-{block['id']}"

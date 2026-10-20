@@ -81,7 +81,7 @@
     <nav class="tabs dataset-tabs" aria-label="{% translate 'Разделы таблицы' %}">
       {% for item in tabs %}
         <a class="tabs__tab{% if item.active %} is-active{% endif %}" href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>
-          {{ item.title }}{% if item.attention %}<span class="tabs__mark" title="{% translate 'есть замечания' %}"><span class="visually-hidden">{% translate "есть замечания" %}</span></span>{% endif %}
+          {{ item.title }}{% if item.attention %} <span class="tabs__note">{% translate "замечаний" %}: {{ item.attention }}</span>{% endif %}
         </a>
       {% endfor %}
     </nav>

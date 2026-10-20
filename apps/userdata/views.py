@@ -69,21 +69,27 @@ class UploadView(BreadcrumbMixin, TemplateView):
             Crumb(title=_("Загрузить таблицу")),
         )
 
-    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        # Загрузка начата из панели исследования: собранная таблица вернётся в него.
-        from .lab import remember_study
-
-        remember_study(request, request.GET.get("study", ""))
-        return super().get(request, *args, **kwargs)
-
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        from .lab import chosen_study
+
         context = super().get_context_data(**kwargs)
         context.setdefault("upload_form", UploadForm())
         context.setdefault("paste_form", PasteForm())
+        # Загрузка начата из панели исследования: собранная таблица вернётся в него,
+        # и страница говорит об этом до загрузки.
+        source = self.request.POST if self.request.method == "POST" else self.request.GET
+        context["study"] = chosen_study(self.request, source.get("study", ""))
         context["page_title"] = _("Загрузить таблицу")
         context["steps"] = steps("file")
         context["upload_limit"] = services.upload_size_text()
         return context
+
+    def created(self, request: HttpRequest, dataset: Dataset) -> HttpResponse:
+        """Набор заведён: запомнить исследование, откуда начата загрузка, и к файлу."""
+        from .lab import chosen_study, remember_study
+
+        remember_study(request, dataset, chosen_study(request, request.POST.get("study", "")))
+        return redirect("userdata:file", public_id=dataset.public_id)
 
     def post(self, request: HttpRequest) -> HttpResponse:
         if request.POST.get("action") == "paste":
@@ -97,7 +103,7 @@ class UploadView(BreadcrumbMixin, TemplateView):
                 except ingest.IngestError as error:
                     paste_form.add_error("text", str(error))
                 else:
-                    return redirect("userdata:file", public_id=dataset.public_id)
+                    return self.created(request, dataset)
             return self.render_to_response(self.get_context_data(paste_form=paste_form))
         upload_form = UploadForm(request.POST, request.FILES)
         if upload_form.is_valid():
@@ -107,7 +113,7 @@ class UploadView(BreadcrumbMixin, TemplateView):
             except ingest.IngestError as error:
                 upload_form.add_error("file", str(error))
             else:
-                return redirect("userdata:file", public_id=dataset.public_id)
+                return self.created(request, dataset)
         return self.render_to_response(self.get_context_data(upload_form=upload_form))
 
 
@@ -364,6 +370,8 @@ class SeriesStepView(DatasetStepMixin, TemplateView):
         return context
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        from .lab import destination
+
         context = super().get_context_data(**kwargs)
         report = self.version.report.get("extract") or {}
         items = indicators.indicators_of(self.version)
@@ -382,6 +390,7 @@ class SeriesStepView(DatasetStepMixin, TemplateView):
             built=self.version.state == DatasetVersion.State.BUILT,
             few_regions=max((item.regions for item in items), default=0) < FEW_REGIONS,
             alone_missing=self.version.report.get("build", {}).get("alone_missing", []),
+            destination=destination(self.request, self.dataset),
         )
         return context
 

@@ -180,6 +180,15 @@
       {% endif %}
       <a class="button button--ghost" href="{% url 'userdata:table' dataset.public_id %}">{% translate "Назад к описанию таблицы" %}</a>
     </div>
+    {% if not built %}
+      <p class="wizard-actions__note">
+        {% if destination %}
+          {% blocktranslate trimmed with study=destination.title %}Карта собранной таблицы добавится в исследование «{{ study }}».{% endblocktranslate %}
+        {% else %}
+          {% translate "Карта собранной таблицы откроется в новом исследовании." %}
+        {% endif %}
+      </p>
+    {% endif %}
   </form>
 
   {% endif %}

@@ -54,6 +54,21 @@ def example(slug: str) -> Example | None:
     return next((item for item in examples() if item.slug == slug), None)
 
 
+def unfinished(request: HttpRequest, item: Example) -> Dataset | None:
+    """Свой не собранный набор из этого примера — последний начатый."""
+    from . import access
+    from .models import DatasetVersion
+
+    return (
+        access.owned(request)
+        .filter(source_url=item.source_url, versions__file_name=item.name)
+        .exclude(current_version__state=DatasetVersion.State.BUILT)
+        .select_related("current_version")
+        .order_by("-created_at")
+        .first()
+    )
+
+
 def create(request: HttpRequest, item: Example) -> Dataset:
     """Принять файл примера как загруженный: название и источник — из описания."""
     from . import services

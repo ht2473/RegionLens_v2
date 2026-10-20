@@ -587,14 +587,15 @@ legend.question-card__title ~ * {
 /* --- Раздел и страница таблицы ------------------------------------------------------------ */
 
 .own-data-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
   margin-top: var(--space-5);
 }
 
-.own-data-actions form {
-  margin: 0;
+/* Куда попадёт собранная таблица: на странице загрузки и у кнопки сборки. */
+.upload-destination,
+.wizard-actions__note {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
 .own-data-actions__hint {
@@ -746,14 +747,12 @@ legend.question-card__title ~ * {
   margin-top: var(--space-2);
 }
 
-.tabs__mark {
-  display: inline-block;
-  width: 0.5rem;
-  height: 0.5rem;
+/* Число замечаний у вкладки «Проверки» — словами, цветом внимания. */
+.tabs__note {
   margin-left: var(--space-1);
-  border-radius: 50%;
-  background-color: var(--attention);
-  vertical-align: 0.15em;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--attention);
 }
 
 .dataset-menu__hint {

@@ -92,6 +92,21 @@ _SUM_UNIT = re.compile(
 _SUM_NAME = re.compile(r"(численност|количеств|^число |объ[её]м|оборот)", re.IGNORECASE)
 # Рубли: в цены года переводит индекс потребительских цен региона.
 _MONEY_UNIT = re.compile(r"(руб|₽|\brub)", re.IGNORECASE)
+# Единица — просто рубли, без разряда: «руб.», «рублей».
+_PLAIN_RUBLES = re.compile(r"^\s*(руб\.?|рубл\w*|₽)\s*$", re.IGNORECASE)
+# Дата в названии («на 1 января 2024 года», «на 01.01.2024», «на 10-е марта») — не признак
+# величины «на 1 жителя»: её убирают до сравнения с признаками.
+_DATE = re.compile(
+    r"на\s+\d{1,2}(?:-?(?:е|го))?\s+(?:январ|феврал|март|апрел|ма[яй]|июн|июл|август|"
+    r"сентябр|октябр|ноябр|декабр)\w*(?:\s+\d{4}(?:\s*(?:года|г\.?))?)?"
+    r"|на\s+\d{1,2}\.\d{1,2}(?:\.\d{2,4})?",
+    re.IGNORECASE,
+)
+
+
+def _without_dates(text: str) -> str:
+    """Название или единица без дат: «Численность на 1 января» → «Численность »."""
+    return _DATE.sub(" ", text or "")
 
 
 @dataclass(slots=True)
@@ -191,8 +206,10 @@ FIELDS = ("title", "unit", "kind", "months", "polarity", "breaks", "fold", "reco
 
 def kind_is_clear(name: str, unit: str) -> bool:
     """Вид величины подсказан единицей или названием, а не выбран по умолчанию."""
+    name, unit = _without_dates(name), _without_dates(unit)
     return bool(
-        _RELATIVE_UNIT.search(unit or "")
+        _PLAIN_RUBLES.match(unit)
+        or _RELATIVE_UNIT.search(unit or "")
         or _RELATIVE_NAME.search(name or "")
         or _SUM_UNIT.search(unit or "")
         or _SUM_NAME.search(name or "")
@@ -208,6 +225,10 @@ def default_per(name: str, kind: str) -> tuple[str, ...]:
 
 def guess_kind(name: str, unit: str) -> str:
     """Вид величины по единице и названию: сумма складывается по регионам, остальное — нет."""
+    name, unit = _without_dates(name), _without_dates(unit)
+    # Рубли без «тыс.», «млн», «млрд» — сумма на человека: зарплата, пенсия, прожиточный минимум.
+    if _PLAIN_RUBLES.match(unit):
+        return RELATIVE
     if _RELATIVE_UNIT.search(unit or "") or _RELATIVE_NAME.search(name or ""):
         return RELATIVE
     if _SUM_UNIT.search(unit or "") or _SUM_NAME.search(name or ""):

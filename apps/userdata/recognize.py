@@ -118,6 +118,19 @@ _NAMED_POINT = re.compile(r"на\s+1\s+([а-я]+)\s+((?:19|20)\d{2})")
 # от него в названии показателя остаётся «оду».
 _NAMED_YEAR = re.compile(r"(?:в|за)\s+((?:19|20)\d{2})\s*г(?:од[уа]?|г\.?|\.)?")
 _CODE_VALUE = re.compile(r"^\d{8}(\d{3})?(\.0)?$")
+# Шапка из Word: перенос слова («обрабаты- вающие») и знак сноски у слова («организаций4)»).
+# Союз после дефиса — не перенос: «сельско- и лесохозяйственная»; месяц по любую сторону —
+# тоже: «январь- май» — промежуток, а не слово.
+_WRAPPED_WORD = re.compile(r"([а-яё]+)-\s+([а-яё]+)")
+_MONTH = re.compile(
+    r"(?:январ|феврал|март|апрел|ма[йяе]|июн|июл|август|сентябр|октябр|ноябр|декабр)"
+)
+_NOT_WRAPPED = frozenset({"и", "или", "а", "либо"})
+# Знаки сносок подряд («организаций2);3)») снимаются вместе; перед скобкой пояснения
+# остаётся пробел: «населения1)(на конец года)» → «населения (на конец года)».
+_NOTE_MARK = re.compile(r"(?<=[а-яёa-z.])\d{1,2}\)(?:[;,]\s*\d{1,2}\))*(?P<bracket>\()?")
+# «Продукция … - всего»: подпись итога, у частей «в том числе» она без «всего».
+_TOTAL_WORD = re.compile(r"\s*[-–—]\s*всего\b|,\s*всего\b", re.IGNORECASE)
 _FOOTNOTE_ROW = re.compile(r"^\s*[\W_]*(\d{1,2})(?:[)\.]\s*|\s+|(?=[^\d\s]))(\S.*)$", re.DOTALL)
 
 
@@ -400,6 +413,44 @@ def _header_texts(
     return [[line[column] for line in filled if line[column]] for column in range(width)]
 
 
+def tidy_header(text: str) -> str:
+    """Подпись шапки без переноса слова из Word и без знака сноски у слова."""
+
+    def join(found: re.Match[str]) -> str:
+        left, right = found.groups()
+        if right in _NOT_WRAPPED or _MONTH.match(left) or _MONTH.match(right):
+            return found.group(0)
+        return left + right
+
+    def drop_note(found: re.Match[str]) -> str:
+        return " (" if found.group("bracket") else ""
+
+    return _WRAPPED_WORD.sub(join, _NOTE_MARK.sub(drop_note, " ".join(text.split())))
+
+
+def _named_parts(texts: list[list[str]]) -> list[list[str]]:
+    """
+    «В том числе» в шапке — не показатель: под общей подписью оно снимается, а над столбцом
+    заменяется подписью итога слева без «всего» («Продукция сельского хозяйства - всего»
+    и «в том числе | растениеводства» → «Продукция сельского хозяйства | растениеводства»).
+    """
+    named: list[list[str]] = []
+    for column in texts:
+        parts = [part for level, part in enumerate(column) if not (level and _LEAD_IN.match(part))]
+        if len(parts) > 1 and _LEAD_IN.match(parts[0]):
+            parent = next(
+                (
+                    previous[0]
+                    for previous in reversed(named)
+                    if previous and not _LEAD_IN.match(previous[0])
+                ),
+                "",
+            )
+            parts = [_TOTAL_WORD.sub("", parent), *parts[1:]] if parent else parts[1:]
+        named.append(parts)
+    return named
+
+
 def _shifted_headers(raw: list[list[str]], has_values: list[bool], territory: int) -> set[int]:
     """
     Шапка, сдвинутая на столбец относительно чисел (таблицы из Word): подписи стоят над
@@ -480,6 +531,7 @@ def _profile(
         if header_rows
         else [[] for _ in range(width)]
     )
+    texts = _named_parts([[tidy_header(text) for text in column] for column in texts])
     columns = []
     for index, values in enumerate(all_values):
         header = " | ".join(" ".join(text.split()) for text in texts[index])

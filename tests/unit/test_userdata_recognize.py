@@ -125,7 +125,8 @@ class TestSheets:
         result = _recognize(rows)
         assert result.form == WIDE
         assert {column.stamp["period"] for column in result.value_columns} == {"window:7:3"}  # type: ignore[index]
-        assert result.indicators == ["Численность", "в том числе | занятые"]
+        # «В том числе» — не показатель: над столбцом встаёт подпись итога слева.
+        assert result.indicators == ["Численность", "Численность | занятые"]
 
     def test_country_row_named_as_indicator(self) -> None:
         rows = [
@@ -204,8 +205,8 @@ class TestSheets:
         assert [column.header for column in result.value_columns] == [
             "Численность | 2024 год",
             "Численность | 2025 год",
-            "в том числе | занятые | 2024 год",
-            "в том числе | занятые | 2025 год",
+            "Численность | занятые | 2024 год",
+            "Численность | занятые | 2025 год",
         ]
         assert result.same_headers == []
 

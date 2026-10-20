@@ -20,14 +20,16 @@
         можно выбрать. Таблицу видите только вы.
       {% endblocktranslate %}
     </p>
-    <div class="own-data-actions">
-      <a class="button button--primary" href="{% url 'userdata:upload' %}">
+    <div class="own-data-actions button-pair">
+      <a class="button button--primary button--sm" href="{% url 'userdata:upload' %}">
         <svg aria-hidden="true"><use href="#icon-upload"></use></svg>
         {% translate "Загрузить таблицу" %}
       </a>
       <form method="post" action="{% url 'userdata:example' %}">
         {% csrf_token %}
-        <button class="button button--secondary" type="submit">{% translate "Попробовать на примере" %}</button>
+        <button class="button button--secondary button--sm" type="submit">
+          {% translate "Попробовать на примере" %}
+        </button>
       </form>
     </div>
     <p class="own-data-actions__hint">
@@ -98,7 +100,7 @@
                 {% endblocktranslate %}
                 {% if version.first_year %}· <span class="numeric">{{ version.first_year|year }}{% if version.last_year != version.first_year %}–{{ version.last_year|year }}{% endif %}</span>{% endif %}
               {% else %}
-                {% translate "не собрана" %}
+                {% translate "не собрана" %} · <a href="{% url 'userdata:dataset' item.public_id %}">{% translate "продолжить или удалить" %}</a>
               {% endif %}
               · {{ item.size_bytes|filesizeformat }}
               {% if item.expires_at %}· {% blocktranslate trimmed with moment=item.expires_at|date:"d.m.Y H:i" %}хранится до {{ moment }}{% endblocktranslate %}{% endif %}

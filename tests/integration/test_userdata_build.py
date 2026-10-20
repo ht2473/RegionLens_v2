@@ -145,6 +145,71 @@ class TestSeriesStep:
         assert version.regions_count == 10
         assert (version.first_year, version.last_year) == (2022, 2023)
 
+    def test_description_never_stops_the_build(self, client: Client, warehouse: Any) -> None:
+        # Необязательное — не помеха: пустое название остаётся прежним, адрес без https://
+        # дополняется, текст вместо адреса уходит в источник.
+        from apps.userdata.forms import DatasetMetaForm
+
+        dataset = _upload(client, "environment.csv")
+        blank = {"title": "", "source_title": "", "description": ""}
+        form = DatasetMetaForm({**blank, "source_url": "Росстат, бюллетень"}, instance=dataset)
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["title"] == dataset.title
+        assert form.cleaned_data["source_url"] == ""
+        assert form.cleaned_data["source_title"] == "Росстат, бюллетень"
+        form = DatasetMetaForm(
+            {**blank, "source_title": "Росстат", "source_url": "rosstat.gov.ru/folder/210"},
+            instance=dataset,
+        )
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["source_url"] == "https://rosstat.gov.ru/folder/210"
+        form = DatasetMetaForm(
+            {**blank, "source_title": "Росстат", "source_url": "сборник 2023"}, instance=dataset
+        )
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["source_title"] == "Росстат, сборник 2023"
+
+    def test_table_returns_to_its_study(self, client: Client, warehouse: Any) -> None:
+        # Куда попадёт таблица, сказано до загрузки; исследование помнится для этой таблицы,
+        # и следующая, загруженная не из него, уходит в новое.
+        from apps.userdata.models import Study
+
+        client.post(reverse("userdata:study-new"), {"title": "К курсовой"})
+        study = Study.objects.get()
+        page = client.get(reverse("userdata:upload"), {"study": str(study.public_id)})
+        assert "добавится картой в исследование «К курсовой»" in page.text
+        assert f'name="study" value="{study.public_id}"' in page.text
+        content = (FIXTURES / "environment.csv").read_bytes()
+        client.post(
+            reverse("userdata:upload"),
+            {
+                "action": "upload",
+                "study": str(study.public_id),
+                "file": SimpleUploadedFile("environment.csv", content),
+            },
+        )
+        dataset = Dataset.objects.latest("created_at")
+        client.post(
+            reverse("userdata:file", args=[dataset.public_id]),
+            {"action": "choose", "table": "", "encoding": ""},
+        )
+        _describe(client, dataset)
+        step = client.get(reverse("userdata:series", args=[dataset.public_id]))
+        assert "добавится в исследование «К курсовой»" in step.text
+        response = _build(client, dataset)
+        assert urlparse(response["Location"]).path == reverse(
+            "userdata:study", args=[study.public_id]
+        )
+        opened = client.get(response["Location"])
+        assert "добавлена в исследование «К курсовой»" in opened.text
+
+        assert "в новом исследовании" in client.get(reverse("userdata:upload")).text
+        other = _upload(client, "crime_wide.csv")
+        _describe(client, other)
+        again = _build(client, other)
+        assert urlparse(again["Location"]).path != reverse("userdata:study", args=[study.public_id])
+        assert Study.objects.count() == 2
+
     def test_rows_under_region_headings_become_a_slice(
         self, client: Client, warehouse: Any
     ) -> None:
@@ -216,6 +281,109 @@ class TestSeriesStep:
             indicators.RELATIVE
         )
         assert indicators.guess_kind("Ожидаемая продолжительность", "года") == indicators.RELATIVE
+
+    def test_date_in_title_is_not_per_capita(self) -> None:
+        # «на 1 января» — дата, а не «на 1 жителя»: численность остаётся суммой.
+        for name, unit in (
+            ("Численность населения на 1 января", ""),
+            ("Численность населения на 1 января 2024 года", "тыс. человек"),
+            ("Задолженность по ипотечным кредитам на 01.01.2007", "млн руб."),
+            ("Число организаций на 10-е марта", ""),
+        ):
+            assert indicators.guess_kind(name, unit) == indicators.SUM, name
+            assert indicators.kind_is_clear(name, unit), name
+        # Признак «на 100 жителей» рядом с датой по-прежнему узнаётся.
+        assert (
+            indicators.guess_kind("Врачи на 1 января", "на 10 000 человек населения")
+            == indicators.RELATIVE
+        )
+        # Дата без других признаков вид не подсказывает — его спросят.
+        assert not indicators.kind_is_clear("Ипотека на 1 января 2007 года", "")
+
+    def test_plain_rubles_are_per_person(self) -> None:
+        # Рубли без разряда — сумма на человека (прожиточный минимум, размер доплаты).
+        name = "Величина прожиточного минимума пенсионера"
+        assert indicators.guess_kind(name, "руб.") == indicators.RELATIVE
+        assert indicators.kind_is_clear(name, "руб.")
+        assert indicators.guess_kind("Объём кредитов", "млн руб.") == indicators.SUM
+
+    def test_column_header_gives_name_and_unit(self) -> None:
+        cases = (
+            ("Средний размер доплаты, руб.", ("Средний размер доплаты", "руб.")),
+            (
+                "Численность лиц, которым установлена доплата, чел.",
+                ("Численность лиц, которым установлена доплата", "чел."),
+            ),
+            ("Выбросы (тыс. тонн)", ("Выбросы", "тыс. тонн")),
+            ("Доля, %", ("Доля", "%")),
+            ("Число лет до пенсии", ("Число лет до пенсии", "")),
+        )
+        for header, expected in cases:
+            assert extract.header_unit(header) == expected, header
+        # Единица из своего столбца сильнее подписи.
+        assert extract.header_unit("Расходы, руб.", "млн рублей") == ("Расходы", "млн рублей")
+        # Единица в конце общей подписи составной шапки.
+        assert extract.header_unit("Объём отгрузки, млрд руб. | добыча") == (
+            "Объём отгрузки | добыча",
+            "млрд руб.",
+        )
+
+    def test_word_header_is_tidied(self) -> None:
+        from apps.userdata.recognize import tidy_header
+
+        assert tidy_header("обрабаты- вающие производства") == "обрабатывающие производства"
+        assert tidy_header("деятельности организа- ций4), млрд руб.") == (
+            "деятельности организаций, млрд руб."
+        )
+        # Сноски подряд снимаются вместе, пробел перед пояснением в скобках остаётся.
+        assert tidy_header("организаций2);3), млн руб.") == "организаций, млн руб."
+        assert tidy_header("населения1)(на конец года)") == "населения (на конец года)"
+        # Союз после дефиса и промежуток месяцев — не перенос слова.
+        assert tidy_header("сельско- и лесохозяйственная") == "сельско- и лесохозяйственная"
+        assert tidy_header("январь- май") == "январь- май"
+        assert tidy_header("июнь- сентябрь") == "июнь- сентябрь"
+        assert tidy_header("Ввод жилья, тыс. м2 общей площади") == (
+            "Ввод жилья, тыс. м2 общей площади"
+        )
+
+    def test_word_paste_gives_clean_names(self, client: Client, warehouse: Any) -> None:
+        # Вставка из Word: шапка в две строки, «в том числе», переносы слов и сноска.
+        text = (FIXTURES / "word_paste_two_level.tsv").read_text(encoding="utf-8")
+        client.post(reverse("userdata:upload"), {"action": "paste", "text": text})
+        dataset = Dataset.objects.latest("created_at")
+        client.post(
+            reverse("userdata:file", args=[dataset.public_id]),
+            {"action": "choose", "table": "", "encoding": ""},
+        )
+        # Года в таблице нет — его называет человек.
+        _describe(client, dataset, {"year": "2023"})
+        client.get(reverse("userdata:series", args=[dataset.public_id]))
+        found = {item.name: item for item in indicators.indicators_of(_version(dataset))}
+        names = " ".join(found)
+        assert found
+        assert "- " not in names.replace(" - ", " "), list(found)
+        assert "в том числе" not in names, list(found)
+        assert "4)" not in names, list(found)
+        plant = found["Продукция сельского хозяйства | растениеводства"]
+        assert plant.unit == "млрд руб."
+        mining = next(name for name in found if name.endswith("| обрабатывающие производства"))
+        assert "млрд руб." not in mining
+        assert found[mining].unit == "млрд руб."
+
+    def test_caption_is_not_part_of_column_names(self, client: Client, warehouse: Any) -> None:
+        # Пример СФР: над шапкой — «Приложение 4» и заголовок, показатели — в столбцах.
+        path = Path("data/examples/sfr-pension-supplement-2023.csv")
+        dataset = _upload(client, "sfr.csv", path.read_bytes())
+        _describe(client, dataset)
+        client.get(reverse("userdata:series", args=[dataset.public_id]))
+        found = {item.name: item for item in indicators.indicators_of(_version(dataset))}
+        assert not any(name.startswith("Приложение") for name in found), list(found)
+        minimum = found["Величина прожиточного минимума пенсионера в субъекте Российской Федерации"]
+        assert minimum.unit == "руб."
+        assert minimum.kind == indicators.RELATIVE
+        assert found[
+            "Численность лиц, которым установлена федеральная социальная доплата"
+        ].unit == ("чел.")
 
     def test_extraction_failure_is_explained(self, client: Client, warehouse: Any) -> None:
         dataset = _upload(client, "environment.csv")
@@ -315,6 +483,8 @@ class TestBuild:
         assert "RU-ARK" in version.report["build"]["alone_missing"]
         page = client.get(reverse("userdata:dataset", args=[dataset.public_id]), {"tab": "checks"})
         assert "Для долей и средних область без округов не вычислить" in page.text
+        # Число замечаний — у вкладки словами, а не точкой без подписи.
+        assert '<span class="tabs__note">замечаний: ' in page.text
 
     def test_codes_survive_rebuild(self, client: Client, warehouse: Any) -> None:
         dataset = _built(client)
@@ -614,6 +784,17 @@ class TestAgencyExamples:
         assert response["Location"] == reverse("userdata:file", args=[dataset.public_id])
         assert dataset.title == f"Пример: {item.title}"
         assert dataset.source_url == item.source_url
+
+    def test_unfinished_example_is_continued(self, client: Client, warehouse: Any) -> None:
+        url = reverse("userdata:example-file", args=["sfr-pension-supplement-2023"])
+        first = client.post(url)
+        # Повторное нажатие на не собранный пример ведёт в тот же черновик, а не в копию.
+        second = client.post(url)
+        dataset = Dataset.objects.get()
+        assert second["Location"] == first["Location"]
+        listing = client.get(reverse("userdata:index")).content.decode()
+        assert "не собрана" in listing
+        assert reverse("userdata:dataset", args=[dataset.public_id]) in listing
 
     def test_example_file_downloads(self, client: Client) -> None:
         response = client.get(reverse("userdata:example-file", args=["fts-export-2021"]))

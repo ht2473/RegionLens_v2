@@ -119,6 +119,11 @@ class ExampleFileView(View):
         item = examples.example(slug)
         if item is None:
             raise Http404
+        # Начатый и не собранный пример продолжается с того же шага: новая копия на каждое
+        # нажатие копила бы черновики в «Моих таблицах».
+        draft = examples.unfinished(request, item)
+        if draft is not None:
+            return redirect(_continue_url(draft, draft.current_version))
         try:
             services.check_limits(request)
             dataset = examples.create(request, item)
@@ -212,7 +217,7 @@ class DatasetView(ReadableDatasetMixin, BreadcrumbMixin, TemplateView):
                     "title": title,
                     "url": "?" + urlencode({"tab": code}) if code != DATA else "?",
                     "active": code == tab,
-                    "attention": code == CHECKS and notices["attention"],
+                    "attention": notices["attention"] if code == CHECKS else 0,
                 }
                 for code, title in TABS
                 if code in available
@@ -286,7 +291,8 @@ def _notices(
     """
     Пометки таблицы для вкладки «Проверки» — то, что считается сразу, без разбора рядов:
     суммы, коды-маски, мало субъектов, неполный последний год, вложенные области, строки
-    вне справочника. ``attention`` — есть ли о чём предупредить.
+    вне справочника. ``attention`` — сколько замечаний стоит прочесть: число пишется
+    у вкладки словами, а не одной точкой без подписи.
     """
     report = version.report.get("extract") or {}
     build = version.report.get("build", {})
@@ -304,13 +310,16 @@ def _notices(
         "conflicts": report.get("conflicts", 0),
         "masks": [item["value"] for item in report.get("masks", []) if item.get("masked")],
     }
-    found["attention"] = bool(
-        (found["sums"] and not found["per_capita"])
-        or found["masks"]
-        or found["few_regions"]
-        or found["incomplete"]
-        or found["alone_conflict"]
-        or found["alone_missing"]
+    found["attention"] = sum(
+        bool(item)
+        for item in (
+            found["sums"] and not found["per_capita"],
+            found["masks"],
+            found["few_regions"],
+            found["incomplete"],
+            found["alone_conflict"],
+            found["alone_missing"],
+        )
     )
     return found
 

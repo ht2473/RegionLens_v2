@@ -53,7 +53,7 @@
   <fieldset class="field indicator-card__breaks">
     <legend class="field__label">{% translate "Смена методики" %}</legend>
     <label class="indicator-card__sublabel" for="breaks-{{ number }}">{% translate "С какого года значения считаются по-другому" %}</label>
-    <input class="input input--years numeric" id="breaks-{{ number }}" name="breaks-{{ number }}" value="{{ item.breaks|join:', ' }}" inputmode="numeric" placeholder="2019" aria-describedby="breaks-hint-{{ number }}">
+    <input class="input input--years numeric" id="breaks-{{ number }}" name="breaks-{{ number }}" value="{{ item.breaks|join:', ' }}" inputmode="numeric"{% if item.last_year and item.first_year != item.last_year %} placeholder="{{ item.last_year|year }}"{% endif %} aria-describedby="breaks-hint-{{ number }}">
     <label class="indicator-card__sublabel" for="break-note-{{ number }}">{% translate "Что изменилось" %}</label>
     <input class="input" id="break-note-{{ number }}" name="break-note-{{ number }}" value="{{ item.break_note }}" maxlength="300">
     <span class="field__hint" id="breaks-hint-{{ number }}">{% translate "Несколько лет — через запятую. Динамика и инструменты анализа покажут разрыв и предложат сравнивать годы по одной методике." %}</span>

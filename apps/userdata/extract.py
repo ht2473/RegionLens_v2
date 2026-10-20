@@ -14,6 +14,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import time
 from collections import Counter, defaultdict
 from collections.abc import Iterator, Mapping
@@ -485,14 +486,21 @@ class _Reader:
             unit = self.text(row, self.unit_column)
             hidden = self.hidden(row)
             for column in values:
-                indicator = f"{base} — {column.header}" if named and column.header else base
+                indicator, column_unit = base, unit
+                if named and column.header:
+                    # Без столбца показателей показатель — сам столбец: подпись над таблицей
+                    # («Приложение 4 …») — заголовок таблицы, а не часть названия.
+                    if self.indicator_column is None:
+                        indicator, column_unit = header_unit(column.header, unit)
+                    else:
+                        indicator = f"{base} — {column.header}"
                 indicator += code
                 raw = row[column.index] if column.index < len(row) else None
                 self.collector.add(
                     indicator=indicator,
                     slices=sliced,
                     period=found.period.key,
-                    unit=unit,
+                    unit=column_unit,
                     place=place,
                     year=found.year,
                     cell=cells.parse(raw, self.style(column.index)),
@@ -557,8 +565,10 @@ class _Reader:
                 if found is None:
                     continue
                 year, period, group = found
+                column_unit = unit
                 if result.form == recognize.INDICATORS:
-                    indicator = _without_year(column.header) or self.title
+                    indicator, column_unit = header_unit(_without_year(column.header), unit)
+                    indicator = indicator or self.title
                     extra: tuple[tuple[str, str], ...] = ()
                 else:
                     indicator = row_indicator or self.title
@@ -568,7 +578,7 @@ class _Reader:
                     indicator=indicator,
                     slices=sliced + extra,
                     period=period,
-                    unit=unit,
+                    unit=column_unit,
                     place=place,
                     year=year,
                     cell=cells.parse(raw, self.style(column.index)),
@@ -644,6 +654,36 @@ class _Reader:
                 )
 
 
+# Единица в конце подписи столбца: «…, руб.», «… (тыс. человек)», «…, %».
+_UNIT_TAIL = re.compile(
+    r"(?:,\s*|\s*\(\s*)"
+    r"((?:тыс\.?|млн\.?|млрд\.?)?\s*(?:руб(?:\.|лей)?|чел(?:\.|овек)?|ед(?:\.|иниц)?|шт\.?"
+    r"|тонн|т\.|га|кв\.\s?м|м²|м3|куб\.\s?м|долл\.?(?:\s*США)?|лет|процент(?:ов)?|%"
+    r"|в\s+процентах))"
+    r"\s*\)?\s*\.?\s*$",
+    re.IGNORECASE,
+)
+
+
+def header_unit(header: str, unit: str = "") -> tuple[str, str]:
+    """
+    Название столбца и его единица: «Средний размер доплаты, руб.» → («Средний размер
+    доплаты», «руб.»). Единица из своего столбца сильнее подписи. У составной шапки
+    единица бывает в конце общей подписи: «Объём отгрузки, млрд руб. | добыча» →
+    («Объём отгрузки | добыча», «млрд руб.»).
+    """
+    found = _UNIT_TAIL.search(header)
+    if found is not None and found.start() > 0:
+        name = header[: found.start()].strip(" ,.:;–-")
+        return name, unit or " ".join(found.group(1).split())
+    head, _separator, rest = header.partition(" | ")
+    if rest:
+        name, head_unit = header_unit(head)
+        if head_unit:
+            return f"{name} | {rest}", unit or head_unit
+    return header, unit
+
+
 def _without_year(header: str) -> str:
     """Название показателя из шапки столбца без года: «… на 1 января 2024 г.» → «…»."""
     text = header
@@ -651,7 +691,9 @@ def _without_year(header: str) -> str:
         found = pattern.search(text.lower())
         if found is not None:
             text = text[: found.start()] + text[found.end() :]
-    return " ".join(text.replace(" г.", " ").split()).strip(" ,.:;–-")
+    text = " ".join(text.replace(" г.", " ").split()).strip(" ,:;–-")
+    # Точка сокращения единицы остаётся: «…, млрд руб.» — как у столбца без года.
+    return text if _UNIT_TAIL.search(text) else text.rstrip(" .,:;–-")
 
 
 # --- Запись и отчёт ------------------------------------------------------------------------------

@@ -26,6 +26,16 @@
 
   {% include "userdata/_steps.html" %}
 
+  {# Куда попадёт таблица — до загрузки, а не после сборки. #}
+  <p class="upload-destination">
+    {% if study %}
+      {% blocktranslate trimmed with title=study.title %}Собранная таблица добавится картой в исследование «{{ title }}».{% endblocktranslate %}
+      <a href="{% url 'userdata:upload' %}">{% translate "Открыть в новом исследовании" %}</a>
+    {% else %}
+      {% translate "Собранная таблица откроется картой в новом исследовании." %}
+    {% endif %}
+  </p>
+
   {% if upload_form.errors or paste_form.errors %}
     <div class="callout callout--danger form-errors" role="alert" tabindex="-1" data-error-summary>
       <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
@@ -46,6 +56,7 @@
       <form method="post" enctype="multipart/form-data" class="stack" novalidate data-upload-form>
         {% csrf_token %}
         <input type="hidden" name="action" value="upload">
+        {% if study %}<input type="hidden" name="study" value="{{ study.public_id }}">{% endif %}
         <div class="field">
           <label class="field__label" for="{{ upload_form.file.id_for_label }}">{{ upload_form.file.label }}</label>
           {{ upload_form.file }}
@@ -63,6 +74,7 @@
       <form method="post" class="stack" novalidate>
         {% csrf_token %}
         <input type="hidden" name="action" value="paste">
+        {% if study %}<input type="hidden" name="study" value="{{ study.public_id }}">{% endif %}
         <div class="field">
           <label class="field__label" for="{{ paste_form.text.id_for_label }}">{{ paste_form.text.label }}</label>
           {{ paste_form.text }}
