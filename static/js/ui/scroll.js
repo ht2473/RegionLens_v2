@@ -55,9 +55,18 @@ function update(area) {
   }
 }
 
+// Следим и за обёрткой, и за самой таблицей: таблица меняет размер без обёртки (догрузился
+// шрифт, пришли строки), и прежний замер «помещается ли» устаревает.
 const observer =
   "ResizeObserver" in window
-    ? new ResizeObserver((entries) => entries.forEach((entry) => update(entry.target)))
+    ? new ResizeObserver((entries) =>
+        entries.forEach((entry) => {
+          const area = entry.target.closest(SELECTOR);
+          if (area) {
+            update(area);
+          }
+        }),
+      )
     : null;
 
 /** Отступ закреплённой шапки таблицы: низ шапки сайта или строки пути. */
@@ -90,10 +99,16 @@ export function enhance(root = document) {
     if (area.dataset.scrollWatch === undefined) {
       area.dataset.scrollWatch = "";
       observer.observe(area);
+      const table = area.querySelector(":scope > table");
+      if (table) {
+        observer.observe(table);
+      }
     }
   });
 }
 
 export function init() {
   enhance(document);
+  // Ширина таблицы меняется, когда догрузится шрифт: перемерить все области.
+  document.fonts?.ready.then(() => document.querySelectorAll(SELECTOR).forEach(update));
 }

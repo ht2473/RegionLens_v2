@@ -243,6 +243,9 @@ STICKY_ROWS = 15
 # и строкой пути (ui/scroll.js ставит --table-head-top); широкая — у верха своей рамки.
 # Таблица прокручивается до середины, и шапка должна стоять на своём месте.
 STICKY_SCRIPT = r"""async (minRows) => {
+    // Замер «помещается ли таблица» верен только с загруженным шрифтом.
+    await document.fonts.ready;
+    await new Promise((done) => requestAnimationFrame(() => setTimeout(done, 100)));
     const problems = [];
     const tables = [...document.querySelectorAll('main .data-table-wrapper > table')]
         .filter((t) => t.tBodies[0] && t.tBodies[0].rows.length >= minRows);
