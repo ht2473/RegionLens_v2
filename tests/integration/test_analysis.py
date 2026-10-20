@@ -491,6 +491,25 @@ class TestAnalyticsTools:
         assert matrix is not None
         assert response.context["strongest"]
 
+    def test_shown_pair_is_marked_and_reached(self, client: Client, series_keys: list[str]) -> None:
+        """
+        Пара, разобранная ниже, отмечена в перечне связей; выбор другой пары и щелчок
+        по клетке матрицы ведут экран к разбору — иначе он появляется ниже края окна.
+        """
+        response = client.get(reverse("analytics:correlation"), {"series": series_keys[:3]})
+        assert response.context["matrix_option"]["pick"]["reveal"] == "#pair"
+        page = response.content.decode()
+        assert 'id="pair"' in page
+        strongest = response.context["strongest"]
+        if not strongest:
+            pytest.skip("Значимых связей в синтетическом складе нет")
+        current = [item for item in strongest if item.get("current")]
+        shown = {response.context["pair_first"]["key"], response.context["pair_second"]["key"]}
+        assert all({item["first_key"], item["second_key"]} == shown for item in current)
+        assert page.count('aria-current="true"') >= len(current)
+        if len(current) < len(strongest):
+            assert "show:#pair:top" in page
+
     def test_spatial_autocorrelation_is_measured(self, client: Client, series_key: str) -> None:
         """
         Индекс Морана рассчитан, локальные кластеры определены.

@@ -155,9 +155,14 @@ class TestFormats:
         """Параметры документа берутся из строки запроса страницы."""
         parameters = services.default_parameters(
             ReportKind.RANKING,
-            {"series": "E000000001:00", "year": "2023", "order": "asc"},
+            {"series": "E000000001:00", "year": "2023", "order": "asc", "base": "2020"},
         )
-        assert parameters == {"series": "E000000001:00", "year": "2023", "ascending": True}
+        assert parameters == {
+            "series": "E000000001:00",
+            "year": "2023",
+            "order": "asc",
+            "base": "2020",
+        }
 
     def test_file_name_describes_the_document(self) -> None:
         """Имя файла называет вид, ряд и год; двоеточие ключа заменено."""

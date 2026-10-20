@@ -93,6 +93,11 @@ class CorrelationView(AnalyticsView):
             }
         )
         context.update(_pair_context(request, selected, columns, matrix, year))
+        # Пара, разобранная ниже, отмечена в перечне связей.
+        if context.get("pair_first"):
+            shown = {context["pair_first"]["key"], context["pair_second"]["key"]}
+            for item in strongest:
+                item["current"] = {item["first_key"], item["second_key"]} == shown
         return context
 
 
@@ -119,7 +124,7 @@ def _matrix_option(matrix: dict[str, Any], titles: list[str]) -> dict[str, Any]:
         [str(title) for title in titles],
         matrix["keys"],
         cells,
-        pick={"x": "#pair-x", "y": "#pair-y"},
+        pick={"x": "#pair-x", "y": "#pair-y", "reveal": "#pair"},
     )
 
 

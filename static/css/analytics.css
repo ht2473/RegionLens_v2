@@ -123,6 +123,11 @@
   border-bottom: 0;
 }
 
+/* Разбор пары: после выбора экран переходит к нему, верх — под шапкой сайта и строкой пути. */
+.pair-frame {
+  scroll-margin-top: calc(var(--table-head-top, 104px) + var(--space-4));
+}
+
 /* Таблица внутри раздела остаётся таблицей в рамке — рамку даёт её обёртка. */
 .tool-canvas .card .data-table-wrapper {
   margin-top: var(--space-2);

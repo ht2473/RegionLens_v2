@@ -80,8 +80,14 @@ def default_parameters(kind: str, source: Any) -> dict[str, Any]:
     if kind == ReportKind.RANKING:
         if source.get("year"):
             parameters["year"] = source.get("year")
-        if source.get("order") == "asc" or source.get("ascending"):
+        # Порядок, год сравнения и округ — как на странице; без порядка — по смыслу показателя.
+        if source.get("order") in ("asc", "desc"):
+            parameters["order"] = source.get("order")
+        elif source.get("ascending"):
             parameters["ascending"] = True
+        for name in ("base", "district"):
+            if source.get(name):
+                parameters[name] = source.get(name)
     if kind == ReportKind.TERRITORY:
         parameters["territory"] = source.get("territory", "")
     return parameters

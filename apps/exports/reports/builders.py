@@ -23,6 +23,7 @@ from apps.sources.registry import registry
 from apps.warehouse.queries import (
     available_years,
     featured_set,
+    rank_history,
     ranked_years,
     ranking_table,
     region_directory,
@@ -305,15 +306,26 @@ def build_ranking_report(parameters: dict[str, Any], *, max_rows: int) -> Report
     year = _as_int(parameters.get("year")) or years[-1]
     if year not in years:
         year = years[-1]
-    previous_year = next((item for item in reversed(years) if item < year), None)
-    ascending = bool(parameters.get("ascending"))
+    # Год сравнения, порядок мест и округ — как на странице, с которой выгружают.
+    base = _as_int(parameters.get("base"))
+    previous_year = (
+        base
+        if base in years and base != year
+        else next((item for item in reversed(years) if item < year), None)
+    )
+    ascending = _ranking_ascending(series_key, parameters)
+    district = str(parameters.get("district") or "")
 
     rows_raw = ranking_table(
         series_key,
         year,
         previous_year=previous_year,
         ascending=ascending,
-    )[:max_rows]
+    )
+    if district:
+        rows_raw = [row for row in rows_raw if row.get("district_code") == district]
+    rows_raw = rows_raw[:max_rows]
+    forward = previous_year is None or previous_year < year
 
     columns = [
         Column("rank", "Место", COLUMN_INTEGER, width=8),
@@ -335,13 +347,24 @@ def build_ranking_report(parameters: dict[str, Any], *, max_rows: int) -> Report
             "value": row["value"],
             "ratio": row.get("ratio_to_country"),
             "change": (
-                row[previous_key] - row[rank_key]
+                (row[previous_key] - row[rank_key]) * (1 if forward else -1)
                 if row.get(previous_key) is not None and row.get(rank_key) is not None
                 else None
             ),
         }
         for row in rows_raw
     ]
+    tables = [
+        Table(
+            columns=columns,
+            rows=rows,
+            title=metadata["full_title_ru"],
+            note=_coverage_note(metadata),
+        )
+    ]
+    history = _places_table(series_key, rows_raw, years, year, rank_key)
+    if history is not None:
+        tables.append(history)
 
     direction = "по возрастанию значения" if ascending else "по убыванию значения"
     return ReportDocument(
@@ -352,6 +375,7 @@ def build_ranking_report(parameters: dict[str, Any], *, max_rows: int) -> Report
                 ("Единица измерения", metadata.get("unit_name_ru") or "не указана"),
                 ("Год", str(year)),
                 ("Год сравнения", str(previous_year) if previous_year else "—"),
+                *([("Федеральный округ", _district_name(district))] if district else []),
                 ("Субъектов в рейтинге", str(len(rows))),
                 *_origin_row(series_key, year),
                 *_status_row(series_key),
@@ -365,18 +389,62 @@ def build_ranking_report(parameters: dict[str, Any], *, max_rows: int) -> Report
                     "Положительное изменение места означает подъём в рейтинге "
                     "относительно года сравнения.",
                 ],
-                tables=[
-                    Table(
-                        columns=columns,
-                        rows=rows,
-                        title=metadata["full_title_ru"],
-                        note=_coverage_note(metadata),
-                    )
-                ],
+                tables=tables,
             )
         ],
         footer=_footer(),
     )
+
+
+# История мест в выгрузке — те же годы, что на графике и в столбце таблицы.
+RANKING_HISTORY_YEARS = 10
+
+
+def _ranking_ascending(series_key: str, parameters: dict[str, Any]) -> bool:
+    """Порядок мест: явный выбор страницы, иначе — по смыслу показателя, как на странице."""
+    from apps.catalog.models import Series
+    from apps.rankings.panel import first_at_smallest
+
+    order = parameters.get("order")
+    if order in ("asc", "desc"):
+        return order == "asc"
+    if parameters.get("ascending"):
+        return True
+    series = None if is_user_key(series_key) else Series.objects.filter(key=series_key).first()
+    return series is not None and first_at_smallest(series, None)
+
+
+def _district_name(code: str) -> str:
+    """Название федерального округа по коду; неизвестный — кодом."""
+    territory = Territory.objects.filter(code=code).first()
+    return territory.name_ru if territory else code
+
+
+def _places_table(
+    series_key: str,
+    rows: list[dict[str, Any]],
+    years: list[int],
+    year: int,
+    rank_key: str,
+) -> Table | None:
+    """Места по годам за последние годы до года рейтинга: регионы × годы, числами."""
+    window = [item for item in years if year - RANKING_HISTORY_YEARS < item <= year]
+    if len(window) < 2 or not rows:  # noqa: PLR2004 — истории по одному году нет
+        return None
+    codes = [row["territory_code"] for row in rows]
+    history = rank_history(series_key, codes, first_year=window[0], last_year=window[-1])
+    columns = [Column("territory", "Субъект", COLUMN_TEXT, width=40)] + [
+        Column(f"y{item}", str(item), COLUMN_INTEGER, width=8) for item in window
+    ]
+    table_rows = []
+    for row in rows:
+        places = {
+            point["year"]: point[rank_key] for point in history.get(row["territory_code"], [])
+        }
+        table_rows.append(
+            {"territory": row["name_ru"], **{f"y{item}": places.get(item) for item in window}}
+        )
+    return Table(columns=columns, rows=table_rows, title="Места по годам")
 
 
 # ---------------------------------------------------------------------------------------

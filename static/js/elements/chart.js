@@ -269,9 +269,10 @@ class RegionChart extends HTMLElement {
   }
 
   /**
-   * Выбор щелчком по элементу графика (служебный раздел pick: {x, y} — селекторы полей формы):
-   * у элемента данных pick — значения полей; поле получает значение, форма — событие change.
-   * То же без мыши — ссылками рядом с графиком.
+   * Выбор щелчком по элементу графика (служебный раздел pick: {x, y} — селекторы полей формы,
+   * reveal — блок итога): у элемента данных pick — значения полей; поле получает значение,
+   * форма — событие change, а после ответа экран переходит к итогу — иначе он появляется
+   * ниже края окна и щелчок кажется пустым. То же без мыши — ссылками рядом с графиком.
    */
   enablePick() {
     const pick = this.options.pick;
@@ -290,6 +291,13 @@ class RegionChart extends HTMLElement {
       fields.forEach((field, index) => {
         field.value = values[index];
       });
+      if (pick.reveal) {
+        document.body.addEventListener(
+          "htmx:afterSettle",
+          () => document.querySelector(pick.reveal)?.scrollIntoView({ block: "start" }),
+          { once: true },
+        );
+      }
       fields[0].dispatchEvent(new Event("change", { bubbles: true }));
     });
   }

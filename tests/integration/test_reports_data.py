@@ -127,6 +127,50 @@ class TestRankingReport:
         )
         assert document.sections[0].tables[0].rows
 
+    def test_page_settings_reach_the_file(self, series_key: str) -> None:
+        """Год сравнения, округ и порядок мест — как на странице; места по годам — листом."""
+        from apps.catalog.models import Territory
+        from apps.warehouse.queries import ranking_table
+
+        district = Territory.objects.federal_districts().order_by("display_order").first()
+        assert district is not None
+        document = build_report(
+            ReportKind.RANKING,
+            {
+                "series": series_key,
+                "year": 2018,
+                "base": 2010,
+                "district": district.code,
+                "order": "asc",
+            },
+            max_rows=MAX_ROWS,
+        )
+        meta = dict(document.meta)
+        assert meta["Год сравнения"] == "2010"
+        assert meta["Федеральный округ"] == district.name_ru
+        main, history = document.sections[0].tables
+        expected = [
+            row
+            for row in ranking_table(series_key, 2018, previous_year=2010, ascending=True)
+            if row["district_code"] == district.code
+        ]
+        assert [row["territory"] for row in main.rows] == [row["name_ru"] for row in expected]
+        assert [row["change"] for row in main.rows] == [
+            row["previous_rank_asc"] - row["rank_asc"] for row in expected
+        ]
+        assert history.title == "Места по годам"
+        assert history.columns[-1].title == "2018"
+        assert len(history.rows) == len(main.rows)
+
+    def test_meaning_sets_the_default_order(self, warehouse: Any) -> None:
+        """Без порядка в адресе — по смыслу показателя: у безработицы первое — наименьшее."""
+        from apps.catalog.models import Series
+
+        key = Series.objects.get(indicator__code=synthetic.UNEMPLOYMENT_CODE).key
+        document = build_report(ReportKind.RANKING, {"series": key}, max_rows=MAX_ROWS)
+        values = [row["value"] for row in document.sections[0].tables[0].rows]
+        assert values == sorted(values)
+
 
 class TestRendering:
     """Превращение отчёта в файл."""

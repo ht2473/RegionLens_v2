@@ -72,12 +72,12 @@
               <th scope="col" class="is-numeric">{% translate "Пар" %}</th>
               <th scope="col" class="is-numeric">{% translate "p" %}</th>
               <th scope="col" class="is-numeric">{% term "significance-level" _("p с поправкой") %}</th>
-              <th scope="col"><span class="visually-hidden">{% translate "Разбор" %}</span></th>
+              <th scope="col">{% translate "Пара на диаграмме" %}</th>
             </tr>
           </thead>
           <tbody>
             {% for item in strongest %}
-              <tr>
+              <tr{% if item.current %} class="is-selected" aria-current="true"{% endif %}>
                 <td class="data-table__long">{{ item.first_label }}</td>
                 <td class="data-table__long">{{ item.second_label }}</td>
                 <td class="is-numeric">
@@ -89,9 +89,13 @@
                 <td class="is-numeric text-secondary">{{ item.correlation.pairs }}</td>
                 <td class="is-numeric text-secondary">{{ item.correlation.p_value|p_level }}</td>
                 <td class="is-numeric">{{ item.correlation.p_adjusted|p_level }}</td>
-                <td>
-                  <a href="{{ item.url }}" hx-get="{{ item.url }}" hx-target="#analytics-results"
-                     hx-push-url="true" hx-swap="innerHTML transition:true">{% translate "Разобрать" %}</a>
+                <td class="data-table__action">
+                  {% if item.current %}
+                    <a href="#pair">{% translate "Показана ниже" %}</a>
+                  {% else %}
+                    <a href="{{ item.url }}" hx-get="{{ item.url }}" hx-target="#analytics-results"
+                       hx-push-url="true" hx-swap="innerHTML show:#pair:top transition:true">{% translate "Показать на диаграмме" %}</a>
+                  {% endif %}
                 </td>
               </tr>
             {% endfor %}
@@ -103,7 +107,7 @@
 
   {# --- Разбор пары ------------------------------------------------------------------------- #}
   {% if scatter_option %}
-    <div class="chart-frame" style="margin-top: var(--space-5)">
+    <div class="chart-frame pair-frame" id="pair" style="margin-top: var(--space-5)">
       <div class="chart-frame__header">
         <div>
           <div class="chart-frame__title">
