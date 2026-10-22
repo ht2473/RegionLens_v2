@@ -2551,6 +2551,21 @@ rl-time-slider {
   stroke-opacity: 0.45;
 }
 
+/* Карта значками: круг полупрозрачный, кромка цвета подложки разделяет соседние круги;
+   наведение и щелчок проходят к субъекту под кругом. */
+.geo-map__symbol {
+  fill: var(--symbol-fill);
+  stroke: var(--symbol-stroke);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.geo-map__symbol.is-selected {
+  stroke: var(--map-label);
+  stroke-width: 2.5;
+}
+
 .geo-map__inset-frame {
   fill: none;
   stroke: var(--map-frame);
@@ -2812,6 +2827,54 @@ rl-time-slider {
 /* Метка перед текстом заголовка или подписи — с отступом, а не вплотную. */
 .card__title > .map-legend__swatch {
   margin-inline-end: var(--space-2);
+}
+
+/* Легенда значков: круги образцовых значений в масштабе карты — диаметр в единицах чертежа
+   (ширина 2000) переводится в ширину карты; на телефоне карта не уже 720 px. */
+.symbol-key {
+  --map-width: 100cqw;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2) var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.map-legend--symbols {
+  container-type: inline-size;
+}
+
+@media (max-width: 720px) {
+  .symbol-key {
+    --map-width: max(100cqw, 720px);
+  }
+}
+
+.symbol-key__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.symbol-key__item--no-data {
+  flex-direction: row;
+  align-self: center;
+}
+
+.symbol-key__circle {
+  width: calc(var(--d) * var(--map-width) / 2000);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background-color: var(--symbol-fill);
+  box-shadow: 0 0 0 1px var(--symbol-stroke);
+}
+
+.symbol-key__value {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
 .map-legend__swatch--no-data {

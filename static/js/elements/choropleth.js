@@ -113,7 +113,10 @@ const LEGEND_ROW = 24;
  * @param {number} width ширина картинки
  * @returns {{markup: string, height: number}}
  */
-function legendMarkup(root, width) {
+function legendMarkup(root, width, scale) {
+  if (root.querySelector(".symbol-key__item")) {
+    return symbolMarkup(root, width, scale);
+  }
   const items = [...root.querySelectorAll(".map-legend__class")].map((item) => {
     const swatch = item.querySelector(".map-legend__swatch");
     const range = item.querySelector(".map-legend__range");
@@ -153,6 +156,55 @@ function legendMarkup(root, width) {
 }
 
 /**
+ * Легенда карты значками: образцовые круги в масштабе картинки (``--d`` — диаметр в единицах
+ * чертежа), подписи значений справа от кругов, «нет данных» — образцом штриховки.
+ *
+ * @param {Element} root элемент карты с легендой
+ * @param {number} width ширина картинки
+ * @param {number} scale единиц картинки в единице чертежа
+ * @returns {{markup: string, height: number}}
+ */
+function symbolMarkup(root, width, scale) {
+  const colour = token("--text-secondary", "#4a4239");
+  const font = (window.getComputedStyle(document.body).fontFamily || "sans-serif").replace(/"/g, "'");
+  const text = (x, y, label) =>
+    `<text x="${x}" y="${y}" font-size="${LEGEND_SIZE}" font-family="${font}" fill="${colour}">` +
+    `${label.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</text>`;
+  const items = [...root.querySelectorAll(".symbol-key__item")];
+  const circles = items
+    .map((item) => item.querySelector(".symbol-key__circle"))
+    .filter(Boolean)
+    .map((circle) => Number.parseFloat(window.getComputedStyle(circle).getPropertyValue("--d")) || 0);
+  const tallest = Math.max(SWATCH, ...circles.map((diameter) => diameter * scale));
+  const base = LEGEND_GAP + tallest;
+  const parts = [];
+  let x = 0;
+  items.forEach((item) => {
+    const label = (item.querySelector(".symbol-key__value") || item).textContent.replace(/\s+/g, " ").trim();
+    const circle = item.querySelector(".symbol-key__circle");
+    const swatch = item.querySelector(".map-legend__swatch");
+    if (circle) {
+      const style = window.getComputedStyle(circle);
+      const radius = ((Number.parseFloat(style.getPropertyValue("--d")) || 0) * scale) / 2;
+      parts.push(
+        `<circle cx="${x + radius}" cy="${base - radius}" r="${radius}" fill="${style.backgroundColor}"` +
+          ` stroke="${style.borderTopColor}"/>`,
+        text(x + 2 * radius + 6, base, label),
+      );
+      x += 2 * radius + 6 + label.length * LEGEND_SIZE * 0.56 + LEGEND_GAP;
+    } else if (swatch && x + SWATCH < width) {
+      parts.push(
+        `<rect x="${x}" y="${base - SWATCH}" width="${SWATCH}" height="${SWATCH}" rx="3"` +
+          ` fill="${token("--no-data-fill", "#ddd")}" stroke="${window.getComputedStyle(swatch).borderTopColor}"/>`,
+        text(x + SWATCH + 6, base - 2, label),
+      );
+      x += SWATCH + 6 + label.length * LEGEND_SIZE * 0.56 + LEGEND_GAP;
+    }
+  });
+  return { markup: parts.join(""), height: base + LEGEND_GAP / 2 };
+}
+
+/**
  * Чертёж картинки: карта во всю ширину и легенда под ней.
  *
  * @param {Element} root элемент карты
@@ -164,7 +216,7 @@ function drawing(root, map) {
   const ratio = box && box.width ? box.height / box.width : 0.6;
   const width = IMAGE_WIDTH;
   const mapHeight = Math.round(width * ratio);
-  const legend = legendMarkup(root, width);
+  const legend = legendMarkup(root, width, box && box.width ? width / box.width : 1);
   const parsed = new DOMParser().parseFromString(serialize(map), "image/svg+xml").documentElement;
   parsed.setAttribute("width", String(width));
   parsed.setAttribute("height", String(mapHeight));
@@ -175,6 +227,26 @@ function drawing(root, map) {
     new XMLSerializer().serializeToString(parsed) +
     `<g transform="translate(0 ${mapHeight})">${legend.markup}</g></svg>`;
   return { svg, width, height };
+}
+
+/**
+ * Картинка карты с легендой без подписи — для отчёта Word (ui/report.js): название и источник
+ * там — текстом. Чертёж снимается сразу, в цветах текущей темы; PNG дорисовывается позже.
+ *
+ * @param {Element} root элемент карты
+ * @returns {Promise<string>|null} адрес данных PNG или null, если карты нет
+ */
+export function picture(root) {
+  const map = root.querySelector("[data-geo-map], svg.tile-map");
+  if (!map) {
+    return null;
+  }
+  root.classList.add("is-exporting");
+  root.apply?.(null);
+  const plan = drawing(root, map);
+  root.classList.remove("is-exporting");
+  root.apply?.(locked);
+  return svgToPng(plan.svg, plan.width, plan.height);
 }
 
 /** Сохранить карту картинкой с подписью: «png» или «svg». */

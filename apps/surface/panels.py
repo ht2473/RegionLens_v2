@@ -74,7 +74,7 @@ PANELS: tuple[Panel, ...] = (
         template="maps/partials/_map_surface.html",
         view_template="maps/partials/_view.html",
         builder=build_map,
-        params=("method", "classes", "mode", "compare"),
+        params=("method", "classes", "mode", "compare", "marks"),
     ),
     Panel(
         code=PANEL_COMPARE,

@@ -157,6 +157,12 @@ def _mode(_target: str, values: dict[str, Any]) -> str:
     return gettext("плиточная карта") if values["mode"] == MODE_TILES else ""
 
 
+def _marks(_target: str, values: dict[str, Any]) -> str:
+    from apps.maps.panel import MARKS_SYMBOLS
+
+    return gettext("карта значками") if values["marks"] == MARKS_SYMBOLS else ""
+
+
 def _compare(_target: str, values: dict[str, Any]) -> str:
     year = _year(values["compare"])
     return gettext("изменение к %(year)s году") % {"year": year} if year else ""
@@ -245,6 +251,7 @@ def _section(_target: str, values: dict[str, Any]) -> str:
 _BUILDERS: tuple[tuple[str, Callable[[str, dict[str, Any]], str]], ...] = (
     ("method", _scale),
     ("mode", _mode),
+    ("marks", _marks),
     ("compare", _compare),
     ("basis", _basis),
     ("span", _span),

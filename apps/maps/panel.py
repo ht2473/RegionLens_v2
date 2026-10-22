@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from django.http import HttpRequest
@@ -20,7 +21,7 @@ from apps.surface.state import SurfaceState
 from apps.warehouse.queries import series_values_by_territory
 
 from .boundaries import boundaries_available, boundaries_meta
-from .cartogram import DEFINITION_PREFIX, build_map
+from .cartogram import DEFINITION_PREFIX, build_map, symbol_radius
 from .classification import (
     DEFAULT_CLASSES,
     DEFAULT_METHOD,
@@ -41,16 +42,31 @@ MODE_GEOGRAPHIC = "geo"
 MODE_TILES = "tiles"
 MODES = (MODE_GEOGRAPHIC, MODE_TILES)
 
+# Знаки карты: заливка по шкале или круги, площадь которых — значение. «По виду величины» —
+# значки у сумм (абсолютных величин), заливка у относительных; так строит карту исследование.
+MARKS_FILL = "fill"
+MARKS_SYMBOLS = "symbols"
+MARKS_AUTO = "auto"
+MARKS = (MARKS_FILL, MARKS_SYMBOLS)
+# Образцовые значения легенды значков — доли наибольшего: площадь каждого круга вчетверо
+# меньше предыдущего, радиус — вдвое.
+SYMBOL_STEPS = (1.0, 0.25, 0.0625)
+
 # Число территорий в списках лидеров и аутсайдеров под картой.
 LEADERS_LIMIT = 5
 
 
 def build(
-    request: HttpRequest, state: SurfaceState, *, prefix: str = DEFINITION_PREFIX
+    request: HttpRequest,
+    state: SurfaceState,
+    *,
+    prefix: str = DEFINITION_PREFIX,
+    marks: str = MARKS_FILL,
 ) -> dict[str, Any]:
     """
     Подготовить всё, что нужно для отрисовки карты и легенды; ``prefix`` — приставка
-    опознавателей контуров, если карт на странице несколько (исследование).
+    опознавателей контуров, если карт на странице несколько (исследование); ``marks`` — знаки,
+    если запрос их не называет (``MARKS_AUTO`` — по виду величины).
     """
     context: dict[str, Any] = {
         "boundaries_available": boundaries_available(),
@@ -69,6 +85,16 @@ def build(
     series = state.series
     mode = context["mode"]
     item = describe_series(series)
+    possible = _symbols_possible(rows, mode, context["compare_year"])
+    wanted = request.GET.get("marks") or marks
+    symbols = possible and (
+        wanted == MARKS_SYMBOLS or (wanted == MARKS_AUTO and bool(item.absolute))
+    )
+    context.update(
+        marks=MARKS_SYMBOLS if symbols else MARKS_FILL,
+        symbols_possible=possible,
+        symbol_legend=_symbol_legend(rows, item.precision) if symbols else [],
+    )
     top, bottom = _leaders(
         rows, item.precision, coloured=not context["compare_year"], ratio=not item.absolute
     )
@@ -79,7 +105,7 @@ def build(
             "tile_grid": tile_grid(rows),
             "tile_caption": _("Плиточная картограмма: %(title)s") % {"title": series.full_title},
             "geo_map": (
-                build_map(rows, selected=state.codes, prefix=prefix)
+                build_map(rows, selected=state.codes, prefix=prefix, symbols=symbols)
                 if mode == MODE_GEOGRAPHIC
                 else None
             ),
@@ -94,6 +120,48 @@ def build(
         }
     )
     return context
+
+
+def _symbols_possible(rows: list[dict[str, Any]], mode: str, compare_year: int | None) -> bool:
+    """
+    Значки можно нарисовать: карта географическая, лет не сравнивают (изменение со знаком —
+    заливка расходящейся шкалой) и значения не отрицательны, хотя бы одно больше нуля.
+    """
+    values = [row["mapped"] for row in rows if row["mapped"] is not None]
+    return (
+        mode == MODE_GEOGRAPHIC
+        and compare_year is None
+        and bool(values)
+        and min(values) >= 0
+        and max(values) > 0
+    )
+
+
+def _symbol_legend(rows: list[dict[str, Any]], precision: int) -> list[dict[str, str]]:
+    """Круги легенды: круглые значения не больше долей наибольшего, диаметр в единицах чертежа."""
+    highest = max(row["mapped"] for row in rows if row["mapped"] is not None)
+    items: list[dict[str, str]] = []
+    shown: list[float] = []
+    for share in SYMBOL_STEPS:
+        value = _round_down(highest * share)
+        if value <= 0 or (shown and value >= shown[-1]):
+            continue
+        shown.append(value)
+        items.append(
+            {
+                "diameter": f"{2 * symbol_radius(value, highest):.1f}",
+                "label": ru_number(value, precision if value < 1 else 0),
+            }
+        )
+    return items
+
+
+def _round_down(value: float) -> float:
+    """Круглое число не больше данного: 1, 2 или 5 с нулями — для подписи легенды."""
+    if value <= 0:
+        return 0.0
+    power = 10.0 ** math.floor(math.log10(value))
+    return next(step * power for step in (5, 2, 1) if step * power <= value)
 
 
 def _leaders(

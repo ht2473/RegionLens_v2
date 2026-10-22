@@ -499,11 +499,13 @@ def build_map(
     *,
     selected: Sequence[str] = (),
     prefix: str = DEFINITION_PREFIX,
+    symbols: bool = False,
 ) -> dict[str, Any] | None:
     """
     Собрать чертёж картограммы: к готовой геометрии — заливка, подсказки и подписи.
 
     ``prefix`` — приставка опознавателей контуров: у второй карты на странице своя.
+    ``symbols`` — карта значками: субъекты ровного цвета, значение — площадь круга.
     """
     plan = layout()
     if plan is None:
@@ -511,57 +513,242 @@ def build_map(
 
     known = {row["code"]: row for row in rows if row["code"] in plan.shapes}
     highlighted = _highlighted(known, selected)
-    regions = [_region(code, row, prefix) for code, row in known.items()]
-    labels = _labels(plan, known, highlighted)
+    regions = [_region(code, row, prefix, plain=symbols) for code, row in known.items()]
+
+    # Значения — у компактной части страны: карта приближается к ней, врезки не нужны.
+    # Иначе — врезки только там, где есть значение хотя бы у одного их субъекта.
+    valued = {code for code, row in known.items() if row.get("colour")}
+    zoom = _fit(plan, valued)
+    kept = (
+        []
+        if zoom is not None
+        else [inset for inset in plan.insets if any(code in valued for code in inset.focus)]
+    )
+    shifts = _recentre(plan, kept)
+    if zoom is not None:
+        backdrop = height = zoom.height
+    else:
+        backdrop = plan.map_height
+        height = plan.height if kept else plan.map_height
+    labels = _labels(plan, known, highlighted, kept=kept, zoom=zoom, height=backdrop)
 
     return {
         "width": _number(plan.width),
-        "height": _number(plan.height),
-        "map_height": _number(plan.map_height),
-        "view_box": f"0 0 {_number(plan.width)} {_number(plan.height)}",
+        "height": _number(height),
+        "map_height": _number(backdrop),
+        "view_box": f"0 0 {_number(plan.width)} {_number(height)}",
+        "zoom": zoom.transform if zoom is not None else "",
+        # Штриховка внутри увеличенного чертежа увеличилась бы вместе с ним.
+        "pattern_transform": (
+            f"scale({1 / zoom.scale:.4f}) rotate(45)" if zoom is not None else "rotate(45)"
+        ),
         "definitions": [
             {"id": f"{prefix}-{code}", "path": plan.shapes[code].path} for code in known
         ],
         "regions": regions,
         "labels": labels,
         "insets": [
-            _inset(plan, inset, known, highlighted, selected=selected, prefix=prefix)
-            for inset in plan.insets
+            _inset(
+                plan,
+                inset,
+                known,
+                highlighted,
+                selected=selected,
+                prefix=prefix,
+                shift=shift,
+                plain=symbols,
+            )
+            for inset, shift in zip(kept, shifts, strict=True)
         ],
         "no_data_pattern": f"{prefix}-no-data",
+        "symbols": _symbols(plan, known, kept, shifts, zoom) if symbols else [],
     }
 
 
-def _region(code: str, row: dict[str, Any], prefix: str = DEFINITION_PREFIX) -> dict[str, Any]:
-    """Описать один субъект на общей карте; признак выбора — из строки наблюдения."""
+# Карта значками: радиус наибольшего круга и наименьший видимый — в единицах чертежа;
+# площадь круга пропорциональна значению.
+SYMBOL_RADIUS = 72.0
+SYMBOL_MIN_RADIUS = 3.0
+
+
+def symbol_radius(value: float, highest: float) -> float:
+    """Радиус круга значения: площадь пропорциональна значению, малый — не меньше видимого."""
+    if value <= 0 or highest <= 0:
+        return 0.0
+    return max(SYMBOL_RADIUS * math.sqrt(value / highest), SYMBOL_MIN_RADIUS)
+
+
+def _symbols(
+    plan: Layout,
+    known: dict[str, dict[str, Any]],
+    kept: list[InsetLayout],
+    shifts: list[float],
+    zoom: Zoom | None,
+) -> list[dict[str, Any]]:
+    """
+    Круги значений в точках подписей субъектов. Субъект врезки — во врезке, но круг того же
+    масштаба, что на общей карте: увеличенный вместе с врезкой, он преувеличил бы значение.
+    Крупные — снизу, мелкие поверх них.
+    """
+    values = {
+        code: float(row["mapped"]) for code, row in known.items() if row.get("mapped") is not None
+    }
+    highest = max(values.values(), default=0.0)
+    in_inset = {
+        code: (inset, shift)
+        for inset, shift in zip(kept, shifts, strict=True)
+        for code in inset.focus
+    }
+    found: list[tuple[float, dict[str, Any]]] = []
+    for code, value in values.items():
+        radius = symbol_radius(value, highest)
+        if not radius:
+            continue
+        if code in in_inset:
+            inset, shift = in_inset[code]
+            x, y = inset.place(plan.anchor(code))
+            x += shift
+        else:
+            x, y = plan.anchor(code)
+            if zoom is not None:
+                x, y = zoom.place((x, y))
+        row = known[code]
+        found.append(
+            (
+                radius,
+                {
+                    "code": code,
+                    "x": _number(x),
+                    "y": _number(y),
+                    # Строкой с точкой: дробь шаблон записал бы с запятой.
+                    "radius": f"{radius:.1f}",
+                    "selected": bool(row.get("selected")),
+                },
+            )
+        )
+    return [item for _radius, item in sorted(found, key=lambda pair: -pair[0])]
+
+
+# Значения у части страны, чей габарит меньше этой доли карты, — карта приближается к ним.
+FIT_SHARE = 0.35
+# Поле вокруг приближенного окна — доля его большей стороны.
+FIT_PADDING = 0.08
+# Окно не уже этого отношения ширины к высоте: узкая полоса читается хуже.
+FIT_MIN_ASPECT = 1.2
+# Наибольшее увеличение: контуры записаны с точностью до единицы чертежа.
+FIT_MAX_SCALE = 4.0
+
+
+@dataclass(frozen=True, slots=True)
+class Zoom:
+    """Окно чертежа вокруг субъектов со значениями, растянутое на всю ширину карты."""
+
+    left: float
+    top: float
+    scale: float
+    height: float
+
+    @property
+    def transform(self) -> str:
+        """Записать увеличение для группы контуров."""
+        return f"scale({self.scale:.4f}) translate({_number(-self.left)} {_number(-self.top)})"
+
+    def place(self, point: tuple[float, float]) -> tuple[float, float]:
+        """Перевести точку общей карты в координаты увеличенной."""
+        return (point[0] - self.left) * self.scale, (point[1] - self.top) * self.scale
+
+
+def _fit(plan: Layout, codes: set[str]) -> Zoom | None:
+    """
+    Приблизить карту к субъектам со значениями или вернуть ``None``, если они занимают
+    большую часть страны: у таблицы по десяти регионам округа карта всей страны — пятно
+    в углу.
+    """
+    if not codes:
+        return None
+    boxes = [plan.shapes[code].box for code in codes]
+    left = min(box[0] for box in boxes)
+    top = min(box[1] for box in boxes)
+    right = max(box[2] for box in boxes)
+    bottom = max(box[3] for box in boxes)
+    width, height = right - left, bottom - top
+    if width * height > FIT_SHARE * plan.width * plan.map_height:
+        return None
+
+    pad = FIT_PADDING * max(width, height)
+    left, top, width, height = left - pad, top - pad, width + 2 * pad, height + 2 * pad
+    wanted = max(FIT_MIN_ASPECT * height, plan.width / FIT_MAX_SCALE)
+    if width < wanted:
+        left, width = left - (wanted - width) / 2, wanted
+    scale = plan.width / width
+    return Zoom(left=left, top=top, scale=scale, height=height * scale)
+
+
+def _recentre(plan: Layout, kept: list[InsetLayout]) -> list[float]:
+    """Сдвиги оставшихся врезок по горизонтали, чтобы полоса снова стояла по центру."""
+    if not kept or len(kept) == len(plan.insets):
+        return [0.0] * len(kept)
+    widths = [inset.frame[2] for inset in kept]
+    offset = (plan.width - sum(widths) - INSET_GAP * (len(kept) - 1)) / 2
+    shifts = []
+    for inset, width in zip(kept, widths, strict=True):
+        shifts.append(offset - inset.frame[0])
+        offset += width + INSET_GAP
+    return shifts
+
+
+def _region(
+    code: str, row: dict[str, Any], prefix: str = DEFINITION_PREFIX, *, plain: bool = False
+) -> dict[str, Any]:
+    """
+    Описать один субъект на общей карте; признак выбора — из строки наблюдения. ``plain`` —
+    карта значками: субъект со значением ровного цвета, без шкалы.
+    """
+    if not row.get("colour"):
+        fill = f"url(#{prefix}-no-data)"
+    else:
+        fill = "var(--symbol-land)" if plain else f"var({row['colour']})"
     return {
         "code": code,
         "reference": f"#{prefix}-{code}",
         "href": row.get("href", ""),
         "title": row.get("title", row.get("name", code)),
-        "fill": (f"var({row['colour']})" if row.get("colour") else f"url(#{prefix}-no-data)"),
+        "fill": fill,
         "class_index": "" if row.get("class_index") is None else str(row["class_index"]),
         "selected": bool(row.get("selected")),
     }
 
 
 def _labels(
-    plan: Layout, known: dict[str, dict[str, Any]], highlighted: list[str]
+    plan: Layout,
+    known: dict[str, dict[str, Any]],
+    highlighted: list[str],
+    *,
+    kept: list[InsetLayout],
+    zoom: Zoom | None,
+    height: float,
 ) -> list[dict[str, Any]]:
-    """Подписать на карте выбранные субъекты; у кого есть врезка — во врезке."""
-    inset_codes = {code for inset in plan.insets for code in inset.focus}
+    """
+    Подписать на карте выбранные субъекты; у кого есть врезка — во врезке. На увеличенной
+    карте субъект за краем окна не подписывается: подпись у кромки указала бы не туда.
+    """
+    inset_codes = {code for inset in kept for code in inset.focus}
     placements: list[Placement] = []
     for code in highlighted:
         if code in inset_codes:
             continue
         row = known[code]
         x, y = plan.anchor(code)
+        if zoom is not None:
+            x, y = zoom.place((x, y))
+            if not (0 <= x <= plan.width and 0 <= y <= height):
+                continue
         name = str(row.get("name", code))
         value = str(row.get("label", ""))
         placements.append(
             Placement(
                 x=_clamp(x, plan.width),
-                y=_clamp(y, plan.map_height),
+                y=_clamp(y, height),
                 text=name,
                 value=value,
                 light=False,
@@ -653,9 +840,17 @@ def _inset(
     *,
     selected: Sequence[str],
     prefix: str = DEFINITION_PREFIX,
+    shift: float = 0.0,
+    plain: bool = False,
 ) -> dict[str, Any]:
-    """Описать одну врезку: рамку, преобразование, состав и подписи сокращениями."""
+    """
+    Описать одну врезку: рамку, преобразование, состав и подписи сокращениями.
+
+    ``shift`` — сдвиг вбок, когда часть врезок не рисуется и полоса собирается к центру;
+    ``plain`` — карта значками, субъекты ровного цвета.
+    """
     left, top, width, height = inset.frame
+    left += shift
     codes = [code for code in inset.codes if code in known]
 
     # Подпись с величиной — последней, поверх соседних.
@@ -665,6 +860,7 @@ def _inset(
             continue
         row = known[code]
         x, y = inset.place(plan.anchor(code))
+        x += shift
         text = row.get("abbreviation") or code
         value = row.get("label", "") if code in highlighted else ""
         placements.append(
@@ -673,7 +869,8 @@ def _inset(
                 y=y,
                 text=text,
                 value=value,
-                light=bool(row.get("light_label")),
+                # Светлая подпись — на тёмной ступени шкалы; у значков заливка светлая.
+                light=bool(row.get("light_label")) and not plain,
                 selected=code in selected,
                 width=max(
                     len(text) * GLYPH_WIDTH * CODE_SIZE,
@@ -704,9 +901,11 @@ def _inset(
         "width": _number(width),
         "height": _number(height),
         "clip": f"{prefix}-clip-{inset.key}",
-        "transform": inset.transform,
-        "caption_x": _number(inset.caption_x),
+        "transform": (
+            f"translate({_number(shift)} 0) {inset.transform}" if shift else inset.transform
+        ),
+        "caption_x": _number(inset.caption_x + shift),
         "caption_y": _number(inset.caption_y),
-        "regions": [_region(code, known[code], prefix) for code in codes],
+        "regions": [_region(code, known[code], prefix, plain=plain) for code in codes],
         "labels": labels,
     }

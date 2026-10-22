@@ -320,3 +320,151 @@ class TestBuildMap:
         drawing = build_map(rows)
         assert drawing is not None
         assert all(region["code"] != "RU-XX" for region in drawing["regions"])
+
+
+# Субъекты Центрального округа — компактная часть страны.
+CENTRAL = (
+    "RU-MOW", "RU-MOS", "RU-VLA", "RU-IVA", "RU-YAR", "RU-KOS", "RU-TVE", "RU-SMO", "RU-KLU",
+    "RU-TUL", "RU-RYA", "RU-LIP", "RU-ORL", "RU-BRY", "RU-KRS", "RU-BEL", "RU-VOR", "RU-TAM",
+)  # fmt: skip
+
+
+def view_size(drawing: dict[str, object]) -> tuple[float, float]:
+    """Ширина и высота видимой части чертежа."""
+    _, _, width, height = (float(value) for value in str(drawing["view_box"]).split())
+    return width, height
+
+
+class TestFit:
+    """Приближение к субъектам со значениями и врезки только при значениях."""
+
+    def test_full_coverage_keeps_the_whole_map(self, plan: cartogram.Layout) -> None:
+        """Значения по всей стране — карта и полоса врезок прежние."""
+        drawing = build_map(rows_for(plan))
+        assert drawing is not None
+        assert drawing["zoom"] == ""
+        assert view_size(drawing) == (float(drawing["width"]), round(plan.height))
+        assert len(drawing["insets"]) == len(plan.insets)
+
+    def test_compact_values_zoom_in(self, plan: cartogram.Layout) -> None:
+        """Значения у одного округа — карта приближается к нему, врезки не рисуются."""
+        rows = rows_for(plan, missing=tuple(code for code in plan.shapes if code not in CENTRAL))
+        drawing = build_map(rows)
+        assert drawing is not None
+        assert drawing["zoom"].startswith("scale(")
+        assert drawing["insets"] == []
+        scale = float(drawing["zoom"].removeprefix("scale(").split(")")[0])
+        assert 1 < scale <= cartogram.FIT_MAX_SCALE
+        width, height = view_size(drawing)
+        assert width / height >= cartogram.FIT_MIN_ASPECT - 0.01
+
+    def test_zoomed_view_contains_every_valued_region(self, plan: cartogram.Layout) -> None:
+        """Ни один субъект со значением не обрезан краем окна."""
+        zoom = cartogram._fit(plan, set(CENTRAL))
+        assert zoom is not None
+        for code in CENTRAL:
+            left, top, right, bottom = plan.shapes[code].box
+            x0, y0 = zoom.place((left, top))
+            x1, y1 = zoom.place((right, bottom))
+            assert x0 >= 0 and x1 <= plan.width
+            assert y0 >= 0 and y1 <= zoom.height
+
+    def test_selected_region_outside_the_window_is_not_labelled(
+        self, plan: cartogram.Layout
+    ) -> None:
+        """Подпись субъекта за краем окна не прижимается к кромке."""
+        rows = rows_for(plan, missing=tuple(code for code in plan.shapes if code not in CENTRAL))
+        drawing = build_map(rows, selected=["RU-CHU", "RU-TUL"])
+        assert drawing is not None
+        assert [label["name"] for label in drawing["labels"]] == ["RU-TUL"]
+
+    def test_inset_without_values_is_dropped(self, plan: cartogram.Layout) -> None:
+        """Нет значений у Кавказа — его врезки нет, остальные собраны к середине."""
+        caucasus = next(inset for inset in INSETS if inset.key == "caucasus")
+        drawing = build_map(rows_for(plan, missing=caucasus.codes))
+        assert drawing is not None
+        assert drawing["zoom"] == ""
+        keys = [inset["key"] for inset in drawing["insets"]]
+        assert "caucasus" not in keys and len(keys) == len(plan.insets) - 1
+
+        frames = [(float(inset["x"]), float(inset["width"])) for inset in drawing["insets"]]
+        left = frames[0][0]
+        right = frames[-1][0] + frames[-1][1]
+        assert abs(left - (plan.width - right)) <= 2
+        for (x0, w0), (x1, _) in pairwise(frames):
+            assert x0 + w0 < x1
+
+    def test_no_insets_shorten_the_map(self, plan: cartogram.Layout) -> None:
+        """Ни одной врезки — полоса под картой не оставляется пустой."""
+        focus = {code for inset in INSETS for code in inset.codes}
+        drawing = build_map(rows_for(plan, missing=tuple(focus)))
+        assert drawing is not None
+        assert drawing["insets"] == []
+        assert view_size(drawing)[1] == round(plan.map_height)
+
+
+class TestSymbols:
+    """Карта значками: площадь круга — значение, субъекты ровного цвета."""
+
+    def test_circles_scale_by_area_and_lie_largest_first(self, plan: cartogram.Layout) -> None:
+        """Наибольшее значение — наибольший круг; мелкие поверх крупных."""
+        drawing = build_map(rows_for(plan), symbols=True)
+        assert drawing is not None
+        radii = [float(item["radius"]) for item in drawing["symbols"]]
+        assert len(radii) == len(plan.shapes)
+        assert radii == sorted(radii, reverse=True)
+        assert radii[0] == cartogram.SYMBOL_RADIUS
+        assert all(region["fill"] == "var(--symbol-land)" for region in drawing["regions"])
+
+    def test_radius_follows_the_square_root(self) -> None:
+        """Вчетверо меньшее значение — вдвое меньший радиус; малый не исчезает."""
+        full = cartogram.symbol_radius(100.0, 100.0)
+        assert cartogram.symbol_radius(25.0, 100.0) == pytest.approx(full / 2)
+        assert cartogram.symbol_radius(0.0001, 100.0) == cartogram.SYMBOL_MIN_RADIUS
+        assert cartogram.symbol_radius(0.0, 100.0) == 0.0
+
+    def test_subject_of_an_inset_is_drawn_in_the_inset(self, plan: cartogram.Layout) -> None:
+        """Круг Москвы — во врезке, один раз, тем же масштабом, что на общей карте."""
+        drawing = build_map(rows_for(plan), symbols=True)
+        assert drawing is not None
+        moscow = [item for item in drawing["symbols"] if item["code"] == "RU-MOW"]
+        assert len(moscow) == 1
+        assert float(moscow[0]["y"]) > plan.map_height
+
+    def test_missing_value_has_no_circle(self, plan: cartogram.Layout) -> None:
+        """Нет значения — нет круга, субъект остаётся на карте."""
+        drawing = build_map(rows_for(plan, missing=("RU-KYA",)), symbols=True)
+        assert drawing is not None
+        assert "RU-KYA" not in {item["code"] for item in drawing["symbols"]}
+        assert "RU-KYA" in {region["code"] for region in drawing["regions"]}
+
+
+class TestSymbolPanel:
+    """Когда карта значками возможна и какие круги в легенде."""
+
+    def test_symbols_need_non_negative_values(self) -> None:
+        """Отрицательное значение или сравнение лет — только заливка."""
+        from apps.maps.panel import MODE_GEOGRAPHIC, MODE_TILES, _symbols_possible
+
+        rows = [{"mapped": 5.0}, {"mapped": 0.0}, {"mapped": None}]
+        assert _symbols_possible(rows, MODE_GEOGRAPHIC, None)
+        assert not _symbols_possible(rows, MODE_TILES, None)
+        assert not _symbols_possible(rows, MODE_GEOGRAPHIC, 2019)
+        assert not _symbols_possible([{"mapped": -1.0}, {"mapped": 3.0}], MODE_GEOGRAPHIC, None)
+        assert not _symbols_possible([{"mapped": 0.0}], MODE_GEOGRAPHIC, None)
+
+    def test_legend_values_are_round_and_shrinking(self) -> None:
+        """Образцы — круглые числа не больше долей наибольшего, без повторов."""
+        from apps.maps.panel import _round_down, _symbol_legend
+
+        assert [_round_down(value) for value in (2319.3, 579.8, 144.9, 0.37)] == [
+            2000,
+            500,
+            100,
+            0.2,
+        ]
+        legend = _symbol_legend([{"mapped": 2319.3}, {"mapped": 12.0}], 1)
+        # Разряды числа разделены неразрывным пробелом.
+        assert [item["label"].replace(chr(0xA0), " ") for item in legend] == ["2 000", "500", "100"]
+        diameters = [float(item["diameter"]) for item in legend]
+        assert diameters == sorted(diameters, reverse=True)
