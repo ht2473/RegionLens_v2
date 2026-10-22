@@ -42,8 +42,8 @@ def _audit(page: Page, problems: list[str]) -> None:
 
 def _study_with_link(page: Page, base: str) -> str:
     """
-    Таблица → исследование с картой → та же карта на холсте → «В исследование» (то же)
-    второй карточкой из меню «Сохранить» → «Открыть» в сообщении → заметка → закрытая
+    Таблица → исследование с первыми карточками → карта на холсте → «В исследование» (то же)
+    ещё одной картой из меню «Сохранить» → «Открыть» в сообщении → заметка → закрытая
     ссылка; вернуть ссылку.
     """
     _walk(page, base)
@@ -53,7 +53,8 @@ def _study_with_link(page: Page, base: str) -> str:
     page.locator("#save-menu button[name=study]").first.click()
     page.locator(".toast a").click()
     page.wait_for_url("**/own-data/studies/**")
-    expect(page.locator(".study-card__body")).to_have_count(2)
+    # Пять первых карточек (одна из них — карта) и добавленная карта.
+    expect(page.locator(".study-card__body")).to_have_count(6)
     expect(page.locator(".study-card__body .geo-map, .study-card__body .tile-map")).to_have_count(2)
     page.locator(".study-add-note > summary").click()
     page.fill("#study-new-note", "Вывод к карте")
@@ -92,7 +93,7 @@ def test_study_and_link_desktop(
         other = reader.new_page()
         other.goto(link)
         expect(other.locator(".page-head .kicker")).to_contain_text("открыто по закрытой ссылке")
-        expect(other.locator(".study-card__body")).to_have_count(2)
+        expect(other.locator(".study-card__body")).to_have_count(6)
         assert other.locator("form[action$='/edit/']").count() == 0
         _audit(other, problems)
     finally:
@@ -118,7 +119,7 @@ def test_study_link_phone(
     problems: list[str] = []
     try:
         phone.goto(link)
-        expect(phone.locator(".study-card__body")).to_have_count(2)
+        expect(phone.locator(".study-card__body")).to_have_count(6)
         _audit(phone, problems)
         # Карточки — друг под другом: ширина карточки — почти вся ширина экрана.
         width = phone.locator(".study-card").first.evaluate("e => e.getBoundingClientRect().width")

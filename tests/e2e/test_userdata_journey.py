@@ -1,7 +1,8 @@
 """
-Свои данные целиком в браузере: файл → «Что в таблице» → «Показатели» → исследование
-с картой → карта на холсте → страница таблицы; на 1440 и 390 точках, по-английски;
-разметка каждого шага — под аудитом доступности.
+Свои данные целиком в браузере: выбор файла → сразу «Проверка» (одна таблица и вопросов
+нет — шаги «Файл» и «Что в таблице» проходятся сами) → исследование с первыми карточками →
+карта на холсте → страница таблицы; на 1440 и 390 точках, по-английски; разметка каждого
+шага, и пропущенных, — под аудитом доступности.
 """
 
 from __future__ import annotations
@@ -45,19 +46,19 @@ def _walk(page: Page, base: str, language: str = "ru") -> list[str]:
 
     page.goto(f"{base}/{language}/own-data/new/")
     audit()
+    # Выбранный файл уходит сам; одна таблица без вопросов — сразу проверка.
     page.set_input_files("input[type=file]", str(FIXTURE))
-    page.locator("form[data-upload-form] button[type=submit]").click()
-    page.wait_for_url("**/file/")
-    audit()
-    page.locator("button.button--primary[type=submit]").last.click()
-    page.wait_for_url("**/table/")
-    audit()
-    page.locator("button[name=action][value=next]").click()
     page.wait_for_url("**/series/")
     audit()
+    review = page.url
+    for step in ("file", "table"):
+        page.goto(review.replace("/series/", f"/{step}/"))
+        audit()
+    page.goto(review)
     page.locator(".series-form button.button--primary[type=submit]").click()
     page.wait_for_url("**/own-data/studies/**")
     expect(page.locator(".study-card .geo-map, .study-card .tile-map")).to_have_count(1)
+    expect(page.locator(".study-card")).to_have_count(5)
     audit()
     return problems
 
@@ -77,10 +78,11 @@ def test_journey_desktop(page: Page, own_data: Any) -> None:
     _open_card(page)
     expect(page.locator(".surface-head__private")).to_have_text("видно только вам")
     page.locator(".surface-head__about a").click()
-    # Ссылка ведёт к ряду на странице таблицы: он выбран, рядом — его карта.
+    # Ссылка ведёт к ряду в «Обзоре» таблицы: он выбран, рядом — переход в исследование.
     page.wait_for_url(re.compile(r"/own-data/[^/]+/\?show="))
     problems.extend(page.evaluate(AUDIT_SCRIPT))
-    expect(page.locator(".dataset-preview .geo-map, .dataset-preview .tile-map")).to_be_visible()
+    expect(page.locator(".dataset-detail__actions").first).to_be_visible()
+    expect(page.locator("#dataset-checks")).to_be_attached()
     assert not problems, "\n".join(problems)
 
 
@@ -129,7 +131,7 @@ def _analysis(page: Page, base: str) -> list[str]:
     page.locator(".surface-head__about a").click()
     page.wait_for_url(re.compile(r"/own-data/[^/]+/"))
     audit()
-    expect(page.locator(".dataset-preview").first).to_be_visible()
+    expect(page.locator(".dataset-detail__actions").first).to_be_visible()
     table_url = page.url.split("?")[0]
     page.locator("button[popovertarget=dataset-edit]").click()
     page.locator("#dataset-edit a[href$='/formula/']").click()
