@@ -83,12 +83,13 @@ $COMPOSE exec -T postgres pg_dump \
 # Загруженные наборы, архив выпусков источников и история посещений: журнал Caddy хранится
 # 30 суток, а история — за всё время.
 say "Архивирование наборов, архива выпусков, статистики посещений и таблиц пользователей…"
-# Каталоги таблиц гостей перечисляет приложение; временные каталоги DuckDB не нужны.
+# Каталоги таблиц гостей перечисляет приложение; временные каталоги DuckDB и очередь службы
+# разборов (её отметка жизни меняется каждую секунду) не нужны.
 $COMPOSE run --rm --no-deps -T \
     --volume "${HOST_TARGET_DIR}:/backup" \
     web sh -c "python manage.py userdata_guest_dirs > /tmp/guests \
         && tar czf /backup/files-${stamp}.tar.gz -C /app --exclude-from=/tmp/guests \
-            --exclude='*.duckdb.tmp' --exclude='.duckdb-tmp' \
+            --exclude='*.duckdb.tmp' --exclude='.duckdb-tmp' --exclude='.jobs' \
             data/uploads data/archive data/visits data/userdata"
 
 # --- Шифрование и подпись -----------------------------------------------------------------------

@@ -475,6 +475,9 @@ USERDATA_GUEST_UPLOADS_PER_HOUR = env.int("USERDATA_GUEST_UPLOADS_PER_HOUR", def
 # Разборов отдельным процессом одновременно на сервер и предел времени одного разбора.
 USERDATA_PARALLEL_JOBS = env.int("USERDATA_PARALLEL_JOBS", default=2)
 USERDATA_JOB_SECONDS = env.int("USERDATA_JOB_SECONDS", default=120)
+# На стенде разборы выполняет служба userdata-worker (свой контейнер и предел памяти): сайт
+# кладёт заявку в очередь в томе таблиц. Выключено — процессом рядом с сайтом (разработка).
+USERDATA_JOB_WORKER = env.bool("USERDATA_JOB_WORKER", default=False)
 # Показ ряда набора: память соединения с файлом набора (поток — один).
 USERDATA_QUERY_MEMORY = env.str("USERDATA_QUERY_MEMORY", default="128MB")
 # Версий таблицы на диске: значения прежних остаются в отчёте о различиях новой.

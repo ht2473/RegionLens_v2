@@ -12,12 +12,14 @@
 #   caddy    — обратный прокси, сертификаты, статика, журнал обращений;
 #   web      — приложение (gunicorn), сборка склада из панели отдельным процессом,
 #              сбор источников и статистика посещений по таймерам хоста;
+#   userdata-worker — разбор и сборка больших таблиц пользователей по заявкам сайта;
 #   postgres — учётные записи, справочники, обращения;
 #   valkey   — кэш и счётчики ограничителей частоты.
 #
 # Наружу открыты только порты 80 и 443; порты базы и Valkey не публикуются.
-# Пределы памяти — для VPS с 4 ГБ: обычно стенду хватает около 1,2 ГБ, во время
-# сборки склада — около 2,5 ГБ, прибавка приходится на web.
+# Пределы памяти — для VPS с 8 ГБ: обычно стенду хватает около 1,2 ГБ, во время
+# сборки склада — до 3 ГБ (прибавка — у web), разбор таблиц пользователей — ещё до 1,5 ГБ
+# в своём контейнере.
 # =====================================================================================
 
 name: regionlens
@@ -33,6 +35,8 @@ x-app: &app
     DJANGO_SETTINGS_MODULE: config.settings.production
     VALKEY_URL: redis://valkey:6379
     DATABASE_URL: postgres://${POSTGRES_USER:-regionlens}:${POSTGRES_PASSWORD:?переменная POSTGRES_PASSWORD обязательна}@postgres:5432/${POSTGRES_DB:-regionlens}
+    # Большие таблицы пользователей разбирает служба userdata-worker: сайт кладёт заявку.
+    USERDATA_JOB_WORKER: "true"
   depends_on:
     postgres:
       condition: service_healthy
@@ -94,14 +98,46 @@ services:
       <<: *app-environment
       # Предел памяти самой сборки склада: она идёт в этом контейнере.
       DUCKDB_BUILD_MEMORY_LIMIT: ${DUCKDB_BUILD_MEMORY_LIMIT:-1GB}
-    # Рабочие процессы сервера — около 0,6 ГБ, сборка склада — ещё до 1,5 ГБ; разбор таблиц
-    # пользователей — до двух процессов по 768 МБ памяти DuckDB, в другое время.
-    mem_limit: 2560m
+    # Рабочие процессы сервера — 0,9–1,5 ГБ, сборка склада — ещё до 1,5 ГБ; в запросе —
+    # маленькие таблицы пользователей и чтение PDF (до 40 страниц).
+    mem_limit: 3584m
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8000/healthz"]
       interval: 30s
       timeout: 5s
       start_period: 40s
+      retries: 3
+
+  # --- Разбор таблиц пользователей -----------------------------------------------------------
+  # Заявки сайта — в каталоге .jobs тома userdata; разборов сразу — не больше
+  # USERDATA_PARALLEL_JOBS. Нехватка памяти обрывает разбор, а не сайт.
+  userdata-worker:
+    <<: *app
+    container_name: regionlens-userdata-worker
+    command: ["python", "manage.py", "userdata_worker"]
+    volumes:
+      - userdata:/app/data/userdata
+      # Склад — население и официальные ряды для пересчётов; соединение только на чтение,
+      # но каталог выгрузки DuckDB создаётся рядом с файлом.
+      - warehouse:/app/data/warehouse
+    # Миграции применяет web при запуске: служба ждёт его готовности.
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    # Два разбора около 0,7 ГБ каждый (DuckDB — USERDATA_PARSE_MEMORY) и сама служба.
+    mem_limit: 1536m
+    # Начатый разбор (не дольше USERDATA_JOB_SECONDS = 120 с) доводится до конца.
+    stop_grace_period: 150s
+    healthcheck:
+      # Служба отмечается в очереди каждую секунду; тишина дольше минуты — зависла.
+      test: ["CMD-SHELL", "test -n \"$$(find /app/data/userdata/.jobs/heartbeat -mmin -1 2>/dev/null)\""]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
       retries: 3
 
   # --- Хранилища ---------------------------------------------------------------------------------
