@@ -1,0 +1,16 @@
+{% load i18n %}
+{# Поле файла своим оформлением: у системного надписи на языке браузера, а не страницы. #}
+{# Файл можно перетащить на зону или на любое место страницы (upload.js). submit — #}
+{# отправить форму сразу после выбора. Без сценариев файл выбирается по подписи-кнопке. #}
+<div class="file-drop" data-file-drop="{% if submit %}submit{% endif %}"
+     data-sending="{% translate 'Загружается' %}">
+  <svg class="file-drop__icon" aria-hidden="true"><use href="#icon-upload"></use></svg>
+  <div class="file-drop__text">
+    <p class="file-drop__title">{% translate "Перетащите файл сюда" %}</p>
+    <p class="file-drop__hint" id="{{ field.id_for_label }}-hint">{{ field.help_text }}</p>
+    <p class="file-drop__name" data-file-name aria-live="polite" hidden></p>
+  </div>
+  {{ field }}
+  <label class="button button--secondary button--sm file-drop__choose" for="{{ field.id_for_label }}">{% translate "Выбрать файл" %}</label>
+</div>
+<span class="field__error" data-size-error hidden>{{ size_error }}</span>

@@ -1,7 +1,8 @@
 """
-Шаг «Показатели»: название, единица, вид величины, направленность, смена методики, свёртка
-месяцев и разрезов; выбранные пересчёты можно снять, новые добавляются в исследовании
-(«Посчитать»).
+Шаг «Показатели»: название, единица и масштаб, вид величины, направленность, смена методики,
+свёртка месяцев и разрезов; выбранные пересчёты можно снять, новые добавляются в исследовании
+(«Посчитать»). Показатель можно скрыть (его ряды не собираются) или влить в другой — тот же
+показатель под другим названием: его значения дополняют ряды того.
 
 Описание задаётся на показатель и действует на все его ряды (разрезы и периоды года).
 Подсказки — по единице и названию; решения человека хранятся в рецепте версии. Спрашивается
@@ -21,6 +22,7 @@ from django.db import transaction
 
 from apps.catalog.constants import is_unnormalised_title
 
+from . import naming
 from .models import DatasetSeries, DatasetVersion
 
 SUM = DatasetSeries.Kind.SUM.value
@@ -28,14 +30,19 @@ RELATIVE = DatasetSeries.Kind.RELATIVE.value
 KINDS = (SUM, RELATIVE)
 POLARITIES = tuple(choice.value for choice in DatasetSeries.Polarity)
 # Пересчёты суммы: на жителей и на площадь.
+PER_ONE = DatasetSeries.Derived.PER_1.value
 PER_CHOICES = (
+    PER_ONE,
     DatasetSeries.Derived.PER_1000.value,
+    DatasetSeries.Derived.PER_10000.value,
     DatasetSeries.Derived.PER_100000.value,
     DatasetSeries.Derived.PER_KM2.value,
 )
 # Пересчёт, предложенный по умолчанию: «на 100 000 жителей» — как у карт преступности
-# и заболеваемости. Численность населения на жителей не пересчитывается: всюду 100 000.
+# и заболеваемости; у денежной суммы — «на жителя» («тыс. руб. на жителя»). Численность
+# населения на жителей не пересчитывается.
 DEFAULT_PER = (DatasetSeries.Derived.PER_100000.value,)
+MONEY_PER = (PER_ONE,)
 _POPULATION = re.compile(
     r"(численност\w*\s+(постоянного\s+|всего\s+)?населени|^население\b|\bpopulation\b)",
     re.IGNORECASE,
@@ -63,6 +70,8 @@ MAX_BREAKS = 10
 # Допустимые годы смены методики.
 FIRST_BREAK_YEAR = 1900
 LAST_BREAK_YEAR = 2100
+# Масштаб: значения умножаются на 1000 в этой степени, разряд единицы сдвигается.
+SCALES = (-2, -1, 0, 1, 2)
 
 # Единица относительной величины: доля, коэффициент, на жителя, годы жизни.
 _RELATIVE_UNIT = re.compile(
@@ -92,6 +101,8 @@ _SUM_UNIT = re.compile(
 _SUM_NAME = re.compile(r"(численност|количеств|^число |объ[её]м|оборот)", re.IGNORECASE)
 # Рубли: в цены года переводит индекс потребительских цен региона.
 _MONEY_UNIT = re.compile(r"(руб|₽|\brub)", re.IGNORECASE)
+# Деньги в любой валюте: их естественно делить на жителя.
+_CURRENCY_UNIT = re.compile(r"(руб|₽|\brub|долл|\$|\busd\b|евро|€|\beur\b)", re.IGNORECASE)
 # Единица — просто рубли, без разряда: «руб.», «рублей».
 _PLAIN_RUBLES = re.compile(r"^\s*(руб\.?|рубл\w*|₽)\s*$", re.IGNORECASE)
 # Дата в названии («на 1 января 2024 года», «на 01.01.2024», «на 10-е марта») — не признак
@@ -140,6 +151,20 @@ class Indicator:
     answered: bool = False
     # Номер в форме шага.
     number: int = 0
+    # Скрыт: ряды не собираются. Масштаб — степень тысячи. Влит в показатель ``merge``.
+    hidden: bool = False
+    scale: int = 0
+    merge: str = ""
+
+    @property
+    def scaled_unit(self) -> str:
+        """Единица рядов после масштаба: «тыс. руб.» при ÷ 1 000 — «млн руб.»."""
+        return naming.scaled_unit(self.unit, self.scale)
+
+    @property
+    def scale_options(self) -> list[tuple[int, str]]:
+        """Масштабы с единицей, которая получится: (степень тысячи, единица)."""
+        return [(exponent, naming.scaled_unit(self.unit, exponent)) for exponent in SCALES]
 
     @property
     def is_sum(self) -> bool:
@@ -149,6 +174,11 @@ class Indicator:
     def is_money(self) -> bool:
         """Денежный показатель в рублях: только его можно перевести в цены года."""
         return bool(_MONEY_UNIT.search(f"{self.unit} {self.title}"))
+
+    @property
+    def is_currency(self) -> bool:
+        """Денежный показатель в любой валюте: его делят на жителя."""
+        return is_currency(self.title, self.unit)
 
     @property
     def has_years(self) -> bool:
@@ -201,7 +231,19 @@ class Indicator:
 
 
 # Поля описания показателя в шаге «Показатели» по порядку.
-FIELDS = ("title", "unit", "kind", "months", "polarity", "breaks", "fold", "recounts")
+FIELDS = (
+    "title",
+    "unit",
+    "scale",
+    "kind",
+    "months",
+    "polarity",
+    "breaks",
+    "fold",
+    "recounts",
+    "merge",
+    "hidden",
+)
 
 
 def kind_is_clear(name: str, unit: str) -> bool:
@@ -216,11 +258,29 @@ def kind_is_clear(name: str, unit: str) -> bool:
     )
 
 
-def default_per(name: str, kind: str) -> tuple[str, ...]:
-    """Пересчёт по умолчанию: у суммы — на 100 000 жителей, кроме самой численности."""
+def is_rubles(name: str, unit: str) -> bool:
+    """Рубли — по единице или названию: в цены года их переводит индекс цен."""
+    return bool(_MONEY_UNIT.search(f"{unit} {name}"))
+
+
+def is_currency(name: str, unit: str) -> bool:
+    """Деньги в любой валюте — по единице или названию."""
+    return bool(_CURRENCY_UNIT.search(f"{unit} {name}"))
+
+
+def default_per(name: str, kind: str, unit: str = "") -> tuple[str, ...]:
+    """
+    Пересчёт по умолчанию: у денежной суммы — на жителя, у остальных — на 100 000 жителей;
+    сама численность не пересчитывается.
+    """
     if kind != SUM or _POPULATION.search(name or ""):
         return ()
-    return DEFAULT_PER
+    return MONEY_PER if is_currency(name, unit) else DEFAULT_PER
+
+
+def per_allowed(indicator: Indicator, per: str) -> bool:
+    """Пересчёт на жителей или площадь — у сумм; на одного жителя — только у денежных."""
+    return indicator.is_sum and (per != PER_ONE or indicator.is_currency)
 
 
 def guess_kind(name: str, unit: str) -> str:
@@ -248,6 +308,8 @@ def indicators_of(version: DatasetVersion) -> list[Indicator]:
     for number, (name, items) in enumerate(grouped.items(), start=1):
         units = Counter(item["unit"] for item in items if item["unit"])
         unit = units.most_common(1)[0][0] if units else ""
+        # Название без единицы в хвосте и без годов — предложение; человек его правит.
+        short, unit = naming.short_title(name, unit)
         answer = answers.get(name) or {}
         kind = answer.get("kind") or guess_kind(name, unit)
         years = [item[key] for item in items for key in ("first_year", "last_year") if item[key]]
@@ -258,11 +320,15 @@ def indicators_of(version: DatasetVersion) -> list[Indicator]:
         result.append(
             Indicator(
                 name=name,
-                title=answer.get("title") or name,
+                title=answer.get("title") or short,
                 unit=answer.get("unit", unit),
                 kind=kind,
                 polarity=answer.get("polarity") or DatasetSeries.Polarity.NEUTRAL.value,
-                per=tuple(answer["per"]) if "per" in answer else default_per(name, kind),
+                per=(
+                    tuple(answer["per"])
+                    if "per" in answer
+                    else default_per(name, kind, answer.get("unit", unit))
+                ),
                 series=len(items),
                 note=notes.get(name, ""),
                 breaks=tuple(item["year"] for item in answer.get("breaks") or []),
@@ -278,9 +344,29 @@ def indicators_of(version: DatasetVersion) -> list[Indicator]:
                 periods={item["period"] for item in items},
                 answered=bool(answer),
                 number=number,
+                hidden=bool(answer.get("hidden")),
+                scale=int(answer.get("scale") or 0) if answer.get("scale") in SCALES else 0,
+                merge=str(answer.get("merge") or ""),
             )
         )
     return result
+
+
+def merge_target(indicator: Indicator, known: Mapping[str, Indicator]) -> Indicator | None:
+    """
+    Показатель, в который влит этот: не он сам, не скрытый и сам никуда не влитый — без
+    цепочек; скрытый показатель никуда не вливается.
+    """
+    target = known.get(indicator.merge)
+    if (
+        indicator.hidden
+        or target is None
+        or target.name == indicator.name
+        or target.hidden
+        or target.merge
+    ):
+        return None
+    return target
 
 
 def parse_years(text: Any) -> list[int]:
@@ -336,8 +422,12 @@ def save(version: DatasetVersion, answers: Mapping[str, Mapping[str, Any]]) -> N
         described.kind, described.unit, described.title = kind, unit, title
         months = str(answer.get("months") or "")
         described.months = months if months in described.month_methods else ""
-        # Пересчёты без ответа — прежние; у суммы, описанной впервые, — на 100 000 жителей.
-        per = described.per if described.answered or described.per else default_per(name, kind)
+        # Пересчёты без ответа — прежние. У показателя, описанного впервые, нетронутые
+        # предложенные пересчёты следуют за единицей и видом из ответа: «млрд руб.» вместо
+        # пустой единицы — на жителя, а не на 100 000 жителей.
+        per = answer.get("per", described.per)
+        if not described.answered and list(per or []) == list(described.per):
+            per = default_per(name, kind, unit)
         cleaned[name] = {
             "title": title,
             "unit": unit,
@@ -345,9 +435,9 @@ def save(version: DatasetVersion, answers: Mapping[str, Mapping[str, Any]]) -> N
             "polarity": polarity
             if polarity in POLARITIES
             else DatasetSeries.Polarity.NEUTRAL.value,
-            "per": [item for item in answer.get("per", per) or [] if item in PER_CHOICES]
-            if kind == SUM
-            else [],
+            "per": [
+                item for item in per or [] if item in PER_CHOICES and per_allowed(described, item)
+            ],
             "breaks": _breaks(answer.get("breaks"), answer.get("break_note")),
             "recalc": [
                 item
@@ -361,7 +451,21 @@ def save(version: DatasetVersion, answers: Mapping[str, Mapping[str, Any]]) -> N
                 if header in (answer.get("fold_slices") or []) and kind == SUM
             ],
             "months": described.months,
+            "hidden": bool(answer.get("hidden")),
+            "scale": int(answer["scale"]) if str(answer.get("scale")) in map(str, SCALES) else 0,
+            "merge": str(answer.get("merge") or "") if answer.get("merge") in known else "",
         }
+    # Влить можно только в показатель, который сам виден и никуда не влит: без цепочек.
+    for name, item in cleaned.items():
+        target = cleaned.get(item["merge"])
+        if (
+            item["hidden"]
+            or target is None
+            or item["merge"] == name
+            or target["hidden"]
+            or target["merge"]
+        ):
+            item["merge"] = ""
     with transaction.atomic():
         version.refresh_from_db(fields=["recipe"])
         version.recipe = {**version.recipe, "indicators": cleaned}

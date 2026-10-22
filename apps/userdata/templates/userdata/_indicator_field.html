@@ -7,7 +7,10 @@
 {% if name == "title" %}
   <div class="field">
     <label class="field__label" for="title-{{ number }}">{% translate "Название" %}</label>
-    <input class="input" id="title-{{ number }}" name="title-{{ number }}" value="{{ item.title }}" maxlength="300">
+    <input class="input" id="title-{{ number }}" name="title-{{ number }}" value="{{ item.title }}" maxlength="300"{% if item.title != item.name %} aria-describedby="title-hint-{{ number }}"{% endif %}>
+    {% if item.title != item.name %}
+      <span class="field__hint" id="title-hint-{{ number }}">{% translate "В таблице:" %} <span{% with lang=item.name|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.name }}</span></span>
+    {% endif %}
   </div>
 {% elif name == "unit" %}
   <div class="field">
@@ -16,6 +19,34 @@
     {% if item.units|length > 1 %}
       <datalist id="units-{{ number }}">{% for unit in item.units %}<option value="{{ unit }}">{% endfor %}</datalist>
     {% endif %}
+  </div>
+{% elif name == "scale" %}
+  <div class="field">
+    <label class="field__label" for="scale-{{ number }}">{% translate "Масштаб" %}</label>
+    <select class="select" id="scale-{{ number }}" name="scale-{{ number }}" aria-describedby="scale-hint-{{ number }}">
+      {% for exponent, unit in item.scale_options %}
+        <option value="{{ exponent }}"{% if exponent == item.scale %} selected{% endif %}>{% if exponent == -2 %}÷ 1 000 000{% elif exponent == -1 %}÷ 1 000{% elif exponent == 1 %}× 1 000{% elif exponent == 2 %}× 1 000 000{% else %}{% translate "как в таблице" %}{% endif %}{% if unit %} — {{ unit }}{% endif %}</option>
+      {% endfor %}
+    </select>
+    <span class="field__hint" id="scale-hint-{{ number }}">{% translate "Значения умножаются или делятся на тысячу, разряд единицы меняется вместе с ними: тыс. руб. → млн руб." %}</span>
+  </div>
+{% elif name == "merge" %}
+  {% if merge_choices|length > 1 %}
+    <div class="field">
+      <label class="field__label" for="merge-{{ number }}">{% translate "Тот же показатель, что" %}</label>
+      <select class="select" id="merge-{{ number }}" name="merge-{{ number }}" aria-describedby="merge-hint-{{ number }}">
+        <option value="">{% translate "нет, отдельный показатель" %}</option>
+        {% for other, title in merge_choices %}
+          {% if other != item.name %}<option value="{{ other }}"{% if other == item.merge %} selected{% endif %}>{{ title }}</option>{% endif %}
+        {% endfor %}
+      </select>
+      <span class="field__hint" id="merge-hint-{{ number }}">{% translate "Одно и то же под разными названиями — например, после переименования в источнике. Значения этого показателя дополнят ряды выбранного; где есть оба, остаётся значение выбранного. Описание — у выбранного." %}</span>
+    </div>
+  {% endif %}
+{% elif name == "hidden" %}
+  <div class="field">
+    <label class="checkbox"><input type="checkbox" name="hidden-{{ number }}" value="1"{% if item.hidden %} checked{% endif %}> <span>{% translate "Скрыть: не собирать ряды этого показателя" %}</span></label>
+    <span class="field__hint">{% translate "Показатель остаётся в файле, его можно вернуть, сняв отметку." %}</span>
   </div>
 {% elif name == "kind" %}
   <fieldset class="field">

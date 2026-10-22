@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -57,11 +58,16 @@ SCHEMA = Path(settings.BASE_DIR) / "apps" / "warehouse" / "sql" / "schema.sql"
 SECTION_CODE = "userdata"
 # Множитель и подпись пересчёта суммы.
 PER_FACTORS = {
+    # На одного жителя множитель выбирается при сборке — по разряду значений.
+    DatasetSeries.Derived.PER_1.value: 1,
     DatasetSeries.Derived.PER_1000.value: 1_000,
+    DatasetSeries.Derived.PER_10000.value: 10_000,
     DatasetSeries.Derived.PER_100000.value: 100_000,
 }
 PER_SUFFIXES = {
+    DatasetSeries.Derived.PER_1.value: "-p1",
     DatasetSeries.Derived.PER_1000.value: "-p1k",
+    DatasetSeries.Derived.PER_10000.value: "-p10k",
     DatasetSeries.Derived.PER_100000.value: "-p100k",
     DatasetSeries.Derived.PER_KM2.value: "-km2",
 }
@@ -102,15 +108,38 @@ REAL_YEARS_SQL = "SELECT derived_key, base_year FROM real_target ORDER BY 1"
 # Признаки значения в запросах сборки — как ValueFlag и fact_observation.flags склада:
 # 2 — рассчитано (область без округов, пересчёт), 4 — знаменатель заморожен.
 
-# Наблюдения таблицы; область без округов у сумм — итог за вычетом всех округов того же года,
-# если самой области в ряду нет.
+# Наблюдения таблицы: значения рядов таблицы с масштабом показателя; у ряда, в который влиты
+# ряды другого показателя, на регион и год — первое непустое значение по порядку источников.
+# Исключённые человеком регионы и годы в расчёты не идут — они в user_excluded.
+# Область без округов у сумм — итог за вычетом всех округов того же года, если самой
+# области в ряду нет.
 FACTS_SQL = """
-    CREATE TEMP TABLE facts AS
-    SELECT p.series_key, r.territory_code, CAST(r.year AS INTEGER) AS year, r.value,
-           CAST(r.quality AS INTEGER) AS quality, 0 AS flags
+    CREATE TEMP TABLE sourced AS
+    SELECT s.series_key, r.territory_code, CAST(r.year AS INTEGER) AS year,
+           r.value * s.factor AS value, CAST(r.quality AS INTEGER) AS quality, s.priority,
+           EXISTS (SELECT 1 FROM excluded_territories AS e
+                   WHERE e.territory_code = r.territory_code)
+           OR EXISTS (SELECT 1 FROM excluded_years AS e
+                      WHERE e.year = CAST(r.year AS INTEGER)) AS excluded
     FROM raw AS r
-    JOIN plan AS p ON p.source = r.series AND p.derived = ''
-    WHERE r.territory_code IS NOT NULL;
+    JOIN sources AS s ON s.source = r.series
+    WHERE r.territory_code IS NOT NULL
+    QUALIFY row_number() OVER (
+        PARTITION BY s.series_key, r.territory_code, r.year
+        ORDER BY r.value IS NULL, s.priority
+    ) = 1;
+
+    CREATE TEMP TABLE facts AS
+    SELECT series_key, territory_code, year, value, quality, 0 AS flags
+    FROM sourced
+    WHERE NOT excluded;
+
+    CREATE TABLE user_excluded AS
+    SELECT series_key, territory_code, CAST(year AS SMALLINT) AS year, value,
+           CAST(quality AS TINYINT) AS quality
+    FROM sourced
+    WHERE excluded
+    ORDER BY 1, 2, 3;
 
     CREATE TEMP TABLE alone AS
     WITH totals AS (
@@ -183,6 +212,21 @@ PER_CAPITA_SQL = """
     FROM based AS b
     JOIN population AS p ON p.territory_code = b.territory_code AND p.year = b.base_year
     WHERE p.population > 0
+"""
+
+# Середина значений на одного жителя в единицах таблицы — для выбора разряда единицы.
+PER_PERSON_MIDDLE_SQL = """
+    WITH last AS (
+        SELECT territory_code, max(year) AS last_year FROM population GROUP BY 1
+    )
+    SELECT d.series_key, median(abs(f.value) / p.population)
+    FROM plan AS d
+    JOIN facts AS f ON f.series_key = d.base_key
+    JOIN last  AS l USING (territory_code)
+    JOIN population AS p
+      ON p.territory_code = f.territory_code AND p.year = least(f.year, l.last_year)
+    WHERE d.derived = 'per1' AND f.value IS NOT NULL AND f.value <> 0 AND p.population > 0
+    GROUP BY 1
 """
 
 PER_AREA_SQL = """
@@ -329,10 +373,10 @@ OBSERVATIONS_SQL = """
 
 OUTSIDE_SQL = """
     CREATE TABLE user_outside AS
-    SELECT p.series_key, r.label, CAST(r.year AS SMALLINT) AS year, r.value,
+    SELECT s.series_key, r.label, CAST(r.year AS SMALLINT) AS year, r.value * s.factor AS value,
            CAST(r.quality AS TINYINT) AS quality
     FROM raw AS r
-    JOIN plan AS p ON p.source = r.series AND p.derived = ''
+    JOIN sources AS s ON s.source = r.series
     WHERE r.territory_code IS NULL
     ORDER BY 1, 2, 3
 """
@@ -464,26 +508,51 @@ def _plan(version: DatasetVersion, report: dict[str, Any]) -> list[dict[str, Any
     """
     described = {item.name: item for item in indicators.indicators_of(version)}
     grouped: dict[str, list[dict[str, Any]]] = {}
-    for index, item in enumerate(report["series"]):
-        indicator = described[item["indicator"]]
-        grouped.setdefault(indicator.name, []).append(
-            {
-                "source": index,
-                "code": item["code"],
-                "indicator": item["indicator"],
-                "title": indicator.title,
-                "unit": indicator.unit or item["unit"],
-                "kind": indicator.kind,
-                "base_kind": indicator.kind,
-                "polarity": indicator.polarity,
-                "slices": [tuple(pair) for pair in item["slices"]],
-                "period": item["period"],
-                "derived": "",
-                "base_code": "",
-                "members": [],
-                "method": "",
-            }
+    # Ряды влитых показателей — после рядов тех, в кого влиты: их значения лишь дополняют.
+    merged = [
+        (index, item)
+        for index, item in enumerate(report["series"])
+        if indicators.merge_target(described[item["indicator"]], described) is not None
+    ]
+    own = [
+        (index, item)
+        for index, item in enumerate(report["series"])
+        if not described[item["indicator"]].hidden
+        and indicators.merge_target(described[item["indicator"]], described) is None
+    ]
+    by_code: dict[str, dict[str, Any]] = {}
+    for index, item in [*own, *merged]:
+        source = described[item["indicator"]]
+        indicator = indicators.merge_target(source, described) or source
+        slices = [tuple(pair) for pair in item["slices"]]
+        code = (
+            item["code"]
+            if indicator is source
+            else naming.series_code(indicator.name, slices, item["period"])
         )
+        # Масштаб влитого приводит его к единице таблицы основного, масштаб основного — дальше.
+        factor = 1000.0 ** (source.scale + (indicator.scale if indicator is not source else 0))
+        if code in by_code:
+            by_code[code]["sources"].append((index, len(by_code[code]["sources"]), factor))
+            continue
+        by_code[code] = {
+            "source": index,
+            "sources": [(index, 0, factor)],
+            "code": code,
+            "indicator": indicator.name,
+            "title": indicator.title,
+            "unit": naming.scaled_unit(indicator.unit or item["unit"], indicator.scale),
+            "kind": indicator.kind,
+            "base_kind": indicator.kind,
+            "polarity": indicator.polarity,
+            "slices": slices,
+            "period": item["period"],
+            "derived": "",
+            "base_code": "",
+            "members": [],
+            "method": "",
+        }
+        grouped.setdefault(indicator.name, []).append(by_code[code])
     plan: list[dict[str, Any]] = []
     for name, bases in grouped.items():
         indicator = described[name]
@@ -532,6 +601,7 @@ def _folds(indicator: indicators.Indicator, bases: list[dict[str, Any]]) -> list
                 {
                     **members[0],
                     "source": -1,
+                    "sources": [],
                     "code": naming.series_code(indicator.name, others, period) + "-sum",
                     "slices": [*others, (header, SLICE_SUM_VALUE.format(header=header))],
                     "derived": DatasetSeries.Derived.SLICE_SUM.value,
@@ -568,6 +638,7 @@ def _month_folds(
             {
                 **by_period[wanted[0]],
                 "source": -1,
+                "sources": [],
                 "code": naming.series_code(indicator.name, slices, indicators.YEAR_PERIOD) + "-y",
                 "title": MONTHS_TITLES[method].format(title=indicator.title),
                 "period": indicators.YEAR_PERIOD,
@@ -587,6 +658,7 @@ def _recalculations(
     """Пересчёты ряда таблицы или свёртки: на жителей и км² (суммы) и отмеченные в описании."""
     common = {
         "source": -1,
+        "sources": [],
         "members": [],
         "method": "",
         "base_code": primary["code"],
@@ -627,6 +699,44 @@ def _recalculations(
     return found
 
 
+# Разряды денежной единицы: значение на жителя записывается с тем, при котором оно не
+# меньше единицы, — «тыс. руб. на жителя», а не «млрд руб. на жителя» с шестью нулями.
+ORDERS = ((1e12, "трлн"), (1e9, "млрд"), (1e6, "млн"), (1e3, "тыс."))
+_ORDER = re.compile(
+    r"^\s*(тыс\.?|тысяч\w*|млн\.?|миллион\w*|млрд\.?|миллиард\w*|трлн\.?|триллион\w*)\s+(\S.*)$",
+    re.IGNORECASE,
+)
+_ORDER_SIZES = (("тыс", 1e3), ("млн", 1e6), ("миллион", 1e6), ("млрд", 1e9), ("миллиард", 1e9))
+
+
+def per_person(unit: str, middle: float | None) -> tuple[float, str]:
+    """
+    Множитель и единица пересчёта на жителя: «млрд руб.» при середине 0,0003 на жителя —
+    множитель 10⁶ и «тыс. руб. на жителя».
+    """
+    match = _ORDER.match(unit or "")
+    size, base = 1.0, (unit or "").strip()
+    if match:
+        word = match[1].casefold()
+        size = next((value for prefix, value in _ORDER_SIZES if word.startswith(prefix)), 1e12)
+        base = match[2].strip()
+    in_base = (middle or 0.0) * size
+    order, label = next(((value, name) for value, name in ORDERS if in_base >= value), (1.0, ""))
+    return size / order, " ".join(part for part in (label, base, _per_title("per1")) if part)
+
+
+def _per_person_order(connection: duckdb.DuckDBPyConnection, plan: list[dict[str, Any]]) -> None:
+    """Выбрать множитель и единицу рядов «на жителя» по их значениям; план — заново."""
+    middles = dict(connection.execute(PER_PERSON_MIDDLE_SQL).fetchall())
+    bases = {item["key"]: item for item in plan}
+    for item in plan:
+        if item["derived"] != DatasetSeries.Derived.PER_1.value:
+            continue
+        base = bases.get(item["base_key"], {})
+        item["factor"], item["unit"] = per_person(base.get("unit", ""), middles.get(item["key"]))
+    connection.register("plan", _plan_frame(plan))
+
+
 def _per_title(per: str) -> str:
     """Подпись пересчёта в названии ряда — по-русски: название ряда хранится как в таблице."""
     with translation.override("ru"):
@@ -649,6 +759,15 @@ def _write_file(
         load_territories(connection)
         connection.register("raw", raw)
         connection.register("plan", _plan_frame(plan))
+        connection.register("sources", _sources_frame(plan))
+        territories, years = exclusions(version.recipe)
+        connection.register(
+            "excluded_territories",
+            pd.DataFrame({"territory_code": pd.Series(territories, dtype=str)}),
+        )
+        connection.register(
+            "excluded_years", pd.DataFrame({"year": pd.Series(years, dtype="int64")})
+        )
         connection.register("nested", _nested_frame())
         connection.execute(FACTS_SQL)
         alone_missing = [row[0] for row in connection.execute(ALONE_MISSING_SQL).fetchall()]
@@ -667,6 +786,8 @@ def _write_file(
         summary["alone_missing"] = alone_missing
         summary["alone_conflict"] = alone_conflict
         summary["formula_errors"] = formula_errors
+        row = connection.execute("SELECT count(*) FROM user_excluded").fetchone()
+        summary["excluded"] = int(row[0]) if row else 0
         summary["changes"] = changes
         connection.execute("DROP TABLE facts")
         connection.executemany(
@@ -696,6 +817,8 @@ def _derive(connection: duckdb.DuckDBPyConnection, plan: list[dict[str, Any]]) -
         connection.execute(FOLD_SQL)
     if derived & set(PER_FACTORS):
         connection.register("population", _population_frame())
+        if DatasetSeries.Derived.PER_1.value in derived:
+            _per_person_order(connection, plan)
         connection.execute(PER_CAPITA_SQL)
     if DatasetSeries.Derived.PER_KM2.value in derived:
         connection.register("areas", _areas_frame())
@@ -739,6 +862,7 @@ def _formulas(
         ).fetchall()
     }
     errors: dict[str, str] = {}
+    districts = formula_store.territory_districts()
     for item in items:
         try:
             tree = formulas.parse(item["expression"])
@@ -750,7 +874,7 @@ def _formulas(
                 raise formulas.FormulaError(
                     _("Нет значений показателей: %(names)s.") % {"names": names}
                 )
-            outcome = formulas.evaluate(tree, inputs, territories)
+            outcome = formulas.evaluate(tree, inputs, territories, districts)
         except formulas.FormulaError as error:
             errors[item["code"]] = str(error)
             continue
@@ -954,12 +1078,39 @@ def _plan_frame(plan: list[dict[str, Any]]) -> pd.DataFrame:
             "base_kind": [item.get("base_kind", item["kind"]) for item in plan],
             "derived": [item["derived"] for item in plan],
             "base_key": [item["base_key"] for item in plan],
-            "factor": [float(PER_FACTORS.get(item["derived"], 0)) for item in plan],
+            "factor": [
+                float(item.get("factor", PER_FACTORS.get(item["derived"], 0))) for item in plan
+            ],
             "month_key": [item.get("month_key", "") for item in plan],
             "month": [int(item.get("month", 0)) for item in plan],
             "month_kind": [item.get("month_kind", "") for item in plan],
         }
     )
+
+
+def _sources_frame(plan: list[dict[str, Any]]) -> pd.DataFrame:
+    """Ряды таблицы под рядами набора: ключ, номер ряда таблицы, порядок и множитель масштаба."""
+    rows = [
+        (item["key"], source, priority, factor)
+        for item in plan
+        for source, priority, factor in item.get("sources", [])
+    ]
+    return pd.DataFrame(
+        {
+            "series_key": pd.Series([row[0] for row in rows], dtype=str),
+            "source": pd.Series([row[1] for row in rows], dtype="int64"),
+            "priority": pd.Series([row[2] for row in rows], dtype="int64"),
+            "factor": pd.Series([row[3] for row in rows], dtype="float64"),
+        }
+    )
+
+
+def exclusions(recipe: dict[str, Any]) -> tuple[list[str], list[int]]:
+    """Регионы и годы, исключённые из расчётов, — из рецепта таблицы."""
+    found = recipe.get("exclusions") or {}
+    territories = [str(code) for code in found.get("territories") or [] if code]
+    years = [int(year) for year in found.get("years") or [] if str(year).isdigit()]
+    return territories, years
 
 
 def _folds_frame(plan: list[dict[str, Any]]) -> pd.DataFrame:
@@ -1176,6 +1327,7 @@ def _save(
                 "alone_missing": summary["alone_missing"],
                 "alone_conflict": summary["alone_conflict"],
                 "formula_errors": summary["formula_errors"],
+                "excluded": summary.get("excluded", 0),
             },
         }
         if summary["changes"] is not None:

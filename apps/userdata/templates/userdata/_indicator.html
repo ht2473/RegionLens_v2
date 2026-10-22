@@ -11,7 +11,9 @@
       <span class="indicator-card__head">
         <span class="indicator-card__name"{% with lang=item.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.title }}</span>
         <span class="indicator-card__facts">
-          {% if item.unit %}<span{% with lang=item.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.unit }}</span> · {% endif %}
+          {% if item.hidden %}<span class="indicator-card__flag">{% translate "скрыт" %}</span> · {% endif %}
+          {% if item.merge %}<span class="indicator-card__flag">{% blocktranslate trimmed with title=titles|dict_value:item.merge %}влит в «{{ title }}»{% endblocktranslate %}</span> · {% endif %}
+          {% if item.scaled_unit %}<span{% with lang=item.scaled_unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.scaled_unit }}</span> · {% endif %}
           {% if item.is_sum %}{% translate "сумма" %}{% else %}{% translate "относительная величина" %}{% endif %}
           · {% blocktranslate trimmed with count=item.series %}рядов: {{ count }}{% endblocktranslate %}
           · {% blocktranslate trimmed with count=item.regions %}субъектов: {{ count }}{% endblocktranslate %}

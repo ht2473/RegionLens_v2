@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import pytest
@@ -177,7 +178,8 @@ class TestRenewal:
         assert dataset.current_version_id == first.pk
         table = member_client.get(reverse("surface:table"), {"series": key, "year": "2022"})
         assert table.status_code == 200
-        assert "999" not in table.text
+        # Число — содержимым клетки: «999» бывает и внутри случайного опознавателя страницы.
+        assert not re.search(r">\s*999(?:,0+)?\s*<", table.text)
         # Черновик новой версии отменяется, текущая остаётся.
         _new_version(member_client, dataset, _table(extra=("Тридевятое царство",)))
         assert renew.draft_of(dataset) is not None

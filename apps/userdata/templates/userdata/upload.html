@@ -59,11 +59,9 @@
         {% if study %}<input type="hidden" name="study" value="{{ study.public_id }}">{% endif %}
         <div class="field">
           <label class="field__label" for="{{ upload_form.file.id_for_label }}">{{ upload_form.file.label }}</label>
-          {{ upload_form.file }}
-          <span class="field__hint">{{ upload_form.file.help_text }}</span>
-          <span class="field__error" data-size-error hidden>{{ upload_limit }}</span>
+          {% include "userdata/_file_drop.html" with field=upload_form.file size_error=upload_limit submit=True %}
         </div>
-        <div class="form-sheet__actions">
+        <div class="form-sheet__actions" data-file-drop-fallback>
           <button class="button button--primary" type="submit">{% translate "Загрузить" %}</button>
         </div>
       </form>

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,7 @@ from urllib.parse import parse_qs, urlparse
 import duckdb
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
@@ -57,6 +59,9 @@ class TestSeriesStep:
         assert page.status_code == 200
         assert "Население в городах с высоким" in page.text
         assert 'name="indicator-1"' in page.text
+        # Проверка: сводка прочитанного плитками и как прочитаны столбцы.
+        assert "review-summary" in page.text and "2014–2022" in page.text
+        assert "Как прочитаны столбцы" in page.text and "→ <b>регион</b>" in page.text
         version = _version(dataset)
         assert extract.is_current(version)
         # 774 значения, из них 73 — код 8888 («в регионе не ведутся наблюдения»).
@@ -81,13 +86,22 @@ class TestSeriesStep:
         assert location.path == reverse("userdata:study", args=[study.public_id])
         key = parse_qs(location.query)["series"][0]
         assert key.startswith(f"u:{dataset.code}:")
-        (block,) = studies.blocks_of(study)
-        assert (block["target"], block["parameters"]["series"]) == ("map", key)
+        # Новое исследование открывается первыми карточками: карта, что заметно, рейтинг,
+        # линии по годам (лет больше одного), связь с официальными (регионов хватает).
+        blocks = studies.blocks_of(study)
+        assert [block.get("target") or block.get("question") for block in blocks] == [
+            "map",
+            "notable",
+            "rankings",
+            "compare",
+            "related",
+        ]
+        assert (blocks[0]["parameters"]["series"], blocks[1]["series"]) == (key, key)
         assert study.title == dataset.title
-        # Пересборка той же таблицы ведёт в то же исследование, без новой карточки.
+        # Пересборка той же таблицы ведёт в то же исследование, без новых карточек.
         again = _build(client, dataset)
         assert urlparse(again["Location"]).path == location.path
-        assert len(studies.blocks_of(Study.objects.get())) == 1
+        assert len(studies.blocks_of(Study.objects.get())) == len(blocks)
         version = _version(dataset)
         assert version.state == DatasetVersion.State.BUILT
         assert version.regions_count == 77
@@ -542,6 +556,119 @@ class TestBuild:
         assert jobs.stage_state(_version(dataset), jobs.EXTRACT) == jobs.PENDING
 
 
+class _Finished:
+    """Процесс разбора, уже завершившийся с кодом ``code``."""
+
+    def __init__(self, code: int) -> None:
+        self.code = code
+
+    def poll(self) -> int:
+        return self.code
+
+
+@pytest.mark.django_db
+class TestWorker:
+    """
+    На стенде большие таблицы разбирает служба в своём контейнере: сайт кладёт заявку
+    в очередь, служба выполняет её, оборванный разбор сразу становится неудачей.
+    """
+
+    def _queued(self, client: Client, monkeypatch: pytest.MonkeyPatch, settings: Any) -> Any:
+        settings.USERDATA_JOB_WORKER = True
+        monkeypatch.setattr(jobs, "INLINE_TABLE_BYTES", 10)
+        dataset = _upload(client, "environment.csv")
+        _describe(client, dataset)
+        assert (
+            "Разбираем таблицу…"
+            in client.get(reverse("userdata:series", args=[dataset.public_id])).text
+        )
+        return _version(dataset)
+
+    def test_site_queues_and_worker_runs(
+        self, client: Client, warehouse: Any, monkeypatch: pytest.MonkeyPatch, settings: Any
+    ) -> None:
+        from apps.userdata.management.commands import userdata_worker
+
+        version = self._queued(client, monkeypatch, settings)
+        requests = list(jobs.queue_dir().glob(f"*{jobs.REQUEST}"))
+        assert len(requests) == 1
+        assert jobs.request_arguments(requests[0]) == [
+            "userdata_build",
+            str(version.pk),
+            jobs.EXTRACT,
+        ]
+        assert jobs.stage_state(version, jobs.EXTRACT) == jobs.RUNNING
+
+        def launch(arguments: list[str]) -> _Finished:
+            jobs.run(DatasetVersion.objects.get(pk=int(arguments[1])), arguments[2])
+            return _Finished(0)
+
+        monkeypatch.setattr(userdata_worker, "_launch", launch)
+        call_command("userdata_worker", "--once")
+        version.refresh_from_db()
+        assert jobs.stage_state(version, jobs.EXTRACT) == jobs.READY
+        assert not [path.name for path in jobs.queue_dir().iterdir() if path.name != "heartbeat"]
+
+    def test_killed_job_fails_at_once(
+        self, client: Client, warehouse: Any, monkeypatch: pytest.MonkeyPatch, settings: Any
+    ) -> None:
+        from apps.userdata.management.commands import userdata_worker
+
+        version = self._queued(client, monkeypatch, settings)
+        # Процесс убит нехваткой памяти, ничего не записав.
+        monkeypatch.setattr(userdata_worker, "_launch", lambda arguments: _Finished(-9))
+        call_command("userdata_worker", "--once")
+        version.refresh_from_db()
+        assert jobs.stage_state(version, jobs.EXTRACT) == jobs.FAILED
+        assert "Разбор прервался" in jobs.stage_error(version, jobs.EXTRACT)
+
+    def test_claimed_before_restart_fails(
+        self, client: Client, warehouse: Any, monkeypatch: pytest.MonkeyPatch, settings: Any
+    ) -> None:
+        version = self._queued(client, monkeypatch, settings)
+        # Служба остановлена посреди разбора: взятая заявка осталась.
+        for request in jobs.queue_dir().glob(f"*{jobs.REQUEST}"):
+            request.rename(request.with_suffix(jobs.CLAIMED))
+        call_command("userdata_worker", "--once")
+        version.refresh_from_db()
+        assert jobs.stage_state(version, jobs.EXTRACT) == jobs.FAILED
+        assert not list(jobs.queue_dir().glob(f"*{jobs.CLAIMED}"))
+
+    @pytest.mark.parametrize(
+        "arguments",
+        [
+            ["flush", "--noinput"],
+            ["userdata_build", "1", "drop"],
+            ["userdata_build", "1; rm", "build"],
+            ["userdata_summarize", "1", "extra"],
+            "userdata_summarize 1",
+        ],
+    )
+    def test_foreign_request_is_dropped(
+        self, monkeypatch: pytest.MonkeyPatch, settings: Any, arguments: Any
+    ) -> None:
+        from apps.userdata.management.commands import userdata_worker
+
+        launched: list[list[str]] = []
+        monkeypatch.setattr(
+            userdata_worker, "_launch", lambda items: launched.append(items) or _Finished(0)
+        )
+        folder = jobs.queue_dir()
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / f"1{jobs.REQUEST}").write_text(json.dumps(arguments), encoding="utf-8")
+        call_command("userdata_worker", "--once")
+        assert launched == []
+        assert not list(folder.glob(f"*{jobs.REQUEST}"))
+
+    def test_cleanup_keeps_queue(self, settings: Any) -> None:
+        from apps.userdata import services
+
+        folder = jobs.queue_dir()
+        folder.mkdir(parents=True, exist_ok=True)
+        services.prune()
+        assert folder.is_dir()
+
+
 @pytest.mark.django_db
 class TestCanvas:
     """Пять видов холста, ссылка на вид и «Сохранить вид» — на рядах набора."""
@@ -682,6 +809,9 @@ class TestDatasetPage:
         )
         assert "Абсолютные величины" not in checks.text
         assert "Субъектов со значениями: 77 из 85." in checks.text
+        # Профиль качества: матрица «субъект × год» с подписями округов и состояний.
+        assert "quality-matrix" in checks.text and "ЦФО" in checks.text
+        assert 'class="is-present"' in checks.text and "есть значение" in checks.text
         bare = _built(client, kind=indicators.SUM, per=())
         warned = client.get(reverse("userdata:dataset", args=[bare.public_id]), {"tab": "checks"})
         assert "Абсолютные величины" in warned.text

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n static formatting userdata %}
 
-{# Шаг «Показатели»: таблица и её источник; вопросы — только о неуверенном, прочее описание — в «Изменить»; сборка. #}
+{# Шаг «Проверка»: сводка прочитанного, вопросы о неуверенном, показатели, как прочитаны столбцы; сборка. #}
 
 {% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
@@ -14,20 +14,13 @@
 <div class="container page">
 
   <header class="page-head">
-    <h1 class="page-head__title">{% translate "Показатели" %}</h1>
+    <h1 class="page-head__title">{% translate "Проверка таблицы" %}</h1>
     <p class="page-head__lead">
       {% blocktranslate trimmed %}
-        Как называются показатели и что означают их значения. Описание действует на все
-        ряды показателя — по разрезам и периодам года.
+        Так сайт прочитал таблицу. Названия, единицы и вид величины показателей можно
+        поправить здесь же. Описание действует на все ряды показателя.
       {% endblocktranslate %}
     </p>
-    {% if not waiting %}
-      <p class="page-head__meta">
-        <span>{% blocktranslate trimmed with count=report.values|ru_number:0 %}значений: {{ count }}{% endblocktranslate %}</span>
-        <span>{% blocktranslate trimmed with count=indicators|length %}показателей: {{ count }}{% endblocktranslate %}</span>
-        <span>{% blocktranslate trimmed with count=report.series|length %}рядов: {{ count }}{% endblocktranslate %}</span>
-      </p>
-    {% endif %}
   </header>
 
   {% include "userdata/_steps.html" %}
@@ -38,6 +31,30 @@
       <p><a class="button button--secondary" href="{% url 'userdata:table' dataset.public_id %}">{% translate "Вернуться к описанию таблицы" %}</a></p>
     {% endif %}
   {% else %}
+
+  <ul class="review-summary" aria-label="{% translate 'Что прочитано' %}">
+    <li class="review-summary__tile">
+      <p class="review-summary__label">{% translate "Регионы" %}</p>
+      <p class="review-summary__value numeric">{% blocktranslate trimmed with count=summary.regions total=summary.regions_total %}{{ count }} из {{ total }}{% endblocktranslate %}</p>
+      <p class="review-summary__note">{% translate "наибольшее число у одного ряда" %}</p>
+    </li>
+    <li class="review-summary__tile">
+      <p class="review-summary__label">{% translate "Годы" %}</p>
+      <p class="review-summary__value numeric">{% if summary.first_year %}{{ summary.first_year|year }}{% if summary.last_year != summary.first_year %}–{{ summary.last_year|year }}{% endif %}{% else %}—{% endif %}</p>
+      <p class="review-summary__note">{% blocktranslate trimmed with count=report.values|ru_number:0 %}значений: {{ count }}{% endblocktranslate %}</p>
+    </li>
+    <li class="review-summary__tile">
+      <p class="review-summary__label">{% translate "Показатели" %}</p>
+      <p class="review-summary__value numeric">{{ summary.indicators }}</p>
+      <p class="review-summary__note">{% blocktranslate trimmed with count=summary.series with_unit=summary.with_unit %}рядов: {{ count }} · с единицей: {{ with_unit }}{% endblocktranslate %}</p>
+    </li>
+    {% if summary.form %}
+      <li class="review-summary__tile review-summary__tile--text">
+        <p class="review-summary__label">{% translate "Как устроена" %}</p>
+        <p class="review-summary__text">{{ summary.form }}</p>
+      </li>
+    {% endif %}
+  </ul>
 
   {% if build_error %}
     <div class="callout callout--danger" role="alert">
@@ -108,6 +125,16 @@
     </div>
   {% endif %}
 
+  {% if report.outside %}
+    <details class="callout callout--info review-outside">
+      <summary>{% blocktranslate trimmed with count=report.outside|length %}Строк вне справочника: {{ count }} — на карту и в рейтинг они не попадут{% endblocktranslate %}</summary>
+      <ul>
+        {% for label, code in report.outside|slice:":30" %}<li{% with lang=label|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ label|truncatechars:80 }}</li>{% endfor %}
+      </ul>
+      <a href="{% url 'userdata:table' dataset.public_id %}">{% translate "Изменить разметку" %}</a>
+    </details>
+  {% endif %}
+
   {% if alone_missing %}
     <div class="callout callout--info">
       <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
@@ -171,6 +198,21 @@
       </section>
     {% endif %}
 
+    {% if roles %}
+      <details class="review-roles">
+        <summary class="review-roles__summary">{% translate "Как прочитаны столбцы" %}</summary>
+        <ul class="review-roles__list">
+          {% for item in roles %}
+            <li class="review-roles__item{% if item.skipped %} is-skipped{% endif %}">
+              <span{% with lang=item.headers.0|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.headers|join:", " }}</span>{% if item.more %} {% blocktranslate trimmed with count=item.more %}и ещё {{ count }}{% endblocktranslate %}{% endif %}
+              → <b>{{ item.role }}</b>
+            </li>
+          {% endfor %}
+        </ul>
+        <a class="review-roles__change" href="{% url 'userdata:table' dataset.public_id %}">{% translate "Изменить разметку" %}</a>
+      </details>
+    {% endif %}
+
     <div class="form-sheet__actions wizard-actions">
       <button class="button button--primary" type="submit">
         {% if built %}{% translate "Собрать заново и открыть" %}{% else %}{% translate "Собрать и открыть" %}{% endif %}
@@ -178,14 +220,14 @@
       {% if built %}
         <a class="button button--secondary" href="{% url 'userdata:dataset' dataset.public_id %}">{% translate "Страница таблицы" %}</a>
       {% endif %}
-      <a class="button button--ghost" href="{% url 'userdata:table' dataset.public_id %}">{% translate "Назад к описанию таблицы" %}</a>
+      <a class="button button--ghost" href="{% url 'userdata:table' dataset.public_id %}">{% translate "Изменить разметку" %}</a>
     </div>
     {% if not built %}
       <p class="wizard-actions__note">
         {% if destination %}
           {% blocktranslate trimmed with study=destination.title %}Карта собранной таблицы добавится в исследование «{{ study }}».{% endblocktranslate %}
         {% else %}
-          {% translate "Карта собранной таблицы откроется в новом исследовании." %}
+          {% translate "Откроется новое исследование: карта, рейтинг, изменение по годам и связь с официальными показателями." %}
         {% endif %}
       </p>
     {% endif %}
