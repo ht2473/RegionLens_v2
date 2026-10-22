@@ -24,7 +24,7 @@ from apps.core.throttle import allow, allow_key
 from apps.warehouse.duckdb_client import close_dataset
 
 from . import access, ingest, paste, tables
-from .models import Dataset, DatasetVersion, Study
+from .models import Dataset, DatasetVersion, RegionGroup, Study
 
 logger = logging.getLogger(__name__)
 
@@ -481,6 +481,14 @@ def export_studies(user: Any) -> list[dict[str, Any]]:
     ]
 
 
+def export_groups(user: Any) -> list[dict[str, Any]]:
+    """Свои группы регионов для выгрузки «Персональных данных»: название и субъекты."""
+    return [
+        {"title": group.title, "codes": group.codes, "created_at": group.created_at.isoformat()}
+        for group in RegionGroup.objects.filter(owner=user)
+    ]
+
+
 def _export_shares(shares: Any) -> list[dict[str, Any]]:
     """Закрытые ссылки без токенов: срок, отзыв, разрешение скачивать, открытия."""
     return [
@@ -546,7 +554,7 @@ def export_datasets(user: Any) -> list[dict[str, Any]]:
 
 def prune() -> tuple[int, int]:
     """
-    Удалить истёкшие таблицы и исследования гостей и осиротевшие файлы: каталоги без
+    Удалить истёкшие таблицы, исследования и группы гостей и осиротевшие файлы: каталоги без
     набора, прежние файлы сборки. Занятый другим процессом файл (Windows) удалится
     при следующей очистке.
     Возвращает число удалённых таблиц и каталогов.
@@ -557,11 +565,17 @@ def prune() -> tuple[int, int]:
     for dataset in expired:
         discard(dataset)
     Study.objects.filter(owner__isnull=True, expires_at__lt=timezone.now()).delete()
+    RegionGroup.objects.filter(owner__isnull=True, expires_at__lt=timezone.now()).delete()
     root = Path(settings.USERDATA_DIR)
     if not root.exists():
         return len(expired), 0
     known = {str(value) for value in Dataset.objects.values_list("public_id", flat=True)}
-    orphans = [path for path in root.iterdir() if path.is_dir() and path.name not in known]
+    # Скрытые каталоги — служебные (очередь службы разборов), а не таблицы.
+    orphans = [
+        path
+        for path in root.iterdir()
+        if path.is_dir() and not path.name.startswith(".") and path.name not in known
+    ]
     for path in orphans:
         shutil.rmtree(path, ignore_errors=True)
     current = {

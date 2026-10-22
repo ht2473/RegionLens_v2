@@ -1,0 +1,32 @@
+{% load i18n userdata %}
+{% comment %}
+  Выбор своей группы для карточки «Группа регионов против остальных»: группы радиокнопками,
+  карточка ставится обычной правкой поля; групп нет — путь к их созданию.
+{% endcomment %}
+{% if own %}
+  <form method="post" action="{% url 'userdata:study-edit' study.public_id %}" class="stack group-pick">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add">
+    <input type="hidden" name="do" value="answer:group">
+    <input type="hidden" name="series" value="{{ series }}">
+    <fieldset class="field">
+      <legend class="field__label">{% translate "Группа" %}</legend>
+      <div class="stack stack--tight">
+        {% for group in own %}
+          <label class="radio">
+            <input type="radio" name="group" value="{{ group.public_id }}"{% if forloop.first %} checked{% endif %}>
+            <span><span{% with lang=group.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ group.title }}</span> <span class="text-muted">· {% blocktranslate trimmed with count=group.codes|length %}регионов: {{ count }}{% endblocktranslate %}</span></span>
+          </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    <p class="field__hint">{% translate "У суммы — доля группы в сумме регионов по годам, у относительной величины — среднее группы и остальных, взвешенное по численности населения." %}</p>
+    <div class="group-pick__actions">
+      <button class="button button--primary" type="submit">{% translate "Поставить на поле" %}</button>
+      <a href="{{ create_url }}">{% translate "Создать или изменить группы" %}</a>
+    </div>
+  </form>
+{% else %}
+  <p>{% translate "Своих групп пока нет. Группа — набор регионов, например регионы проекта; её итог сравнивается с остальными регионами." %}</p>
+  <p><a class="button button--primary" href="{{ create_url }}">{% translate "Создать группу" %}</a></p>
+{% endif %}

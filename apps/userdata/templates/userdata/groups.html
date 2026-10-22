@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load i18n static formatting userdata %}
+
+{% comment %}
+  Свои группы регионов: перечень (название, сколько регионов, первые из них, изменить,
+  удалить) и форма — новая группа или выбранная (?edit=). Из исследования (?next=) после
+  сохранения — обратно к нему.
+{% endcomment %}
+
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+  <link rel="stylesheet" href="{% static 'css/userdata.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Группы регионов" %}</h1>
+    <p class="page-head__lead">{% translate "Свой набор регионов — например, регионы проекта или соседи по макрорегиону. Карточка исследования «Группа регионов против остальных» сравнивает итог группы с остальными по годам." %}</p>
+    {% if guest %}<p class="page-head__meta">{% translate "Без входа группы хранятся сутки, после входа переходят в учётную запись." %}</p>{% endif %}
+  </header>
+
+  {% if own %}
+    <section class="page-section" aria-labelledby="groups-list">
+      <h2 class="page-section__title" id="groups-list">{% blocktranslate trimmed with count=own|length limit=limit %}Мои группы: {{ count }} из {{ limit }}{% endblocktranslate %}</h2>
+      <ul class="own-groups">
+        {% for group in own %}
+          <li class="own-groups__item">
+            <div class="own-groups__text">
+              <span class="own-groups__title"{% with lang=group.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ group.title }}</span>
+              <span class="own-groups__meta">{% blocktranslate trimmed with count=group.codes|length %}регионов: {{ count }}{% endblocktranslate %} — {% for code in group.codes|slice:":4" %}{{ code|territory_name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if group.codes|length > 4 %}…{% endif %}</span>
+            </div>
+            <a class="button button--sm button--ghost" href="?edit={{ group.public_id }}{% if next_url %}&amp;next={{ next_url|urlencode }}{% endif %}#group-form">{% translate "Изменить" %}</a>
+            <form method="post" class="own-groups__delete">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="group" value="{{ group.public_id }}">
+              <button class="button button--sm button--ghost" type="submit" aria-label="{% blocktranslate trimmed with title=group.title %}Удалить группу «{{ title }}»{% endblocktranslate %}">{% translate "Удалить" %}</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  <section class="page-section" id="group-form" aria-labelledby="group-form-title">
+    <h2 class="page-section__title" id="group-form-title">{% if editing %}{% blocktranslate trimmed with title=editing.title %}Группа «{{ title }}»{% endblocktranslate %}{% else %}{% translate "Новая группа" %}{% endif %}</h2>
+    <form method="post" class="stack own-group-form">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="save">
+      {% if editing %}<input type="hidden" name="group" value="{{ editing.public_id }}">{% endif %}
+      {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+      <div class="field">
+        <label class="field__label" for="group-title">{% translate "Название" %}</label>
+        <input class="input" id="group-title" name="title" maxlength="120" value="{{ title }}" required>
+      </div>
+      <fieldset class="field">
+        <legend class="field__label">{% translate "Регионы" %}</legend>
+        <p class="field__hint">{% translate "отмечено" %}: <span class="numeric" data-count-of="#group-regions">{{ chosen|length }}</span></p>
+        <label class="filter-field">
+          <svg aria-hidden="true"><use href="#icon-filter"></use></svg>
+          <span class="visually-hidden">{% translate "Отобрать регион" %}</span>
+          <input type="search" autocomplete="off" data-filter-input="#group-regions" placeholder="{% translate 'Отобрать регион' %}">
+        </label>
+        <div class="territory-picker own-group-form__regions" id="group-regions">
+          {% for item in territory_groups %}
+            <div class="territory-picker__group" data-filter-group>
+              <div class="territory-picker__title">{% if item.district %}{{ item.district.name }}{% else %}{% translate "вне округов" %}{% endif %}</div>
+              <div class="stack stack--tight">
+                {% for territory in item.items %}
+                  <label class="checkbox" data-filter-item data-filter-text="{{ territory.name }}">
+                    <input type="checkbox" name="territory" value="{{ territory.code }}"{% if territory.code in chosen %} checked{% endif %}>
+                    <span class="text-truncate" title="{{ territory.name }}">{{ territory.name }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <div class="own-group-form__actions">
+        <button class="button button--primary" type="submit">{% translate "Сохранить группу" %}</button>
+        {% if editing %}<a class="button button--ghost" href="?{% if next_url %}next={{ next_url|urlencode }}{% endif %}#group-form">{% translate "Новая группа" %}</a>{% endif %}
+        {% if next_url %}<a class="button button--ghost" href="{{ next_url }}">{% translate "К исследованию" %}</a>{% endif %}
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% load i18n formatting userdata %}
+{% comment %}
+  Группа регионов против остальных: итог группы и остальных регионов за год (у суммы — доля
+  группы в сумме регионов, у относительной величины — разница средних, взвешенных
+  по численности), линии по годам и таблица.
+{% endcomment %}
+<div class="answer__columns study-card__answer">
+  <div class="answer__figure">
+    <p class="answer__value">
+      {% if card.is_sum %}
+        <span class="numeric">{{ card.share }}&nbsp;%</span>
+        <span class="answer__unit">{% blocktranslate trimmed with year=card.year|year %}доля группы в сумме регионов, {{ year }}{% endblocktranslate %}</span>
+      {% else %}
+        <span class="numeric">{{ card.difference }}</span>
+        <span class="answer__unit">{% blocktranslate trimmed with year=card.year|year %}группа против остальных, {{ year }}{% endblocktranslate %}</span>
+      {% endif %}
+    </p>
+    <p class="answer__meta">
+      <span>{% blocktranslate trimmed with value=card.group_value %}группа: {{ value }}{% endblocktranslate %}</span>
+      <span>{% blocktranslate trimmed with value=card.rest_value %}остальные регионы: {{ value }}{% endblocktranslate %}</span>
+      {% if not card.is_sum and card.ratio %}<span>{% blocktranslate trimmed with ratio=card.ratio %}группа — {{ ratio }}&nbsp;% от остальных{% endblocktranslate %}</span>{% endif %}
+      <span>{% blocktranslate trimmed with count=card.members size=card.size %}регионов группы со значением: {{ count }} из {{ size }}{% endblocktranslate %}</span>
+    </p>
+  </div>
+</div>
+{% with option_id=card.prefix|add:"-group" %}
+  <rl-chart data-report-image class="chart study-card__chart" data-options="{{ option_id }}"
+            data-image-title="{{ card.title }}" data-image-source="{{ card.source }}"></rl-chart>
+  {{ card.chart|json_script:option_id }}
+{% endwith %}
+<details class="study-card__details">
+  <summary>{% translate "По годам таблицей" %}</summary>
+  <div class="data-table-wrapper study-card__table" data-scroll>
+    <table class="data-table">
+      <caption class="visually-hidden">{% blocktranslate trimmed with title=card.title %}{{ title }} — по годам{% endblocktranslate %}</caption>
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Год" %}</th>
+          <th scope="col" class="is-numeric"{% with lang=card.group_title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ card.group_title }}</th>
+          <th scope="col" class="is-numeric">{% translate "Остальные регионы" %}</th>
+          {% if card.is_sum %}<th scope="col" class="is-numeric">{% translate "Доля группы, %" %}</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in card.rows %}
+          <tr>
+            <th scope="row" class="numeric">{{ row.year|year }}</th>
+            <td class="is-numeric numeric">{{ row.group }}</td>
+            <td class="is-numeric numeric">{{ row.rest }}</td>
+            {% if card.is_sum %}<td class="is-numeric numeric">{{ row.share }}</td>{% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+{% if not card.is_sum %}<p class="answer__meta"><span>{% translate "Среднее группы и остальных взвешено по среднегодовой численности населения." %}</span></p>{% endif %}
