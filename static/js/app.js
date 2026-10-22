@@ -33,6 +33,7 @@ function defineElements() {
    при загрузке, и запоздавший модуль дал бы скачок раскрытого блока. ------------------- */
 
 const BEHAVIOURS = {
+  calc: ["[data-calc-form], #calc-dialog", () => import("./ui/calc.js")],
   clipboard: ["[data-copy], [data-select-all]", () => import("./ui/clipboard.js")],
   forms: [
     "[data-count-of], [data-filter-input], [data-summary-of], form[data-autosubmit]",
@@ -43,6 +44,7 @@ const BEHAVIOURS = {
   inplace: ["[data-inplace-url]", () => import("./ui/inplace.js")],
   more: ["[data-more-toggle]", () => import("./ui/more.js")],
   print: ["[data-print]", () => import("./ui/print.js")],
+  report: ["form[data-report]", () => import("./ui/report.js")],
   scroll: [
     ".data-table-wrapper, .admin-table-wrapper, .edition-list, .admin-log, .code-block",
     () => import("./ui/scroll.js"),
