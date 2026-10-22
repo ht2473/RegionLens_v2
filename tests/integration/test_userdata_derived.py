@@ -298,6 +298,39 @@ class TestFolds:
 class TestStability:
     """Коды пересчётов и свёрток не меняются при новой сборке; предел пересчётов."""
 
+    def test_money_sum_per_person(self, client: Client, warehouse: Any) -> None:
+        """
+        Денежная сумма по умолчанию делится на жителя, разряд единицы — по значениям:
+        «млрд руб.» дают «тыс. руб. на жителя», а не шесть нулей после запятой.
+        """
+        lines = ["Регион;2021;2022"] + [
+            f"{territory.name_ru};{500 + index};{550 + index}"
+            for index, territory in enumerate(_regions())
+        ]
+        dataset = _upload_text(client, "валовой продукт.csv", lines)
+        describe(client, dataset)
+        build(client, dataset, kind=indicators.SUM, extra={"unit-1": "млрд руб."})
+        records = _records(dataset)
+        base = next(record for record in records.values() if not record.derived)
+        assert {derived for _code, derived in records if derived} == {"per1"}
+        person = records[(base.code, "per1")]
+        assert person.unit.endswith("руб. на жителя")
+        assert person.title.endswith("на жителя")
+
+        build(client, dataset, kind=indicators.SUM, per=("per1", "per100000"))
+        records = _records(dataset)
+        person = records[(base.code, "per1")]
+        # Множитель от «млрд руб.» к разряду единицы на жителя.
+        factors = {"": 1e9, "тыс.": 1e6, "млн": 1e3, "млрд": 1.0}
+        factor = factors[person.unit.removesuffix("руб. на жителя").strip()]
+        ones = _rows(dataset, key_of(dataset, person))
+        hundreds = _rows(dataset, key_of(dataset, records[(base.code, "per100000")]))
+        assert ones
+        for code_year, (value, flags) in ones.items():
+            assert value == pytest.approx(hundreds[code_year][0] / 100_000 * factor)
+            assert flags & 2
+        assert 1 <= sorted(value for value, _flags in ones.values())[len(ones) // 2] < 1000
+
     def test_codes_survive_rebuild(self, client: Client, warehouse: Any) -> None:
         dataset = upload(client, "despair.csv")
         describe(client, dataset)

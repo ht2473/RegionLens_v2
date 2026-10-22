@@ -1,0 +1,10 @@
+{% load userdata %}
+{# Выбор ряда панели расчёта: свои таблицы группами, затем официальные ряды поля. #}
+<select class="select" id="{{ id }}" name="{{ name }}">
+  <option value="">—</option>
+  {% for group in options %}
+    <optgroup label="{{ group.title }}">
+      {% for item in group.items %}<option value="{{ item.key }}"{% if value == item.key %} selected{% endif %}>{{ item.title }}</option>{% endfor %}
+    </optgroup>
+  {% endfor %}
+</select>

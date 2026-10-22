@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{# Панель расчёта отдельной страницей — без сценариев; со сценарием она открывается окном на поле. #}
+
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+  <link rel="stylesheet" href="{% static 'css/userdata.css' %}">
+  <link rel="stylesheet" href="{% static 'css/lab.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Новый показатель" %}</h1>
+    <p class="page-head__lead">{% translate "Готовый расчёт или своя формула. Результат — новый ряд в своей таблице, его карта встанет на поле исследования." %}</p>
+    <p><a href="{% url 'userdata:study' study.public_id %}">{% translate "К исследованию" %}</a></p>
+  </header>
+  <div id="calc-dialog-body">{% include "userdata/_calc_panel.html" %}</div>
+</div>
+{% endblock %}

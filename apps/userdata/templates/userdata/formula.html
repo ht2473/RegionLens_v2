@@ -220,7 +220,7 @@
             <li><span{% with lang=title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ title }}</span> — <span class="text-secondary"{% with lang=source|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ source }}</span></li>
           {% endfor %}
         </ul>
-        {% for warning in checked.outcome.warnings %}
+        {% for warning in checked.warnings %}
           <div class="callout callout--warning">
             <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
             <div>{{ warning }}</div>

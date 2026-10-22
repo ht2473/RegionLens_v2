@@ -29,7 +29,9 @@ RELATIVE_KIND = "rate"
 FEW_REGIONS = 20
 # Пересчёты на жителей — в порядке предпочтения для замены суммы.
 PER_CAPITA = (
+    DatasetSeries.Derived.PER_1.value,
     DatasetSeries.Derived.PER_100000.value,
+    DatasetSeries.Derived.PER_10000.value,
     DatasetSeries.Derived.PER_1000.value,
 )
 

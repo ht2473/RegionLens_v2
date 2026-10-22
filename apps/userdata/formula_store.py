@@ -22,7 +22,7 @@ from django.utils.translation import gettext as _
 from apps.warehouse import routing
 from apps.warehouse.duckdb_client import fetch_dicts, using_source
 
-from . import formulas, indicators, naming
+from . import formulas, indicators, naming, operations
 from .formulas import Candidate, Directory, FormulaError
 from .models import Dataset, DatasetSeries, DatasetVersion
 
@@ -45,6 +45,10 @@ class Definition:
     kind: str = indicators.RELATIVE
     polarity: str = DatasetSeries.Polarity.NEUTRAL.value
     labels: dict[str, str] = field(default_factory=dict)
+    # Происхождение: операция каталога (пусто — своя формула), её поля и когда создан ряд.
+    operation: str = ""
+    parameters: dict[str, Any] = field(default_factory=dict)
+    created: str = ""
 
     @property
     def keys(self) -> list[str]:
@@ -59,6 +63,9 @@ class Definition:
             "kind": self.kind,
             "polarity": self.polarity,
             "labels": self.labels,
+            "operation": self.operation,
+            "parameters": self.parameters,
+            "created": self.created,
         }
 
     @classmethod
@@ -71,6 +78,9 @@ class Definition:
             kind=str(item.get("kind") or indicators.RELATIVE),
             polarity=str(item.get("polarity") or DatasetSeries.Polarity.NEUTRAL.value),
             labels=dict(item.get("labels") or {}),
+            operation=str(item.get("operation") or ""),
+            parameters=dict(item.get("parameters") or {}),
+            created=str(item.get("created") or ""),
         )
 
 
@@ -240,6 +250,12 @@ class Check:
     definition: Definition
     outcome: formulas.Outcome
     sources: list[tuple[str, str]]  # подпись и откуда ряд
+    # Что сказать о смысле формулы: разные единицы в сумме, двойной счёт, разные годы.
+    notes: list[str] = field(default_factory=list)
+
+    @property
+    def warnings(self) -> list[str]:
+        return [*self.notes, *self.outcome.warnings]
 
 
 def check(dataset: Dataset, data: Mapping[str, Any], *, code: str = "") -> Check:
@@ -260,9 +276,14 @@ def check(dataset: Dataset, data: Mapping[str, Any], *, code: str = "") -> Check
         kind=kind if kind in KINDS else indicators.RELATIVE,
         polarity=polarity if polarity in POLARITIES else DatasetSeries.Polarity.NEUTRAL.value,
         labels={key: found.by_key[key].title for key in keys},
+        operation=str(data.get("operation") or ""),
+        parameters=dict(data.get("parameters") or {}),
+        created=str(data.get("created") or timezone.localdate().isoformat()),
     )
     tree = formulas.parse(expression)
-    outcome = formulas.evaluate(tree, file_inputs(dataset, keys), territory_flags())
+    outcome = formulas.evaluate(
+        tree, file_inputs(dataset, keys), territory_flags(), territory_districts()
+    )
     if not outcome.rows:
         raise FormulaError(
             _(
@@ -279,7 +300,13 @@ def check(dataset: Dataset, data: Mapping[str, Any], *, code: str = "") -> Check
         )
         for key in keys
     ]
-    return Check(definition=definition, outcome=outcome, sources=sources)
+    infos = {key: info for key in keys if (info := operations.info_of(key)) is not None}
+    return Check(
+        definition=definition,
+        outcome=outcome,
+        sources=sources,
+        notes=operations.warnings(expression, infos),
+    )
 
 
 def save(dataset: Dataset, definition: Definition) -> None:
@@ -396,6 +423,17 @@ def territory_flags() -> dict[str, bool]:
 
     regions = set(Territory.objects.comparable().values_list("code", flat=True))
     return {code: code in regions for code in Territory.objects.values_list("code", flat=True)}
+
+
+def territory_districts() -> dict[str, str]:
+    """Субъект → его федеральный округ (для ОКРУГ и ВЗВОКРУГ)."""
+    from apps.catalog.models import Territory
+
+    return {
+        territory.code: territory.parent.code
+        for territory in Territory.objects.comparable().select_related("parent")
+        if territory.parent is not None
+    }
 
 
 def file_inputs(dataset: Dataset, keys: Iterable[str]) -> dict[str, Rows]:

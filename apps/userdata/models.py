@@ -165,7 +165,9 @@ class DatasetSeries(models.Model):
 
     class Derived(models.TextChoices):
         NONE = "", _("из таблицы")
+        PER_1 = "per1", _("на жителя")
         PER_1000 = "per1000", _("на 1 000 жителей")
+        PER_10000 = "per10000", _("на 10 000 жителей")
         PER_100000 = "per100000", _("на 100 000 жителей")
         PER_KM2 = "perkm2", _("на км²")
         REAL = "real", _("в ценах последнего года")

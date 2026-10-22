@@ -166,7 +166,7 @@ class FormulaView(DatasetMixin, BreadcrumbMixin, TemplateView):
             for name in ("title", "expression", "unit", "kind", "polarity", "template", "a", "b")
         }
         values["study"] = request.POST.get("study", "")
-        if request.headers.get("HX-Request") and not _preview_allowed(request):
+        if request.headers.get("HX-Request") and not preview_allowed(request):
             return HttpResponse(status=429)
         try:
             checked = formula_store.check(self.dataset, self.from_template(values), code=self.code)
@@ -249,7 +249,7 @@ def _study(request: HttpRequest, public_id: Any) -> Study | None:
     return studies.owned(request).filter(public_id=identifier).first()
 
 
-def _preview_allowed(request: HttpRequest) -> bool:
+def preview_allowed(request: HttpRequest) -> bool:
     """Проверки предпросмотра в пределах частоты: с учётной записи, у гостя — с адреса."""
     limit = settings.USERDATA_FORMULA_PREVIEWS
     if request.user.is_authenticated:
@@ -273,7 +273,9 @@ def preview(checked: formula_store.Check, prefix: str = "fp") -> dict[str, Any]:
     for code, year, value in checked.outcome.rows:
         if flags.get(code) and value is not None:
             by_year.setdefault(int(year), {})[code] = value
-    regions = list(Territory.objects.comparable().only("code", "name_ru", "name_en"))
+    regions = list(
+        Territory.objects.comparable().only("code", "name_ru", "name_en", "abbreviation")
+    )
     if not by_year:
         return {"count": 0, "total": len(regions)}
     year = max(by_year, key=lambda item: (len(by_year[item]), item))
@@ -288,6 +290,7 @@ def preview(checked: formula_store.Check, prefix: str = "fp") -> dict[str, Any]:
             {
                 "code": territory.code,
                 "name": territory.name,
+                "abbreviation": territory.short_code,
                 "title": f"{territory.name} — {ru_number(found)}"
                 if found is not None
                 else f"{territory.name} — {gettext('нет данных')}",
