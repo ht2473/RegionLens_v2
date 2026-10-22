@@ -31,7 +31,6 @@ class TestKinds:
     @pytest.mark.parametrize(
         ("head", "code"),
         [
-            (b"%PDF-1.4 ...", "pdf"),
             (b"\x89PNG\r\n\x1a\n", "image"),
             (b"Rar!\x1a\x07\x00", "rar"),
             (b"7z\xbc\xaf\x27\x1c", "rar"),
@@ -59,14 +58,26 @@ class TestKinds:
         assert ingest.sniff(b"<html><table><tr><td>1</td></tr></table>") == ingest.HTML
         assert ingest.sniff(b"PK\x03\x04rest") == ingest.ZIP
         assert ingest.sniff(b"PAR1....") == ingest.PARQUET
+        assert ingest.sniff(b"%PDF-1.4 ...") == ingest.PDF
 
-    def test_docx_inside_zip_is_refused(self, tmp_path: Path) -> None:
+    def test_docx_is_a_document(self, tmp_path: Path) -> None:
+        """DOCX — документ Word: без таблиц — «нет таблиц», с объявлением сущностей — отказ."""
         path = _zip(
             tmp_path / "file.docx", {"word/document.xml": b"<w/>", "[Content_Types].xml": b""}
         )
         with pytest.raises(IngestError) as caught:
             ingest.inspect(path)
-        assert caught.value.code == "word"
+        assert caught.value.code == "no_tables"
+        evil = _zip(
+            tmp_path / "evil.docx",
+            {
+                "word/document.xml": b'<!DOCTYPE w [<!ENTITY x "x">]><w/>',
+                "[Content_Types].xml": b"",
+            },
+        )
+        with pytest.raises(IngestError) as caught:
+            ingest.inspect(evil)
+        assert caught.value.code == "broken"
 
 
 class TestEncoding:

@@ -11,6 +11,8 @@
 архивы ЕБТ — ``ebt/``, «Регионы России» — ``rosstat/``; бюллетень и ВРП — из архива сбора;
 таблицы других ведомств и страницы сайтов — ``foreign/<ведомство>/`` (перечень — ``sources.csv``);
 отложенная выборка — ``heldout/<ведомство>/``: замеряется только явно (``--only heldout``).
+Документы файлом (``documents``) — DOCX «Регионов России» и PDF и DOCX ведомств
+из ``documents/<ведомство>/``; те же DOCX вставкой текста — источник ``regions``.
 Эталон подписей — ``gold.csv``: подпись, источник, число строк, правильный ответ
 (код, ``outside``, ``ask``, ``none``, ``part`` — обрывок разорванной подписи) и отметка проверки.
 """
@@ -55,12 +57,13 @@ from apps.userdata import matching  # noqa: E402
 
 DEFAULT_CORPUS = ROOT.parent / "for work" / "corpus"
 GOLD_FIELDS = ("source", "label", "rows", "expected", "alternatives", "status", "note")
-SOURCES = ("ebt", "bulletin", "grp", "regions", "foreign", "heldout", "variants")
+SOURCES = ("ebt", "bulletin", "grp", "regions", "documents", "foreign", "heldout", "variants")
 SOURCE_TITLES = {
     "ebt": "ЕБТ",
     "bulletin": "бюллетень",
     "grp": "ВРП",
     "regions": "«Регионы России»",
+    "documents": "документы файлом",
     "foreign": "чужие файлы",
     "heldout": "отложенная выборка",
     "variants": "написания",
@@ -72,6 +75,8 @@ MIN_TERRITORIES = 3
 TARGET_SECONDS = 2
 DISPUTED = "спорно"
 _WORD = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+# Документы: их таблицы приём читает сам и хранит рядом с файлом.
+DOCUMENT_SUFFIXES = frozenset({".docx", ".pdf"})
 
 
 # --- Чтение корпуса ------------------------------------------------------------------------------
@@ -135,6 +140,38 @@ def docx_tables(corpus: Path) -> Iterator[tuple[str, list[list[str]]]]:
                         cells.extend([text] + [""] * (repeat - 1))
                     rows.append(cells)
                 yield f"{path.name}#{number}", rows
+
+
+def document_files(corpus: Path, root: Path) -> Iterator[tuple[str, Path]]:
+    """Документы файлом: DOCX «Регионов России» и ``documents/<ведомство>/``, копии в ``root``."""
+    regions = unpack(corpus / "rosstat" / "Region_Pokaz_2025.rar", root / "regions_docx")
+    for path in sorted(regions.rglob("*.docx")):
+        yield path.name, path
+    for tag, path in foreign_files(corpus, "documents"):
+        if path.suffix.lower() in DOCUMENT_SUFFIXES:
+            yield tag, scratch_copy(path, root)
+
+
+def scratch_copy(path: Path, root: Path) -> Path:
+    """Документ — копией в черновике: приём пишет таблицы документа рядом с файлом."""
+    if path.suffix.lower() not in DOCUMENT_SUFFIXES:
+        return path
+    copy = root / "copies" / path.parent.name / path.name
+    copy.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(path, copy)
+    return copy
+
+
+def document_table(path: Path, table: Any, root: Path) -> tuple[Path, Any]:
+    """Таблица документа файлом TSV — так её пишет выбор таблицы на сайте."""
+    from dataclasses import replace
+
+    from apps.userdata import documents, ingest, paste
+
+    rows = documents.load(path)[int(table.key.removeprefix("#")) - 1].rows
+    target = root / paste.FILE_NAME
+    paste.write(rows, target)
+    return target, replace(table, kind=ingest.CSV, encoding="utf-8", delimiter="\t")
 
 
 def foreign_files(corpus: Path, folder: str = "foreign") -> Iterator[tuple[str, Path]]:
@@ -495,9 +532,13 @@ def command_files(corpus: Path) -> None:
             with contextlib.suppress(ingest.IngestError):
                 ingest.inspect(target, paste.FILE_NAME)
             timings.append((time.perf_counter() - started, tag))
-    print("== Таблицы других ведомств и страницы сайтов")
-    for tag, path in foreign_files(corpus):
-        run(path, tag)
+    with tempfile.TemporaryDirectory() as scratch:
+        print("== Документы файлом")
+        for tag, path in document_files(corpus, Path(scratch)):
+            run(path, tag)
+        print("== Таблицы других ведомств и страницы сайтов")
+        for tag, path in foreign_files(corpus):
+            run(scratch_copy(path, Path(scratch)), tag)
     slowest = sorted(timings, reverse=True)[:5]
     slow = sum(elapsed > TARGET_SECONDS for elapsed, _name in timings)
     print(f"\nфайлов и вставок: {len(timings)}; дольше {TARGET_SECONDS} с: {slow}")
@@ -577,7 +618,9 @@ def describe_table(recognition: Any) -> dict[str, str]:
     }
 
 
-def corpus_tables(corpus: Path, only: str = "") -> Iterator[tuple[str, str, Path, Any, str]]:
+def corpus_tables(  # noqa: PLR0912 — по ветви на источник корпуса
+    corpus: Path, only: str = ""
+) -> Iterator[tuple[str, str, Path, Any, str]]:
     """Таблицы корпуса так, как их примет приём: источник, имя, файл, таблица, имя файла."""
     from apps.userdata import ingest, paste
 
@@ -610,6 +653,9 @@ def corpus_tables(corpus: Path, only: str = "") -> Iterator[tuple[str, str, Path
             except ingest.IngestError:
                 continue
             yield "regions", tag, target, inspection.tables[0], paste.FILE_NAME
+        if only in {"", "documents"}:
+            for tag, path in document_files(corpus, root):
+                yield from _document_tables("documents", tag, path, root)
         if only in {"", "foreign"}:
             yield from _foreign_tables(corpus, root)
         if only == "heldout":
@@ -623,6 +669,9 @@ def _foreign_tables(
     from apps.userdata import ingest, paste
 
     for tag, path in foreign_files(corpus, source):
+        if path.suffix.lower() in DOCUMENT_SUFFIXES:
+            yield from _document_tables(source, tag, scratch_copy(path, root), root)
+            continue
         try:
             inspection = ingest.inspect(path, path.name)
         except ingest.IngestError:
@@ -644,6 +693,21 @@ def _foreign_tables(
                 except ingest.IngestError:
                     continue
                 yield source, f"{tag}~вставка{number}", target, pasted.tables[0], paste.FILE_NAME
+
+
+def _document_tables(
+    source: str, tag: str, path: Path, root: Path
+) -> Iterator[tuple[str, str, Path, Any, str]]:
+    """Таблицы документа: имя — файл и номер таблицы в документе."""
+    from apps.userdata import ingest
+
+    try:
+        inspection = ingest.inspect(path, path.name)
+    except ingest.IngestError:
+        return
+    for table in inspection.tables:
+        target, chosen = document_table(path, table, root)
+        yield source, f"{tag}{table.key}", target, chosen, path.name
 
 
 def _rosstat_files(source: str, root: Path) -> Iterator[tuple[str, Path]]:
@@ -955,6 +1019,15 @@ def _build_targets(  # noqa: PLR0912 — по ветви на источник �
             yield "regions", tag, len(text.encode()), _paste_start(text), ""
             if limit and count >= limit:
                 break
+    if only in {"", "documents"}:
+        with tempfile.TemporaryDirectory() as scratch:
+            count = 0
+            for tag, path in document_files(corpus, Path(scratch)):
+                for target in _document_targets("documents", tag, path):
+                    yield target
+                    count += 1
+                    if limit and count >= limit:
+                        return
     if only in {"", "foreign"}:
         yield from _foreign_targets(corpus)
     if only == "heldout":
@@ -968,6 +1041,10 @@ def _foreign_targets(
     from apps.userdata import ingest
 
     for tag, path in foreign_files(corpus, source):
+        if path.suffix.lower() in DOCUMENT_SUFFIXES:
+            with tempfile.TemporaryDirectory() as scratch:
+                yield from _document_targets(source, tag, scratch_copy(path, Path(scratch)))
+            continue
         size = path.stat().st_size
         try:
             inspection = ingest.inspect(path, path.name)
@@ -983,6 +1060,23 @@ def _foreign_targets(
             for number, text, markup in page_tables(path):
                 start = _paste_markup_start(text, markup)
                 yield source, f"{tag}~вставка{number}", len(markup.encode()), start, ""
+
+
+def _document_targets(
+    source: str, tag: str, path: Path
+) -> Iterator[tuple[str, str, int, Callable[[Any], Any], str]]:
+    """Документ для пути до карты: каждая его таблица — загрузкой файла и выбором таблицы."""
+    from apps.userdata import ingest
+
+    size = path.stat().st_size
+    start = _upload_start(path, path.name)
+    try:
+        inspection = ingest.inspect(path, path.name)
+    except ingest.IngestError:
+        yield source, tag, size, start, ""
+        return
+    for table in inspection.tables:
+        yield source, f"{tag}{table.key}", size, start, table.key
 
 
 def command_build(
@@ -1087,7 +1181,7 @@ def main() -> None:
     parser.add_argument(
         "--only",
         default="",
-        help="только один источник: ebt, bulletin, grp, regions, foreign, heldout",
+        help="только один источник: ebt, bulletin, grp, regions, documents, foreign, heldout",
     )
     parser.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
     parser.add_argument("--verbose", action="store_true", help="показывать и вопросы")

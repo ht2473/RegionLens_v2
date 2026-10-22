@@ -8,7 +8,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import shutil
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -37,7 +37,21 @@ SOURCE_STEM = "source"
 TABLE_STEM = "table"
 # Расширения, с которыми исходный файл хранится; прочее — «.bin»: вид решают первые байты.
 KNOWN_SUFFIXES = frozenset(
-    {".csv", ".tsv", ".txt", ".xlsx", ".xlsm", ".xls", ".ods", ".parquet", ".zip", ".htm", ".html"}
+    {
+        ".csv",
+        ".tsv",
+        ".txt",
+        ".xlsx",
+        ".xlsm",
+        ".xls",
+        ".ods",
+        ".parquet",
+        ".zip",
+        ".htm",
+        ".html",
+        ".docx",
+        ".pdf",
+    }
 )
 
 
@@ -223,6 +237,14 @@ def choose_table(version: DatasetVersion, key: str, *, encoding: str = "") -> in
         path = ingest.extract_member(
             source, table.member, version.directory / (TABLE_STEM + suffix)
         )
+    if inspection.kind in ingest.DOCUMENT_KINDS:
+        # Таблица документа — дальше как вставка: файл TSV в UTF-8.
+        from . import documents
+
+        rows = documents.load(source)[int(table.key.removeprefix("#")) - 1].rows
+        path = version.directory / f"{TABLE_STEM}.tsv"
+        paste.write(rows, path)
+        table = replace(table, kind=ingest.CSV, encoding="utf-8", delimiter="\t")
     chosen = asdict(table)
     chosen.pop("sample")
     if table.kind == ingest.CSV and table.encoding != "utf-8":

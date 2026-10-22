@@ -102,7 +102,7 @@ class TestUpload:
     @pytest.mark.parametrize(
         ("name", "data", "text"),
         [
-            ("report.pdf", b"%PDF-1.7 ...", "Это не таблица"),
+            ("report.pdf", b"%PDF-1.7 ...", "повреждён"),
             ("archive.rar", b"Rar!\x1a\x07\x01\x00", "RAR"),
             ("photo.jpg", b"\xff\xd8\xff\xe0", "изображение"),
         ],
@@ -191,7 +191,8 @@ class TestAccess:
         dataset = Dataset.objects.get()
         assert dataset.owner is not None and not dataset.guest_key
         url = reverse("userdata:file", args=[dataset.public_id])
-        assert member_client.get(url).status_code == 200
+        # Одна таблица в файле — шаг выбирает её сам и ведёт дальше.
+        assert member_client.get(url, follow=True).status_code == 200
         other = Client()
         other.force_login(make_user(email="other@example.com"))
         assert other.get(url).status_code == 404

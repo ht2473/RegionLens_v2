@@ -455,6 +455,10 @@ USERDATA_TABLE_MAX_BYTES = env.int("USERDATA_TABLE_MAX_BYTES", default=300 * 102
 # Архив: сжатие таблицы не сильнее 100 : 1 (у ЕБТ — до 60 : 1), файлов не больше 50.
 USERDATA_ZIP_MAX_RATIO = env.int("USERDATA_ZIP_MAX_RATIO", default=100)
 USERDATA_ZIP_MAX_FILES = env.int("USERDATA_ZIP_MAX_FILES", default=50)
+# PDF читается при загрузке: страниц не больше, чтение не дольше (секунд), иначе — отказ
+# с советом сохранить нужные страницы отдельным файлом.
+USERDATA_PDF_MAX_PAGES = env.int("USERDATA_PDF_MAX_PAGES", default=40)
+USERDATA_PDF_SECONDS = env.int("USERDATA_PDF_SECONDS", default=30)
 # Вставка из буфера: текст таблицы, разметка таблицы из Word и Excel — больше текста.
 USERDATA_PASTE_MAX_BYTES = env.int("USERDATA_PASTE_MAX_BYTES", default=5 * 1024 * 1024)
 USERDATA_MAX_ROWS = env.int("USERDATA_MAX_ROWS", default=3_000_000)

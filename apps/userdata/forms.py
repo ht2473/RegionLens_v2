@@ -15,7 +15,7 @@ from django.utils.translation import gettext_lazy as _
 from . import ingest
 from .models import Dataset
 
-ACCEPTED_SUFFIXES = ".csv,.tsv,.txt,.xlsx,.xlsm,.xls,.ods,.parquet,.zip"
+ACCEPTED_SUFFIXES = ".csv,.tsv,.txt,.xlsx,.xlsm,.xls,.ods,.parquet,.docx,.pdf,.zip"
 
 
 class UploadForm(forms.Form):
@@ -23,7 +23,7 @@ class UploadForm(forms.Form):
 
     file = forms.FileField(
         label=_("Файл таблицы"),
-        widget=forms.FileInput(attrs={"accept": ACCEPTED_SUFFIXES, "class": "file-input"}),
+        widget=forms.FileInput(attrs={"accept": ACCEPTED_SUFFIXES, "class": "file-drop__input"}),
     )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -31,8 +31,11 @@ class UploadForm(forms.Form):
         self.fields["file"].widget.attrs["data-max-bytes"] = settings.USERDATA_UPLOAD_MAX_BYTES
         # Подсказка — на языке запроса: при объявлении поля язык ещё не выбран.
         self.fields["file"].help_text = gettext(
-            "CSV, TXT, XLSX, XLS, ODS, Parquet или архив ZIP с ними, до %(limit)s МБ"
+            "CSV, TXT, XLSX, XLS, ODS, Parquet, DOCX, PDF с текстом или архив ZIP, до %(limit)s МБ"
         ) % {"limit": settings.USERDATA_UPLOAD_MAX_BYTES // (1024 * 1024)}
+        # Подсказка — в зоне файла; поле связано с ней (обращение к полю — после подсказки:
+        # связанное поле запоминает её при создании).
+        self.fields["file"].widget.attrs["aria-describedby"] = f"{self['file'].auto_id}-hint"
 
 
 class PasteForm(forms.Form):
