@@ -1,0 +1,59 @@
+{% load i18n formatting userdata %}
+{% comment %}
+  Исключения в «Обзоре» таблицы (владельцу): регионы и годы, которые не идут в расчёты —
+  карты, рейтинги, анализ и пересчёты. Значения остаются в таблице и в выгрузке с пометкой
+  «исключено из расчётов». Сохранение пересобирает таблицу.
+{% endcomment %}
+<section class="page-section own-exclusions" id="own-exclusions" aria-labelledby="own-exclusions-title">
+  <div class="page-section__head">
+    <h2 class="page-section__title" id="own-exclusions-title">{% translate "Исключить из расчётов" %}</h2>
+  </div>
+  {% if exclusions.territories or exclusions.years %}
+    <p class="page-section__lead">
+      {% if exclusions.territories %}{% translate "Регионы" %}: {% for code in exclusions.territories %}{{ code|territory_name }}{% if not forloop.last %}, {% endif %}{% endfor %}.{% endif %}
+      {% if exclusions.years %}{% translate "Годы" %}: <span class="numeric">{% for year in exclusions.years %}{{ year|year }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>.{% endif %}
+      {% blocktranslate trimmed with count=exclusions.count|ru_number:0 %}Значений вне расчётов: {{ count }}.{% endblocktranslate %}
+    </p>
+  {% else %}
+    <p class="page-section__lead">{% translate "Регион с ошибочными числами или год со сменой охвата можно убрать из карт, рейтингов и анализа. Значения останутся в таблице и в выгрузке с пометкой." %}</p>
+  {% endif %}
+  <details class="question-card question-card--quiet"{% if exclusions.territories or exclusions.years %} open{% endif %}>
+    <summary>{% translate "Выбрать регионы и годы" %}</summary>
+    <form method="post" action="{% url 'userdata:exclusions' dataset.public_id %}" class="stack own-exclusions__form">
+      {% csrf_token %}
+      <fieldset class="field">
+        <legend class="field__label">{% translate "Годы" %}</legend>
+        <div class="own-exclusions__years">
+          {% for year in exclusions.year_choices %}
+            <label class="checkbox"><input type="checkbox" name="year" value="{{ year|stringformat:'d' }}"{% if year in exclusions.years %} checked{% endif %}> <span class="numeric">{{ year|year }}</span></label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <fieldset class="field">
+        <legend class="field__label">{% translate "Регионы" %}</legend>
+        <label class="filter-field">
+          <svg aria-hidden="true"><use href="#icon-filter"></use></svg>
+          <span class="visually-hidden">{% translate "Отобрать регион" %}</span>
+          <input type="search" autocomplete="off" data-filter-input="#own-exclusions-regions"
+                 placeholder="{% translate 'Отобрать регион' %}">
+        </label>
+        <div class="territory-picker own-exclusions__regions" id="own-exclusions-regions">
+          {% for group in exclusions.groups %}
+            <div class="territory-picker__group" data-filter-group>
+              <div class="territory-picker__title">{% if group.district %}{{ group.district.name }}{% else %}{% translate "вне округов" %}{% endif %}</div>
+              <div class="stack stack--tight">
+                {% for territory in group.items %}
+                  <label class="checkbox" data-filter-item data-filter-text="{{ territory.name }}">
+                    <input type="checkbox" name="territory" value="{{ territory.code }}"{% if territory.code in exclusions.territories %} checked{% endif %}>
+                    <span class="text-truncate" title="{{ territory.name }}">{{ territory.name }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <div><button class="button button--primary button--sm" type="submit">{% translate "Сохранить и пересобрать" %}</button></div>
+    </form>
+  </details>
+</section>

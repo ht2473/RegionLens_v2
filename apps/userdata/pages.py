@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
+from datetime import date
 from typing import Any
 from urllib.parse import urlencode
 
@@ -24,7 +25,19 @@ from apps.core.navigation import Crumb
 from apps.core.views import BreadcrumbMixin
 from apps.warehouse import queries
 
-from . import access, examples, export, glance, ingest, monthly, scope, services, studies
+from . import (
+    access,
+    desk,
+    examples,
+    export,
+    glance,
+    ingest,
+    monthly,
+    quality,
+    scope,
+    services,
+    studies,
+)
 from .models import Dataset, DatasetSeries, DatasetVersion
 from .series import FEW_REGIONS, UserSeries
 
@@ -36,12 +49,12 @@ VIEWS = (
     ("distribution", "surface:distribution", _("Распределение")),
     ("table", "surface:table", _("Таблица")),
 )
-# Вкладки страницы таблицы; «Файл и версии» и «Доступ» — только владельцу.
+# Вкладки страницы таблицы: «Обзор» (показатели, качество, исключения), «Версии» и «Доступ» —
+# две последние только владельцу. Прежний адрес «Проверок» открывает «Обзор».
 DATA, CHECKS, FILE, ACCESS = "data", "checks", "file", "access"
 TABS = (
-    (DATA, _("Данные")),
-    (CHECKS, _("Проверки")),
-    (FILE, _("Файл и версии")),
+    (DATA, _("Обзор")),
+    (FILE, _("Версии")),
     (ACCESS, _("Доступ")),
 )
 OWNER_TABS = frozenset({FILE, ACCESS})
@@ -60,7 +73,10 @@ OUTSIDE_REASONS = {
 
 
 class SectionView(BreadcrumbMixin, TemplateView):
-    """Раздел: что это, загрузка, «Мои таблицы», какие таблицы подходят, кто их видит."""
+    """
+    Рабочий стол раздела: зона загрузки, «Продолжить» — исследования карточками, таблицы
+    с состоянием, что можно сделать; справка свёрнута. В первый раз — зона крупнее и примеры.
+    """
 
     template_name = "userdata/index.html"
 
@@ -68,12 +84,20 @@ class SectionView(BreadcrumbMixin, TemplateView):
         return (Crumb(title=_("Свои данные")),)
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        from .forms import UploadForm
+
         context = super().get_context_data(**kwargs)
         mine = list(access.owned(self.request).select_related("current_version"))
+        own_studies = list(studies.owned(self.request))
         user = self.request.user
         context.update(
             page_title=_("Свои данные"),
             datasets=mine,
+            study_cards=desk.study_cards(own_studies, {item.code: item.title for item in mine}),
+            table_rows=desk.table_rows(mine, own_studies),
+            first_visit=not mine and not own_studies,
+            upload_form=UploadForm(),
+            upload_limit=services.upload_size_text(),
             used=services.used_bytes(user)
             if user.is_authenticated
             else sum(item.size_bytes for item in mine),
@@ -83,7 +107,6 @@ class SectionView(BreadcrumbMixin, TemplateView):
             else settings.USERDATA_GUEST_MAX_DATASETS,
             guest_hours=settings.USERDATA_GUEST_HOURS,
             retention_days=backup_retention_days(),
-            studies=list(studies.owned(self.request)),
             examples=examples.examples(),
         )
         return context
@@ -123,7 +146,7 @@ class ExampleFileView(View):
         # нажатие копила бы черновики в «Моих таблицах».
         draft = examples.unfinished(request, item)
         if draft is not None:
-            return redirect(_continue_url(draft, draft.current_version))
+            return redirect(continue_url(draft, draft.current_version))
         try:
             services.check_limits(request)
             dataset = examples.create(request, item)
@@ -162,9 +185,10 @@ class ReadableDatasetMixin:
 
 class DatasetView(ReadableDatasetMixin, BreadcrumbMixin, TemplateView):
     """
-    Страница таблицы — вкладки «Данные» (показатели списком и выбранный показатель с картой
-    ряда), «Проверки», «Файл и версии» и «Доступ»; две последние — владельцу. Читатель
-    ссылки ничего не меняет. Ряды без значений к построению не предлагаются.
+    Страница таблицы — служебная: «Обзор» (показатели списком, выбранный — с переходами
+    в исследование и на карту сайта; покрытие по годам, замечания, исключённые из расчётов
+    регионы и годы), «Версии» и «Доступ» — две последние владельцу. Смотрят и считают данные
+    в исследовании. Читатель ссылки ничего не меняет. Ряды без значений не предлагаются.
     """
 
     template_name = "userdata/dataset.html"
@@ -189,7 +213,7 @@ class DatasetView(ReadableDatasetMixin, BreadcrumbMixin, TemplateView):
             owner=self.owner,
             built=built,
             can_export=self.owner or scope.exportable(dataset.code),
-            continue_url=_continue_url(dataset, version),
+            continue_url=continue_url(dataset, version),
             guest=dataset.owner_id is None,
             retention_days=backup_retention_days(),
         )
@@ -217,7 +241,7 @@ class DatasetView(ReadableDatasetMixin, BreadcrumbMixin, TemplateView):
                     "title": title,
                     "url": "?" + urlencode({"tab": code}) if code != DATA else "?",
                     "active": code == tab,
-                    "attention": notices["attention"] if code == CHECKS else 0,
+                    "attention": notices["attention"] if code == DATA else 0,
                 }
                 for code, title in TABS
                 if code in available
@@ -227,8 +251,12 @@ class DatasetView(ReadableDatasetMixin, BreadcrumbMixin, TemplateView):
         )
         if tab == DATA:
             context.update(self.data_context(version, series, everything, covered))
-        elif tab == CHECKS:
-            context.update(notices, checks=glance.checks(dataset, version))
+            context.update(
+                notices,
+                checks=glance.checks(dataset, version),
+                profile=quality.profile(dataset, version, self.request.GET.get("series", "")),
+                exclusions=_exclusions(version) if self.owner else None,
+            )
         elif tab == FILE:
             context.update(_versions_context(dataset))
         elif tab == ACCESS and dataset.owner_id is not None:
@@ -281,7 +309,6 @@ class DatasetView(ReadableDatasetMixin, BreadcrumbMixin, TemplateView):
             "chosen_views": picked["views"] if picked is not None else [],
             "chosen_related_url": picked["related_url"] if picked is not None else "",
             "picked": bool(shown),
-            "preview": _preview(self.request, target) if has_values and target else {},
         }
 
 
@@ -324,35 +351,41 @@ def _notices(
     return found
 
 
-def _preview(request: HttpRequest, item: UserSeries) -> dict[str, Any]:
-    """Карта выбранного ряда — та же, что у карточки исследования, — разметкой и её год."""
-    from django.template.loader import render_to_string
+def _exclusions(version: DatasetVersion) -> dict[str, Any]:
+    """
+    Исключённые из расчётов регионы и годы для формы «Обзора»: субъекты по округам (и уже
+    исключённые, которых в рядах больше нет), годы — все годы таблицы до исключения.
+    """
+    from apps.catalog.selectors import grouped_territories
 
-    from . import study_cards
+    from .build import exclusions
 
-    block = {
-        "id": "preview",
-        "kind": "view",
-        "target": "map",
-        "parameters": {"series": item.key},
-        "title": "",
-        "note": "",
-        "wide": True,
-    }
-    card = study_cards.render(request, block, year=None, territories=[])
-    if card["template"] != "userdata/cards/_map.html":
-        return {}
+    territories, years = exclusions(version.recipe)
+    report = version.report.get("extract") or {}
+    known = [
+        year
+        for item in report.get("series", [])
+        for year in (item.get("first_year"), item.get("last_year"))
+        if year
+    ]
+    span = range(min(known), max(known) + 1) if known else range(0)
     return {
-        "html": render_to_string(card["template"], {**card, "card": card}, request=request),
-        "year": card.get("year"),
+        "territories": territories,
+        "years": years,
+        "year_choices": sorted({*span, *years}, reverse=True),
+        "groups": grouped_territories(),
+        "count": version.report.get("build", {}).get("excluded", 0),
     }
 
 
 def _formulas(
     dataset: Dataset, version: DatasetVersion, series: list[UserSeries]
 ) -> list[dict[str, Any]]:
-    """Показатели по формулам: формула с нынешними названиями, ряд, причина пустоты."""
-    from . import formula_store, formulas
+    """
+    Показатели по формулам: формула с нынешними названиями, ряд, причина пустоты
+    и происхождение — операция каталога, из каких рядов и когда создан.
+    """
+    from . import formula_store, formulas, operations
 
     by_code = {item.record.code: item for item in series}
     errors = version.report.get("build", {}).get("formula_errors", {})
@@ -360,10 +393,14 @@ def _formulas(
     for item in formula_store.definitions(version):
         titles = {**item.labels, **formula_store.titles(dataset, item.keys)}
         record = by_code.get(item.code)
+        operation = operations.BY_CODE.get(item.operation)
         found.append(
             {
                 "definition": item,
                 "expression": formulas.display(item.expression, titles),
+                "operation": operation,
+                "inputs": [titles.get(key, key) for key in item.keys],
+                "created": _date(item.created),
                 "series": record,
                 "error": errors.get(item.code, ""),
                 "views": _views(record)
@@ -379,6 +416,14 @@ def _formulas(
     return found
 
 
+def _date(text: str) -> date | None:
+    """Дата из записи формулы; нет её или она испорчена — ничего."""
+    try:
+        return date.fromisoformat(text) if text else None
+    except ValueError:
+        return None
+
+
 def _views(item: UserSeries) -> list[dict[str, Any]]:
     """Ссылки на виды холста для ряда."""
     return [
@@ -391,7 +436,7 @@ def _views(item: UserSeries) -> list[dict[str, Any]]:
     ]
 
 
-def _continue_url(dataset: Dataset, version: DatasetVersion | None) -> str:
+def continue_url(dataset: Dataset, version: DatasetVersion | None) -> str:
     """Шаг мастера, на котором остановилась несобранная таблица или новая версия."""
     from . import renew
 
@@ -414,7 +459,7 @@ def _versions_context(dataset: Dataset) -> dict[str, Any]:
             dataset.versions.filter(state=DatasetVersion.State.BUILT).order_by("-number")
         ),
         "draft": draft,
-        "draft_url": _continue_url(dataset, draft) if draft is not None else "",
+        "draft_url": continue_url(dataset, draft) if draft is not None else "",
         "draft_questions": renew.pending_questions(draft) if draft is not None else [],
         "version_upload_form": UploadForm(),
         "version_paste_form": PasteForm(auto_id="id_version_%s"),
@@ -514,6 +559,56 @@ class DatasetStudyView(DatasetMixin, View):
                 return redirect("userdata:dataset", public_id=dataset.public_id)
         url = reverse("userdata:study", args=[study.public_id])
         return redirect(f"{url}?{urlencode({'series': key})}#study-actions" if key else url)
+
+
+class ExclusionsView(DatasetMixin, View):
+    """
+    Исключить регионы и годы из расчётов: отметка в рецепте и пересборка. Значения остаются
+    в таблице и в выгрузке с пометкой, но в рядах — карты, рейтинги, анализ — их нет.
+    """
+
+    def post(self, request: HttpRequest, public_id: str) -> HttpResponse:  # noqa: ARG002
+        from apps.catalog.models import Territory
+
+        from . import jobs
+
+        version = self.dataset.current_version
+        if version is None or version.state != DatasetVersion.State.BUILT:
+            raise Http404
+        wanted = [code for code in request.POST.getlist("territory") if code]
+        known = set(
+            Territory.objects.comparable().filter(code__in=wanted).values_list("code", flat=True)
+        )
+        years = sorted(
+            {
+                int(year)
+                for year in request.POST.getlist("year")
+                if year.isdigit() and MIN_EXCLUDED_YEAR <= int(year) <= MAX_EXCLUDED_YEAR
+            }
+        )
+        territories = [code for code in wanted if code in known]
+        version.recipe = {
+            **version.recipe,
+            "exclusions": {"territories": territories, "years": years},
+        }
+        version.save(update_fields=["recipe", "updated_at"])
+        state = jobs.start(version, jobs.BUILD)
+        if state == jobs.FAILED:
+            messages.error(request, jobs.stage_error(version, jobs.BUILD))
+        else:
+            messages.success(
+                request,
+                gettext("Исключения сохранены, таблица пересобирается.")
+                if state != jobs.READY
+                else gettext("Исключения сохранены, таблица пересобрана."),
+            )
+        url = reverse("userdata:dataset", args=[self.dataset.public_id])
+        return redirect(f"{url}#own-exclusions")
+
+
+# Годы, которые можно исключить.
+MIN_EXCLUDED_YEAR = 1900
+MAX_EXCLUDED_YEAR = 2100
 
 
 class DeleteView(DatasetMixin, View):

@@ -81,9 +81,7 @@
         <input type="hidden" name="action" value="upload">
         <div class="field">
           <label class="field__label" for="{{ version_upload_form.file.id_for_label }}">{{ version_upload_form.file.label }}</label>
-          {{ version_upload_form.file }}
-          <span class="field__hint">{{ version_upload_form.file.help_text }}</span>
-          <span class="field__error" data-size-error hidden>{{ upload_limit }}</span>
+          {% include "userdata/_file_drop.html" with field=version_upload_form.file size_error=upload_limit %}
         </div>
         <div class="form-sheet__actions">
           <button class="button button--primary" type="submit">{% translate "Загрузить новую версию" %}</button>

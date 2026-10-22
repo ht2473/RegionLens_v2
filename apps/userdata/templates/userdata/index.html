@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 {% load i18n static formatting userdata %}
 
-{# Раздел «Свои данные»: что это, загрузка и пример, мои таблицы, какие таблицы подходят, хранение. #}
+{% comment %}
+  Рабочий стол раздела «Свои данные»: зона загрузки (файл перетаскивают на страницу или
+  выбирают — загрузка начинается сразу), «Продолжить» — исследования карточками с миниатюрой,
+  таблицы с состоянием, что можно сделать; справка о формах таблиц, примерах и хранении
+  свёрнута. В первый раз — зона крупнее, «Что получится» и примеры ведомств карточками.
+{% endcomment %}
 
 {% block extra_css %}
   <link rel="stylesheet" href="{% static 'css/content.css' %}">
@@ -9,240 +14,287 @@
 {% endblock %}
 
 {% block content %}
-<div class="container page">
+<div class="container page own-desk">
 
   <header class="page-head">
     <h1 class="page-head__title">{% translate "Свои данные" %}</h1>
     <p class="page-head__lead">
       {% blocktranslate trimmed %}
-        Своя таблица по регионам России открывается на той же карте и в тех же видах,
-        что и данные сайта. Регионы, годы и показатели узнаются по таблице; что не узнано,
-        можно выбрать. Таблицу видите только вы.
-      {% endblocktranslate %}
-    </p>
-    <div class="own-data-actions button-pair">
-      <a class="button button--primary button--sm" href="{% url 'userdata:upload' %}">
-        <svg aria-hidden="true"><use href="#icon-upload"></use></svg>
-        {% translate "Загрузить таблицу" %}
-      </a>
-      <form method="post" action="{% url 'userdata:example' %}">
-        {% csrf_token %}
-        <button class="button button--secondary button--sm" type="submit">
-          {% translate "Попробовать на примере" %}
-        </button>
-      </form>
-    </div>
-    <p class="own-data-actions__hint">
-      {% blocktranslate trimmed %}
-        Пример — набор «Если быть точным» о загрязнении воздуха в городах, архивом, как он
-        скачивается с сайта набора.
+        Своя таблица по регионам — на карте и рядом с официальными данными. Регионы, годы
+        и показатели сайт узнаёт сам. Таблицу видите только вы.
       {% endblocktranslate %}
     </p>
   </header>
 
-  <section class="page-section" aria-labelledby="own-studies" id="own-studies-section">
-    <div class="page-section__head">
-      <h2 class="page-section__title" id="own-studies">{% translate "Мои исследования" %}</h2>
-    </div>
-    <p class="page-section__lead">
-      {% blocktranslate trimmed %}
-        Исследование — рабочее поле: ваши таблицы и показатели сайта, а из них — карты, линии,
-        рейтинги и ответы числами с вашими заметками. Его можно распечатать и показать
-        по закрытой ссылке.
-      {% endblocktranslate %}
-    </p>
-    {% if studies %}
-      <ul class="own-studies">
-        {% for study in studies %}
-          <li class="own-studies__item">
-            <a href="{% url 'userdata:study' study.public_id %}"{% with lang=study.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ study.title }}</a>
-            <span class="own-studies__facts">
-              {% blocktranslate trimmed with count=study.blocks|length moment=study.updated_at|date:"d.m.Y" %}карточек и заметок: {{ count }} · изменено {{ moment }}{% endblocktranslate %}
-            </span>
-          </li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-    <form method="post" action="{% url 'userdata:study-new' %}" class="own-study-form">
+  <section class="desk-drop{% if first_visit %} desk-drop--big{% endif %}" aria-labelledby="desk-drop-title">
+    <h2 class="visually-hidden" id="desk-drop-title">{% translate "Загрузить таблицу" %}</h2>
+    <form method="post" action="{% url 'userdata:upload' %}" enctype="multipart/form-data" novalidate
+          class="desk-drop__form" data-upload-form>
       {% csrf_token %}
-      <div class="field">
-        <label class="field__label" for="own-study-title">{% translate "Название" %}</label>
-        <input class="input" id="own-study-title" name="title" maxlength="200"
-               placeholder="{% translate 'Например: к курсовой' %}">
+      <input type="hidden" name="action" value="upload">
+      {% include "userdata/_file_drop.html" with field=upload_form.file size_error=upload_limit submit=True %}
+      <div class="desk-drop__fallback" data-file-drop-fallback>
+        <button class="button button--primary button--sm" type="submit">{% translate "Загрузить" %}</button>
       </div>
-      <button class="button button--secondary" type="submit">
-        <svg aria-hidden="true"><use href="#icon-plus"></use></svg>
-        {% translate "Начать исследование" %}
-      </button>
     </form>
-    {% if not user.is_authenticated %}
-      <p class="field__hint">
-        {% blocktranslate trimmed with hours=guest_hours %}Без входа исследование хранится {{ hours }} ч.{% endblocktranslate %}
-        <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "Войдите, чтобы сохранить его" %}</a>
-      </p>
-    {% endif %}
+    <div class="desk-drop__more">
+      <a href="{% url 'userdata:upload' %}#upload-paste-title">{% translate "Вставить таблицу из буфера" %}</a>
+      {% if not first_visit %}
+        <span aria-hidden="true">·</span>
+        <form method="post" action="{% url 'userdata:example' %}" class="desk-drop__example-form">
+          {% csrf_token %}
+          <button class="desk-drop__example" type="submit">{% translate "Пример" %}</button>
+        </form>
+      {% endif %}
+      {% if first_visit and not user.is_authenticated %}
+        <span aria-hidden="true">·</span>
+        <span>{% blocktranslate trimmed with hours=guest_hours %}без входа таблица хранится {{ hours }} ч{% endblocktranslate %}</span>
+      {% endif %}
+    </div>
   </section>
 
-  <section class="page-section" aria-labelledby="own-tables">
-    <div class="page-section__head">
-      <h2 class="page-section__title" id="own-tables">{% translate "Мои таблицы" %}</h2>
-    </div>
-    {% if datasets %}
-      <ul class="own-tables">
-        {% for item in datasets %}
-          {% with version=item.current_version %}
-          <li class="own-tables__item">
-            <a class="own-tables__title" href="{% url 'userdata:dataset' item.public_id %}"{% with lang=item.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.title }}</a>
-            <p class="own-tables__facts">
-              {% if version.state == "built" %}
-                {% blocktranslate trimmed with series=version.series_count regions=version.regions_count %}
-                  рядов: {{ series }} · субъектов: {{ regions }}
-                {% endblocktranslate %}
-                {% if version.first_year %}· <span class="numeric">{{ version.first_year|year }}{% if version.last_year != version.first_year %}–{{ version.last_year|year }}{% endif %}</span>{% endif %}
-              {% else %}
-                {% translate "не собрана" %} · <a href="{% url 'userdata:dataset' item.public_id %}">{% translate "продолжить или удалить" %}</a>
-              {% endif %}
-              · {{ item.size_bytes|filesizeformat }}
-              {% if item.expires_at %}· {% blocktranslate trimmed with moment=item.expires_at|date:"d.m.Y H:i" %}хранится до {{ moment }}{% endblocktranslate %}{% endif %}
-            </p>
+  {% if study_cards %}
+    <section class="page-section desk-section" aria-labelledby="desk-studies">
+      <div class="desk-section__head">
+        <h2 class="page-section__title" id="desk-studies">{% translate "Продолжить" %}</h2>
+        {% if study_cards|length > 4 %}
+          <label class="filter-field desk-filter">
+            <svg aria-hidden="true"><use href="#icon-filter"></use></svg>
+            <span class="visually-hidden">{% translate "Найти исследование" %}</span>
+            <input type="search" autocomplete="off" data-filter-input="#desk-study-list"
+                   data-filter-empty="#desk-study-empty" placeholder="{% translate 'Найти исследование' %}">
+          </label>
+        {% endif %}
+      </div>
+      <ul class="desk-cards" id="desk-study-list">
+        {% for item in study_cards %}
+          <li data-filter-item data-filter-text="{{ item.study.title }} {{ item.sources|join:' ' }}">
+            <a class="desk-card" href="{% url 'userdata:study' item.study.public_id %}">
+              <span class="desk-card__thumb" aria-hidden="true">
+                {% if item.thumbnail %}
+                  <svg class="desk-thumb" viewBox="0 0 {{ item.thumbnail.width }} {{ item.thumbnail.height }}" preserveAspectRatio="xMidYMid meet">
+                    {% for tile in item.thumbnail.tiles %}<rect x="{{ tile.x }}" y="{{ tile.y }}" width="9" height="9" rx="1"{% if tile.step %} data-step="{{ tile.step }}"{% endif %}></rect>{% endfor %}
+                  </svg>
+                {% endif %}
+              </span>
+              <span class="desk-card__body">
+                <span class="desk-card__title"{% with lang=item.study.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.study.title }}</span>
+                <span class="desk-card__meta">{% blocktranslate trimmed with count=item.cards moment=item.study.updated_at|date:"d.m.Y" %}карточек: {{ count }} · изменено {{ moment }}{% endblocktranslate %}</span>
+                {% if item.sources %}<span class="desk-card__meta"{% with lang=item.sources.0|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.sources|join:" · " }}</span>{% endif %}
+              </span>
+            </a>
           </li>
+        {% endfor %}
+        <li>
+          <form method="post" action="{% url 'userdata:study-new' %}" class="desk-card-form">
+            {% csrf_token %}
+            <button class="desk-card desk-card--new" type="submit">
+              <span class="desk-card__title">{% translate "Новое исследование" %}</span>
+              <span class="desk-card__meta">{% translate "из своих таблиц и показателей сайта" %}</span>
+            </button>
+          </form>
+        </li>
+      </ul>
+      <p class="field__hint" id="desk-study-empty" hidden>{% translate "Ничего не найдено" %}</p>
+      {% if not user.is_authenticated %}
+        <p class="field__hint">
+          {% blocktranslate trimmed with hours=guest_hours %}Без входа исследования хранятся {{ hours }} ч.{% endblocktranslate %}
+          <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "Войдите, чтобы сохранить их" %}</a>
+        </p>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {% if table_rows %}
+    <section class="page-section desk-section" aria-labelledby="desk-tables">
+      <div class="desk-section__head">
+        <h2 class="page-section__title" id="desk-tables">{% translate "Таблицы" %}</h2>
+        <p class="desk-quota">
+          {% if user.is_authenticated %}
+            {% blocktranslate trimmed with used=used|filesizeformat quota=quota|filesizeformat count=datasets|length limit=limit %}Занято {{ used }} из {{ quota }} · таблиц {{ count }} из {{ limit }}{% endblocktranslate %}
+          {% else %}
+            {% blocktranslate trimmed with count=datasets|length limit=limit %}Таблиц {{ count }} из {{ limit }}{% endblocktranslate %}
+          {% endif %}
+        </p>
+      </div>
+      <ul class="desk-rows">
+        {% for row in table_rows %}
+          {% with item=row.dataset version=row.version %}
+            <li class="desk-row">
+              <div class="desk-row__main">
+                <a class="desk-row__title" href="{% if row.built %}{% url 'userdata:dataset' item.public_id %}{% else %}{{ row.continue_url }}{% endif %}"{% with lang=item.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.title }}</a>
+                <p class="desk-row__meta">
+                  {% if row.built %}
+                    {% blocktranslate trimmed with series=version.series_count regions=version.regions_count %}рядов: {{ series }} · субъектов: {{ regions }}{% endblocktranslate %}{% if version.first_year %} · <span class="numeric">{{ version.first_year|year }}{% if version.last_year != version.first_year %}–{{ version.last_year|year }}{% endif %}</span>{% endif %}
+                    · {{ item.size_bytes|filesizeformat }}{% if row.studies %} · {% blocktranslate trimmed with count=row.studies %}исследований: {{ count }}{% endblocktranslate %}{% endif %}
+                  {% else %}
+                    {% blocktranslate trimmed with moment=item.created_at|date:"d.m.Y" %}не собрана · начата {{ moment }}{% endblocktranslate %} · {{ item.size_bytes|filesizeformat }}
+                  {% endif %}
+                  {% if item.expires_at %}· {% blocktranslate trimmed with moment=item.expires_at|date:"d.m.Y H:i" %}хранится до {{ moment }}{% endblocktranslate %}{% endif %}
+                </p>
+              </div>
+              {% if row.built %}
+                <a class="desk-row__action" href="{% url 'userdata:dataset' item.public_id %}">{% translate "Открыть" %}</a>
+              {% else %}
+                <span class="desk-chip">{% translate "черновик" %}</span>
+                <span class="desk-row__actions">
+                  <a class="desk-row__action" href="{{ row.continue_url }}">{% translate "Продолжить" %}</a>
+                  <a class="desk-row__action" href="{% url 'userdata:dataset' item.public_id %}">{% translate "Удалить" %}</a>
+                </span>
+              {% endif %}
+            </li>
           {% endwith %}
         {% endfor %}
       </ul>
-      <p class="own-tables__quota">
-        {% if user.is_authenticated %}
-          {% blocktranslate trimmed with used=used|filesizeformat quota=quota|filesizeformat count=datasets|length limit=limit %}
-            Занято {{ used }} из {{ quota }}; таблиц {{ count }} из {{ limit }}.
-          {% endblocktranslate %}
-        {% else %}
-          {% blocktranslate trimmed with count=datasets|length limit=limit hours=guest_hours %}
-            Таблиц {{ count }} из {{ limit }}. Без входа таблицы хранятся {{ hours }} ч.
-          {% endblocktranslate %}
-          <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "Войдите, чтобы сохранить их" %}</a>
-        {% endif %}
-      </p>
-    {% else %}
-      <p class="page-section__lead">{% translate "Загруженных таблиц пока нет." %}</p>
-    {% endif %}
-  </section>
+      {% if not user.is_authenticated %}
+        <p class="field__hint">
+          <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "Войдите, чтобы таблицы хранились дольше суток" %}</a>
+        </p>
+      {% endif %}
+    </section>
+  {% endif %}
 
-  <section class="page-section" aria-labelledby="own-forms">
-    <div class="page-section__head">
-      <h2 class="page-section__title" id="own-forms">{% translate "Какие таблицы подходят" %}</h2>
-    </div>
-    <p class="page-section__lead">
-      {% blocktranslate trimmed %}
-        CSV, TXT, XLSX, XLS, ODS, Parquet и архив ZIP с ними. Таблицу из Word или PDF можно
-        скопировать и вставить в поле «Вставить таблицу». Нужен столбец или строка
-        с названиями субъектов РФ; значения по районам и городам на карту сайта не попадут.
-      {% endblocktranslate %}
-    </p>
-    <ul class="table-forms">
-      <li class="table-forms__item">
-        <h3 class="table-forms__title">{% translate "Длинная" %}</h3>
-        <table class="table-forms__scheme" aria-label="{% translate 'Схема таблицы' %}">
-          <tr><th>{% translate "регион" %}</th><th>{% translate "год" %}</th><th>{% translate "значение" %}</th></tr>
-          <tr><td>…</td><td>2023</td><td>12,5</td></tr>
-          <tr><td>…</td><td>2024</td><td>13,1</td></tr>
-        </table>
-        <p>{% translate "Регион, год, показатель, разрезы и значение — в своих столбцах. Так выгружают открытые наборы." %}</p>
+  <section class="page-section desk-section" aria-labelledby="desk-tasks">
+    <h2 class="page-section__title" id="desk-tasks">{% if first_visit %}{% translate "Что получится" %}{% else %}{% translate "Что можно сделать со своей таблицей" %}{% endif %}</h2>
+    <ul class="desk-tasks">
+      <li class="desk-task">
+        <svg class="desk-task__pic" viewBox="0 0 120 80" aria-hidden="true"><path d="M8 50 L30 20 L58 26 L80 10 L112 30 L104 64 L64 72 L22 68 Z" data-step="3"/><path d="M58 26 L80 10 L112 30 L84 44 Z" data-step="5"/><path d="M8 50 L30 20 L42 46 Z" data-step="1"/></svg>
+        <h3 class="desk-task__title">{% translate "Карта и рейтинг" %}</h3>
+        <p class="desk-task__text">{% translate "Где больше, где меньше и кто вырос — сразу после загрузки." %}</p>
       </li>
-      <li class="table-forms__item">
-        <h3 class="table-forms__title">{% translate "Годы в столбцах" %}</h3>
-        <table class="table-forms__scheme" aria-label="{% translate 'Схема таблицы' %}">
-          <tr><th>{% translate "регион" %}</th><th>2023</th><th>2024</th></tr>
-          <tr><td>…</td><td>12,5</td><td>13,1</td></tr>
-          <tr><td>…</td><td>8,0</td><td>7,6</td></tr>
-        </table>
-        <p>{% translate "Как в статистических сборниках. Шапка может быть в несколько строк." %}</p>
+      <li class="desk-task">
+        <svg class="desk-task__pic" viewBox="0 0 120 80" aria-hidden="true"><polyline class="desk-task__line" points="6,60 30,52 54,56 78,34 112,22"/><polyline class="desk-task__line desk-task__line--other" points="6,40 30,44 54,38 78,42 112,36"/></svg>
+        <h3 class="desk-task__title">{% translate "Рядом с официальными" %}</h3>
+        <p class="desk-task__text">{% translate "Сравнить с показателями Росстата и найти связь." %}</p>
       </li>
-      <li class="table-forms__item">
-        <h3 class="table-forms__title">{% translate "Периоды в столбцах" %}</h3>
-        <table class="table-forms__scheme" aria-label="{% translate 'Схема таблицы' %}">
-          <tr><th rowspan="2">{% translate "регион" %}</th><th colspan="2">{% translate "январь–июль" %}</th></tr>
-          <tr><th>2025</th><th>2026</th></tr>
-          <tr><td>…</td><td>101,2</td><td>99,8</td></tr>
-        </table>
-        <p>{% translate "Месяцы, кварталы, «с начала года»: каждый период года — свой ряд по годам." %}</p>
+      <li class="desk-task">
+        <svg class="desk-task__pic" viewBox="0 0 120 80" aria-hidden="true"><text class="desk-task__formula" x="4" y="52">A ÷ B</text></svg>
+        <h3 class="desk-task__title">{% translate "Посчитать" %}</h3>
+        <p class="desk-task__text">{% translate "На жителя, доля в сумме, темп роста, Россия = 100." %}</p>
       </li>
-      <li class="table-forms__item">
-        <h3 class="table-forms__title">{% translate "Показатели в столбцах" %}</h3>
-        <table class="table-forms__scheme" aria-label="{% translate 'Схема таблицы' %}">
-          <tr><th>{% translate "регион" %}</th><th>{% translate "ДТП" %}</th><th>{% translate "погибло" %}</th></tr>
-          <tr><td>…</td><td>1 204</td><td>96</td></tr>
-          <tr><td>…</td><td>873</td><td>71</td></tr>
-        </table>
-        <p>{% translate "Несколько показателей за один год; год, если его нет в таблице, сайт спросит." %}</p>
+      <li class="desk-task">
+        <svg class="desk-task__pic" viewBox="0 0 120 80" aria-hidden="true"><rect class="desk-task__sheet" x="18" y="6" width="56" height="70" rx="4"/><rect x="26" y="16" width="40" height="18" data-step="3"/><rect class="desk-task__rule" x="26" y="40" width="40" height="3"/><rect class="desk-task__rule" x="26" y="48" width="32" height="3"/><rect class="desk-task__rule" x="26" y="56" width="36" height="3"/></svg>
+        <h3 class="desk-task__title">{% translate "Отчёт" %}</h3>
+        <p class="desk-task__text">{% translate "Карточки и заметки исследования — в Word, Excel, печать или по закрытой ссылке." %}</p>
       </li>
     </ul>
+    <p class="desk-groups">
+      <a href="{% url 'userdata:groups' %}">{% translate "Группы регионов" %}</a>
+      — {% translate "свой набор регионов, итог которого сравнивается с остальными." %}
+    </p>
   </section>
 
-  {% if examples %}
-    <section class="page-section" aria-labelledby="own-examples">
-      <div class="page-section__head">
-        <h2 class="page-section__title" id="own-examples">{% translate "Примеры таблиц ведомств" %}</h2>
+  {% if first_visit and examples %}
+    <section class="page-section desk-section" aria-labelledby="desk-examples">
+      <div class="desk-section__head">
+        <h2 class="page-section__title" id="desk-examples">{% translate "Нет своей таблицы под рукой? Начните с примера" %}</h2>
       </div>
-      <p class="page-section__lead">
-        {% blocktranslate trimmed %}
-          Файлы как их публикуют ведомства. Пример открывается в мастере как своя таблица:
-          видно, что сайт узнал сам и о чём спросит.
-        {% endblocktranslate %}
-      </p>
       <ul class="own-examples">
-        {% for item in examples %}
-          <li class="own-examples__item">
-            <h3 class="own-examples__title" lang="ru">{{ item.title }}</h3>
-            <p class="own-examples__source" lang="ru">
-              <a href="{{ item.source_url }}" rel="noopener noreferrer" target="_blank">{{ item.source }}</a>
-            </p>
-            <p class="own-examples__shows" lang="ru">{{ item.shows }}</p>
-            {% if item.asks %}
-              <p class="own-examples__asks" lang="ru"><span>{% translate "Мастер спросит:" %}</span> {{ item.asks }}</p>
-            {% endif %}
-            <div class="own-examples__actions">
-              <form method="post" action="{% url 'userdata:example-file' item.slug %}">
-                {% csrf_token %}
-                <button class="button button--secondary button--sm" type="submit">{% translate "Открыть в мастере" %}</button>
-              </form>
-              <a class="button button--ghost button--sm" href="{% url 'userdata:example-file' item.slug %}" download>
-                <svg aria-hidden="true"><use href="#icon-download"></use></svg>
-                {% translate "Скачать файл" %}
-              </a>
-            </div>
-          </li>
-        {% endfor %}
+        <li class="own-examples__item">
+          <h3 class="own-examples__title">{% translate "Загрязнение воздуха в городах" %}</h3>
+          <p class="own-examples__shows">{% translate "Набор «Если быть точным» архивом, как он скачивается с сайта набора. Собирается сразу и открывается в исследовании." %}</p>
+          <form method="post" action="{% url 'userdata:example' %}" class="own-examples__actions">
+            {% csrf_token %}
+            <button class="button button--secondary button--sm" type="submit">{% translate "Открыть пример" %}</button>
+          </form>
+        </li>
+        {% for item in examples %}{% include "userdata/_example.html" %}{% endfor %}
       </ul>
     </section>
   {% endif %}
 
-  <section class="page-section" aria-labelledby="own-storage">
-    <div class="page-section__head">
-      <h2 class="page-section__title" id="own-storage">{% translate "Кто видит таблицу, где и сколько она хранится" %}</h2>
-    </div>
-    <ul class="compact-list own-storage">
-      <li>{% translate "Таблицу и её виды видите только вы. Поисковики их не индексируют; в панели управления видно только число таблиц и занятое место." %}</li>
-      <li>
-        {% blocktranslate trimmed with hours=guest_hours %}
-          Без входа таблица хранится {{ hours }} ч, затем удаляется. После входа таблицы
-          переходят в учётную запись и хранятся, пока вы их не удалите.
+  <section class="page-section desk-help" aria-label="{% translate 'Справка' %}">
+    <details class="desk-help__item">
+      <summary>{% translate "Какие таблицы подходят" %}</summary>
+      <p>
+        {% blocktranslate trimmed %}
+          CSV, TXT, XLSX, XLS, ODS, Parquet, документы Word (DOCX) и PDF с текстом, архив ZIP
+          с таблицами. Таблицу можно и скопировать и вставить из буфера. Нужен столбец или строка
+          с названиями субъектов РФ. Значения по районам и городам на карту сайта не попадут.
         {% endblocktranslate %}
-      </li>
-      <li>
-        {% if retention_days %}
-          {% blocktranslate trimmed with days=retention_days %}
-            Удалённая таблица сразу исчезает с сайта, а из резервных копий — через {{ days }} сут.
+      </p>
+      <ul class="table-forms">
+        <li class="table-forms__item">
+          <h3 class="table-forms__title">{% translate "Длинная" %}</h3>
+          <table class="table-forms__scheme" aria-label="{% translate 'Схема таблицы' %}">
+            <tr><th>{% translate "регион" %}</th><th>{% translate "год" %}</th><th>{% translate "значение" %}</th></tr>
+            <tr><td>…</td><td>2023</td><td>12,5</td></tr>
+            <tr><td>…</td><td>2024</td><td>13,1</td></tr>
+          </table>
+          <p>{% translate "Регион, год, показатель, разрезы и значение — в своих столбцах. Так выгружают открытые наборы." %}</p>
+        </li>
+        <li class="table-forms__item">
+          <h3 class="table-forms__title">{% translate "Годы в столбцах" %}</h3>
+          <table class="table-forms__scheme" aria-label="{% translate 'Схема таблицы' %}">
+            <tr><th>{% translate "регион" %}</th><th>2023</th><th>2024</th></tr>
+            <tr><td>…</td><td>12,5</td><td>13,1</td></tr>
+            <tr><td>…</td><td>8,0</td><td>7,6</td></tr>
+          </table>
+          <p>{% translate "Как в статистических сборниках. Шапка может быть в несколько строк." %}</p>
+        </li>
+        <li class="table-forms__item">
+          <h3 class="table-forms__title">{% translate "Периоды в столбцах" %}</h3>
+          <table class="table-forms__scheme" aria-label="{% translate 'Схема таблицы' %}">
+            <tr><th rowspan="2">{% translate "регион" %}</th><th colspan="2">{% translate "январь–июль" %}</th></tr>
+            <tr><th>2025</th><th>2026</th></tr>
+            <tr><td>…</td><td>101,2</td><td>99,8</td></tr>
+          </table>
+          <p>{% translate "Месяцы, кварталы, «с начала года»: каждый период года — свой ряд по годам." %}</p>
+        </li>
+        <li class="table-forms__item">
+          <h3 class="table-forms__title">{% translate "Показатели в столбцах" %}</h3>
+          <table class="table-forms__scheme" aria-label="{% translate 'Схема таблицы' %}">
+            <tr><th>{% translate "регион" %}</th><th>{% translate "ДТП" %}</th><th>{% translate "погибло" %}</th></tr>
+            <tr><td>…</td><td>1 204</td><td>96</td></tr>
+            <tr><td>…</td><td>873</td><td>71</td></tr>
+          </table>
+          <p>{% translate "Несколько показателей за один год; год, если его нет в таблице, сайт спросит." %}</p>
+        </li>
+      </ul>
+    </details>
+
+    {% if examples and not first_visit %}
+      <details class="desk-help__item">
+        <summary>{% blocktranslate trimmed with count=examples|length %}Примеры таблиц ведомств — {{ count }}{% endblocktranslate %}</summary>
+        <p>
+          {% blocktranslate trimmed %}
+            Файлы как их публикуют ведомства. Пример открывается в мастере как своя таблица:
+            видно, что сайт узнал сам и о чём спросит.
           {% endblocktranslate %}
-        {% else %}
-          {% translate "Удалённая таблица сразу исчезает с сайта." %}
-        {% endif %}
-      </li>
-      <li>{% translate "Не загружайте таблицы со сведениями о конкретных людях: сайт рассчитан на значения по регионам." %}</li>
-    </ul>
-    <p class="own-storage__links">
-      <a href="{% url 'core:terms' %}#own-data">{% translate "Условия использования" %}</a>
-      · <a href="{% url 'core:privacy' %}#own-data">{% translate "Политика обработки персональных данных" %}</a>
-      · <a href="{% url 'content:methodology' %}#m-own-data">{% translate "Методика" %}</a>
-    </p>
+        </p>
+        <ul class="own-examples">
+          {% for item in examples %}{% include "userdata/_example.html" %}{% endfor %}
+        </ul>
+      </details>
+    {% endif %}
+
+    <details class="desk-help__item">
+      <summary>{% translate "Кто видит таблицу и сколько она хранится" %}</summary>
+      <ul class="compact-list own-storage">
+        <li>{% translate "Таблицу и её виды видите только вы. Поисковики их не индексируют; в панели управления видно только число таблиц и занятое место." %}</li>
+        <li>
+          {% blocktranslate trimmed with hours=guest_hours %}
+            Без входа таблица хранится {{ hours }} ч, затем удаляется. После входа таблицы
+            переходят в учётную запись и хранятся, пока вы их не удалите.
+          {% endblocktranslate %}
+        </li>
+        <li>
+          {% if retention_days %}
+            {% blocktranslate trimmed with days=retention_days %}
+              Удалённая таблица сразу исчезает с сайта, а из резервных копий — через {{ days }} сут.
+            {% endblocktranslate %}
+          {% else %}
+            {% translate "Удалённая таблица сразу исчезает с сайта." %}
+          {% endif %}
+        </li>
+        <li>{% translate "Не загружайте таблицы со сведениями о конкретных людях: сайт рассчитан на значения по регионам." %}</li>
+      </ul>
+      <p class="own-storage__links">
+        <a href="{% url 'core:terms' %}#own-data">{% translate "Условия использования" %}</a>
+        · <a href="{% url 'core:privacy' %}#own-data">{% translate "Политика обработки персональных данных" %}</a>
+        · <a href="{% url 'content:methodology' %}#m-own-data">{% translate "Методика" %}</a>
+      </p>
+    </details>
   </section>
 
 </div>

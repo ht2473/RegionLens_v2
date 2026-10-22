@@ -37,16 +37,24 @@ def _page(client: Client, dataset: Dataset, **query: Any) -> Any:
 class TestDatasetPage:
     """Вкладки страницы таблицы и выбранный ряд."""
 
-    def test_data_tab_shows_chosen_series_with_map(self, client: Client, warehouse: Any) -> None:
+    def test_overview_shows_series_quality_and_exclusions(
+        self, client: Client, warehouse: Any
+    ) -> None:
+        """
+        «Обзор» — показатели с переходом в исследование, качество и исключения; карты на
+        странице таблицы нет: смотрят данные в исследовании.
+        """
         dataset = _built(client)
         page = _page(client, dataset)
         assert page.status_code == 200
         assert 'id="dataset-detail"' in page.text
-        assert "geo-map" in page.text or "tile-map" in page.text
+        assert "geo-map" not in page.text and "dataset-preview" not in page.text
         assert reverse("userdata:dataset-study", args=[dataset.public_id]) in page.text
-        # Вкладки владельца — все четыре.
-        for title in ("Данные", "Проверки", "Файл и версии", "Доступ"):
+        assert 'id="dataset-checks"' in page.text and 'id="own-exclusions"' in page.text
+        # Вкладки владельца — три.
+        for title in ("Обзор", "Версии", "Доступ"):
             assert title in page.text
+        assert "Проверки" not in page.text and "Файл и версии" not in page.text
 
     def test_show_selects_series(self, client: Client, warehouse: Any) -> None:
         dataset = _built(client, "crime_wide.csv")
@@ -90,8 +98,9 @@ class TestDatasetPage:
         reader.get(reverse("share-open", args=[token]))
         page = reader.get(reverse("userdata:dataset", args=[dataset.public_id]), {"tab": "file"})
         assert page.status_code == 200
-        assert "Файл и версии" not in page.text
+        assert 'href="?tab=file"' not in page.text
         assert 'id="own-versions"' not in page.text
+        assert 'id="own-exclusions"' not in page.text
         assert reverse("userdata:dataset-study", args=[dataset.public_id]) not in page.text
         assert share.pk
 
