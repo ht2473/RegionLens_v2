@@ -58,9 +58,9 @@
       "title": "Your own data",
       "summary": "The laboratory brings a user’s table to the form “territory × year × indicator” and computes the same on it as on the site’s series.",
       "formula": "per 100,000 inhabitants: <math display=\"block\"><mfrac><mi>x</mi><mi>P</mi></mfrac><mo>×</mo><mn>100,000</mn></math>",
-      "limitations": "Rows outside the directory are kept in the table but do not reach the map or the ranking.\nWith fewer than twenty regions, inequality and spatial analysis are not computed.\nTables of municipal districts, cities and federal districts are not parsed, and a table from Word or PDF is copied into the paste field.",
-      "body": "Territory labels are matched against the site’s directory, and the site asks about uncertain ones. Per-inhabitant and per-km² series are offered for regional sums. P is the average annual population. A recalculation is kept as a separate series marked “RegionLens calculation”. How each action works is explained next to it in the laboratory.",
-      "source": "5118348a4d45408cf53f23f68d9ffb0bcb71c7a4"
+      "limitations": "Rows outside the directory are kept in the table but do not reach the map or the ranking.\nWith fewer than twenty regions, inequality and spatial analysis are not computed.\nTables of municipal districts, cities and federal districts are not parsed, and a scanned PDF without a text layer cannot be read.",
+      "body": "Territory labels are matched against the site’s directory, and the site asks about uncertain ones. Per-inhabitant and per-km² series are offered for regional sums. P is the average annual population. The calculation catalogue adds shares, changes over years, comparisons with Russia and the federal district, and regional methods. A recalculation is kept as a separate series marked “RegionLens calculation”. How each calculation works is explained next to it in the calculation panel.",
+      "source": "877a29c3841b4eda4089b855c9734671b1229738"
     },
     "map-classes": {
       "title": "Scale classes on the map",
