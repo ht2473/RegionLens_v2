@@ -1,0 +1,46 @@
+{% load i18n formatting %}
+{% comment %}
+  Почему изменилось: сумма в начальном и конечном году и вклады между ними — водопадом:
+  вклады регионов или, у карточки с частями, составляющих; крупнейшие отдельно, остальные
+  одним столбцом. Ниже — словами и таблицей.
+{% endcomment %}
+<p class="answer__value">
+  <span class="numeric">{{ card.change }}</span>
+  <span class="answer__unit">{% if card.relative %}({{ card.relative }}) {% endif %}{% if card.by_parts %}{% blocktranslate trimmed with since=card.since|year year=card.year|year first=card.first last=card.last %}сумма частей с {{ since }} по {{ year }} год: {{ first }} → {{ last }}{% endblocktranslate %}{% else %}{% blocktranslate trimmed with since=card.since|year year=card.year|year first=card.first last=card.last %}сумма регионов с {{ since }} по {{ year }} год: {{ first }} → {{ last }}{% endblocktranslate %}{% endif %}</span>
+</p>
+<div class="answer__columns study-card__answer">
+  {% if card.rising %}
+    <div>
+      <h3 class="answer__label">{% translate "Больше всего добавили" %}</h3>
+      <ol class="answer-list">
+        {% for row in card.rising %}<li><span>{{ row.name }}</span> <span class="numeric">{{ row.change }}</span></li>{% endfor %}
+      </ol>
+    </div>
+  {% endif %}
+  {% if card.falling %}
+    <div>
+      <h3 class="answer__label">{% translate "Больше всего убавили" %}</h3>
+      <ol class="answer-list">
+        {% for row in card.falling %}<li><span>{{ row.name }}</span> <span class="numeric">{{ row.change }}</span></li>{% endfor %}
+      </ol>
+    </div>
+  {% endif %}
+</div>
+{% with option_id=card.prefix|add:"-waterfall" %}
+  <rl-chart data-report-image class="chart study-card__chart" style="height: {{ card.chart_height }}px" data-options="{{ option_id }}"
+            data-image-title="{{ card.title }}" data-image-subtitle="{{ card.since|year }}–{{ card.year|year }}"
+            data-image-source="{{ card.source }}"></rl-chart>
+  {{ card.chart|json_script:option_id }}
+{% endwith %}
+<details class="study-card__details">
+  <summary>{% translate "Вклады таблицей" %}</summary>
+  <table class="data-table">
+    <caption class="visually-hidden">{% if card.by_parts %}{% blocktranslate trimmed with title=card.title %}{{ title }} — вклады составляющих{% endblocktranslate %}{% else %}{% blocktranslate trimmed with title=card.title %}{{ title }} — вклады регионов{% endblocktranslate %}{% endif %}</caption>
+    <tbody>
+      {% for step in card.steps %}
+        <tr{% if step.total %} class="is-total"{% endif %}><th scope="row">{{ step.name }}</th><td class="is-numeric numeric">{{ step.label }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</details>
+<p class="answer__meta"><span>{% if card.by_parts %}{% blocktranslate trimmed with count=card.count %}В сумме — регионы со значениями всех частей в обоих годах: {{ count }}.{% endblocktranslate %}{% else %}{% blocktranslate trimmed with count=card.count %}В сумме — регионы со значениями в обоих годах: {{ count }}.{% endblocktranslate %}{% endif %}</span></p>

@@ -2,6 +2,7 @@
 {# Карточка исследования фрагментом: заголовок, вид, источник и переход к виду целиком. #}
 <div class="study-card__body">
   <header class="study-card__head">
+    {% if owner and card.settings %}{% include "userdata/cards/_settings.html" %}{% endif %}
     <p class="kicker study-card__kicker">
       <svg aria-hidden="true"><use href="#icon-{{ card.icon }}"></use></svg>
       {{ card.target_title }}{% if card.year and card.target != "compare" %} · <span class="numeric">{{ card.year|year }}</span>{% endif %}{% if card.unit %} · <span{% with lang=card.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ card.unit }}</span>{% endif %}
@@ -15,6 +16,30 @@
   </header>
 
   {% include card.template %}
+
+  {% if owner and card.next %}
+    {# «Дальше» — короткие пути к пунктам «Что сделать»; новая карточка — в конец поля, как из меню. #}
+    <div class="card-next no-print">
+      <span class="card-next__label">{% translate "Дальше" %}</span>
+      {% for step in card.next %}
+        {% if step.href %}
+          <a class="card-next__step" href="{{ step.href }}" hx-get="{{ step.href }}" hx-target="#study-sources"
+             hx-select="#study-sources" hx-swap="outerHTML" hx-push-url="true">{{ step.title }}</a>
+        {% else %}
+          <form method="post" action="{% url 'userdata:study-edit' study.public_id %}"
+                hx-post="{% url 'userdata:study-edit' study.public_id %}" hx-target="#study-cards"
+                hx-select=".study-cards > .is-new" hx-swap="beforeend" hx-push-url="false"
+                hx-select-oob="#study-sources,#study-meta,#study-empty,#study-toolbar,#study-toast">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            <input type="hidden" name="series" value="{{ step.series }}">
+            {% for part in step.parts %}<input type="hidden" name="part" value="{{ part }}">{% endfor %}
+            <button class="card-next__step" type="submit" name="do" value="{{ step.value }}">{{ step.title }}</button>
+          </form>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
 
   <footer class="study-card__foot">
     {% if card.source %}<p class="study-card__source"{% with lang=card.source|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ card.source }}</p>{% endif %}

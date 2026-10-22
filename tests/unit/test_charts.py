@@ -440,3 +440,54 @@ class TestTerritoryLinks:
         blur = data_series(option)[0]["blur"]
         assert blur["lineStyle"]["opacity"] == layout.BLUR_OPACITY
         assert blur["lineStyle"]["opacity"] > 0.1
+
+
+class TestStructureAndWaterfall:
+    """Структура по регионам и водопад вкладов."""
+
+    def test_structure_stacks_parts_to_a_hundred(self) -> None:
+        """Каждая часть — отрезок одной стопки; цвета — по порядку палитры рядов."""
+        from apps.core.charts import structure_option
+
+        option = structure_option(
+            ["Россия", "Тверская область"],
+            [{"name": "A", "shares": [70.0, 60.0]}, {"name": "B", "shares": [30.0, 40.0]}],
+        )
+        assert {entry["stack"] for entry in option["series"]} == {"share"}
+        assert [entry["itemStyle"]["color"] for entry in option["series"]] == [
+            "var(--series-1)",
+            "var(--series-2)",
+        ]
+        assert option["xAxis"]["max"] == 100
+
+    def test_waterfall_bars_hang_between_levels(self) -> None:
+        """Итоги — от нуля, вклад — между уровнями до и после, цвет по знаку."""
+        from apps.core.charts import waterfall_option
+
+        steps = [
+            {"name": "2018", "start": 0, "end": 100.0, "total": True, "label": "100"},
+            {"name": "A", "start": 100.0, "end": 90.0, "total": False, "label": "−10"},
+            {"name": "B", "start": 90.0, "end": 95.0, "total": False, "label": "+5"},
+            {"name": "2022", "start": 0, "end": 95.0, "total": True, "label": "95"},
+        ]
+        option = waterfall_option(steps)
+        bases, bars = option["series"][0]["data"], option["series"][1]["data"]
+        assert bases == [0, 90.0, 90.0, 0]
+        assert [bar["value"] for bar in bars] == [100.0, 10.0, 5.0, 95.0]
+        assert bars[1]["itemStyle"]["color"] == "var(--rank-down)"
+        assert bars[2]["itemStyle"]["color"] == "var(--rank-up)"
+
+    def test_waterfall_axis_not_from_zero_keeps_bars_inside(self) -> None:
+        """Ось не с нуля: итог начинается у её начала, а не за краем сетки."""
+        from apps.core.charts import waterfall_option
+
+        steps = [
+            {"name": "2018", "start": 0, "end": 17000.0, "total": True, "label": ""},
+            {"name": "A", "start": 17000.0, "end": 16500.0, "total": False, "label": ""},
+            {"name": "2022", "start": 0, "end": 16500.0, "total": True, "label": ""},
+        ]
+        option = waterfall_option(steps, low=10000.0)
+        bases, bars = option["series"][0]["data"], option["series"][1]["data"]
+        assert option["xAxis"]["min"] == 10000.0
+        assert bases == [10000.0, 16500.0, 10000.0]
+        assert [bar["value"] for bar in bars] == [7000.0, 500.0, 6500.0]

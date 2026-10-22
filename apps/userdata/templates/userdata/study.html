@@ -41,6 +41,12 @@
     </p>
     <div class="page-head__actions no-print">
       {% if owner %}
+        {% url 'userdata:calc' study.public_id as calc_url %}
+        <a class="button button--sm button--primary" href="{{ calc_url }}{% if panel.chosen.is_user %}?series={{ panel.chosen.key|urlencode }}{% endif %}"
+           data-dialog-open="calc-dialog" hx-get="{{ calc_url }}{% if panel.chosen.is_user %}?series={{ panel.chosen.key|urlencode }}{% endif %}"
+           hx-target="#calc-dialog-body" hx-swap="innerHTML" hx-push-url="false">
+          {% translate "Новый показатель" %}
+        </a>
         <button type="button" class="button button--sm button--secondary" popovertarget="study-share" aria-haspopup="dialog">
           <svg aria-hidden="true"><use href="#icon-link"></use></svg>
           {% translate "Поделиться" %}
@@ -50,6 +56,12 @@
         <svg aria-hidden="true"><use href="#icon-print"></use></svg>
         {% translate "Печать или PDF" %}
       </button>
+      {% if report_allowed %}
+        <button type="button" class="button button--sm button--ghost" popovertarget="study-report" aria-haspopup="dialog">
+          <svg aria-hidden="true"><use href="#icon-download"></use></svg>
+          {% translate "Отчёт файлом" %}
+        </button>
+      {% endif %}
       {% if owner %}
         <button type="button" class="icon-button" popovertarget="study-menu" aria-haspopup="dialog"
                 aria-label="{% translate 'Название и удаление' %}" title="{% translate 'Название и удаление' %}">
@@ -58,6 +70,32 @@
       {% endif %}
     </div>
   </header>
+
+  {% if report_allowed %}
+    {# Отчёт файлом. Word — формой: со сценарием к ней приложатся картинки графиков и карт (report.js). #}
+    {% url 'userdata:study-report' study.public_id as report_url %}
+    <div class="menu-popover study-report no-print" id="study-report" popover role="dialog"
+         aria-label="{% translate 'Отчёт файлом' %}">
+      <form method="post" action="{{ report_url }}" data-report data-busy-label="{% translate 'Отчёт собирается: графики и карты переводятся в картинки…' %}">
+        {% csrf_token %}
+        <button class="menu-item study-report__item" type="submit" name="format" value="docx">
+          <svg aria-hidden="true"><use href="#icon-file-text"></use></svg>
+          <span class="study-report__text">
+            {% translate "Word" %}
+            <span class="study-report__hint">{% translate "карточки с графиками, заметки, расчёты и источники" %}</span>
+          </span>
+        </button>
+      </form>
+      <a class="menu-item study-report__item" href="{{ report_url }}?format=xlsx">
+        <svg aria-hidden="true"><use href="#icon-table"></use></svg>
+        <span class="study-report__text">
+          {% translate "Excel" %}
+          <span class="study-report__hint">{% translate "данные карточек: лист на карточку, годы по столбцам" %}</span>
+        </span>
+      </a>
+      <p class="study-report__note" data-report-status role="status">{% translate "Карточки и заметки с пометкой «не в отчёте» в файлы и печать не входят." %}</p>
+    </div>
+  {% endif %}
 
   {% if owner %}
     <div class="menu-popover share-menu study-share no-print" id="study-share" popover role="dialog"
@@ -139,7 +177,8 @@
       <div class="study-cards" id="study-cards"{% if owner %} data-sortable{% endif %}>
         {% for block in blocks %}
           {% if block.kind == "text" %}
-            <section class="study-note{% if block.id == added %} is-new{% endif %}" id="block-{{ block.id }}" data-block="{{ block.id }}" aria-label="{% translate 'Заметка' %}">
+            <section class="study-note{% if block.id in added %} is-new{% endif %}{% if block.report is False %} is-off-report{% endif %}" id="block-{{ block.id }}" data-block="{{ block.id }}" aria-label="{% translate 'Заметка' %}">
+              {% if owner %}<span class="study-off-report no-print">{% translate "не в отчёте" %}</span>{% endif %}
               {% if owner %}
                 <button type="button" class="inplace inplace--text study-note__body" data-inplace="text" data-block="{{ block.id }}"
                         aria-label="{% translate 'Заметка — изменить' %}"{% with lang=block.text|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ block.text|linebreaksbr }}</button>
@@ -149,8 +188,9 @@
               {% endif %}
             </section>
           {% else %}
-            <article class="study-card{% if block.wide %} study-card--wide{% endif %}{% if block.id == added %} is-new{% endif %}"
+            <article class="study-card{% if block.wide %} study-card--wide{% endif %}{% if block.id in added %} is-new{% endif %}{% if block.report is False %} is-off-report{% endif %}"
                      id="block-{{ block.id }}" data-block="{{ block.id }}"{% if owner and block.primary_key %} data-series="{{ block.primary_key }}"{% endif %}>
+              {% if owner %}<span class="study-off-report no-print">{% translate "не в отчёте" %}</span>{% endif %}
               <div class="study-card__slot" hx-get="{{ block.card_url }}" hx-trigger="load" hx-swap="innerHTML">
                 <p class="kicker study-card__kicker">{{ block.target_title }}</p>
                 <p class="study-card__waiting">{% translate "Строится…" %}</p>
@@ -198,4 +238,45 @@
   </div>
 
 </div>
+{% if owner %}
+  {# Панель расчёта: содержимое приходит фрагментом при открытии (calc_views.CalcView). #}
+  <dialog class="calc-dialog" id="calc-dialog" aria-labelledby="calc-dialog-title">
+    <div class="calc-dialog__head">
+      <div>
+        <h2 class="calc-dialog__title" id="calc-dialog-title">{% translate "Новый показатель" %}</h2>
+        <p class="calc-dialog__lead">{% translate "Готовый расчёт или своя формула. Результат — новый ряд в своей таблице, его карта встанет на поле." %}</p>
+      </div>
+      <button type="button" class="icon-button" data-dialog-close aria-label="{% translate 'Закрыть' %}" title="{% translate 'Закрыть' %}">
+        <svg aria-hidden="true"><use href="#icon-close"></use></svg>
+      </button>
+    </div>
+    <div class="calc-dialog__body" id="calc-dialog-body"><p class="study-card__waiting">{% translate "Строится…" %}</p></div>
+  </dialog>
+  {# Выбор частей структуры: содержимое приходит фрагментом при открытии (StructureView). #}
+  <dialog class="calc-dialog" id="structure-dialog" aria-labelledby="structure-dialog-title">
+    <div class="calc-dialog__head">
+      <div>
+        <h2 class="calc-dialog__title" id="structure-dialog-title">{% translate "Структура" %}</h2>
+        <p class="calc-dialog__lead">{% translate "Доли частей в их сумме по каждому региону: столбец региона — 100 %." %}</p>
+      </div>
+      <button type="button" class="icon-button" data-dialog-close aria-label="{% translate 'Закрыть' %}" title="{% translate 'Закрыть' %}">
+        <svg aria-hidden="true"><use href="#icon-close"></use></svg>
+      </button>
+    </div>
+    <div class="calc-dialog__body" id="structure-dialog-body"><p class="study-card__waiting">{% translate "Строится…" %}</p></div>
+  </dialog>
+  {# Выбор своей группы регионов: содержимое приходит фрагментом при открытии (StudyGroupView). #}
+  <dialog class="calc-dialog" id="group-dialog" aria-labelledby="group-dialog-title">
+    <div class="calc-dialog__head">
+      <div>
+        <h2 class="calc-dialog__title" id="group-dialog-title">{% translate "Группа регионов против остальных" %}</h2>
+        <p class="calc-dialog__lead">{% translate "Итог своей группы регионов по годам рядом с итогом остальных регионов." %}</p>
+      </div>
+      <button type="button" class="icon-button" data-dialog-close aria-label="{% translate 'Закрыть' %}" title="{% translate 'Закрыть' %}">
+        <svg aria-hidden="true"><use href="#icon-close"></use></svg>
+      </button>
+    </div>
+    <div class="calc-dialog__body" id="group-dialog-body"><p class="study-card__waiting">{% translate "Строится…" %}</p></div>
+  </dialog>
+{% endif %}
 {% endblock %}

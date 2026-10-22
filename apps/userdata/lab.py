@@ -10,11 +10,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 from urllib.parse import urlencode
 from uuid import UUID
 
+from django.core.exceptions import ValidationError
+from django.db.models import F
 from django.http import HttpRequest
 from django.urls import reverse
 from django.utils.translation import gettext as _
@@ -23,30 +25,31 @@ from django.utils.translation import gettext_lazy
 from apps.analytics.core.convergence import MIN_SPAN_YEARS as CONVERGENCE_SPAN
 from apps.warehouse import routing
 
-from . import access, build, extract, indicators, jobs, studies
+from . import access, build, extract, indicators, jobs, operations, studies
 from .models import Dataset, DatasetSeries, DatasetVersion, Study
-from .series import FEW_REGIONS, UserSeries
+from .series import FEW_REGIONS, PER_CAPITA, UserSeries
 
-BUILD, COMPUTE, LEARN, PAIR = "build", "compute", "learn", "pair"
-# Значение кнопки формы: что поставить на поле; у сравнения — с каким рядом.
+BUILD, COMPUTE, LEARN, PAIR, SETS = "build", "compute", "learn", "pair", "sets"
+# Значение кнопки формы: что поставить на поле; у сравнения — с каким рядом; набор карточек.
 VIEW_PREFIX, ANSWER_PREFIX, COMPUTE_PREFIX = "view:", "answer:", "compute:"
 COMPARE_PREFIX = "compare:"
+SET_PREFIX = "set:"
+# Готовые наборы карточек исследования.
+SET_PROFILE, SET_INEQUALITY = "profile", "inequality"
+SET_NEIGHBOURS, SET_PAIR = "neighbours", "pair"
 # Сколько рядов поля и похожих официальных показателей предлагать для сравнения.
 FIELD_PARTNERS = 3
 OFFICIAL_PARTNERS = 2
+# Подсказок «Дальше» под карточкой — не больше.
+NEXT_SHOWN = 4
 # Ряды, от которых считаются пересчёты: из таблицы и свёртки.
 PRIMARY = ("", DatasetSeries.Derived.SLICE_SUM.value, DatasetSeries.Derived.MONTHS.value)
-# Пересчёты в меню по порядку: код, подпись, только для сумм, только для денег.
-RECOUNTS = (
-    (DatasetSeries.Derived.PER_100000.value, True, False),
-    (DatasetSeries.Derived.PER_1000.value, True, False),
-    (DatasetSeries.Derived.PER_KM2.value, True, False),
-    (DatasetSeries.Derived.RUSSIA.value, False, False),
-    (DatasetSeries.Derived.GROWTH.value, False, False),
-    (DatasetSeries.Derived.SHARE.value, True, False),
-    (DatasetSeries.Derived.REAL.value, False, True),
-)
 SUFFIXES = {**build.PER_SUFFIXES, **build.RECALC_SUFFIXES}
+# Что такое готовый набор: справка у группы действий.
+SETS_HINT = gettext_lazy(
+    "Набор ставит на поле сразу несколько карточек по выбранному показателю. Карточки, "
+    "которые показателю не подходят, в набор не входят. Лишние убираются из меню карточки."
+)
 # Как считаются пересчёты: справка у самого действия, а не в методике.
 RECOUNT_HINT = gettext_lazy(
     "Пересчёт — новый ряд рядом с исходным с пометкой «расчёт RegionLens». На жителей значение "
@@ -71,11 +74,19 @@ class Entry:
     is_user: bool
     is_sum: bool = False
     is_money: bool = False
+    # Деньги в любой валюте: их делят на одного жителя.
+    is_currency: bool = False
     # Ряд — пересчёт или формула: от него не считают.
     derived: str = ""
+    # Ряд — сумма разрезов показателя: итог, а не часть структуры.
+    is_total: bool = False
+    # Части структуры, в которую входит ряд: разрезы его показателя или суммы таблицы.
+    parts: tuple[str, ...] = ()
     # Пересчёты этого ряда, уже собранные в таблице: код пересчёта → ключ ряда.
     recounts: dict[str, str] = field(default_factory=dict)
-    formula_url: str = ""
+    # Панель расчёта поля с этим рядом и выбор частей структуры.
+    calc_url: str = ""
+    structure_url: str = ""
     related_url: str = ""
 
     @property
@@ -105,6 +116,12 @@ class Action:
     reason: str = ""
     # Подсказка к доступному пункту: «уже посчитано».
     hint: str = ""
+    # Ряд, для которого ставится карточка, если не ряд выбора: карта уже собранного пересчёта.
+    series: str = ""
+    # Окно на странице, куда фрагментом приходит ``href``: панель расчёта.
+    dialog: str = ""
+    # Части одного целого для карточки «Дальше»: вклады составляющих под структурой.
+    parts: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -166,7 +183,12 @@ def panel(
 
         partners = _partners(study, chosen, everything)
         groups = actions(
-            chosen, partner, partners=partners, region_known=my_region(request) is not None
+            chosen,
+            partner,
+            partners=partners,
+            region_known=my_region(request) is not None,
+            group_url=f"{reverse('userdata:study-group', args=[study.public_id])}?"
+            f"{urlencode({'series': chosen.key})}",
         )
     return {
         "tables": tables,
@@ -248,7 +270,9 @@ def _tables(request: HttpRequest, wanted: set[str], study: Study) -> list[Source
         version = dataset.current_version
         if version is None or version.state != DatasetVersion.State.BUILT:
             continue
-        money = {item.name for item in indicators.indicators_of(version) if item.is_money}
+        described = indicators.indicators_of(version)
+        money = {item.name for item in described if item.is_money}
+        currency = {item.name for item in described if item.is_currency}
         source = Source(
             title=dataset.title,
             url=reverse("userdata:dataset", args=[dataset.public_id]),
@@ -283,10 +307,14 @@ def _tables(request: HttpRequest, wanted: set[str], study: Study) -> list[Source
                 is_user=True,
                 is_sum=item.is_sum,
                 is_money=record.indicator in money,
+                is_currency=record.indicator in currency,
                 derived=record.derived if record.derived not in PRIMARY else "",
+                is_total=record.derived == DatasetSeries.Derived.SLICE_SUM,
                 recounts=recounts.get(record.code, {}),
-                formula_url=f"{reverse('userdata:formula-new', args=[dataset.public_id])}?"
-                f"{urlencode({'study': study.public_id})}",
+                calc_url=f"{reverse('userdata:calc', args=[study.public_id])}?"
+                f"{urlencode({'series': item.key})}",
+                structure_url=f"{reverse('userdata:structure', args=[study.public_id])}?"
+                f"{urlencode({'series': item.key})}",
                 related_url=f"{reverse('userdata:related', args=[dataset.public_id])}?"
                 f"{urlencode({'series': item.key})}",
             )
@@ -294,11 +322,60 @@ def _tables(request: HttpRequest, wanted: set[str], study: Study) -> list[Source
             grouped[record.title].entries.append(entry)
             if item.key in wanted:
                 source.open = True
-        source.indicators = list(grouped.values())
+        source.indicators = _with_parts(list(grouped.values()))
         found.append(source)
     if found and not any(source.open for source in found):
         found[0].open = True
     return found
+
+
+def _with_parts(groups: list[Indicator]) -> list[Indicator]:
+    """
+    Возможные части структуры для сумм таблицы: исходные суммы той же единицы (не пересчёты
+    и не сумма разрезов — она итог). Какие из них части одного целого, решает человек.
+    """
+
+    def plain(entry: Entry) -> bool:
+        return entry.is_sum and not entry.derived and not entry.is_total
+
+    by_unit: dict[str, list[str]] = {}
+    for group in groups:
+        for entry in group.entries:
+            if plain(entry):
+                by_unit.setdefault(entry.unit, []).append(entry.key)
+    for group in groups:
+        for index, entry in enumerate(group.entries):
+            same = by_unit.get(entry.unit, [])
+            if entry.is_sum and not entry.derived and len(same) > 1:
+                group.entries[index] = replace(entry, parts=tuple(same))
+    return groups
+
+
+def structure_choice(request: HttpRequest, study: Study, key: str) -> tuple[list[Entry], list[str]]:
+    """
+    Части структуры для ряда своей таблицы: возможные (суммы той же единицы) и отмеченные
+    заранее — разрезы его показателя, иначе показатели с тем же началом названия
+    («Выбросы от стационарных…» и «Выбросы от передвижных…»).
+    """
+    for source in _tables(request, {key}, study):
+        everything = {entry.key: entry for group in source.indicators for entry in group.entries}
+        chosen = everything.get(key)
+        if chosen is None:
+            continue
+        candidates = [everything[part] for part in chosen.parts if part in everything]
+        group = next(group for group in source.indicators if chosen in group.entries)
+        slices = [entry.key for entry in group.entries if entry.key in chosen.parts]
+        if len(slices) > 1:
+            return candidates, slices
+        stem = _stem(chosen.title)
+        alike = [entry.key for entry in candidates if _stem(entry.title) == stem]
+        return candidates, alike if len(alike) > 1 else []
+    return [], []
+
+
+def _stem(title: str) -> str:
+    """Первые два слова названия — общее начало частей одного целого."""
+    return " ".join(title.casefold().split()[:2])
 
 
 def _site_entry(key: str) -> Entry | None:
@@ -325,6 +402,7 @@ def _site_entry(key: str) -> Entry | None:
         last_year=max(years) if years else None,
         regions=85,
         is_user=False,
+        is_sum=bool(item.absolute),
     )
 
 
@@ -334,10 +412,12 @@ def actions(
     *,
     partners: list[Partner] | None = None,
     region_known: bool = True,
+    group_url: str = "",
 ) -> list[Group]:
     """
-    Что можно сделать с рядом: построить, посчитать, узнать, сравнить с другим показателем;
-    недоступное — с причиной. ``partners`` — что предложить для сравнения без выбора.
+    Что можно сделать с рядом: построить, посчитать, узнать, готовые наборы карточек,
+    сравнить с другим показателем; недоступное — с причиной. ``partners`` — что предложить
+    для сравнения без выбора; ``group_url`` — окно выбора своей группы регионов.
     """
     one_year = _("у показателя один год") if entry.years < 2 else ""  # noqa: PLR2004
     # Сближение оценивается на отрезке не короче пяти лет — нужно шесть лет значений.
@@ -353,10 +433,17 @@ def actions(
         Action(_("Рейтинг"), "ranking", value=f"{VIEW_PREFIX}rankings"),
         Action(_("Распределение"), "distribution", value=f"{VIEW_PREFIX}distribution"),
         Action(_("Таблица"), "table", value=f"{VIEW_PREFIX}table"),
-        Action(_("Тепловая таблица"), "heat", value=f"{ANSWER_PREFIX}heat", reason=one_year),
         Action(_("Малые графики"), "multiples", value=f"{ANSWER_PREFIX}multiples", reason=one_year),
+        Action(
+            _("Структура"),
+            "structure",
+            href=entry.structure_url,
+            reason=_structure_reason(entry),
+            dialog="structure-dialog",
+        ),
     ]
     learn = [
+        Action(_("Что заметно"), "list", value=f"{ANSWER_PREFIX}notable"),
         Action(_("Лидеры и отстающие"), "ranking", value=f"{ANSWER_PREFIX}leaders"),
         Action(
             _("Мой регион"),
@@ -366,7 +453,21 @@ def actions(
         ),
         Action(_("Как изменился"), "dynamics", value=f"{ANSWER_PREFIX}change", reason=one_year),
         Action(_("Кто вырос сильнее"), "growth", value=f"{ANSWER_PREFIX}growth", reason=one_year),
+        Action(
+            _("Почему изменилось"),
+            "waterfall",
+            value=f"{ANSWER_PREFIX}contributions",
+            reason=one_year
+            or ("" if entry.is_sum else _("вклады регионов складываются только у сумм")),
+        ),
         Action(_("Итоги по округам"), "districts", value=f"{ANSWER_PREFIX}districts"),
+        Action(
+            _("Группа регионов против остальных"),
+            "districts",
+            href=group_url,
+            reason="" if group_url else _("группы — в исследовании"),
+            dialog="group-dialog",
+        ),
         Action(
             _("Насколько различаются регионы"),
             "inequality",
@@ -382,10 +483,33 @@ def actions(
         Action(_("Похожи ли соседи"), "spatial", value=f"{ANSWER_PREFIX}neighbours", reason=few),
         Action(_("С чем связан"), "correlation", value=f"{ANSWER_PREFIX}related", reason=few),
     ]
+    sets = [
+        Action(
+            _("Профиль показателя"),
+            "map",
+            value=f"{SET_PREFIX}{SET_PROFILE}",
+            hint=_("карта, что заметно, рейтинг, линии, распределение, округа, изменение"),
+        ),
+        Action(
+            _("Неравенство и сближение"),
+            "inequality",
+            value=f"{SET_PREFIX}{SET_INEQUALITY}",
+            hint=_("различие регионов, сближение, распределение, малые графики"),
+            reason=few,
+        ),
+        Action(
+            _("Мой регион среди соседей"),
+            "map-pin",
+            value=f"{SET_PREFIX}{SET_NEIGHBOURS}",
+            hint=_("отмечает мой регион и соседей: мой регион, карта, рейтинг, линии"),
+            reason="" if region_known else _("мой регион не выбран — выберите его в шапке"),
+        ),
+    ]
     groups = [
         Group(BUILD, _("Построить"), build_group),
-        _compute_group(entry, one_year),
+        _compute_group(entry),
         Group(LEARN, _("Узнать"), learn),
+        Group(SETS, _("Готовые наборы"), sets, hint=str(SETS_HINT)),
     ]
     if partner is not None:
         groups.append(
@@ -393,6 +517,12 @@ def actions(
                 PAIR,
                 _("Вместе с «%(title)s»") % {"title": partner.title},
                 [
+                    Action(
+                        _("Сравнить два показателя"),
+                        "compare",
+                        value=f"{SET_PREFIX}{SET_PAIR}",
+                        hint=_("набор: сравнение, связь, карта каждого"),
+                    ),
                     Action(_("Сравнение"), "compare", value=f"{ANSWER_PREFIX}comparison"),
                     Action(
                         _("Связь и облако точек"),
@@ -426,54 +556,207 @@ def actions(
     return groups
 
 
+def _structure_reason(entry: Entry) -> str:
+    """Почему структуры нет: ряд сайта, не сумма или частей меньше двух."""
+    if not entry.is_user:
+        return _("структура — для своих таблиц")
+    if not entry.is_sum:
+        return _("доли считаются у сумм")
+    if len(entry.parts) < 2:  # noqa: PLR2004
+        return _("нужны две суммы с одной единицей: разрезы показателя или показатели таблицы")
+    return ""
+
+
 def _pick_url(key: str) -> str:
     return f"?{urlencode({'series': key, 'pick': '1'})}#study-sources"
 
 
-def _compute_group(entry: Entry, one_year: str) -> Group:
-    """Пересчёты ряда своей таблицы; уже собранные — сразу на поле."""
+def _compute_group(entry: Entry) -> Group:
+    """Пересчёты сборки из каталога расчётов для ряда своей таблицы; собранные — сразу на поле."""
     title = _("Посчитать")
     if not entry.is_user:
         return Group(COMPUTE, title, [], reason=_("пересчёты — для своих таблиц"))
     if entry.derived:
         return Group(COMPUTE, title, [], reason=_("ряд уже пересчитан — считайте от исходного"))
-    found = []
-    for code, sums_only, money_only in RECOUNTS:
-        reason = ""
-        if sums_only and not entry.is_sum:
-            reason = _("только для сумм по регионам")
-        elif money_only and not entry.is_money:
-            reason = _("только для денежных показателей")
-        elif code == DatasetSeries.Derived.GROWTH.value:
-            reason = one_year
-        found.append(
-            Action(
-                str(DatasetSeries.Derived(code).label).capitalize(),
-                value=f"{COMPUTE_PREFIX}{code}",
-                reason=reason,
-                hint=_("уже посчитано") if code in entry.recounts else "",
-            )
+    info = operations.Info(
+        key=entry.key,
+        title=entry.title,
+        unit=entry.unit,
+        is_sum=entry.is_sum,
+        is_currency=entry.is_currency,
+        is_rubles=entry.is_money,
+        first_year=entry.first_year,
+        last_year=entry.last_year,
+        regions=entry.regions,
+    )
+    found = [
+        Action(
+            str(operation.title),
+            value=f"{COMPUTE_PREFIX}{operation.recount}",
+            reason=operations.reason(operation, info),
+            hint=_("уже посчитано") if operation.recount in entry.recounts else "",
         )
-    found.append(Action(_("Формула"), href=entry.formula_url))
+        for operation in operations.OPERATIONS
+        if operation.recount
+    ]
+    found.append(Action(_("Другие расчёты и формула"), href=entry.calc_url, dialog="calc-dialog"))
     return Group(COMPUTE, title, found, hint=str(RECOUNT_HINT))
 
 
 def add(
-    request: HttpRequest, study: Study, value: str, series_key: str, other: str = ""
+    request: HttpRequest,
+    study: Study,
+    value: str,
+    series_key: str,
+    other: str = "",
+    *,
+    parts: list[str] | None = None,
+    group: str = "",
 ) -> dict[str, Any]:
-    """Поставить на поле карточку по кнопке «Что сделать»; общий год и регионы — исследования."""
+    """
+    Поставить на поле карточку по кнопке «Что сделать»; общий год и регионы — исследования.
+    ``parts`` — части структуры, отмеченные человеком (только из возможных для ряда);
+    ``group`` — своя группа регионов (только своя). У набора — первая из его карточек.
+    """
     if value.startswith(VIEW_PREFIX):
         target = value.removeprefix(VIEW_PREFIX)
         return studies.add_view(study, target, urlencode({"series": series_key}))
     if value.startswith(ANSWER_PREFIX):
-        return studies.add_answer(study, value.removeprefix(ANSWER_PREFIX), series_key, other)
+        question = value.removeprefix(ANSWER_PREFIX)
+        return _add_answer(request, study, question, series_key, other, parts=parts, group=group)
     if value.startswith(COMPARE_PREFIX):
         partner = value.removeprefix(COMPARE_PREFIX)
         return studies.add_answer(study, "comparison", series_key, partner)
+    if value.startswith(SET_PREFIX):
+        blocks, territories = set_blocks(request, value.removeprefix(SET_PREFIX), series_key, other)
+        first = studies.append_all(study, blocks)[0]
+        if territories:
+            studies.set_common(study, study.year, territories)
+        return first
     if value.startswith(COMPUTE_PREFIX):
         key = compute(request, series_key, value.removeprefix(COMPUTE_PREFIX))
         return studies.add_view(study, "map", urlencode({"series": key}))
     raise studies.StudyError(_("Такой карточки нет."))
+
+
+def _add_answer(
+    request: HttpRequest,
+    study: Study,
+    question: str,
+    series_key: str,
+    other: str,
+    *,
+    parts: list[str] | None,
+    group: str,
+) -> dict[str, Any]:
+    """Карточка-ответ: у группы — своя группа, у структуры и вкладов частей — части ряда."""
+    if question in studies.GROUP_QUESTIONS:
+        from . import groups
+
+        try:
+            chosen = groups.owned(request).filter(public_id=group).first() if group else None
+        except ValueError, ValidationError:
+            chosen = None
+        if chosen is None:
+            raise studies.StudyError(_("Выберите группу регионов."))
+        return studies.add_answer(study, question, series_key, group=str(chosen.public_id))
+    if question in studies.PARTS_QUESTIONS or (question in studies.SPLIT_QUESTIONS and parts):
+        candidates, _chosen = structure_choice(request, study, series_key)
+        allowed = {entry.key for entry in candidates}
+        wanted = [key for key in dict.fromkeys(parts or []) if key in allowed]
+        if question in studies.SPLIT_QUESTIONS and len(wanted) < 2:  # noqa: PLR2004
+            raise studies.StudyError(_("Для вкладов составляющих нужны хотя бы две части."))
+        return studies.add_answer(study, question, series_key, parts=wanted)
+    return studies.add_answer(study, question, series_key, other)
+
+
+def set_blocks(
+    request: HttpRequest, code: str, key: str, other: str = ""
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """
+    Готовый набор карточек по ряду: профиль показателя, неравенство и сближение, мой регион
+    среди соседей, два показателя. Вторым — общие регионы, которые набор отмечает (мой
+    регион и соседи). Карточки, которым ряд не подходит (один год, мало регионов), в набор
+    не входят.
+    """
+    info = operations.info_of(key)
+    if info is None:
+        raise studies.StudyError(_("Такого показателя нет."))
+    if code == SET_NEIGHBOURS:
+        return _neighbour_blocks(request, key, info)
+    builders = {SET_PROFILE: _profile_blocks, SET_INEQUALITY: _inequality_blocks}
+    if code == SET_PAIR:
+        return _pair_blocks(key, other, info), []
+    if code not in builders:
+        raise studies.StudyError(_("Такого набора нет."))
+    return builders[code](key, info), []
+
+
+def _profile_blocks(key: str, info: operations.Info) -> list[dict[str, Any]]:
+    """Профиль показателя: карта, что заметно, рейтинг, линии, распределение, округа, изменение."""
+    query = urlencode({"series": key})
+    blocks = [
+        studies.view_block("map", query),
+        studies.answer_block("notable", key),
+        studies.view_block("rankings", query),
+    ]
+    if info.years > 1:
+        blocks.append(studies.view_block("compare", query))
+    blocks += [studies.view_block("distribution", query), studies.answer_block("districts", key)]
+    if info.years > 1:
+        blocks.append(studies.answer_block("contributions" if info.is_sum else "growth", key))
+    return blocks
+
+
+def _inequality_blocks(key: str, info: operations.Info) -> list[dict[str, Any]]:
+    """Неравенство и сближение: различие регионов, сближение, распределение, малые графики."""
+    if info.regions < FEW_REGIONS:
+        raise studies.StudyError(
+            _("Для неравенства нужны значения хотя бы по %(count)s регионам.")
+            % {"count": FEW_REGIONS}
+        )
+    blocks = [studies.answer_block("spread", key)]
+    if info.years > CONVERGENCE_SPAN:
+        blocks.append(studies.answer_block("convergence", key))
+    blocks.append(studies.view_block("distribution", urlencode({"series": key})))
+    if info.years > 1:
+        blocks.append(studies.answer_block("multiples", key))
+    return blocks
+
+
+def _neighbour_blocks(
+    request: HttpRequest, key: str, info: operations.Info
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """Мой регион среди соседей: он и соседи — общими регионами; место, карта, рейтинг, линии."""
+    from apps.accounts.region import my_region
+    from apps.analytics.selectors import neighbour_map
+
+    region = my_region(request)
+    if region is None:
+        raise studies.StudyError(_("Мой регион не выбран — выберите его в шапке."))
+    query = urlencode({"series": key})
+    blocks = [
+        studies.answer_block("mine", key),
+        studies.view_block("map", query),
+        studies.view_block("rankings", query),
+    ]
+    if info.years > 1:
+        blocks.append(studies.view_block("compare", query))
+    if info.regions >= FEW_REGIONS:
+        blocks.append(studies.answer_block("neighbours", key))
+    return blocks, [region.code, *neighbour_map("all").get(region.code, [])]
+
+
+def _pair_blocks(key: str, other: str, info: operations.Info) -> list[dict[str, Any]]:
+    """Два показателя: сравнение, связь (если регионов хватает), карта каждого."""
+    blocks = [studies.answer_block("comparison", key, other)]
+    if info.regions >= FEW_REGIONS:
+        blocks.append(studies.answer_block("relation", key, other))
+    return [
+        *blocks,
+        studies.view_block("map", urlencode({"series": key})),
+        studies.view_block("map", urlencode({"series": other})),
+    ]
 
 
 def compute(request: HttpRequest, series_key: str, recount: str) -> str:
@@ -510,7 +793,7 @@ def _mark(version: DatasetVersion, name: str, recount: str) -> None:
     described = {item.name: item for item in indicators.indicators_of(version)}
     item = described.get(name)
     allowed = (
-        item.is_sum
+        indicators.per_allowed(item, recount)
         if item is not None and recount in build.PER_SUFFIXES
         else item is not None and indicators.recalc_allowed(item, recount)
     )
@@ -548,6 +831,110 @@ STUDY_SESSION_KEY = "userdata_study_for"
 STUDY_MEMORY = 20
 
 
+def next_steps(study: Study, block: dict[str, Any]) -> list[Action]:
+    """
+    «Дальше» под карточкой — короткие пути к пунктам «Что сделать» для ряда своей таблицы:
+    на жителя у исходной суммы (карта пересчёта или сам пересчёт), рейтинг, сравнение
+    с официальным показателем, линии по годам и кто вырос сильнее — чего на поле ещё нет.
+    Только под первой карточкой ряда: одни и те же подсказки под каждой — шум.
+    """
+    keys = studies.series_keys(block)
+    key = keys[0] if keys else ""
+    if not routing.is_user_key(key):
+        return []
+    blocks = studies.blocks_of(study)
+    if block.get("question") in studies.PARTS_QUESTIONS:
+        return _parts_steps(blocks, block)
+    first = next((item for item in blocks if studies.series_keys(item)[:1] == [key]), None)
+    if first is None or first["id"] != block["id"]:
+        return []
+    dataset_code, code = key.removeprefix(routing.USER_PREFIX).split(":", 1)
+    dataset = Dataset.objects.select_related("current_version").filter(code=dataset_code).first()
+    version = dataset.current_version if dataset is not None else None
+    if version is None:
+        return []
+    record = version.series.filter(code=code).first()
+    if record is None:
+        return []
+    shown = {
+        (item.get("target") or item.get("question"), found)
+        for item in blocks
+        for found in studies.series_keys(item)[:1]
+    }
+    years = (record.last_year or 0) - (record.first_year or 0) + 1 if record.first_year else 0
+    steps: list[Action] = []
+    # На жителя — у исходной суммы; у пересчёта и формулы его нет.
+    if record.kind == DatasetSeries.Kind.SUM and record.derived in PRIMARY:
+        recounts = {
+            item.derived: item
+            for item in version.series.filter(
+                base_code=code, derived__in=PER_CAPITA, values_count__gt=0
+            )
+        }
+        per_capita = next((recounts[item] for item in PER_CAPITA if item in recounts), None)
+        if per_capita is not None:
+            per_key = f"{routing.USER_PREFIX}{dataset_code}:{per_capita.code}"
+            if ("map", per_key) not in shown:
+                steps.append(Action(_("На жителя"), value=f"{VIEW_PREFIX}map", series=per_key))
+        else:
+            recount = (
+                DatasetSeries.Derived.PER_1
+                if indicators.is_currency(record.title, record.unit)
+                else DatasetSeries.Derived.PER_100000
+            )
+            steps.append(Action(_("На жителя"), value=f"{COMPUTE_PREFIX}{recount.value}"))
+    if ("rankings", key) not in shown:
+        steps.append(Action(_("Рейтинг"), value=f"{VIEW_PREFIX}rankings"))
+    steps.append(Action(_("Сравнить с официальным"), href=_pick_url(key)))
+    if years > 1 and ("compare", key) not in shown:
+        steps.append(Action(_("Линии по годам"), value=f"{VIEW_PREFIX}compare"))
+    changed = _change_step(record, key, shown) if years > 1 else None
+    if changed is not None:
+        steps.append(changed)
+    return [replace(step, series=step.series or key) for step in steps[:NEXT_SHOWN]]
+
+
+def _parts_steps(blocks: list[dict[str, Any]], block: dict[str, Any]) -> list[Action]:
+    """
+    «Дальше» под структурой: как изменилась сумма частей и какая часть дала изменение —
+    вклады составляющих, если таких карточек с теми же частями на поле ещё нет и лет больше
+    одного.
+    """
+    parts = list(block.get("parts") or [])
+    if any(
+        item.get("question") in studies.SPLIT_QUESTIONS and item.get("parts") == parts
+        for item in blocks
+    ):
+        return []
+    dataset_code, code = parts[0].removeprefix(routing.USER_PREFIX).split(":", 1)
+    record = DatasetSeries.objects.filter(
+        version__dataset__code=dataset_code,
+        version__dataset__current_version=F("version"),
+        code=code,
+    ).first()
+    if record is None or not record.first_year or record.first_year == record.last_year:
+        return []
+    return [
+        Action(
+            _("Почему изменилась сумма"),
+            value=f"{ANSWER_PREFIX}contributions",
+            series=parts[0],
+            parts=tuple(parts),
+        )
+    ]
+
+
+def _change_step(record: DatasetSeries, key: str, shown: set[tuple[Any, str]]) -> Action | None:
+    """Изменение суммы раскладывается на вклады регионов; у относительной — кто вырос."""
+    if record.kind == DatasetSeries.Kind.SUM:
+        if ("contributions", key) in shown:
+            return None
+        return Action(_("Почему изменилось"), value=f"{ANSWER_PREFIX}contributions")
+    if ("growth", key) in shown:
+        return None
+    return Action(_("Кто вырос сильнее"), value=f"{ANSWER_PREFIX}growth")
+
+
 def chosen_study(request: HttpRequest, public_id: str) -> Study | None:
     """Своё исследование по адресу ``?study=``; чужое и неизвестное — ``None``."""
     try:
@@ -570,6 +957,32 @@ def destination(request: HttpRequest, dataset: Dataset) -> Study | None:
     """Исследование, куда откроется собранная таблица; ``None`` — в новое."""
     remembered = (request.session.get(STUDY_SESSION_KEY) or {}).get(str(dataset.public_id), "")
     return chosen_study(request, remembered) if remembered else None
+
+
+def starter_blocks(version: DatasetVersion, key: str) -> list[dict[str, Any]]:
+    """
+    Первые карточки нового исследования по ряду: карта, что заметно, рейтинг, линии
+    по годам (если лет больше одного), связь с официальными показателями (если регионов
+    хватает для связи).
+    """
+    code = key.rsplit(":", 1)[-1]
+    record = version.series.filter(code=code).first()
+    years = (
+        record.last_year - record.first_year + 1
+        if record is not None and record.first_year and record.last_year
+        else 0
+    )
+    query = urlencode({"series": key})
+    blocks = [
+        studies.view_block("map", query),
+        studies.answer_block("notable", key),
+        studies.view_block("rankings", query),
+    ]
+    if years > 1:
+        blocks.append(studies.view_block("compare", query))
+    if record is not None and record.regions_count >= FEW_REGIONS:
+        blocks.append(studies.answer_block("related", key))
+    return blocks
 
 
 def open_in_study(request: HttpRequest, version: DatasetVersion) -> str | None:
@@ -607,11 +1020,13 @@ def open_in_study(request: HttpRequest, version: DatasetVersion) -> str | None:
     try:
         if study is None:
             study = studies.create(request, dataset.title)
-        block = studies.add_view(study, "map", urlencode({"series": key}))
+            block = studies.append_all(study, starter_blocks(version, key))[0]
+        else:
+            block = studies.add_view(study, "map", urlencode({"series": key}))
     except studies.StudyError:
         return None
     text = (
-        _("Таблица «%(table)s» собрана, её карта — в новом исследовании.")
+        _("Таблица «%(table)s» собрана: карта, рейтинг и первые выводы — в новом исследовании.")
         if created
         else _("Таблица «%(table)s» собрана, её карта добавлена в исследование «%(study)s».")
     )

@@ -12,12 +12,14 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 from uuid import UUID
 
 from django.conf import settings
 from django.contrib import messages
+from django.core.files.uploadedfile import UploadedFile
 from django.http import Http404, HttpRequest, HttpResponse, QueryDict
 from django.http.response import HttpResponseBase
 from django.shortcuts import redirect, render
@@ -41,9 +43,15 @@ from .models import Study
 # Окно предела правок поля, секунд.
 EDIT_WINDOW = 600
 # Действия с одним блоком.
-BLOCK_ACTIONS = frozenset({"resize", "change", "up", "down", "remove"})
+BLOCK_ACTIONS = frozenset({"resize", "change", "configure", "report", "up", "down", "remove"})
 # Действия, после которых сценарию не нужна разметка: он уже показал изменение.
-SILENT_ACTIONS = frozenset({"resize", "change", "reorder", "rename"})
+SILENT_ACTIONS = frozenset({"resize", "change", "configure", "report", "reorder", "rename"})
+# Отчётов Word и Excel за окно: сборка обходит все карточки исследования.
+REPORTS_PER_WINDOW = 20
+REPORT_WINDOW = 600
+# Картинки отчёта со страницы: каждая и все вместе не больше этого.
+REPORT_IMAGE_BYTES = 4 * 1024 * 1024
+REPORT_IMAGES_BYTES = 20 * 1024 * 1024
 
 
 def readable_study(request: HttpRequest, public_id: Any) -> tuple[Study, bool]:
@@ -72,7 +80,7 @@ def _common(request: HttpRequest, study: Study) -> tuple[int | None, list[str]]:
     return year, territories
 
 
-def _allowed(request: HttpRequest) -> bool:
+def edit_allowed(request: HttpRequest) -> bool:
     """Правка поля в пределах частоты: с учётной записи, у гостя — с адреса."""
     limit = settings.USERDATA_STUDY_EDITS
     if request.user.is_authenticated:
@@ -91,7 +99,7 @@ class StudyCreateView(View):
     """Новое исследование — у учётной записи или у гостя на сутки."""
 
     def post(self, request: HttpRequest) -> HttpResponse:
-        if not _allowed(request):
+        if not edit_allowed(request):
             messages.error(request, gettext("Слишком много изменений подряд. Повторите позже."))
             return redirect("userdata:index")
         try:
@@ -149,7 +157,8 @@ class StudyView(BreadcrumbMixin, TemplateView):
             owner=self.owner,
             guest=study.owner_id is None,
             blocks=blocks,
-            added=request.GET.get("added", ""),
+            # Только что поставленные карточки: одна или набор через запятую.
+            added=[item for item in request.GET.get("added", "").split(",") if item],
             removed=request.GET.get("removed") == "1" and bool(study.undo),
             year=year,
             territories=territories,
@@ -160,6 +169,7 @@ class StudyView(BreadcrumbMixin, TemplateView):
             card_count=sum(1 for block in blocks if block["kind"] != studies.TEXT),
             shared=shares.of(study).exists() if self.owner else True,
             selected_names=_names(territories),
+            report_allowed=self.owner or _downloads(request, study),
         )
         if self.owner:
             if study.owner_id is not None:
@@ -219,11 +229,16 @@ class StudyCardView(View):
         )
         if block is None:
             raise Http404
-        year, territories = _common(request, study)
+        common_year, common_territories = _common(request, study)
+        year, territories = studies.card_common(block, common_year, common_territories)
         card = study_cards.render(request, block, year=year, territories=territories)
         if card["template"] == "userdata/cards/_missing.html" and _building(block):
             card["template"] = "userdata/cards/_building.html"
             card["poll_url"] = request.get_full_path()
+        elif owner and card["template"] not in study_cards.EMPTY_TEMPLATES:
+            card["next"] = lab.next_steps(study, block)
+        if owner and card["template"] != "userdata/cards/_building.html":
+            card["settings"] = study_cards.settings_of(block, card, common_year=common_year)
         # Имена вида — и на верхнем уровне: карта и легенда холста включаются как есть.
         response = render(
             request,
@@ -265,7 +280,7 @@ class StudyEditView(View):
         study = studies.own_or_404(request, public_id)
         action = request.POST.get("action", "")
         scripted = bool(request.headers.get("HX-Request") or request.headers.get("X-Study"))
-        if not _allowed(request):
+        if not edit_allowed(request):
             if scripted:
                 return HttpResponse(status=429)
             messages.error(request, gettext("Слишком много изменений подряд. Повторите позже."))
@@ -279,6 +294,13 @@ class StudyEditView(View):
             target = _url(study, series=request.POST.get("series", ""))
         if request.headers.get("X-Study") and action in SILENT_ACTIONS:
             return HttpResponse(status=204)
+        if request.headers.get("HX-Request") and request.POST.get("do", "").startswith(
+            lab.SET_PREFIX
+        ):
+            # Набор: карточек несколько, у «соседей» меняются и общие регионы — страница заново.
+            response = HttpResponse(status=204)
+            response["HX-Redirect"] = target
+            return response
         return redirect(target)
 
     def apply(self, request: HttpRequest, study: Study, action: str) -> str:
@@ -309,12 +331,22 @@ def _add(request: HttpRequest, study: Study) -> str:
     """Карточка из «Что сделать» или ряд, брошенный на поле (``at`` — место броска)."""
     data = request.POST
     key = data.get("series", "")
-    block = lab.add(request, study, data.get("do", ""), key, data.get("other", ""))
+    before = {item["id"] for item in studies.blocks_of(study)}
+    block = lab.add(
+        request,
+        study,
+        data.get("do", ""),
+        key,
+        data.get("other", ""),
+        parts=data.getlist("part"),
+        group=data.get("group", ""),
+    )
     if data.get("at", "").isdigit():
         order = [item["id"] for item in studies.blocks_of(study) if item["id"] != block["id"]]
         order.insert(int(data["at"]), block["id"])
         studies.reorder(study, order)
-    return f"{_url(study, series=key, added=block['id'])}#block-{block['id']}"
+    added = [item["id"] for item in studies.blocks_of(study) if item["id"] not in before]
+    return f"{_url(study, series=key, added=','.join(added))}#block-{block['id']}"
 
 
 def _reorder(request: HttpRequest, study: Study) -> str:
@@ -360,14 +392,23 @@ EDITS = {
 
 
 def _edit_block(study: Study, action: str, block_id: str, data: QueryDict) -> str:
-    """Правка одного блока: ширина, текст и названия, порядок, удаление; вернуть адрес."""
+    """
+    Правка одного блока: ширина, текст и названия, настройки «Вида», порядок, удаление;
+    вернуть адрес.
+    """
     if action == "resize":
         studies.resize(study, block_id)
+    elif action == "report":
+        studies.toggle_report(study, block_id)
     elif action == "change":
         fields = {
-            name: data.get(name, "") for name in ("text", "title", "note", "scale") if name in data
+            name: data.get(name, "")
+            for name in ("text", "title", "note", "scale", "colour")
+            if name in data
         }
         studies.change(study, block_id, **fields)
+    elif action == "configure":
+        studies.configure(study, block_id, data)
     elif action in {"up", "down"}:
         studies.move(study, block_id, -1 if action == "up" else 1)
     else:
@@ -396,7 +437,7 @@ class StudyAddView(View):
         target = request.POST.get("target", "")
         territory = request.POST.get("territory", "")
         chosen = request.POST.get("study", "")
-        if not _allowed(request):
+        if not edit_allowed(request):
             messages.error(request, gettext("Слишком много изменений подряд. Повторите позже."))
             return redirect(back)
         try:
@@ -428,3 +469,119 @@ class StudyAddView(View):
         if request.POST.get("open") == "1":
             return redirect("userdata:study", public_id=study.public_id)
         return redirect(back)
+
+
+class StudyReportView(View):
+    """
+    Отчёт исследования файлом: Word — карточки, заметки, расчёты и источники; Excel — данные
+    карточек. Владельцу и читателю закрытой ссылки, разрешающей скачивать. Word формой
+    со страницы получает картинки графиков и карт (``image-<карточка>-<номер>``); без
+    сценария и по ссылке — только числа и таблицы.
+    """
+
+    def get(self, request: HttpRequest, public_id: str) -> HttpResponse:
+        return self._answer(request, public_id, request.GET.get("format", ""), {})
+
+    def post(self, request: HttpRequest, public_id: str) -> HttpResponse:
+        return self._answer(
+            request, public_id, request.POST.get("format", ""), _report_images(request)
+        )
+
+    def _answer(
+        self, request: HttpRequest, public_id: str, kind: str, images: dict[str, list[bytes]]
+    ) -> HttpResponse:
+        from . import report
+
+        study, owner = readable_study(request, public_id)
+        if not (owner or _downloads(request, study)) or kind not in {"docx", "xlsx"}:
+            raise Http404
+        if not _report_allowed(request):
+            return HttpResponse(
+                gettext("Слишком много отчётов подряд. Повторите позже."),
+                status=429,
+                content_type="text/plain; charset=utf-8",
+            )
+        if kind == "xlsx":
+            body = report.excel(request, study)
+            content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        else:
+            body = report.word(request, study, images)
+            content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        response = HttpResponse(body, content_type=content_type)
+        name = re.sub(r'[\\/:*?"<>|\s]+', " ", study.title).strip()[:80] or "study"
+        response["Content-Disposition"] = (
+            f'attachment; filename="regionlens-study.{kind}"; '
+            f"filename*=UTF-8''{quote(f'{name}.{kind}')}"
+        )
+        response["Cache-Control"] = "private, no-store"
+        return response
+
+
+def _downloads(request: HttpRequest, study: Study) -> bool:
+    """Читатель закрытой ссылки может скачивать: так отмечено у ссылки."""
+    share = shares.opened_study(request, study)
+    return share is not None and share.downloads
+
+
+def _report_allowed(request: HttpRequest) -> bool:
+    """Отчёты в пределах частоты: с учётной записи, у гостя и читателя — с адреса."""
+    if request.user.is_authenticated:
+        return allow_key(
+            "study-report",
+            f"user:{request.user.pk}",
+            limit=REPORTS_PER_WINDOW,
+            window=REPORT_WINDOW,
+        )
+    return allow(request, "study-report", limit=REPORTS_PER_WINDOW, window=REPORT_WINDOW)
+
+
+def _report_images(request: HttpRequest) -> dict[str, list[bytes]]:
+    """
+    Картинки карточек из формы: поле ``image-<карточка>-<номер>``, только PNG, каждая
+    и все вместе в пределах; лишнее отбрасывается молча — отчёт выйдет без этой картинки.
+    """
+    from apps.exports.renderers.docx import PNG_SIGNATURE
+
+    found: dict[str, list[tuple[int, bytes]]] = {}
+    total = 0
+    for name in request.FILES:
+        upload = request.FILES.get(name)
+        matched = re.fullmatch(r"image-([0-9a-f]{8})-(\d{1,2})", name)
+        if (
+            matched is None
+            or not isinstance(upload, UploadedFile)
+            or upload.size is None
+            or upload.size > REPORT_IMAGE_BYTES
+        ):
+            continue
+        total += upload.size
+        if total > REPORT_IMAGES_BYTES:
+            break
+        data = upload.read()
+        if data.startswith(PNG_SIGNATURE):
+            found.setdefault(matched.group(1), []).append((int(matched.group(2)), data))
+    return {block: [data for _number, data in sorted(items)] for block, items in found.items()}
+
+
+class StructureView(TemplateView):
+    """
+    Выбор частей структуры для ряда своей таблицы: окном на поле (фрагмент) или отдельной
+    страницей без сценариев. Форма ставит карточку «Структура» обычной правкой поля.
+    """
+
+    template_name = "userdata/structure.html"
+
+    def get_template_names(self) -> list[str]:
+        if self.request.headers.get("HX-Request"):
+            return ["userdata/_structure_pick.html"]
+        return [self.template_name]
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        study = studies.owned(self.request).filter(public_id=kwargs["public_id"]).first()
+        if study is None:
+            raise Http404
+        key = self.request.GET.get("series", "")
+        candidates, chosen = lab.structure_choice(self.request, study, key)
+        context.update(study=study, series=key, candidates=candidates, chosen=chosen)
+        return context

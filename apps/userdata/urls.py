@@ -5,7 +5,9 @@ from __future__ import annotations
 from django.urls import path
 
 from . import (
+    calc_views,
     formula_views,
+    group_views,
     month_views,
     pages,
     related_views,
@@ -25,6 +27,23 @@ urlpatterns = [
     path("own-data/studies/new/", study_views.StudyCreateView.as_view(), name="study-new"),
     path("own-data/studies/add/", study_views.StudyAddView.as_view(), name="study-add"),
     path("own-data/studies/<uuid:public_id>/", study_views.StudyView.as_view(), name="study"),
+    path("own-data/studies/<uuid:public_id>/calc/", calc_views.CalcView.as_view(), name="calc"),
+    path(
+        "own-data/studies/<uuid:public_id>/structure/",
+        study_views.StructureView.as_view(),
+        name="structure",
+    ),
+    path(
+        "own-data/studies/<uuid:public_id>/group/",
+        group_views.StudyGroupView.as_view(),
+        name="study-group",
+    ),
+    path("own-data/groups/", group_views.GroupsView.as_view(), name="groups"),
+    path(
+        "own-data/studies/<uuid:public_id>/report/",
+        study_views.StudyReportView.as_view(),
+        name="study-report",
+    ),
     path(
         "own-data/studies/<uuid:public_id>/edit/",
         study_views.StudyEditView.as_view(),

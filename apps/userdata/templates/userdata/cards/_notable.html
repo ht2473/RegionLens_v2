@@ -1,0 +1,15 @@
+{% load i18n formatting %}
+{# Что заметно: крайние значения года и их отношение, рост с первого года ряда, пропуски — числами. #}
+<ul class="answer-list answer-list--plain study-card__answer">
+  <li data-territory="{{ card.high.code }}">{% blocktranslate trimmed with name=card.high.name value=card.high.value %}Больше всего — {{ name }}: <span class="numeric">{{ value }}</span>.{% endblocktranslate %}</li>
+  <li data-territory="{{ card.low.code }}">{% blocktranslate trimmed with name=card.low.name value=card.low.value %}Меньше всего — {{ name }}: <span class="numeric">{{ value }}</span>.{% endblocktranslate %}</li>
+  {% if card.ratio %}
+    <li>{% blocktranslate trimmed with ratio=card.ratio %}Отношение наибольшего к наименьшему — <span class="numeric">{{ ratio }}</span>.{% endblocktranslate %}</li>
+  {% endif %}
+  {% if card.growth %}
+    <li>{% blocktranslate trimmed with first=card.growth.first|year up=card.growth.up total=card.growth.total %}Выросло с {{ first }} года — регионов: <span class="numeric">{{ up }}</span> из {{ total }}.{% endblocktranslate %}</li>
+  {% endif %}
+  {% if card.missing %}
+    <li>{% blocktranslate trimmed with missing=card.missing %}Без значения за год — регионов: <span class="numeric">{{ missing }}</span>.{% endblocktranslate %}</li>
+  {% endif %}
+</ul>

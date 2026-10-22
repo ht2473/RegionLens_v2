@@ -1,7 +1,7 @@
 {% load i18n %}
 {% comment %}
-  Меню карточки или заметки: развернуть, ширина, сравнить с другим показателем, выше и ниже,
-  убрать; название и пояснение карточки (текст заметки — на месте). Перетаскивание — за ручку;
+  Меню карточки или заметки: развернуть, ширина, сравнить с другим показателем, в отчёт или нет,
+  выше и ниже, убрать; название и пояснение карточки (текст заметки — на месте). Перетаскивание — за ручку;
   то же без мыши — «Выше» и «Ниже», сравнение — выбором второго показателя в панели. Со
   сценарием ширина и порядок меняются на месте (study.js), без него — формой.
 {% endcomment %}
@@ -37,6 +37,10 @@
           <svg aria-hidden="true"><use href="#icon-compare"></use></svg>{% translate "Сравнить с другим показателем" %}
         </a>
       {% endif %}
+      <button class="menu-item" type="submit" name="action" value="report">
+        <svg aria-hidden="true"><use href="#icon-file-text"></use></svg>
+        <span data-in-label="{% translate 'Не включать в отчёт' %}" data-out-label="{% translate 'Включить в отчёт' %}">{% if block.report is False %}{% translate "Включить в отчёт" %}{% else %}{% translate "Не включать в отчёт" %}{% endif %}</span>
+      </button>
       <button class="menu-item" type="submit" name="action" value="up">
         <svg aria-hidden="true"><use href="#icon-arrow-up"></use></svg>{% translate "Выше" %}
       </button>

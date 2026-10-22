@@ -10,7 +10,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from apps.userdata import answers, indicators
+from apps.userdata import answers, build, indicators
 from apps.userdata.formula_views import FREE, template_of
 
 NBSP = chr(0xA0)
@@ -99,3 +99,36 @@ def test_questions_only_until_answered() -> None:
 )
 def test_default_per_skips_population(name: str, kind: str, expected: tuple[str, ...]) -> None:
     assert indicators.default_per(name, kind) == expected
+
+
+@pytest.mark.parametrize(
+    ("name", "unit", "expected"),
+    [
+        ("Валовой региональный продукт", "млрд руб.", indicators.MONEY_PER),
+        ("Экспорт", "млн долл. США", indicators.MONEY_PER),
+        ("Расходы бюджета, млн рублей", "", indicators.MONEY_PER),
+        ("Выбросы загрязняющих веществ", "тыс. тонн", indicators.DEFAULT_PER),
+    ],
+)
+def test_money_sum_is_divided_per_person(name: str, unit: str, expected: tuple[str, ...]) -> None:
+    """Денежную сумму естественно делить на жителя, остальные — на 100 000 жителей."""
+    assert indicators.default_per(name, indicators.SUM, unit) == expected
+
+
+@pytest.mark.parametrize(
+    ("unit", "middle", "factor", "expected"),
+    [
+        ("млрд руб.", 0.000_333, 1e6, "тыс. руб. на жителя"),
+        ("млн рублей", 0.5, 1e3, "тыс. рублей на жителя"),
+        ("тыс. руб.", 0.2, 1e3, "руб. на жителя"),
+        ("млн долл. США", 0.002, 1e3, "тыс. долл. США на жителя"),
+        ("рублей", 50_000, 1e-3, "тыс. рублей на жителя"),
+        ("трлн руб.", 0.000_008, 1e6, "млн руб. на жителя"),
+        ("", None, 1, "на жителя"),
+    ],
+)
+def test_per_person_order(unit: str, middle: float | None, factor: float, expected: str) -> None:
+    """Разряд единицы на жителя — тот, при котором середина значений не меньше единицы."""
+    found_factor, found_unit = build.per_person(unit, middle)
+    assert found_factor == pytest.approx(factor)
+    assert found_unit == expected

@@ -17,6 +17,8 @@ from django.http import Http404, HttpRequest, QueryDict
 from django.urls import reverse
 
 from apps.core.citation import series_source
+from apps.core.templatetags.formatting import ru_number
+from apps.maps.panel import MARKS_AUTO, MARKS_SYMBOLS
 from apps.maps.panel import build as build_map_view
 from apps.surface.panels import PANELS_BY_CODE
 from apps.surface.state import SurfaceState, resolve_state, state_context
@@ -26,10 +28,14 @@ from apps.workspace.constants import QUERY_TARGETS_BY_CODE
 from apps.workspace.describe import describe_parameters
 
 from . import answers
-from .studies import ANSWER, CANVAS_TARGETS, PAIR_QUESTIONS
+from .studies import ANSWER, CANVAS_TARGETS, PAIR_QUESTIONS, VIEW
 
 # Строк рейтинга и таблицы на карточке; остальное — по ссылке «Открыть».
 CARD_ROWS = 10
+# Карточки без содержимого: ряда нет или ответа нет — подсказкам «Дальше» там не место.
+EMPTY_TEMPLATES = ("userdata/cards/_missing.html", "userdata/cards/_unanswered.html")
+# Ступеней шкалы у раскрашенной таблицы — как было у тепловой таблицы.
+TABLE_CLASSES = 5
 
 
 def card_query(
@@ -103,17 +109,24 @@ def render(
         return card
     try:
         clone, state = _state(request, query)
-        card.update(_canvas(clone, state, target, card["prefix"]))
+        card.update(_canvas(clone, state, block, card["prefix"]))
     except Http404, WarehouseNotBuiltError:
         card.update(template="userdata/cards/_missing.html", title=block.get("title", ""))
         return card
     card["title"] = block.get("title") or card["subject_title"]
+    if card.get("marks") == MARKS_SYMBOLS and "marks" not in query:
+        # Значки выбраны по виду величины: вид целиком открывается таким же.
+        query["marks"] = MARKS_SYMBOLS
+        card["open_url"] = open_url(block, query)
     return card
 
 
-def _canvas(request: HttpRequest, state: SurfaceState, target: str, prefix: str) -> dict[str, Any]:
+def _canvas(
+    request: HttpRequest, state: SurfaceState, block: dict[str, Any], prefix: str
+) -> dict[str, Any]:
     """Вид холста карточки: те же сборщики, что у рабочей поверхности."""
     assert state.series is not None
+    target = block["target"]
     subject = describe_subject(state)
     context: dict[str, Any] = {
         **state_context(state),
@@ -126,12 +139,18 @@ def _canvas(request: HttpRequest, state: SurfaceState, target: str, prefix: str)
         "precision": subject.item.precision if subject else None,
     }
     if target == "map":
-        # Свои опознаватели контуров: карт в исследовании несколько.
-        context.update(build_map_view(request, state, prefix=prefix))
+        # Свои опознаватели контуров: карт в исследовании несколько. Знаки — по виду величины:
+        # у суммы значки, у относительной величины заливка; выбор карточки — в её параметрах.
+        context.update(build_map_view(request, state, prefix=prefix, marks=MARKS_AUTO))
+        # «Без подписей значений» — карта без чисел у отмеченных регионов.
+        context["plain"] = block.get("labels") == "off"
         return context
     context.update(PANELS_BY_CODE[target].builder(request, state))
     if target == "table":
         rows = context.get("table_rows") or []
+        context["colour"] = block.get("colour", "")
+        if context["colour"]:
+            context["table_legend"] = _colour_table(rows, context["precision"])
         if state.codes:
             rows = [row for row in rows if row["selected"]]
         context["card_rows"] = rows
@@ -144,6 +163,96 @@ def _canvas(request: HttpRequest, state: SurfaceState, target: str, prefix: str)
             if index < CARD_ROWS or row["territory_code"] in chosen
         ]
     return context
+
+
+def settings_of(
+    block: dict[str, Any], card: dict[str, Any], *, common_year: int | None
+) -> dict[str, Any]:
+    """
+    Настройки карточки для её «Вида»: что уместно виду и что выбрано сейчас. Годы — ряда
+    карточки; у линий по годам года нет: на них все годы.
+    """
+    from apps.catalog.selectors import MAX_COMPARE, grouped_territories
+    from apps.maps.classification import (
+        DEFAULT_CLASSES,
+        DEFAULT_METHOD,
+        MAX_CLASSES,
+        METHODS,
+        MIN_CLASSES,
+    )
+    from apps.warehouse.queries import year_counts
+
+    from .studies import series_keys
+
+    target = card["target"]
+    if block["kind"] == VIEW and target not in CANVAS_TARGETS:
+        # Ссылка на инструмент анализа: её вид настраивается в самом инструменте.
+        return {}
+    parameters = block.get("parameters") or {}
+    keys = series_keys(block)
+    years: list[int] = []
+    if keys and target != "compare":
+        try:
+            years = sorted((int(year) for year in year_counts(keys[0])), reverse=True)
+        except Http404, WarehouseNotBuiltError:
+            years = []
+    own = block.get("territories")
+    regions = "common" if own is None else ("own" if own else "none")
+    classes = str(parameters.get("classes", DEFAULT_CLASSES))
+    return {
+        "views": (
+            [(code, QUERY_TARGETS_BY_CODE[code].title) for code in CANVAS_TARGETS]
+            if block["kind"] == VIEW and target in CANVAS_TARGETS
+            else []
+        ),
+        "years": years,
+        "year": block.get("year"),
+        "common_year": common_year,
+        "regions": regions,
+        "territories": block.get("territories") or [],
+        "territory_groups": grouped_territories(),
+        "max_compare": MAX_COMPARE,
+        "marks": parameters.get("marks", "auto") if target == "map" else "",
+        "scale": target in {"map", "distribution"},
+        "methods": METHODS,
+        "method": parameters.get("method", DEFAULT_METHOD),
+        "classes": range(MIN_CLASSES, MAX_CLASSES + 1),
+        "class_count": int(classes) if classes.isdigit() else DEFAULT_CLASSES,
+        "labels": block.get("labels", "") if target == "map" else None,
+        "colour": block.get("colour", "") if target == "table" else None,
+        "multiples": block.get("scale", "common") if target == "multiples" else "",
+    }
+
+
+def _colour_table(rows: list[dict[str, Any]], precision: int | None) -> list[dict[str, str]]:
+    """
+    Раскрасить клетки таблицы по годам ступенью общей шкалы (квантили по всем субъектам,
+    а не только отмеченным); вернуть легенду. Нуль и пропуск — без цвета: иначе таблица
+    с нулями заливает ими нижнюю ступень, и раскраска становится шумом.
+    """
+    from apps.maps.classification import classify, sequential_palette
+
+    values = [float(cell["value"]) for row in rows for cell in row["cells"] if cell["value"]]
+    classification = classify(values, class_count=TABLE_CLASSES)
+    if classification is None:
+        return []
+    palette = sequential_palette(classification.class_count)
+    for row in rows:
+        for cell in row["cells"]:
+            index = classification.class_of(float(cell["value"])) if cell["value"] else None
+            if index is None:
+                continue
+            # Ступень шкалы (--scale-seq-N); на двух верхних, тёмных, подпись светлая.
+            cell["step"] = palette[index].rsplit("-", 1)[1]
+            cell["light"] = index >= classification.class_count - 2
+    return [
+        {
+            "step": palette[index].rsplit("-", 1)[1],
+            "lower": ru_number(item["lower"], precision),
+            "upper": ru_number(item["upper"], precision),
+        }
+        for index, item in enumerate(classification.intervals())
+    ]
 
 
 def _answer(
@@ -197,7 +306,7 @@ def _answer(
     card.update(
         built,
         template=f"userdata/cards/_{question}.html",
-        title=block.get("title") or title,
+        title=block.get("title") or built.get("title") or title,
         unit=built.get("unit", subject.unit),
         source=series_source(state.series.key, built.get("year") or state.year),
     )

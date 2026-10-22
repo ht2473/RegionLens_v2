@@ -15,6 +15,7 @@ from typing import Any
 from urllib.parse import urlencode
 
 import numpy as np
+from django.core.exceptions import ValidationError
 from django.http import HttpRequest
 from django.urls import reverse
 from django.utils.translation import get_language, gettext_lazy
@@ -34,9 +35,6 @@ TREND_YEARS = 5
 RELATED_SHOWN = 3
 # Регионов в перечнях «вырос сильнее» и «меньше всего».
 GROWTH_SHOWN = 5
-# Лет в тепловой таблице и классов её шкалы.
-HEAT_YEARS = 10
-HEAT_CLASSES = 5
 # Малые графики: лет в клетке и размер клетки в единицах чертежа.
 MULTIPLES_YEARS = 15
 SPARK_WIDTH = 120
@@ -49,32 +47,38 @@ APART_SHOWN = 3
 RESULT_REVISION = 1
 
 TITLES = {
+    "notable": gettext_lazy("Что заметно"),
     "leaders": gettext_lazy("Лидеры и отстающие"),
     "mine": gettext_lazy("Мой регион"),
     "change": gettext_lazy("Как изменился"),
     "growth": gettext_lazy("Кто вырос сильнее"),
     "districts": gettext_lazy("Итоги по округам"),
-    "heat": gettext_lazy("Тепловая таблица"),
     "multiples": gettext_lazy("Малые графики"),
     "spread": gettext_lazy("Насколько различаются регионы"),
     "convergence": gettext_lazy("Сближаются ли регионы"),
     "neighbours": gettext_lazy("Похожи ли соседи"),
     "related": gettext_lazy("С чем связан"),
+    "structure": gettext_lazy("Структура"),
+    "contributions": gettext_lazy("Почему изменилось"),
+    "group": gettext_lazy("Группа регионов"),
     "relation": gettext_lazy("Связь двух показателей"),
     "comparison": gettext_lazy("Сравнение двух показателей"),
 }
 ICONS = {
+    "notable": "list",
     "leaders": "ranking",
     "mine": "map-pin",
     "change": "dynamics",
     "growth": "growth",
     "districts": "districts",
-    "heat": "heat",
     "multiples": "multiples",
     "spread": "inequality",
     "convergence": "convergence",
     "neighbours": "spatial",
     "related": "correlation",
+    "structure": "structure",
+    "contributions": "waterfall",
+    "group": "districts",
     "relation": "correlation",
     "comparison": "compare",
 }
@@ -396,6 +400,366 @@ def growth(asked: Asked) -> dict[str, Any]:
     }
 
 
+# --- Структура и вклады в изменение ---------------------------------------------------------
+
+# Частей структуры со своим цветом (палитра рядов); остальные — вместе, «прочие».
+STRUCTURE_PARTS = 8
+# Регионов-вкладов отдельными столбцами водопада; остальные — одним.
+CONTRIBUTORS = 8
+# Размах водопада меньше этой доли его наибольшего столбца — ось начинается не с нуля.
+WATERFALL_SPAN = 0.5
+# Поле оси ниже наименьшего столбца — доля размаха.
+WATERFALL_MARGIN = 0.15
+
+
+def _part_titles(keys: list[str]) -> tuple[dict[str, str], str]:
+    """
+    Названия частей и целого: у разрезов одного показателя — название разреза («Женщины»)
+    и показателя, у разных показателей таблицы — их короткие названия и перечень первых.
+    """
+    from .series import user_series_many
+
+    found = user_series_many(keys)
+    if len(found) < len(set(keys)):
+        raise NoAnswerError(_("Часть структуры удалена из таблицы."))
+    english = get_language() != "ru"
+    titles = list(dict.fromkeys(found[key].record.title for key in keys))
+    named = {}
+    for key, series in found.items():
+        name = series.name if english else series.name_ru
+        if len(titles) == 1 and name:
+            named[key] = name
+        else:
+            named[key] = f"{series.record.title}, {name}" if name else series.record.title
+    if len(titles) == 1:
+        whole = titles[0]
+    elif len(titles) == 2:  # noqa: PLR2004
+        whole = _("%(first)s и %(second)s") % {"first": titles[0], "second": titles[1]}
+    else:
+        whole = _("%(first)s и другие (%(count)s)") % {
+            "first": titles[0],
+            "count": len(titles) - 1,
+        }
+    return named, whole
+
+
+def structure(asked: Asked) -> dict[str, Any]:
+    """
+    Структура по регионам: доли частей (разрезов одного показателя или сумм одной таблицы
+    с одной единицей) в их сумме за год исследования — столбец региона в 100 %. Сверху —
+    Россия как сумма регионов; регионы — по доле самой крупной части. Частей больше восьми —
+    мелкие вместе как «прочие». Регион без значения какой-либо части пропускается.
+    """
+    from apps.analytics.selectors import region_rows
+    from apps.core.charts import STRUCTURE_PAD, STRUCTURE_ROW, structure_option
+    from apps.warehouse.queries import region_panel
+
+    state = asked.state
+    assert state.year is not None and asked.block is not None
+    keys = [key for key in asked.block.get("parts") or [] if isinstance(key, str)]
+    if len(keys) < 2:  # noqa: PLR2004
+        raise NoAnswerError(_("Для структуры нужны хотя бы две части."))
+    titles, heading = _part_titles(keys)
+    panels = {key: region_panel(key).get(state.year) or {} for key in keys}
+    codes = sorted(set.intersection(*(set(values) for values in panels.values())))
+    totals = {code: sum(panels[key][code] for key in keys) for code in codes}
+    codes = [code for code in codes if totals[code] > 0]
+    if any(panels[key][code] < 0 for key in keys for code in codes):
+        raise NoAnswerError(_("У частей есть отрицательные значения — долей у них нет."))
+    if len(codes) < LEADERS:
+        raise NoAnswerError(_("За этот год значений всех частей по регионам слишком мало."))
+    # Части по доле в сумме регионов: крупные — своим цветом, мелкие — «прочими».
+    country = {key: sum(panels[key][code] for code in codes) for key in keys}
+    whole = sum(country.values())
+    ordered = sorted(keys, key=lambda key: -country[key])
+    shown = ordered if len(ordered) <= STRUCTURE_PARTS else ordered[: STRUCTURE_PARTS - 1]
+    rest = [key for key in ordered if key not in shown]
+    lead = ordered[0]
+    codes.sort(key=lambda code: -panels[lead][code] / totals[code])
+    names = {row["code"]: row["name"] for row in region_rows()}
+    labels = [_("Россия (сумма регионов)"), *(names.get(code, code) for code in codes)]
+
+    parts: list[dict[str, Any]] = []
+    groups = [(titles[key], [key]) for key in shown]
+    if rest:
+        groups.append((_("прочие"), rest))
+    for title, members in groups:
+        column = [sum(country[key] for key in members) / whole * 100]
+        column += [sum(panels[key][code] for key in members) / totals[code] * 100 for code in codes]
+        parts.append({"name": title, "shares": [round(value, 1) for value in column]})
+    leader = parts[0]["shares"][1:]
+    high = max(range(len(codes)), key=lambda index: leader[index])
+    low = min(range(len(codes)), key=lambda index: leader[index])
+    return {
+        "year": state.year,
+        # Название карточки — целое, а не первая часть.
+        "title": heading,
+        "parts": [
+            {**part, "country": ru_number(part["shares"][0], 1), "colour": index}
+            for index, part in enumerate(parts, start=1)
+        ],
+        "lead": parts[0]["name"],
+        "high": {"name": names.get(codes[high], codes[high]), "share": ru_number(leader[high], 1)},
+        "low": {"name": names.get(codes[low], codes[low]), "share": ru_number(leader[low], 1)},
+        "rows": [
+            {"name": label, "shares": [ru_number(part["shares"][index], 1) for part in parts]}
+            for index, label in enumerate(labels)
+        ],
+        "count": len(codes),
+        "chart": structure_option(labels, parts),
+        "chart_height": STRUCTURE_PAD + STRUCTURE_ROW * len(labels),
+        "unit": "%",
+    }
+
+
+def contributions(asked: Asked) -> dict[str, Any]:
+    """
+    Почему изменилось: изменение суммы между двумя годами разложено на вклады — водопад
+    от итога начального года к итогу конечного. Без частей вклады — регионов; с частями
+    (``parts`` карточки) — составляющих: каждая часть — сумма по одним и тем же регионам.
+    Год конечный — исследования, начальный — как у «Кто вырос сильнее» (не дальше пяти лет).
+    Вклады складываются только у сумм; регионы без значения в одном из лет (у частей —
+    хотя бы одной части) не входят в итог.
+    """
+    from apps.core.charts import STRUCTURE_PAD, STRUCTURE_ROW, waterfall_option
+
+    state, subject = asked.state, asked.subject
+    assert state.series is not None and state.year is not None
+    if not subject.item.absolute:
+        raise NoAnswerError(
+            _(
+                "Вклады регионов складываются только у сумм. У относительной величины "
+                "смотрите «Кто вырос сильнее»."
+            )
+        )
+    end = state.year
+    earlier = [year for year in _years(state) if year < end]
+    if not earlier:
+        raise NoAnswerError(_("Для изменения нужны хотя бы два года."))
+    within = [year for year in earlier if end - year <= TREND_YEARS]
+    start = min(within) if within else max(earlier)
+    keys = [key for key in (asked.block or {}).get("parts") or [] if isinstance(key, str)]
+    shifts = (
+        _part_shifts(keys, start, end) if keys else _region_shifts(state.series.key, start, end)
+    )
+    first, last = shifts.first, shifts.last
+    precision = subject.item.precision
+    ranked = sorted(shifts.found, key=lambda entry: -abs(entry[1]))
+    shown, folded = ranked[:CONTRIBUTORS], ranked[CONTRIBUTORS:]
+    steps: list[dict[str, Any]] = [{"name": str(start), "start": 0, "end": first, "total": True}]
+    level = first
+    entries = list(shown)
+    if folded:
+        entries.append(
+            (shifts.rest % {"count": len(folded)}, sum(shift for _name, shift in folded))
+        )
+    for name, shift in entries:
+        steps.append({"name": name, "start": level, "end": level + shift, "total": False})
+        level += shift
+    steps.append({"name": str(end), "start": 0, "end": last, "total": True})
+    for step in steps:
+        amount = step["end"] - step["start"]
+        step["label"] = (
+            ru_number(amount, precision) if step["total"] else signed(DIFFERENCE, amount, precision)
+        )
+    moving: list[float] = [
+        value for step in steps if not step["total"] for value in (step["start"], step["end"])
+    ]
+    low = None
+    high = max(first, last, *moving)
+    bottom = min(moving or [first])
+    if bottom > 0 and high - bottom < WATERFALL_SPAN * high:
+        low = _round_axis(bottom - (high - bottom) * WATERFALL_MARGIN)
+    rising = sorted((entry for entry in entries[: len(shown)] if entry[1] > 0), key=lambda e: -e[1])
+    falling = sorted((entry for entry in entries[: len(shown)] if entry[1] < 0), key=lambda e: e[1])
+    return {
+        **({"title": shifts.heading} if shifts.heading else {}),
+        "by_parts": bool(keys),
+        "year": end,
+        "since": start,
+        "first": ru_number(first, precision),
+        "last": ru_number(last, precision),
+        "change": signed(DIFFERENCE, last - first, precision),
+        "relative": signed(PERCENT, (last - first) / first * 100, 1) if first > 0 else "",
+        "count": shifts.count,
+        "rising": [
+            {"name": name, "change": signed(DIFFERENCE, shift, precision)}
+            for name, shift in rising[:3]
+        ],
+        "falling": [
+            {"name": name, "change": signed(DIFFERENCE, shift, precision)}
+            for name, shift in falling[:3]
+        ],
+        "steps": [
+            {"name": step["name"], "label": step["label"], "total": step["total"]} for step in steps
+        ],
+        "chart": waterfall_option(steps, low=low),
+        "chart_height": STRUCTURE_PAD + 2 * STRUCTURE_ROW * len(steps),
+        "open_url": _url("maps:choropleth", series=state.series.key, year=end, compare=start),
+    }
+
+
+@dataclass(frozen=True, slots=True)
+class _Shifts:
+    """
+    Вклады в изменение суммы: пары «название, изменение», итоги начального и конечного года
+    по регионам со значениями в обоих, их число, подпись свёрнутых вкладов, название целого.
+    """
+
+    found: list[tuple[str, float]]
+    first: float
+    last: float
+    count: int
+    rest: str
+    heading: str = ""
+
+
+def _region_shifts(key: str, start: int, end: int) -> _Shifts:
+    """Вклады регионов в изменение суммы ряда."""
+    from apps.analytics.selectors import region_rows
+    from apps.warehouse.queries import region_panel
+
+    panel = region_panel(key)
+    before, after = panel.get(start) or {}, panel.get(end) or {}
+    codes = sorted(set(before) & set(after))
+    if len(codes) < LEADERS:
+        raise NoAnswerError(_("Значений в обоих годах слишком мало для сравнения."))
+    names = {row["code"]: row["name"] for row in region_rows()}
+    return _Shifts(
+        found=[(names.get(code, code), after[code] - before[code]) for code in codes],
+        first=sum(before[code] for code in codes),
+        last=sum(after[code] for code in codes),
+        count=len(codes),
+        rest=_("остальные регионы (%(count)s)"),
+    )
+
+
+def _part_shifts(keys: list[str], start: int, end: int) -> _Shifts:
+    """Вклады составляющих: каждая часть — сумма по одним и тем же регионам в обоих годах."""
+    from apps.warehouse.queries import region_panel
+
+    titles, heading = _part_titles(keys)
+    panels = {key: region_panel(key) for key in keys}
+    codes = sorted(
+        set.intersection(
+            *(set(panels[key].get(start) or {}) & set(panels[key].get(end) or {}) for key in keys)
+        )
+    )
+    if len(codes) < LEADERS:
+        raise NoAnswerError(_("Значений всех частей в обоих годах слишком мало для сравнения."))
+    totals = {
+        key: (
+            sum(panels[key][start][code] for code in codes),
+            sum(panels[key][end][code] for code in codes),
+        )
+        for key in keys
+    }
+    return _Shifts(
+        found=[(titles[key], after - before) for key, (before, after) in totals.items()],
+        first=sum(before for before, _after in totals.values()),
+        last=sum(after for _before, after in totals.values()),
+        count=len(codes),
+        rest=_("остальные части (%(count)s)"),
+        heading=heading,
+    )
+
+
+def group(asked: Asked) -> dict[str, Any]:
+    """
+    Группа регионов против остальных: итог группы и остальных регионов по годам — у суммы
+    сумма и доля группы в сумме регионов, у относительной величины среднее, взвешенное
+    по численности, и разница. Год — исследования, иначе последний с итогом обеих частей.
+    """
+    from apps.core.charts import timeline_option
+
+    from . import groups
+    from .models import RegionGroup
+
+    state, subject = asked.state, asked.subject
+    assert state.series is not None
+    try:
+        found = RegionGroup.objects.filter(
+            public_id=str((asked.block or {}).get("group") or "")
+        ).first()
+    except ValueError, ValidationError:
+        found = None
+    if found is None:
+        raise NoAnswerError(_("Группа регионов удалена."))
+    is_sum = bool(subject.item.absolute)
+    years = [
+        item
+        for item in groups.totals(state.series.key, found.codes, is_sum=is_sum)
+        if item.group is not None and item.rest is not None
+    ]
+    if not years:
+        raise NoAnswerError(_("У регионов группы нет значений этого показателя."))
+    chosen = next((item for item in years if item.year == state.year), years[-1])
+    precision = subject.item.precision
+
+    def share(item: groups.Year) -> float:
+        whole = (item.group or 0.0) + (item.rest or 0.0)
+        return (item.group or 0.0) / whole * 100 if whole else 0.0
+
+    labels = [str(item.year) for item in years]
+    if is_sum:
+        chart = timeline_option(
+            labels,
+            [
+                {
+                    "name": _("доля группы в сумме регионов"),
+                    "values": [round(share(item), 1) for item in years],
+                    "primary": True,
+                }
+            ],
+            unit="%",
+            end_labels=False,
+        )
+    else:
+        chart = timeline_option(
+            labels,
+            [
+                {"name": found.title, "values": [item.group for item in years], "primary": True},
+                {"name": _("остальные регионы"), "values": [item.rest for item in years]},
+            ],
+            unit=subject.unit,
+            end_labels=False,
+        )
+    assert chosen.group is not None and chosen.rest is not None
+    return {
+        "title": f"{subject.title} — {found.title}",
+        "year": chosen.year,
+        "group_title": found.title,
+        "is_sum": is_sum,
+        "group_value": ru_number(chosen.group, precision),
+        "rest_value": ru_number(chosen.rest, precision),
+        "share": ru_number(share(chosen), 1),
+        "difference": signed(DIFFERENCE, chosen.group - chosen.rest, precision),
+        "ratio": ru_number(chosen.group / chosen.rest * 100, 0) if chosen.rest else "",
+        "members": chosen.members,
+        "size": len(found.codes),
+        "rows": [
+            {
+                "year": item.year,
+                "group": ru_number(item.group, precision),
+                "rest": ru_number(item.rest, precision),
+                "share": ru_number(share(item), 1) if is_sum else "",
+            }
+            for item in reversed(years)
+        ],
+        "chart": chart,
+    }
+
+
+def _round_axis(value: float) -> float:
+    """Начало оси водопада — круглое число не больше данного."""
+    import math
+
+    if value <= 0:
+        return 0.0
+    power = 10.0 ** math.floor(math.log10(value))
+    return math.floor(value / power) * power
+
+
 def _years(state: SurfaceState) -> list[int]:
     """Годы ряда со значениями по регионам."""
     from apps.warehouse.queries import year_counts
@@ -496,80 +860,52 @@ def _bars(rows: list[dict[str, Any]], basis: str) -> None:
         row["bar"] = f"{abs(row['number']) / highest:.3f}" if scaled else ""
 
 
-# --- Тепловая таблица ----------------------------------------------------------------------
+# --- Что заметно ---------------------------------------------------------------------------
 
 
-def heat(asked: Asked) -> dict[str, Any]:
+def notable(asked: Asked) -> dict[str, Any]:
     """
-    Регионы × годы: последние годы до года исследования, цвет — класс общей шкалы всех
-    клеток (квантили). Регионы — общие регионы исследования, иначе все; по убыванию
-    значения последнего года. Строка России — без цвета: у сумм она равна сумме регионов.
+    Что заметно в ряду, числами и без оценок: наибольшее и наименьшее значение года и их
+    отношение (у положительных), в скольких регионах значение выросло с первого года ряда,
+    у скольких значения за год нет.
     """
     from apps.analytics.selectors import region_rows
-    from apps.maps.classification import classify, sequential_palette
-    from apps.warehouse.queries import COUNTRY_CODE, region_panel, series_values
+    from apps.warehouse.queries import region_panel
 
     state, subject = asked.state, asked.subject
-
     assert state.series is not None and state.year is not None
-    panel = region_panel(state.series.key)
-    years = [year for year in sorted(panel) if year <= state.year][-HEAT_YEARS:]
-    if len(years) < 2:  # noqa: PLR2004 — таблица по годам, а не по одному году
-        raise NoAnswerError(_("Для тепловой таблицы нужны хотя бы два года."))
     names = {row["code"]: row["name"] for row in region_rows()}
-    chosen = [code for code in state.codes if code in names]
-    codes = chosen or [code for code in names if any(code in panel[year] for year in years)]
-    values = [panel[year][code] for year in years for code in codes if code in panel[year]]
-    classification = classify(values, class_count=HEAT_CLASSES)
-    if classification is None:
-        raise NoAnswerError(_("Значения одинаковы: шкалы не построить."))
-    palette = sequential_palette(classification.class_count)
-    count = classification.class_count
+    panel = region_panel(state.series.key)
+    values = {code: value for code, value in (panel.get(state.year) or {}).items() if code in names}
+    if not values:
+        raise NoAnswerError(_("За этот год значений по регионам нет."))
     precision = subject.item.precision
-    last = years[-1]
+    high = max(values, key=values.__getitem__)
+    low = min(values, key=values.__getitem__)
 
-    def cell(value: float | None) -> dict[str, Any]:
-        if value is None:
-            return {"value": "", "step": "", "light": False}
-        index = classification.class_of(value)
-        assert index is not None
-        return {
-            "value": ru_number(value, precision),
-            # Ступень шкалы (--scale-seq-N): цвет клетки задаёт правило оформления.
-            "step": palette[index].rsplit("-", 1)[1],
-            # Две верхние ступени тёмные: подпись светлая.
-            "light": index >= count - 2,
-        }
+    def point(code: str) -> dict[str, str]:
+        return {"code": code, "name": names[code], "value": ru_number(values[code], precision)}
 
-    rows = [
-        {
-            "code": code,
-            "name": names[code],
-            "sort": panel[last].get(code),
-            "cells": [cell(panel[year].get(code)) for year in years],
-        }
-        for code in codes
-    ]
-    rows.sort(key=lambda row: (row["sort"] is None, -(row["sort"] or 0.0)))
-    country = series_values([state.series.key], [COUNTRY_CODE]).get(state.series.key, {})
-    by_year = country.get(COUNTRY_CODE, {})
-    return {
-        "year": last,
-        "years": years,
-        "rows": rows,
-        "country": [
-            ru_number(by_year[year], precision) if year in by_year else "" for year in years
-        ],
-        "has_country": bool(by_year),
-        "legend": [
-            {
-                "step": palette[index].rsplit("-", 1)[1],
-                "lower": ru_number(item["lower"], precision),
-                "upper": ru_number(item["upper"], precision),
+    ratio = values[high] / values[low] if values[low] > 0 and high != low else None
+    growth = None
+    earlier = [year for year in panel if year < state.year]
+    if earlier:
+        first = min(earlier)
+        both = [code for code in values if code in panel[first]]
+        if both:
+            growth = {
+                "first": first,
+                "up": sum(1 for code in both if values[code] > panel[first][code]),
+                "total": len(both),
             }
-            for index, item in enumerate(classification.intervals())
-        ],
-        "open_url": _url("surface:table", series=state.series.key, year=last),
+    return {
+        "year": state.year,
+        "high": point(high),
+        "low": point(low),
+        "ratio": ru_number(ratio, 1 if ratio < 10 else 0) if ratio else "",  # noqa: PLR2004
+        "growth": growth,
+        "missing": len(names) - len(values),
+        "open_url": _url("rankings:index", series=state.series.key, year=state.year),
     }
 
 

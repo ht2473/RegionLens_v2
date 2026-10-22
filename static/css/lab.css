@@ -5,7 +5,8 @@
 
 /* --- Малые графики: регионы по округам, в клетке — название, линия и значение ------------- */
 
-.multiples-head {
+/* Шапка карточки: годы или шкала слева, переключатель вида справа. */
+.card-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -14,19 +15,19 @@
   margin-bottom: var(--space-3);
 }
 
-.multiples-head__years {
+.card-head__note {
   margin: 0;
   font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
-.multiples-head__scale {
+.card-head__options {
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
 
-.multiples-head__scale .segmented__option {
+.card-head__options .segmented__option {
   background: none;
   border: 0;
   font: inherit;
@@ -275,15 +276,54 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  /* Место под ручку и меню справа от заголовка. */
-  padding-right: calc(2 * 34px + var(--space-2));
 }
 
+/* «Вид» карточки — слева от ручки и меню. */
+.card-settings__toggle {
+  position: absolute;
+  top: var(--space-2);
+  right: calc(2 * 34px + var(--space-2));
+}
+
+.card-settings {
+  width: min(22rem, calc(100vw - 2 * var(--space-4)));
+  max-height: min(38rem, 80vh);
+  overflow-y: auto;
+}
+
+.card-settings__pair {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-3);
+}
+
+.card-settings fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.card-settings__picker summary {
+  cursor: pointer;
+  margin-top: var(--space-2);
+  color: var(--text-accent);
+}
+
+.card-settings__list {
+  max-height: 14rem;
+  overflow-y: auto;
+  margin-top: var(--space-2);
+}
+
+/* Место под «Вид», ручку и меню — справа от строки вида и не ниже их: название под ними
+   во всю ширину карточки, на телефоне оно не сжимается в узкий столбец. */
 .study-card__kicker {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1);
+  min-height: calc(34px + var(--space-2) - var(--space-4));
+  padding-right: calc(2 * 34px + var(--space-2) + 5.5rem);
 }
 
 .study-card__kicker svg {
@@ -327,6 +367,78 @@
 .study-card__table {
   max-height: 22rem;
 }
+
+/* «Дальше» под карточкой: подпись и пилюли действий в строку. */
+.card-next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.card-next form {
+  display: contents;
+}
+
+.card-next__label {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.card-next__step {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background-color: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--text-xs);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.card-next__step:hover {
+  border-color: var(--accent);
+}
+
+.card-next__step:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+/* Таблица по годам на карточке: год исследования выделен; раскраска — ступень
+   последовательной шкалы, как у карты; на двух тёмных ступенях подпись светлая. */
+.data-table--years thead .is-current {
+  color: var(--text-primary);
+  font-weight: var(--weight-semibold);
+}
+
+.data-table--years tbody th {
+  min-width: 11rem;
+  font-weight: var(--weight-regular);
+}
+
+/* Просвет цвета подложки между раскрашенными клетками: соседние одной ступени не сливаются. */
+.data-table--years td[data-step] {
+  color: var(--map-label-on-low);
+  box-shadow: inset 0 0 0 1px var(--surface-raised);
+}
+
+.data-table--years td[data-step].is-light {
+  color: var(--map-label-on-high);
+}
+
+.data-table--years td[data-step="1"] { background: var(--scale-seq-1); }
+.data-table--years td[data-step="2"] { background: var(--scale-seq-2); }
+.data-table--years td[data-step="3"] { background: var(--scale-seq-3); }
+.data-table--years td[data-step="4"] { background: var(--scale-seq-4); }
+.data-table--years td[data-step="5"] { background: var(--scale-seq-5); }
+.data-table--years td[data-step="6"] { background: var(--scale-seq-6); }
+.data-table--years td[data-step="7"] { background: var(--scale-seq-7); }
 
 .study-card__phrases {
   margin: 0;
@@ -411,6 +523,55 @@
   width: min(18rem, calc(100vw - 2 * var(--space-4)));
 }
 
+/* Карточка или заметка «не в отчёте»: приглушена, с пометкой; в печать и файлы не идёт. */
+.study-off-report {
+  display: none;
+}
+
+.is-off-report > .study-off-report {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 0 var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.study-card.is-off-report,
+.study-note.is-off-report {
+  border-style: dashed;
+}
+
+.is-off-report > .study-card__slot,
+.is-off-report > .study-note__body {
+  opacity: 0.6;
+}
+
+/* Отчёт файлом: два пункта с пояснением и оговорка. */
+.menu-popover.study-report {
+  width: min(22rem, calc(100vw - 2 * var(--space-4)));
+}
+
+.study-report__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: start;
+}
+
+.study-report__hint,
+.study-report__note {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.study-report__note {
+  margin: var(--space-2) 0 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
 .study-card-menu__items {
   display: flex;
   flex-direction: column;
@@ -441,7 +602,7 @@
   margin-top: var(--space-3);
 }
 
-/* --- Ответы карточек: перечень без номеров, полосы округов, тепловая таблица ------------ */
+/* --- Ответы карточек: перечень без номеров, полосы округов ------------------------------ */
 
 .answer-list--plain {
   padding-left: 0;
@@ -548,6 +709,60 @@
 
 .line-legend__item[data-line="2"]::before {
   background: var(--series-2);
+}
+
+/* Части структуры: цвет отрезка — палитра рядов по порядку. */
+.part-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.part-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.part-legend__item::before {
+  content: "";
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 2px;
+  background: var(--series-1);
+}
+
+.part-legend__item[data-part="2"]::before { background: var(--series-2); }
+.part-legend__item[data-part="3"]::before { background: var(--series-3); }
+.part-legend__item[data-part="4"]::before { background: var(--series-4); }
+.part-legend__item[data-part="5"]::before { background: var(--series-5); }
+.part-legend__item[data-part="6"]::before { background: var(--series-6); }
+.part-legend__item[data-part="7"]::before { background: var(--series-7); }
+.part-legend__item[data-part="8"]::before { background: var(--series-8); }
+
+/* Высокий график (структура по всем регионам) — в своей полосе прокрутки. */
+.study-card__scroll {
+  max-height: 32rem;
+  overflow-y: auto;
+}
+
+.study-card__details summary {
+  cursor: pointer;
+  color: var(--text-accent);
+  font-size: var(--text-sm);
+}
+
+.study-card__details .data-table {
+  margin-top: var(--space-2);
+}
+
+.study-card__details tr.is-total th,
+.study-card__details tr.is-total td {
+  font-weight: 600;
 }
 
 /* --- Ряд, брошенный на карточку: сравнение с её показателем --------------------------- */
@@ -818,7 +1033,8 @@
 @media print {
   .study-panel,
   .rail-dock,
-  .study-card-menu {
+  .study-card-menu,
+  .is-off-report {
     display: none;
   }
 
@@ -843,4 +1059,218 @@
   }
 }
 
+}
+
+/* --- Панель расчёта: окно справа во всю высоту; на телефоне — во весь экран ------------- */
+
+.calc-dialog {
+  inset: 0 0 0 auto;
+  width: min(100%, 34rem);
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0 0 0 auto;
+  padding: var(--space-5) var(--space-6) 0;
+  border: 0;
+  border-left: 1px solid var(--border-subtle);
+  background-color: var(--surface-overlay);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-lg);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.calc-dialog::backdrop {
+  background: rgb(0 0 0 / 0.25);
+}
+
+.calc-dialog__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.calc-dialog__title {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+
+.calc-dialog__lead,
+.calc-panel__method,
+.calc-preview__note,
+.calc-preview__count {
+  margin: var(--space-1) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.calc-panel {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.calc-catalog {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.calc-catalog__title {
+  margin: 0 0 var(--space-1);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.calc-catalog__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Расчёт — пилюля с переключателем внутри: щелчок по подписи выбирает его. */
+.calc-pill {
+  position: relative;
+  display: inline-flex;
+}
+
+.calc-pill input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.calc-pill input + span {
+  padding: 3px var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background-color: var(--surface-base);
+  font-size: var(--text-sm);
+}
+
+.calc-pill input:checked + span {
+  border-color: var(--accent);
+  background-color: var(--accent-quiet);
+  font-weight: var(--weight-semibold);
+}
+
+.calc-pill input:focus-visible + span {
+  box-shadow: var(--shadow-focus);
+}
+
+.calc-pill.is-disabled input {
+  cursor: not-allowed;
+}
+
+.calc-pill.is-disabled input + span {
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.calc-panel__fields,
+.calc-panel__result {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.calc-parts__list {
+  max-height: 14rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow-y: auto;
+}
+
+.calc-parts__group {
+  margin: var(--space-2) 0 var(--space-1);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.calc-free__expression {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+/* Подсказка названий в формуле: подходящие показатели под полем. */
+.calc-suggest {
+  display: grid;
+  max-height: 12rem;
+  margin: var(--space-1) 0 0;
+  padding: var(--space-1);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-raised);
+  overflow-y: auto;
+  list-style: none;
+}
+
+.calc-suggest button {
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.calc-suggest button:hover,
+.calc-suggest button.is-active {
+  background-color: var(--accent-quiet);
+}
+
+.calc-preview {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.calc-preview__extremes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-4);
+}
+
+.calc-preview__formula {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.calc-preview__formula code {
+  overflow-wrap: anywhere;
+}
+
+/* Кнопки — у нижнего края окна, что бы ни было выше. */
+.calc-panel__actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 calc(-1 * var(--space-6));
+  padding: var(--space-3) var(--space-6);
+  border-top: 1px solid var(--border-subtle);
+  background-color: var(--surface-overlay);
+}
+
+@media (max-width: 720px) {
+  .calc-dialog {
+    width: 100%;
+    padding-inline: var(--space-4);
+  }
+
+  .calc-panel__actions {
+    margin-inline: calc(-1 * var(--space-4));
+    padding-inline: var(--space-4);
+  }
 }

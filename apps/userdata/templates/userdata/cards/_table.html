@@ -1,25 +1,40 @@
 {% load i18n formatting %}
-{# Таблица на карточке исследования: отмеченные территории или все субъекты в прокручиваемой области. #}
+{% comment %}
+  Таблица на карточке исследования: субъекты (отмеченные или все) × последние годы до года
+  исследования, год исследования выделен. Раскраска по значению — ступень общей шкалы клеток;
+  нуль и пропуск без цвета. Владелец включает её в «Виде» карточки.
+{% endcomment %}
 {% if card_rows %}
+  <div class="card-head">
+    <p class="card-head__note numeric">{{ table_years.0|year }}{% if table_years|length > 1 %}–{{ table_years|last|year }}{% endif %}</p>
+  </div>
   <div class="data-table-wrapper study-card__table study-card__table--tall" data-scroll>
-    <table class="data-table">
+    <table class="data-table data-table--years">
       <caption class="visually-hidden">{{ card.title }}</caption>
       <thead>
         <tr>
           <th scope="col">{% translate "Субъект" %}</th>
-          <th scope="col" class="is-numeric">{% translate "Значение" %}</th>
+          {% for year in table_years %}<th scope="col" class="is-numeric{% if forloop.counter0 == current_index %} is-current{% endif %}">{{ year|year }}</th>{% endfor %}
         </tr>
       </thead>
       <tbody>
         {% for row in card_rows %}
           <tr data-territory="{{ row.code }}">
-            <td>{{ row.name }}</td>
-            <td class="is-numeric">{% if row.value is not None %}{{ row.value|ru_number:precision }}{% else %}<span class="text-muted">{{ row.note|default:"—" }}</span>{% endif %}</td>
+            <th scope="row">{{ row.name }}</th>
+            {% for cell in row.cells %}<td class="is-numeric{% if cell.light %} is-light{% endif %}"{% if cell.step %} data-step="{{ cell.step }}"{% endif %}>{% if cell.value is not None %}{{ cell.value|ru_number:precision }}{% else %}<span class="text-muted" title="{{ cell.note }}">—</span>{% endif %}</td>{% endfor %}
           </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+  {% if table_legend %}
+    <ol class="scale-legend" aria-label="{% translate 'Шкала цвета' %}">
+      {% for item in table_legend %}
+        <li class="scale-legend__step"><span class="scale-legend__swatch" data-step="{{ item.step }}" aria-hidden="true"></span><span class="numeric">{{ item.lower }}–{{ item.upper }}</span></li>
+      {% endfor %}
+      <li class="scale-legend__step">{% translate "нуль и пропуск — без цвета" %}</li>
+    </ol>
+  {% endif %}
 {% else %}
   <p class="study-card__empty">{% translate "За этот год значений по субъектам нет." %}</p>
 {% endif %}

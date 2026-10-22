@@ -218,11 +218,20 @@ function onMenuSubmit(event) {
   const action = submitter.value;
   const block = form.elements.block.value;
   const card = document.getElementById(`block-${block}`);
-  if (!card || !["resize", "up", "down"].includes(action)) {
+  if (!card || !["resize", "report", "up", "down"].includes(action)) {
     return;
   }
   event.preventDefault();
   form.closest("[popover]")?.hidePopover();
+  if (action === "report") {
+    const off = card.classList.toggle("is-off-report");
+    const label = submitter.querySelector("[data-in-label]");
+    if (label) {
+      label.textContent = off ? label.dataset.outLabel : label.dataset.inLabel;
+    }
+    save({ action: "report", block });
+    return;
+  }
   if (action === "resize") {
     const wide = card.classList.toggle("study-card--wide");
     const label = submitter.querySelector("[data-wide-label]");
@@ -246,15 +255,20 @@ function onMenuSubmit(event) {
   save({ action: "reorder", order: order() });
 }
 
-/** Название и пояснение карточки из меню: сохранить и перестроить карточку. */
+/** Название и пояснение из меню, настройки «Вида»: сохранить и перестроить карточку. */
 function onChangeSubmit(event) {
   const form = event.target.closest("[data-card-change]");
   if (!form || !window.htmx) {
     return;
   }
   event.preventDefault();
-  const values = Object.fromEntries(new FormData(form).entries());
-  delete values.csrfmiddlewaretoken;
+  // Повторённое поле (свои регионы карточки) — списком значений.
+  const values = {};
+  new FormData(form).forEach((value, name) => {
+    if (name !== "csrfmiddlewaretoken") {
+      values[name] = name in values ? [].concat(values[name], value) : value;
+    }
+  });
   form.closest("[popover]")?.hidePopover();
   save(values).then((ok) => {
     const card = document.getElementById(`block-${values.block}`);

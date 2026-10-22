@@ -1,0 +1,45 @@
+{% load i18n formatting %}
+{% comment %}
+  Структура: столбец каждого региона — 100 %, отрезки — доли частей; сверху Россия как сумма
+  регионов. Цвет части — постоянный по порядку. Ниже — те же доли таблицей.
+{% endcomment %}
+<ul class="part-legend" aria-label="{% translate 'Части и их доли в сумме регионов' %}">
+  {% for part in card.parts %}
+    <li class="part-legend__item" data-part="{{ part.colour }}">{{ part.name }} <span class="numeric">{{ part.country }}&nbsp;%</span></li>
+  {% endfor %}
+</ul>
+<p class="answer__meta">
+  <span>{% blocktranslate trimmed with part=card.lead name=card.high.name share=card.high.share %}Доля «{{ part }}» больше всего — {{ name }}, {{ share }}&nbsp;%{% endblocktranslate %}</span>
+  <span>{% blocktranslate trimmed with name=card.low.name share=card.low.share %}меньше всего — {{ name }}, {{ share }}&nbsp;%{% endblocktranslate %}</span>
+  <span>{% blocktranslate trimmed with count=card.count %}регионов: {{ count }}{% endblocktranslate %}</span>
+</p>
+<div class="study-card__scroll" data-scroll>
+  {% with option_id=card.prefix|add:"-structure" %}
+    <rl-chart data-report-image class="chart study-card__chart" style="height: {{ card.chart_height }}px" data-options="{{ option_id }}"
+              data-image-title="{{ card.title }}" data-image-subtitle="{{ card.year|year }}"
+              data-image-source="{{ card.source }}"></rl-chart>
+    {{ card.chart|json_script:option_id }}
+  {% endwith %}
+</div>
+<details class="study-card__details">
+  <summary>{% translate "Доли таблицей" %}</summary>
+  <div class="data-table-wrapper study-card__table" data-scroll>
+    <table class="data-table">
+      <caption class="visually-hidden">{% blocktranslate trimmed with title=card.title %}{{ title }} — доли частей, %{% endblocktranslate %}</caption>
+      <thead>
+        <tr>
+          <th scope="col">{% translate "Субъект" %}</th>
+          {% for part in card.parts %}<th scope="col" class="is-numeric">{{ part.name }}, %</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in card.rows %}
+          <tr>
+            <th scope="row">{{ row.name }}</th>
+            {% for share in row.shares %}<td class="is-numeric numeric">{{ share }}</td>{% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
