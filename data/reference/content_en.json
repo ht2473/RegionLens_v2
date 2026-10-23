@@ -56,11 +56,11 @@
     },
     "own-data": {
       "title": "Your own data",
-      "summary": "The laboratory brings a user’s table to the form “territory × year × indicator” and computes the same on it as on the site’s series.",
-      "formula": "per 100,000 inhabitants: <math display=\"block\"><mfrac><mi>x</mi><mi>P</mi></mfrac><mo>×</mo><mn>100,000</mn></math>",
-      "limitations": "Rows outside the directory are kept in the table but do not reach the map or the ranking.\nWith fewer than twenty regions, inequality and spatial analysis are not computed.\nTables of municipal districts, cities and federal districts are not parsed, and a scanned PDF without a text layer cannot be read.",
-      "body": "Territory labels are matched against the site’s directory, and the site asks about uncertain ones. Per-inhabitant and per-km² series are offered for regional sums. P is the average annual population. The calculation catalogue adds shares, changes over years, comparisons with Russia and the federal district, and regional methods. A recalculation is kept as a separate series marked “RegionLens calculation”. How each calculation works is explained next to it in the calculation panel.",
-      "source": "877a29c3841b4eda4089b855c9734671b1229738"
+      "summary": "Your own table is brought to the form “region × year × indicator”, and the site builds the same on it as on its own indicators.",
+      "formula": "per 100,000 inhabitants: <math display=\"block\"><mfrac><mi>x</mi><mi>P</mi></mfrac><mo>×</mo><mn>100,000</mn></math>\nshare of a part: <math display=\"block\"><msub><mi>s</mi><mi>j</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>x</mi><mi>j</mi></msub></mrow><mrow><munder><mo>∑</mo><mi>k</mi></munder><msub><mi>x</mi><mi>k</mi></msub></mrow></mfrac><mo>×</mo><mn>100</mn><mo>%</mo></math>\ncontribution of a region: <math display=\"block\"><mi>Δ</mi><msub><mi>x</mi><mi>i</mi></msub><mo>=</mo><msub><mi>x</mi><mrow><mi>i</mi><mo>,</mo><mi>t</mi></mrow></msub><mo>−</mo><msub><mi>x</mi><mrow><mi>i</mi><mo>,</mo><mi>s</mi></mrow></msub></math>\ngroup average: <math display=\"block\"><msub><mover><mi>x</mi><mo>¯</mo></mover><mi>G</mi></msub><mo>=</mo><mfrac><mrow><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>P</mi><mi>i</mi></msub><msub><mi>x</mi><mi>i</mi></msub></mrow><mrow><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>P</mi><mi>i</mi></msub></mrow></mfrac></math>\nsymbol radius: <math display=\"block\"><msub><mi>r</mi><mi>i</mi></msub><mo>=</mo><msub><mi>r</mi><mi>max</mi></msub><msqrt><mfrac><mrow><msub><mi>x</mi><mi>i</mi></msub></mrow><mrow><msub><mi>x</mi><mi>max</mi></msub></mrow></mfrac></msqrt></math>",
+      "limitations": "Contributions add up only for sums: for a relative value their total does not equal the change.\nA region without a value in one of the two years is left out of the change breakdown.\nWith fewer than twenty regions, inequality, convergence and neighbourhood of regions are not computed.",
+      "body": "Region labels are matched against the site’s directory, and the site asks about uncertain ones. P is the average annual population of the year. Structure is the shares of parts of one sum, adding up to 100% in a region. A region’s contribution is the difference between its values in the end and start years, and the contributions add up to the change in the total. For a group of regions a sum is added up, while a relative value is averaged with population weights. On a symbol map the circle area is proportional to the value. How each recalculation works is explained next to it in the “New indicator” window.",
+      "source": "896ad744091c923cdd4f273bf212f0cf4eaced58"
     },
     "map-classes": {
       "title": "Scale classes on the map",
@@ -268,10 +268,10 @@
     },
     "quantile": {
       "term": "Quantile",
-      "short_definition": "A value that divides ordered values in a given proportion.",
-      "definition": "Quartiles divide regions into four parts of equal size, deciles into ten. The median divides them in half. On the map there are five quantile classes by default.",
+      "short_definition": "A boundary below which a given share of ordered values lies.",
+      "definition": "Quartiles divide regions into four parts of equal size, deciles into ten. The median divides them in half. On the map there are five quantile classes by default, so each colour holds the same number of regions.",
       "synonyms": "quartile, decile, quintile, quantile",
-      "source": "1d122efa71206652bbfabd7ee6f6066a2609b8b4"
+      "source": "4ba5de66e0b1e0e2c562b6b2cab5e87af52713bb"
     },
     "median": {
       "term": "Median",
@@ -366,10 +366,10 @@
     },
     "series": {
       "term": "Series",
-      "short_definition": "A pair “indicator + breakdown”, the unit of analysis on the site.",
-      "definition": "One indicator is published in several breakdowns: “total”, “urban population”, “rural population”. Values of different breakdowns are not compared with each other. Besides the dataset series, RegionLens builds series from Bank of Russia and Federal Tax Service data.",
-      "synonyms": "time series, indicator breakdown",
-      "source": "8419094e9cd4f563bc0e627ad2194197563ed91e"
+      "short_definition": "Values of one indicator in one breakdown by region and year.",
+      "definition": "An indicator is published in several breakdowns: “total”, “urban population”, “rural population”. Each breakdown is a separate series, and their values are not compared with each other. In your own tables a series is called a part of an indicator.",
+      "synonyms": "time series, indicator breakdown, part of an indicator",
+      "source": "9eb44bf611e61647585ca6a72d6f10f78ea02618"
     },
     "edition": {
       "term": "Issue of a compendium",
@@ -507,9 +507,65 @@
     "map-class": {
       "term": "Scale class",
       "short_definition": "A range of values coloured the same on the map.",
-      "definition": "A region’s colour means the class its value fell into. The class boundaries and the method of division are shown in the legend. The same data look different with quantiles and equal intervals.",
+      "definition": "A region’s colour means the class its value fell into. The title above the legend says how the colours were divided, and the class boundaries are shown in it. The same colour means the same class, not the same value.",
       "synonyms": "choropleth class, scale grade",
-      "source": "752730a4257bda6ed1ff07f45fd027ddeb434feb"
+      "source": "1b115812ff1a069828f69af3c95198815e776db6"
+    },
+    "symbol-map": {
+      "term": "Symbol map",
+      "short_definition": "A map on which a region’s value is shown by the area of a circle.",
+      "definition": "Sums are shown this way: the number of people, roubles, cases. The circle area is proportional to the value, so a large region stands out at once. Relative values suit colour fill.",
+      "synonyms": "circle map, proportional symbols",
+      "source": "c86f860e0a5f7fe909e49c98f55bff59caeb359d"
+    },
+    "structure": {
+      "term": "Structure",
+      "short_definition": "Shares of the parts of one sum, adding up to 100% in each region.",
+      "definition": "Parts are, for example, deposits in roubles and in foreign currency. The share of a part equals its value divided by the sum of the region’s parts. Structure is computed only for sums in one unit.",
+      "synonyms": "composition, shares of parts",
+      "source": "874315ca0f5dc0e62ffd4299b7407911cf3d020a"
+    },
+    "change-contribution": {
+      "term": "Contribution to change",
+      "short_definition": "How much a region or a part added to the change in the total.",
+      "definition": "A contribution equals the difference between the values in the end and start years. The contributions add up to the change in the total. Contributions can be added up only for sums.",
+      "synonyms": "change decomposition, waterfall",
+      "source": "0ec8133ecfb464c03b7af8d33d342c0d575f5e8d"
+    },
+    "weighted-mean": {
+      "term": "Weighted mean",
+      "short_definition": "A mean in which each value has its own weight.",
+      "definition": "For a group of regions the weight is the population. A large region then affects the mean more than a small one. A simple mean would give every region an equal vote.",
+      "synonyms": "weighted average",
+      "source": "c40fb60876550c3bffb9c3035fa4a4eaea53f8ab"
+    },
+    "base-year-index": {
+      "term": "Base-year index",
+      "short_definition": "A year’s value divided by the base-year value and multiplied by 100.",
+      "definition": "The base year equals 100. A value of 120 means growth of 20% from the base year. This is how the course of an indicator is compared across regions with different levels.",
+      "synonyms": "base year = 100, fixed-base index",
+      "source": "ca100247d2cac59466e7852317b47299abfae8bc"
+    },
+    "average-annual-growth": {
+      "term": "Average annual growth rate",
+      "short_definition": "Steady yearly growth that would give the same change over the period.",
+      "definition": "The ratio of the last value to the first is raised to the power 1 / n, then one is subtracted. Here n is the number of years between them. The result is shown as a percentage per year.",
+      "synonyms": "compound annual growth rate, CAGR",
+      "source": "50df87425a43f8274ab601e67f8d1f24e1b0abe1"
+    },
+    "location-quotient": {
+      "term": "Location quotient",
+      "short_definition": "An industry’s share in the region’s total divided by the same share for Russia.",
+      "definition": "Above one, the industry is more present in the region than in the country. Below one, less. The quotient compares the composition of the economy, not its size.",
+      "synonyms": "specialisation coefficient, LQ",
+      "source": "c04dc9146072a778022ab08badd64c4aa63f7928"
+    },
+    "shift-share": {
+      "term": "Shift-share",
+      "short_definition": "A breakdown of the change in a region’s industries over a period into three parts.",
+      "definition": "The first part is growth as in Russia on average. The second is the effect of the region’s industry mix. The third is the regional shift: how much faster or slower the region grew than expected.",
+      "synonyms": "shift-share analysis, structural shift",
+      "source": "4978cd78b3102e1ea3ba599ab95258a075c618ac"
     }
   }
 }
