@@ -268,10 +268,11 @@ def is_currency(name: str, unit: str) -> bool:
     return bool(_CURRENCY_UNIT.search(f"{unit} {name}"))
 
 
-def default_per(name: str, kind: str, unit: str = "") -> tuple[str, ...]:
+def suggested_per(name: str, kind: str, unit: str = "") -> tuple[str, ...]:
     """
-    Пересчёт по умолчанию: у денежной суммы — на жителя, у остальных — на 100 000 жителей;
-    сама численность не пересчитывается.
+    Какой пересчёт предложить сумме: денежной — на жителя, остальным — на 100 000 жителей;
+    сама численность не пересчитывается. Сам по себе пересчёт не строится: таблица
+    собирается в числах человека (сумма на карте — значками), пересчёт — по нажатию.
     """
     if kind != SUM or _POPULATION.search(name or ""):
         return ()
@@ -324,11 +325,7 @@ def indicators_of(version: DatasetVersion) -> list[Indicator]:
                 unit=answer.get("unit", unit),
                 kind=kind,
                 polarity=answer.get("polarity") or DatasetSeries.Polarity.NEUTRAL.value,
-                per=(
-                    tuple(answer["per"])
-                    if "per" in answer
-                    else default_per(name, kind, answer.get("unit", unit))
-                ),
+                per=tuple(answer.get("per") or ()),
                 series=len(items),
                 note=notes.get(name, ""),
                 breaks=tuple(item["year"] for item in answer.get("breaks") or []),
@@ -422,12 +419,8 @@ def save(version: DatasetVersion, answers: Mapping[str, Mapping[str, Any]]) -> N
         described.kind, described.unit, described.title = kind, unit, title
         months = str(answer.get("months") or "")
         described.months = months if months in described.month_methods else ""
-        # Пересчёты без ответа — прежние. У показателя, описанного впервые, нетронутые
-        # предложенные пересчёты следуют за единицей и видом из ответа: «млрд руб.» вместо
-        # пустой единицы — на жителя, а не на 100 000 жителей.
+        # Пересчёты без ответа — прежние; сами по себе они не строятся.
         per = answer.get("per", described.per)
-        if not described.answered and list(per or []) == list(described.per):
-            per = default_per(name, kind, unit)
         cleaned[name] = {
             "title": title,
             "unit": unit,

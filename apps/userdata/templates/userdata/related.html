@@ -46,7 +46,7 @@
         <div class="callout__title">{% translate "Сумма по региону" %}</div>
         <p>
           {% translate "Сумма связана со всем, что растёт вместе с численностью населения: связи повторяют размер регионов." %}
-          {% if per_capita %}<a href="{% url 'userdata:related' dataset.public_id %}?series={{ per_capita.key|urlencode }}">{% translate "Смотреть ряд на жителя" %}</a>{% endif %}
+          {% if per_capita %}<a href="{% url 'userdata:related' dataset.public_id %}?series={{ per_capita.key|urlencode }}">{% translate "Смотреть в пересчёте на жителя" %}</a>{% endif %}
         </p>
       </div>
     </div>

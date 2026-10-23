@@ -551,7 +551,7 @@ class Directory:
         if len(own) == 1:
             return own[0]
         if len(matches) > 1:
-            places = sorted({item.table or _("официальные ряды") for item in matches})
+            places = sorted({item.table or _("показатели сайта") for item in matches})
             raise FormulaError(
                 _(
                     "«%(name)s» подходит к нескольким рядам (%(places)s). Уточните название "

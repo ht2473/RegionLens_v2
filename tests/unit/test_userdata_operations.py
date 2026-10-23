@@ -142,7 +142,7 @@ def test_reason_explains_mismatch() -> None:
     money = Info("k", "Доход", "руб.", is_currency=True, is_rubles=True, regions=85)
     assert operations.reason(operations.BY_CODE["subsistence"], money) == ""
     missing = dict.fromkeys(operations.OFFICIAL_INPUTS, False)
-    assert "официальных" in operations.reason(operations.BY_CODE["subsistence"], money, missing)
+    assert "нет на сайте" in operations.reason(operations.BY_CODE["subsistence"], money, missing)
 
 
 def _warn(expression: str, **items: Info) -> list[str]:

@@ -442,11 +442,41 @@ export function init() {
     settleNew();
   });
   // Заметка добавлена: поле очищается, форма сворачивается.
+  // Окно открывается сразу, его содержимое приходит следом: до ответа — «Загружается…»,
+  // а не прежнее содержимое для другого показателя.
+  document.body.addEventListener("htmx:beforeRequest", (event) => {
+    const target = event.detail.target;
+    if (!target?.dataset?.waiting || !event.detail.elt.closest?.("[data-dialog-open]")) {
+      return;
+    }
+    const waiting = document.createElement("p");
+    waiting.className = "study-card__waiting";
+    waiting.textContent = target.dataset.waiting;
+    target.replaceChildren(waiting);
+  });
+  // Показатель, по которому открыто окно, отмечен и в панели.
+  document.body.addEventListener("click", (event) => {
+    const item = event.target.closest?.('.study-series__item[data-dialog-open="choose-dialog"]');
+    if (!item || item.closest(".study-panel")?.querySelector(".study-pick")) {
+      return;
+    }
+    document.querySelectorAll(".study-series__item.is-chosen").forEach((other) => {
+      other.classList.remove("is-chosen");
+      other.removeAttribute("aria-current");
+    });
+    item.classList.add("is-chosen");
+    item.setAttribute("aria-current", "true");
+  });
   document.body.addEventListener("htmx:afterRequest", (event) => {
     const form = event.target.closest?.(".study-add-note__form");
     if (form && event.detail.successful) {
       form.reset();
       form.closest("details")?.removeAttribute("open");
+    }
+    // Карточка из окна «Что показать» встала на поле — окно закрывается.
+    const choose = event.target.closest?.("[data-choose-form]");
+    if (choose && event.detail.successful) {
+      choose.closest("dialog")?.close();
     }
   });
   markMine();

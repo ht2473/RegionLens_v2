@@ -37,7 +37,7 @@ from . import (
 )
 from .forms import ChooseTableForm, DatasetMetaForm, PasteForm, UploadForm
 from .models import Dataset, DatasetSeries, DatasetVersion
-from .series import FEW_REGIONS, PER_CAPITA
+from .series import FEW_REGIONS
 
 STEPS: tuple[tuple[str, Promise], ...] = (
     ("file", _("Файл")),
@@ -162,13 +162,9 @@ class FileStepView(DatasetStepMixin, TemplateView):
     step = "file"
 
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        # В файле одна таблица и она читается — выбирать нечего: сразу дальше. Вставка
-        # из буфера остаётся на шаге: к ней добавляют продолжение таблицы.
-        if (
-            not self.version.recipe.get("table")
-            and "encoding" not in request.GET
-            and self.version.file_kind != ingest.PASTE
-        ):
+        # В файле одна таблица и она читается — выбирать нечего: сразу дальше. Вставка —
+        # тоже (продолжение таблицы добавляют по ссылке со страницы проверки).
+        if not self.version.recipe.get("table") and "encoding" not in request.GET:
             target = self._single_table(request)
             if target:
                 return redirect(target)
@@ -427,7 +423,11 @@ class SeriesStepView(DatasetStepMixin, TemplateView):
             merge_choices=[(item.name, item.title) for item in items if not item.merge],
             titles={item.name: item.title for item in items},
             report=report,
-            meta_form=kwargs.get("meta_form") or DatasetMetaForm(instance=self.dataset),
+            meta_form=kwargs.get("meta_form")
+            or DatasetMetaForm(
+                instance=self.dataset,
+                initial=services.suggested_title(self.dataset, self.version, items),
+            ),
             kinds=DatasetSeries.Kind.choices,
             polarities=DatasetSeries.Polarity.choices,
             build_error=jobs.stage_error(self.version, jobs.BUILD)
@@ -524,8 +524,11 @@ def first_view_url(version: DatasetVersion) -> str:
 
 
 def first_key(version: DatasetVersion) -> str | None:
-    """Первый ряд собранной таблицы; у суммы — её пересчёт на жителей."""
-    records = list(version.series.order_by("order"))
+    """
+    Первый показатель собранной таблицы в числах человека: у показателя в разбивке — его итог
+    (сумма разбивки), иначе первый ряд со значениями; пересчёт на жителей — не первым.
+    """
+    records = [record for record in version.series.order_by("order") if record.values_count]
     if not records:
         return None
     first = records[0]
@@ -533,11 +536,10 @@ def first_key(version: DatasetVersion) -> str | None:
         (
             record
             for record in records
-            if record.base_code == first.code
-            and record.derived in PER_CAPITA
-            and record.values_count
+            if record.indicator == first.indicator
+            and record.derived == DatasetSeries.Derived.SLICE_SUM
         ),
-        first,
+        next((record for record in records if not record.derived), first),
     )
     return f"u:{version.dataset.code}:{preferred.code}"
 

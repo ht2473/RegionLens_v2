@@ -29,6 +29,11 @@ urlpatterns = [
     path("own-data/studies/<uuid:public_id>/", study_views.StudyView.as_view(), name="study"),
     path("own-data/studies/<uuid:public_id>/calc/", calc_views.CalcView.as_view(), name="calc"),
     path(
+        "own-data/studies/<uuid:public_id>/choose/",
+        study_views.StudyChooseView.as_view(),
+        name="study-choose",
+    ),
+    path(
         "own-data/studies/<uuid:public_id>/structure/",
         study_views.StructureView.as_view(),
         name="structure",

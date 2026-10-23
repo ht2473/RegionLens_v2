@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% load i18n static formatting userdata %}
 
-{# Шаг «Проверка»: сводка прочитанного, вопросы о неуверенном, показатели, как прочитаны столбцы; сборка. #}
+{% comment %}
+  Шаг «Проверка»: что найдено — крупно, вопросы — только о том, чего не понять из таблицы,
+  показатели; название и источник таблицы — свёрнуто (необязательно); сборка.
+{% endcomment %}
 
 {% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
@@ -17,8 +20,8 @@
     <h1 class="page-head__title">{% translate "Проверка таблицы" %}</h1>
     <p class="page-head__lead">
       {% blocktranslate trimmed %}
-        Так сайт прочитал таблицу. Названия, единицы и вид величины показателей можно
-        поправить здесь же. Описание действует на все ряды показателя.
+        Проверьте, что сайт нашёл в таблице, и откройте результат. Название, единицу и вид
+        показателя можно поправить в «Изменить».
       {% endblocktranslate %}
     </p>
   </header>
@@ -36,17 +39,16 @@
     <li class="review-summary__tile">
       <p class="review-summary__label">{% translate "Регионы" %}</p>
       <p class="review-summary__value numeric">{% blocktranslate trimmed with count=summary.regions total=summary.regions_total %}{{ count }} из {{ total }}{% endblocktranslate %}</p>
-      <p class="review-summary__note">{% translate "наибольшее число у одного ряда" %}</p>
     </li>
     <li class="review-summary__tile">
       <p class="review-summary__label">{% translate "Годы" %}</p>
       <p class="review-summary__value numeric">{% if summary.first_year %}{{ summary.first_year|year }}{% if summary.last_year != summary.first_year %}–{{ summary.last_year|year }}{% endif %}{% else %}—{% endif %}</p>
-      <p class="review-summary__note">{% blocktranslate trimmed with count=report.values|ru_number:0 %}значений: {{ count }}{% endblocktranslate %}</p>
+      <p class="review-summary__note">{% blocktranslate trimmed with count=report.values|ru_number:0 %}чисел: {{ count }}{% endblocktranslate %}</p>
     </li>
     <li class="review-summary__tile">
       <p class="review-summary__label">{% translate "Показатели" %}</p>
       <p class="review-summary__value numeric">{{ summary.indicators }}</p>
-      <p class="review-summary__note">{% blocktranslate trimmed with count=summary.series with_unit=summary.with_unit %}рядов: {{ count }} · с единицей: {{ with_unit }}{% endblocktranslate %}</p>
+      {% if summary.with_unit < summary.series %}<p class="review-summary__note">{% translate "единица указана не у всех" %}</p>{% endif %}
     </li>
     {% if summary.form %}
       <li class="review-summary__tile review-summary__tile--text">
@@ -69,7 +71,7 @@
   {% if few_regions %}
     <div class="callout callout--info">
       <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
-      <div>{% translate "Субъектов меньше 20: неравенство и пространственный анализ по таблице не считаются. Карта, таблица и динамика работают." %}</div>
+      <div>{% translate "Регионов меньше 20. Карта, рейтинг и изменения по годам будут, а разрыв между регионами и сходство соседей — от 20 регионов." %}</div>
     </div>
   {% endif %}
 
@@ -83,9 +85,8 @@
         <p>
           {% blocktranslate trimmed %}
             Эти числа из одинаковых цифр в десять и более раз больше почти всех остальных
-            значений своих показателей. Так наборы «Если быть точным» и другие обозначают
-            пропуски и значения без точного числа — смысл кодов написан в описании набора.
-            Отмеченные считаются пропусками и на карту не попадают.
+            значений своих показателей. Так в таблицах обозначают пропуски и значения без
+            точного числа. Отмеченные считаются пропусками и на карту не попадают.
           {% endblocktranslate %}
         </p>
         <ul class="own-masks__list">
@@ -139,7 +140,7 @@
     <div class="callout callout--info">
       <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
       <div>
-        {% translate "В таблице есть область вместе с автономными округами. Для сумм область без округов вычислена (пометка «расчёт RegionLens»); для долей и средних её не вычислить — на карте она остаётся пустой:" %}
+        {% translate "В таблице есть область вместе с автономными округами. Для сумм область без округов вычислена, у таких значений пометка «вычислено». Для долей и средних её не вычислить, на карте она остаётся пустой:" %}
         {% for code in alone_missing %}{{ code|territory_name }}{% if not forloop.last %}, {% endif %}{% endfor %}.
       </div>
     </div>
@@ -160,22 +161,13 @@
       </div>
     {% endif %}
 
-    <fieldset class="question-card">
-      <legend class="question-card__title">{% translate "Таблица" %}</legend>
-      <div class="series-form__meta">
-        {% for field in meta_form %}
-          {% include "partials/_field.html" with field=field %}
-        {% endfor %}
-      </div>
-    </fieldset>
-
     {% if asking %}
       <section class="question-card question-card--ask" aria-labelledby="asking-title">
         <h2 class="question-card__title" id="asking-title">
           {% blocktranslate trimmed with count=asking|length %}Показателей с вопросами: {{ count }}{% endblocktranslate %}
         </h2>
         <p class="series-form__hint">
-          {% translate "Это не понять из таблицы. Ответ подсказан; проверьте его. Остальное — в «Изменить»." %}
+          {% translate "Этого не понять из таблицы. Ответ подсказан, проверьте его." %}
         </p>
         <ol class="indicator-list">
           {% for item in asking %}{% include "userdata/_indicator.html" %}{% endfor %}
@@ -197,6 +189,16 @@
         </ol>
       </section>
     {% endif %}
+
+    {# Название и источник — необязательно: подставлены из файла; раскрыто, если в них ошибка. #}
+    <details class="question-card review-meta"{% if meta_form.errors %} open{% endif %}>
+      <summary class="review-meta__summary">{% translate "Название таблицы и источник" %} <span class="review-meta__optional">{% translate "необязательно" %}</span></summary>
+      <div class="series-form__meta">
+        {% for field in meta_form %}
+          {% include "partials/_field.html" with field=field %}
+        {% endfor %}
+      </div>
+    </details>
 
     {% if roles %}
       <details class="review-roles">
@@ -222,12 +224,17 @@
       {% endif %}
       <a class="button button--ghost" href="{% url 'userdata:table' dataset.public_id %}">{% translate "Изменить разметку" %}</a>
     </div>
+    {% if version.file_kind == "paste" and not built %}
+      <p class="wizard-actions__note">
+        <a href="{% url 'userdata:file' dataset.public_id %}#paste-append-title">{% translate "Вставили не всю таблицу? Добавить строки" %}</a>
+      </p>
+    {% endif %}
     {% if not built %}
       <p class="wizard-actions__note">
         {% if destination %}
           {% blocktranslate trimmed with study=destination.title %}Карта собранной таблицы добавится в исследование «{{ study }}».{% endblocktranslate %}
         {% else %}
-          {% translate "Откроется новое исследование: карта, рейтинг, изменение по годам и связь с официальными показателями." %}
+          {% translate "Откроется исследование: карта, главное в цифрах, рейтинг и изменения по годам." %}
         {% endif %}
       </p>
     {% endif %}

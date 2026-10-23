@@ -173,7 +173,7 @@ class TestWizard:
         assert 'name="recalc-1" value="russia"' not in page.text
 
     def test_recounts_kept_unless_unchecked(self, client: Client, warehouse: Any) -> None:
-        dataset = _built(client, "crime_wide.csv", kind=indicators.SUM)
+        dataset = _built(client, "crime_wide.csv", kind=indicators.SUM, per=indicators.DEFAULT_PER)
         version = version_of(dataset)
         assert indicators.indicators_of(version)[0].per == indicators.DEFAULT_PER
         # Форма без перечня пересчётов (старая или без поля) их не трогает.

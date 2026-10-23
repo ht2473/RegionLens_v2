@@ -201,7 +201,7 @@ class CalcView(TemplateView):
             }
             items = [{"key": key, "title": title, "search": title} for key, title in titles.items()]
             if items:
-                groups.append({"title": gettext("Официальные ряды на поле"), "items": items})
+                groups.append({"title": gettext("Показатели сайта на поле"), "items": items})
         return groups
 
     def tables(self) -> list[Dataset]:

@@ -92,6 +92,25 @@ class TestOwner:
             media = [name for name in archive.namelist() if name.startswith("word/media/")]
         assert media == ["word/media/image1.png"]
 
+    def test_map_without_picture_becomes_a_table(
+        self, member_client: Client, warehouse: Any
+    ) -> None:
+        """Без картинки со страницы карта не пропадает: её регионы и числа — таблицей."""
+        study = _study(member_client)
+        block = studies.blocks_of(study)[0]
+        without = _word(member_client.get(_url(study), {"format": "docx"}))
+        pictured = _word(
+            member_client.post(
+                _url(study),
+                {
+                    "format": "docx",
+                    f"image-{block['id']}-0": SimpleUploadedFile("map.png", png(40, 20)),
+                },
+            )
+        )
+        assert without.count("<w:tbl>") == pictured.count("<w:tbl>") + 1
+        assert "Регион" in without
+
     def test_excel_has_a_sheet_per_card_with_data(
         self, member_client: Client, warehouse: Any
     ) -> None:
@@ -127,7 +146,8 @@ class TestOwner:
         assert page.text.count("is-off-report") == 2
         assert "Включить в отчёт" in page.text
         body = _word(member_client.get(_url(study), {"format": "docx"}))
-        assert "Вывод: в столицах хуже." not in body and "<w:tbl>" not in body
+        # Таблица одна — числа карты без картинки; рейтинга нет.
+        assert "Вывод: в столицах хуже." not in body and body.count("<w:tbl>") == 1
         book = load_workbook(io.BytesIO(member_client.get(_url(study), {"format": "xlsx"}).content))
         assert book.sheetnames == ["Отчёт", "1. Карта"]
         # Повторная отметка возвращает карточку в отчёт.

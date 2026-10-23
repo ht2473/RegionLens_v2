@@ -174,14 +174,69 @@ class StudyView(BreadcrumbMixin, TemplateView):
         if self.owner:
             if study.owner_id is not None:
                 context.update(share_context(request, study))
-            context["panel"] = lab.panel(
+            panel = lab.panel(
                 request,
                 study,
                 request.GET.get("series", ""),
                 request.GET.get("with", ""),
                 picking=request.GET.get("pick") == "1",
             )
+            context["panel"] = panel
+            context["default_series"] = _default_series(panel, blocks)
+            # Окно «Что показать» открыто сразу, если показатель выбран адресом (без сценария
+            # или по ссылке), но не после добавления карточки и не при выборе второго.
+            context["choose_open"] = bool(
+                panel["chosen"] and not panel["picking"] and not request.GET.get("added")
+            )
+        context["sources"] = _sources(blocks)
         return context
+
+
+def _default_series(panel: dict[str, Any], blocks: list[dict[str, Any]]) -> str:
+    """Показатель для «+ Карточка»: выбранный, иначе первый на поле, иначе первый в панели."""
+    if panel["chosen"] is not None:
+        return str(panel["chosen"].key)
+    for block in blocks:
+        keys = studies.series_keys(block)
+        if keys:
+            return keys[0]
+    for source in panel["tables"]:
+        for indicator in source.indicators:
+            for entry in indicator.entries:
+                return str(entry.key)
+    return ""
+
+
+def _sources(blocks: list[dict[str, Any]]) -> list[str]:
+    """
+    Источники данных исследования одним перечнем внизу поля, а не под каждой карточкой:
+    у своей таблицы — её название и названный при загрузке источник, у ряда сайта — издатель.
+    """
+    from apps.core.citation import series_publisher
+    from apps.warehouse import routing
+
+    from .series import user_series_many
+
+    keys = list(dict.fromkeys(key for block in blocks for key in studies.series_keys(block)))
+    own = user_series_many([key for key in keys if routing.is_user_key(key)])
+    found: list[str] = []
+    for key in keys:
+        if routing.is_user_key(key):
+            series = own.get(key)
+            if series is None:
+                continue
+            dataset = series.dataset
+            line = (
+                gettext("«%(table)s» — %(source)s")
+                % {"table": dataset.title, "source": dataset.source_title}
+                if dataset.source_title
+                else gettext("«%(table)s» — ваша таблица") % {"table": dataset.title}
+            )
+        else:
+            line = series_publisher(key)
+        if line and line not in found:
+            found.append(line)
+    return found
 
 
 def _follows_common(block: dict[str, Any]) -> bool:
@@ -585,3 +640,28 @@ class StructureView(TemplateView):
         candidates, chosen = lab.structure_choice(self.request, study, key)
         context.update(study=study, series=key, candidates=candidates, chosen=chosen)
         return context
+
+
+class StudyChooseView(View):
+    """
+    Окно «Что показать» по показателю своего исследования — фрагментом для окна на странице;
+    без сценария — та же страница исследования с открытым окном.
+    """
+
+    def get(self, request: HttpRequest, public_id: str) -> HttpResponse:
+        study = studies.owned(request).filter(public_id=public_id).first()
+        if study is None:
+            raise Http404
+        series = request.GET.get("series", "")
+        other = request.GET.get("with", "")
+        if not request.headers.get("HX-Request"):
+            query = urlencode(
+                {key: value for key, value in (("series", series), ("with", other)) if value}
+            )
+            return redirect(f"{reverse('userdata:study', args=[study.public_id])}?{query}")
+        panel = lab.panel(request, study, series, other)
+        if panel["chosen"] is None:
+            raise Http404
+        response = render(request, "userdata/_study_choose.html", {"study": study, "panel": panel})
+        response["Cache-Control"] = "private, no-store"
+        return response

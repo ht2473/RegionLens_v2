@@ -28,10 +28,12 @@ from .models import Dataset, DatasetVersion, RegionGroup, Study
 
 logger = logging.getLogger(__name__)
 
-# Пример: набор «Если быть точным» «Состояние окружающей среды в регионах России с 2014 года».
-EXAMPLE_PATH = Path(settings.REFERENCE_DIR) / "userdata_example.zip"
-EXAMPLE_NAME = "data_environment_113_v20230123_csv.zip"
-EXAMPLE_URL = "https://tochno.st/datasets/environment"
+# Пример — вклады населения по регионам на 1 января 2020–2026 годов, в рублях и в валюте:
+# выборка из открытой таблицы Банка России «Вклады (депозиты) физических лиц»
+# (02_06_Dep_ind.xlsx, скачана 10.10.2026; только субъекты, области без автономных округов).
+EXAMPLE_PATH = Path(settings.REFERENCE_DIR) / "userdata_example.csv"
+EXAMPLE_NAME = "Вклады населения по регионам.csv"
+EXAMPLE_URL = "https://www.cbr.ru/vfs/statistics/BankSector/Borrowings/02_06_Dep_ind.xlsx"
 
 SOURCE_STEM = "source"
 TABLE_STEM = "table"
@@ -347,10 +349,24 @@ def used_bytes(user: Any) -> int:
     return int(total or 0)
 
 
+def example_of(request: HttpRequest) -> Dataset | None:
+    """Уже собранный пример того, кто спрашивает: повторное нажатие не делает копию."""
+    return (
+        access.owned(request)
+        .filter(
+            versions__file_name=EXAMPLE_NAME,
+            current_version__state=DatasetVersion.State.BUILT,
+        )
+        .select_related("current_version")
+        .order_by("-created_at")
+        .first()
+    )
+
+
 def create_example(request: HttpRequest) -> Dataset:
     """
-    Таблица-пример: набор «Если быть точным» об окружающей среде (CC BY 4.0) как скачан —
-    архивом; разбор и сборка — без вопросов, по распознаванию.
+    Таблица-пример: вклады населения по регионам (Банк России) — разбор и сборка без
+    вопросов, по распознаванию.
     """
     from . import describe, jobs
 
@@ -358,12 +374,12 @@ def create_example(request: HttpRequest) -> Dataset:
         uploaded = File(handle, name=EXAMPLE_NAME)
         uploaded.size = EXAMPLE_PATH.stat().st_size
         dataset = create_from_upload(request, uploaded)  # type: ignore[arg-type]
-    dataset.title = _("Состояние окружающей среды в регионах России")
-    dataset.source_title = _("«Если быть точным», обработка данных Росгидромета и Росстата")
+    dataset.title = _("Вклады населения по регионам")
+    dataset.source_title = _("Банк России")
     dataset.source_url = EXAMPLE_URL
     dataset.description = _(
-        "Пример таблицы: набор «Если быть точным» в архиве, как он скачивается с сайта "
-        "набора. Условия использования — Creative Commons BY 4.0."
+        "Пример: вклады физических лиц в банках на 1 января 2020–2026 годов, в рублях "
+        "и в иностранной валюте."
     )
     dataset.save(update_fields=["title", "source_title", "source_url", "description"])
     version = dataset.current_version
@@ -455,6 +471,18 @@ def update_size(dataset: Dataset) -> None:
     total = sum(path.stat().st_size for path in dataset.directory.rglob("*") if path.is_file())
     Dataset.objects.filter(pk=dataset.pk).update(size_bytes=total)
     dataset.size_bytes = total
+
+
+def suggested_title(dataset: Dataset, version: DatasetVersion, items: list[Any]) -> dict[str, str]:
+    """
+    Название таблицы вместо подставленного из имени файла («R 16», «Вставленная таблица»):
+    у таблицы с одним показателем — его название. Пустой словарь — название уже своё.
+    """
+    placeholders = {_title(version.file_name), str(_("Вставленная таблица"))}
+    if dataset.title not in placeholders or len(items) != 1:
+        return {}
+    title = str(items[0].title or "").strip()
+    return {"title": title[:200]} if title and title not in placeholders else {}
 
 
 def _title(file_name: str) -> str:

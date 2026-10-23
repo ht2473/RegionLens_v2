@@ -323,6 +323,11 @@ def shift_of(mode: str, value: float, before: float) -> float:
     return value - before
 
 
+def coefficient(value: float | None) -> str:
+    """Коэффициент связи: два знака и настоящий минус — «−0,45», а не дефис."""
+    return ru_number(value, 2).replace("-", "−")
+
+
 def signed(mode: str, amount: float, precision: int) -> str:
     """Изменение словами со знаком: «+3,4 %», «−0,8 п. п.», «+150»."""
     digits = 1 if mode == PERCENT else max(precision, 1) if mode == POINTS else precision
@@ -867,7 +872,8 @@ def notable(asked: Asked) -> dict[str, Any]:
     """
     Что заметно в ряду, числами и без оценок: наибольшее и наименьшее значение года и их
     отношение (у положительных), в скольких регионах значение выросло с первого года ряда,
-    у скольких значения за год нет.
+    у скольких значения за год нет — из регионов, что есть в ряду хоть за один год: таблица
+    по двадцати регионам не «теряет» остальные шестьдесят пять.
     """
     from apps.analytics.selectors import region_rows
     from apps.warehouse.queries import region_panel
@@ -887,6 +893,7 @@ def notable(asked: Asked) -> dict[str, Any]:
         return {"code": code, "name": names[code], "value": ru_number(values[code], precision)}
 
     ratio = values[high] / values[low] if values[low] > 0 and high != low else None
+    covered = {code for row in panel.values() for code in row if code in names}
     growth = None
     earlier = [year for year in panel if year < state.year]
     if earlier:
@@ -904,7 +911,7 @@ def notable(asked: Asked) -> dict[str, Any]:
         "low": point(low),
         "ratio": ru_number(ratio, 1 if ratio < 10 else 0) if ratio else "",  # noqa: PLR2004
         "growth": growth,
-        "missing": len(names) - len(values),
+        "missing": len(covered - set(values)),
         "open_url": _url("rankings:index", series=state.series.key, year=state.year),
     }
 
@@ -1153,7 +1160,7 @@ def related(asked: Asked) -> dict[str, Any]:
         "links": [
             {
                 "title": link.item.short_title,
-                "coefficient": ru_number(link.result.coefficient, 2),
+                "coefficient": coefficient(link.result.coefficient),
                 "strength": link.result.strength,
                 "direct": (link.result.coefficient or 0) > 0,
                 "url": link.url,
@@ -1188,7 +1195,7 @@ def relation(asked: Asked, other: SurfaceState, partner: Any) -> dict[str, Any]:
     option = scatter_fit_option(points, x_name=subject.title, y_name=partner.title)
     return {
         "year": year,
-        "coefficient": ru_number(result.coefficient, 2),
+        "coefficient": coefficient(result.coefficient),
         "strength": result.strength,
         "direct": result.coefficient > 0,
         "significant": result.is_significant,
@@ -1339,7 +1346,7 @@ def _ranks(keys: list[str], wanted: int | None) -> dict[str, Any]:
     apart = sorted(codes, key=lambda code: -abs(rank_first[code] - rank_second[code]))
     return {
         "year": year,
-        "coefficient": ru_number(result.coefficient, 2),
+        "coefficient": coefficient(result.coefficient),
         "strength": result.strength,
         "direct": result.coefficient > 0,
         "significant": result.is_significant,

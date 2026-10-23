@@ -154,7 +154,7 @@ def _analysis(page: Page, base: str) -> list[str]:
     audit()
     expect(page.locator("h1")).to_be_visible()
     page.goto(table_url)
-    key = page.locator(".dataset-view").first.get_attribute("href") or ""
+    key = page.locator("#dataset-views a").first.get_attribute("href") or ""
     page.goto(f"{base}/ru/analytics/inequality/?{key.split('?', 1)[1]}")
     audit()
     expect(page.locator(".tool-subject__title")).to_contain_text(TITLE)

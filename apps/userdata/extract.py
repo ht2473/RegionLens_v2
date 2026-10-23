@@ -195,7 +195,7 @@ def extract(version: DatasetVersion) -> dict[str, Any]:
         )
     if result.series > recognize.MAX_SERIES:
         raise ExtractError(
-            _("Получается %(count)s рядов — больше %(limit)s. Выберите значения разрезов.")
+            _("Получается показателей: %(count)s, больше %(limit)s. Выберите значения разрезов.")
             % {"count": result.series, "limit": recognize.MAX_SERIES}
         )
     if result.form == recognize.INDICATORS and result.needs_year:
@@ -210,7 +210,7 @@ def extract(version: DatasetVersion) -> dict[str, Any]:
         raise ExtractError(_("В таблице не нашлось ни одного значения по территориям."))
     if len(collector.infos) > recognize.MAX_SERIES:
         raise ExtractError(
-            _("Получается %(count)s рядов — больше %(limit)s. Выберите значения разрезов.")
+            _("Получается показателей: %(count)s, больше %(limit)s. Выберите значения разрезов.")
             % {"count": len(collector.infos), "limit": recognize.MAX_SERIES}
         )
     _write(collector, version.directory / EXTRACT_FILE)

@@ -1,0 +1,27 @@
+{% load i18n glossary %}
+{% comment %}
+  Пункт окна «Что показать»: кнопка карточки (value), окно на странице (dialog), выбор
+  второго показателя в панели (адрес «?…») или переход. Ссылки внутри формы окна задают свою
+  выборку ответа: иначе унаследовали бы выборку новой карточки (hx-select и hx-select-oob формы).
+  Термин пункта — знаком «?» справа: определение из глоссария и ссылки в глоссарий и методику.
+{% endcomment %}
+<li class="choose-item-row{% if action.term %} choose-item-row--term{% endif %}">
+  {% if action.value %}
+    <button class="choose-item{% if large %} choose-item--large{% endif %}" type="submit" name="do" value="{{ action.value }}">
+  {% elif action.dialog %}
+    <a class="choose-item{% if large %} choose-item--large{% endif %}" href="{{ action.href }}" data-dialog-open="{{ action.dialog }}"
+       hx-get="{{ action.href }}" hx-target="#{{ action.dialog }}-body" hx-select="unset" hx-select-oob="unset" hx-swap="innerHTML" hx-push-url="false">
+  {% elif action.href|slice:":1" == "?" %}
+    <a class="choose-item{% if large %} choose-item--large{% endif %}" href="{{ action.href }}" data-dialog-close
+       hx-get="{{ action.href }}" hx-target="#study-sources" hx-select="#study-sources" hx-select-oob="unset" hx-swap="outerHTML" hx-push-url="true">
+  {% else %}
+    <a class="choose-item{% if large %} choose-item--large{% endif %}" href="{{ action.href }}">
+  {% endif %}
+      {% if action.icon %}<svg class="choose-item__icon" aria-hidden="true"><use href="#icon-{{ action.icon }}"></use></svg>{% endif %}
+      <span class="choose-item__text">
+        <span class="choose-item__title">{{ action.title }}</span>
+        {% if action.description %}<span class="choose-item__note">{{ action.description }}</span>{% endif %}
+      </span>
+  {% if action.value %}</button>{% else %}</a>{% endif %}
+  {% if action.term %}<span class="choose-item-row__term">{% term action.term "?" %}</span>{% endif %}
+</li>

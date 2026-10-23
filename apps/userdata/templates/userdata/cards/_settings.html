@@ -1,14 +1,14 @@
 {% load i18n formatting %}
 {% comment %}
-  «Вид» карточки — её настройки в одном месте: вид холста, год, отмеченные регионы, знаки,
+  «Настроить» карточку — её настройки в одном месте: как показать, год, отмеченные регионы, знаки,
   шкала и подписи карты, раскраска таблицы, шкала малых графиков; показано то, что уместно
   виду карточки. Форма правки (data-card-change): сохраняется и перестраивает карточку,
   без сценария — переход обратно на страницу.
 {% endcomment %}
 {% with settings=card.settings block_id=card.block.id %}
 <button type="button" class="button button--sm button--ghost card-settings__toggle no-print"
-        popovertarget="card-settings-{{ block_id }}" aria-haspopup="dialog">
-  <svg aria-hidden="true"><use href="#icon-sliders"></use></svg>{% translate "Вид" %}
+        popovertarget="card-settings-{{ block_id }}" aria-haspopup="dialog" title="{% translate 'Настроить карточку' %}">
+  <svg aria-hidden="true"><use href="#icon-sliders"></use></svg><span class="card-settings__label">{% translate "Настроить" %}</span>
 </button>
 <div class="menu-popover card-settings no-print" id="card-settings-{{ block_id }}" popover role="dialog"
      aria-label="{% translate 'Настройки карточки' %}">
@@ -20,7 +20,7 @@
 
     {% if settings.views %}
       <div class="field">
-        <label class="field__label" for="settings-view-{{ block_id }}">{% translate "Вид" %}</label>
+        <label class="field__label" for="settings-view-{{ block_id }}">{% translate "Показать как" %}</label>
         <select class="select" id="settings-view-{{ block_id }}" name="target">
           {% for code, title in settings.views %}
             <option value="{{ code }}"{% if code == card.target %} selected{% endif %}>{{ title }}</option>

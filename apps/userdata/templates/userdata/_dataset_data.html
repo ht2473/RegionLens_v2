@@ -1,8 +1,8 @@
 {% load i18n formatting userdata %}
 {% comment %}
-  Показатели в «Обзоре» таблицы: слева показатели (и по формулам), справа выбранный — ряды
-  по разрезам и периодам, «Открыть в исследовании» и переходы на карту и другие виды сайта.
-  Смотрят данные в исследовании: карты здесь нет. Ряды без значений не выбираются.
+  Показатели в «Обзоре» таблицы: слева показатели (и по формулам), справа выбранный — его части
+  по разрезам и периодам, «Открыть в исследовании» и меню видов сайта. Смотрят данные
+  в исследовании: карты здесь нет. Части без значений не выбираются.
   На телефоне — список или выбранное (is-picked), с возвратом к списку.
 {% endcomment %}
 <div class="dataset-browser{% if picked %} is-picked{% endif %}" id="dataset-browser" data-dataset-browser>
@@ -25,7 +25,7 @@
              {% if group == chosen_group %}aria-current="true"{% endif %}>
             <span class="dataset-list__title"{% with lang=group.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ group.title }}</span>
             <span class="dataset-list__meta">
-              {% if group.unit %}<span{% with lang=group.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ group.unit }}</span>{% endif %}{% if group.items|length > 1 %}{% if group.unit %} · {% endif %}{% blocktranslate trimmed with count=group.items|length %}рядов: {{ count }}{% endblocktranslate %}{% endif %}
+              {% if group.unit %}<span{% with lang=group.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ group.unit }}</span>{% endif %}{% if group.items|length > 1 %}{% if group.unit %} · {% endif %}{% blocktranslate trimmed with count=group.items|length %}частей: {{ count }}{% endblocktranslate %}{% endif %}
             </span>
           </a>
         </li>
@@ -90,7 +90,7 @@
         {% endif %}
       </header>
       {% if chosen_group.items|length > 1 %}
-        <ul class="dataset-series" aria-label="{% translate 'Ряды показателя' %}">
+        <ul class="dataset-series" aria-label="{% translate 'Части показателя' %}">
           {% for item in chosen_group.items %}
             <li>
               {% if item.has_values %}
@@ -103,7 +103,7 @@
                 <span class="dataset-series__name"{% with lang=item.detail|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{% if item.detail %}{{ item.detail }}{% else %}{% translate "как в таблице" %}{% endif %}</span>
                 <span class="dataset-series__meta">
                   {% if item.has_values %}
-                    {% blocktranslate trimmed with count=item.record.regions_count %}субъектов: {{ count }}{% endblocktranslate %}{% if item.record.first_year %} · <span class="numeric">{{ item.record.first_year|year }}{% if item.record.last_year != item.record.first_year %}–{{ item.record.last_year|year }}{% endif %}</span>{% endif %}
+                    {% blocktranslate trimmed with count=item.record.regions_count %}регионов: {{ count }}{% endblocktranslate %}{% if item.record.first_year %} · <span class="numeric">{{ item.record.first_year|year }}{% if item.record.last_year != item.record.first_year %}–{{ item.record.last_year|year }}{% endif %}</span>{% endif %}
                   {% else %}
                     {% translate "нет значений" %}
                   {% endif %}
@@ -117,9 +117,9 @@
 
     {% if chosen_series %}
       <p class="dataset-detail__facts">
-        {% blocktranslate trimmed with count=chosen_series.record.regions_count %}субъектов: {{ count }}{% endblocktranslate %}
+        {% blocktranslate trimmed with count=chosen_series.record.regions_count %}регионов: {{ count }}{% endblocktranslate %}
         {% if chosen_series.record.first_year %}· <span class="numeric">{{ chosen_series.record.first_year|year }}{% if chosen_series.record.last_year != chosen_series.record.first_year %}–{{ chosen_series.record.last_year|year }}{% endif %}</span>{% endif %}
-        · {% blocktranslate trimmed with count=chosen_series.record.values_count|ru_number:0 %}значений: {{ count }}{% endblocktranslate %}
+        · {% blocktranslate trimmed with count=chosen_series.record.values_count|ru_number:0 %}чисел: {{ count }}{% endblocktranslate %}
       </p>
       <div class="dataset-detail__actions">
         {% if owner %}
@@ -132,25 +132,29 @@
             </button>
           </form>
         {% endif %}
-        <nav class="dataset-views" aria-label="{% translate 'Открыть ряд' %}">
+        {# Виды сайта — одним меню: в строку они спорили с главной кнопкой. #}
+        <button type="button" class="button button--secondary" popovertarget="dataset-views" aria-haspopup="dialog">
+          {% translate "Посмотреть на сайте" %}<svg aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
+        </button>
+        <nav class="menu-popover dataset-menu" id="dataset-views" popover aria-label="{% translate 'Посмотреть на сайте' %}">
           {% for view in chosen_views %}
-            <a class="dataset-view" href="{{ view.url }}"><svg aria-hidden="true"><use href="#icon-{% if view.code == 'compare' %}dynamics{% elif view.code == 'rankings' %}ranking{% else %}{{ view.code }}{% endif %}"></use></svg>{{ view.title }}</a>
+            <a class="menu-item" href="{{ view.url }}"><svg aria-hidden="true"><use href="#icon-{% if view.code == 'compare' %}dynamics{% elif view.code == 'rankings' %}ranking{% else %}{{ view.code }}{% endif %}"></use></svg>{{ view.title }}</a>
           {% endfor %}
           {% if chosen_related_url %}
-            <a class="dataset-view" href="{{ chosen_related_url }}"><svg aria-hidden="true"><use href="#icon-correlation"></use></svg>{% translate "С чем связан" %}</a>
+            <a class="menu-item" href="{{ chosen_related_url }}"><svg aria-hidden="true"><use href="#icon-related"></use></svg>{% translate "С чем связан" %}</a>
           {% endif %}
           {% if chosen_group.months_url %}
-            <a class="dataset-view" href="{{ chosen_group.months_url }}"><svg aria-hidden="true"><use href="#icon-dynamics"></use></svg>{% translate "По месяцам" %}</a>
-          {% endif %}
-          {% if chosen_formula and owner %}
-            <a class="dataset-view" href="{{ chosen_formula.edit_url }}"><svg aria-hidden="true"><use href="#icon-edit"></use></svg>{% translate "Изменить формулу" %}</a>
+            <a class="menu-item" href="{{ chosen_group.months_url }}"><svg aria-hidden="true"><use href="#icon-trend"></use></svg>{% translate "По месяцам" %}</a>
           {% endif %}
         </nav>
+        {% if chosen_formula and owner %}
+          <a class="button button--ghost" href="{{ chosen_formula.edit_url }}"><svg aria-hidden="true"><use href="#icon-edit"></use></svg>{% translate "Изменить формулу" %}</a>
+        {% endif %}
       </div>
     {% elif chosen_formula and owner %}
       <p><a class="button button--secondary button--sm" href="{{ chosen_formula.edit_url }}">{% translate "Изменить формулу" %}</a></p>
     {% elif chosen_group %}
-      <p class="study-card__empty">{% translate "У этого ряда нет значений: в таблице одни пропуски." %}</p>
+      <p class="study-card__empty">{% translate "У этого показателя нет значений: в таблице одни пропуски." %}</p>
     {% else %}
       <p class="study-card__empty">{% translate "Показателей со значениями в таблице нет." %}</p>
     {% endif %}

@@ -790,6 +790,7 @@ legend.question-card__title ~ * {
   grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr);
   gap: var(--space-6);
   align-items: start;
+  margin-bottom: var(--space-12);
 }
 
 .dataset-list {
@@ -960,26 +961,6 @@ a.dataset-series__item:hover {
 
 .dataset-detail__actions form {
   margin: 0;
-}
-
-.dataset-views {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-4);
-}
-
-.dataset-view {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  min-height: 24px;
-  font-size: var(--text-sm);
-}
-
-.dataset-view svg {
-  flex-shrink: 0;
-  width: 16px;
-  height: 16px;
 }
 
 /* Телефон: список или выбранное — с возвратом к списку. */
@@ -1169,15 +1150,12 @@ a.dataset-series__item:hover {
   font-size: var(--text-sm);
   text-align: left;
   overflow-wrap: anywhere;
-  cursor: grab;
+  /* По плашке щёлкают — показатель встаёт в формулу; перетаскивание — второй способ. */
+  cursor: pointer;
 }
 
 .formula-chip:hover {
   border-color: var(--accent);
-}
-
-.formula-chip:active {
-  cursor: grabbing;
 }
 
 .formula-palette__group > summary {
@@ -1828,6 +1806,23 @@ a.dataset-series__item:hover {
 .review-roles__summary {
   font-weight: var(--weight-semibold);
   cursor: pointer;
+}
+
+/* Название и источник таблицы — свёрнуто: подставлены из файла, править необязательно. */
+.review-meta__summary {
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.review-meta__optional {
+  margin-left: var(--space-2);
+  color: var(--text-muted);
+  font-weight: var(--weight-regular);
+  font-size: var(--text-sm);
+}
+
+.review-meta[open] .series-form__meta {
+  margin-top: var(--space-4);
 }
 
 .review-roles__list {

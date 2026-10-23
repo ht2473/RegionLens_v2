@@ -21,7 +21,7 @@
         <span>{% blocktranslate trimmed with count=table|rows_text %}строк: {{ count }}{% endblocktranslate %}</span>
         <span>{% blocktranslate trimmed with count=resolved_regions %}субъектов узнано: {{ count }} из 85{% endblocktranslate %}</span>
         {% if result.periods %}<span><span class="numeric">{{ result.periods.first }}{% if result.periods.last != result.periods.first %}–{{ result.periods.last }}{% endif %}</span>, {{ period_kinds|join:", " }}</span>{% endif %}
-        <span>{% blocktranslate trimmed with count=result.series|ru_number:0 %}рядов получится: {{ count }}{% endblocktranslate %}</span>
+        <span>{% blocktranslate trimmed with count=result.series|ru_number:0 %}показателей получится: {{ count }}{% endblocktranslate %}</span>
       </p>
     {% endif %}
   </header>
@@ -194,10 +194,10 @@
     {% if result.slices %}
       <details class="question-card{% if too_many %} question-card--ask{% else %} question-card--quiet{% endif %}"{% if too_many %} open{% endif %}>
         <summary class="question-card__title">
-          {% if too_many %}{% translate "Разрезы: рядов слишком много" %}{% else %}{% translate "Разрезы: отбор значений" %}{% endif %}
+          {% if too_many %}{% translate "Разрезы: показателей слишком много" %}{% else %}{% translate "Разрезы: отбор значений" %}{% endif %}
         </summary>
         {% if too_many %}
-          <p class="field__error">{% blocktranslate trimmed with count=result.series|ru_number:0 limit=max_series %}Получается {{ count }} рядов — больше {{ limit }}. Выберите значения разрезов.{% endblocktranslate %}</p>
+          <p class="field__error">{% blocktranslate trimmed with count=result.series|ru_number:0 limit=max_series %}Получается показателей: {{ count }}, больше {{ limit }}. Выберите значения разрезов.{% endblocktranslate %}</p>
         {% endif %}
         <input type="hidden" name="slices-present" value="1">
         {% for index, info in result.slices.items %}
@@ -216,7 +216,7 @@
     {% if result.row_parts %}
       <details class="question-card question-card--quiet">
         <summary class="question-card__title">{% translate "Разрез строками под регионом" %}</summary>
-        <p>{% translate "Под каждым регионом идут строки с числами. Каждая такая строка станет отдельным рядом." %}</p>
+        <p>{% translate "Под каждым регионом идут строки с числами. Каждая такая строка станет отдельным показателем." %}</p>
         <ul class="compact-list">
           {% for part in result.row_parts %}<li{% with lang=part|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ part|truncatechars:60 }}</li>{% endfor %}
         </ul>

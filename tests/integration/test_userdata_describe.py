@@ -79,7 +79,10 @@ class TestRecognitionPage:
         assert "Нужно ответить" not in text
 
     def test_single_table_skips_the_choice(self, client: Client) -> None:
-        """В файле одна таблица — шаг «Файл» выбирает её сам; вставка остаётся на шаге."""
+        """
+        В файле одна таблица — шаг «Файл» выбирает её сам; вставка — тоже, а к продолжению
+        таблицы возвращаются на шаг по ссылке.
+        """
         content = (FIXTURES / "environment.csv").read_bytes()
         client.post(
             reverse("userdata:upload"),
@@ -95,6 +98,8 @@ class TestRecognitionPage:
         first = (FIXTURES / "regions_population_part1.txt").read_text(encoding="utf-8")
         client.post(reverse("userdata:upload"), {"action": "paste", "text": first})
         pasted = Dataset.objects.latest("created_at")
+        skipped = client.get(reverse("userdata:file", args=[pasted.public_id]))
+        assert skipped["Location"] == reverse("userdata:table", args=[pasted.public_id])
         assert client.get(reverse("userdata:file", args=[pasted.public_id])).status_code == 200
 
     def test_years_in_columns_with_nested_question(self, client: Client) -> None:

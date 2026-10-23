@@ -97,8 +97,8 @@ def test_questions_only_until_answered() -> None:
         ("Средняя зарплата", "relative", ()),
     ],
 )
-def test_default_per_skips_population(name: str, kind: str, expected: tuple[str, ...]) -> None:
-    assert indicators.default_per(name, kind) == expected
+def test_suggested_per_skips_population(name: str, kind: str, expected: tuple[str, ...]) -> None:
+    assert indicators.suggested_per(name, kind) == expected
 
 
 @pytest.mark.parametrize(
@@ -112,7 +112,7 @@ def test_default_per_skips_population(name: str, kind: str, expected: tuple[str,
 )
 def test_money_sum_is_divided_per_person(name: str, unit: str, expected: tuple[str, ...]) -> None:
     """Денежную сумму естественно делить на жителя, остальные — на 100 000 жителей."""
-    assert indicators.default_per(name, indicators.SUM, unit) == expected
+    assert indicators.suggested_per(name, indicators.SUM, unit) == expected
 
 
 @pytest.mark.parametrize(

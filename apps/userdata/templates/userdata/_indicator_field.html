@@ -40,12 +40,12 @@
           {% if other != item.name %}<option value="{{ other }}"{% if other == item.merge %} selected{% endif %}>{{ title }}</option>{% endif %}
         {% endfor %}
       </select>
-      <span class="field__hint" id="merge-hint-{{ number }}">{% translate "Одно и то же под разными названиями — например, после переименования в источнике. Значения этого показателя дополнят ряды выбранного; где есть оба, остаётся значение выбранного. Описание — у выбранного." %}</span>
+      <span class="field__hint" id="merge-hint-{{ number }}">{% translate "Одно и то же под разными названиями — например, после переименования в источнике. Значения этого показателя дополнят выбранный. Где есть оба значения, остаётся значение выбранного. Описание — у выбранного." %}</span>
     </div>
   {% endif %}
 {% elif name == "hidden" %}
   <div class="field">
-    <label class="checkbox"><input type="checkbox" name="hidden-{{ number }}" value="1"{% if item.hidden %} checked{% endif %}> <span>{% translate "Скрыть: не собирать ряды этого показателя" %}</span></label>
+    <label class="checkbox"><input type="checkbox" name="hidden-{{ number }}" value="1"{% if item.hidden %} checked{% endif %}> <span>{% translate "Скрыть: не показывать этот показатель" %}</span></label>
     <span class="field__hint">{% translate "Показатель остаётся в файле, его можно вернуть, сняв отметку." %}</span>
   </div>
 {% elif name == "kind" %}
@@ -68,12 +68,12 @@
           <option value="{{ method }}"{% if item.months == method %} selected{% endif %}{% if method == "sum" %} data-sum-only{% endif %}>{% if method == "sum" %}{% translate "сумма за 12 месяцев" %}{% elif method == "mean" %}{% translate "среднее за месяц" %}{% elif method == "december" %}{% translate "значение за декабрь" %}{% else %}{% translate "январь–декабрь из итогов с начала года" %}{% endif %}</option>
         {% endfor %}
       </select>
-      <span class="field__hint" id="months-hint-{{ number }}">{% translate "Годовой ряд из месяцев: складываются только суммы, у долей и средних — среднее за месяц. Год без всех месяцев остаётся пустым." %}</span>
+      <span class="field__hint" id="months-hint-{{ number }}">{% translate "Год из месяцев: суммы складываются, у долей и средних берётся среднее за месяц. Год без всех месяцев остаётся пустым." %}</span>
     </div>
   {% endif %}
 {% elif name == "polarity" %}
   <div class="field">
-    <label class="field__label" for="polarity-{{ number }}">{% translate "Направленность" %}</label>
+    <label class="field__label" for="polarity-{{ number }}">{% translate "Как оценивать рост" %}</label>
     <select class="select" id="polarity-{{ number }}" name="polarity-{{ number }}">
       {% for value, label in polarities %}
         <option value="{{ value }}"{% if item.polarity == value %} selected{% endif %}>{{ label }}</option>
@@ -109,7 +109,7 @@
     {% for code in item.recalc %}
       <label class="checkbox"><input type="checkbox" name="recalc-{{ number }}" value="{{ code }}" checked> <span>{{ code|derived_label }}</span></label>
     {% endfor %}
-    <span class="field__hint">{% if item.recounts %}{% translate "Снимите отметку, чтобы убрать пересчёт. Новые пересчёты — в исследовании: «Что сделать» → «Посчитать»." %}{% else %}{% translate "Пересчёты — в исследовании: «Что сделать» → «Посчитать»." %}{% endif %}</span>
+    <span class="field__hint">{% if item.recounts %}{% translate "Снимите отметку, чтобы убрать пересчёт. Новые пересчёты — в исследовании: нажмите на показатель, раздел «Новый показатель»." %}{% else %}{% translate "Пересчёты — в исследовании: нажмите на показатель, раздел «Новый показатель»." %}{% endif %}</span>
   </fieldset>
 {% endif %}
 {% endwith %}

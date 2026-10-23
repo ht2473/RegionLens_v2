@@ -7,7 +7,8 @@
 Карточку собирает та же разметка, что и страницу (``study_cards`` и шаблоны карточек):
 отчёт не расходится с полем. Из разметки берётся то, что видно при печати, — без меню,
 подсказок «Дальше» и скрытых подписей. Картинки рисует страница (графики — в браузере),
-сервер только вкладывает их; без них в отчёте остаются числа и таблицы.
+сервер только вкладывает их; без них в отчёте остаются числа и таблицы, а вместо карты
+и линий по годам — таблицы с их числами.
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ from django.utils import timezone
 from django.utils.formats import date_format
 from django.utils.translation import gettext as _
 
+from apps.core.templatetags.formatting import ru_number
 from apps.exports.renderers import xlsx
 from apps.exports.renderers.docx import Cell, Word
 from apps.exports.reports.base import COLUMN_NUMBER, Column, ReportDocument, Section, Table
@@ -33,6 +35,10 @@ from .models import Study
 
 # Картинок на карточку не больше этого: у карточки один график или одна карта.
 IMAGES_PER_CARD = 2
+# Карта без картинки — таблицей первых и последних регионов, по столько строк.
+MAP_ROWS = 10
+# Линии без картинки — таблицей по годам, не больше столбцов территорий.
+LINE_COLUMNS = 8
 # Знаков в названии листа Excel — предел самой программы.
 SHEET_TITLE = 31
 
@@ -83,6 +89,8 @@ def word(request: HttpRequest, study: Study, images: dict[str, list[bytes]]) -> 
         reader = _CardReader(document, images.get(block["id"], []))
         reader.feed(html)
         reader.close()
+        if reader.unpictured:
+            _numbers_instead(document, block, card)
         if card.get("source") and card["source"] not in sources:
             sources.append(card["source"])
         keys.extend(key for key in studies.series_keys(block) if key not in keys)
@@ -97,6 +105,65 @@ def word(request: HttpRequest, study: Study, images: dict[str, list[bytes]]) -> 
         for number, source in enumerate(sources, start=1):
             document.item(source, f"{number}.")
     return document.render(study.title)
+
+
+def _numbers_instead(document: Word, block: dict[str, Any], card: dict[str, Any]) -> None:
+    """
+    Карта или линии без картинки (страница её не прислала, например без сценариев) —
+    их числа таблицей: у карты первые и последние регионы, у линий значения по годам.
+    """
+    precision = card.get("precision")
+    unit = card.get("unit") or ""
+    if block.get("target") == "map":
+        rows = sorted(
+            (row for row in card.get("rows") or [] if row.get("value") is not None),
+            key=lambda row: row["value"],
+            reverse=True,
+        )
+        if len(rows) > 2 * MAP_ROWS:
+            rows = [*rows[:MAP_ROWS], *rows[-MAP_ROWS:]]
+            document.paragraph(
+                _("Первые и последние %(count)s регионов") % {"count": MAP_ROWS}, "Meta"
+            )
+        head = [
+            Cell(_("Регион"), header=True),
+            Cell(unit or _("Значение"), numeric=True, header=True),
+        ]
+        document.table(
+            [
+                head,
+                *(
+                    [Cell(row["name"]), Cell(ru_number(row["value"], precision), numeric=True)]
+                    for row in rows
+                ),
+            ]
+        )
+        return
+    option = card.get("timeline_option")
+    if block.get("target") != "compare" or not isinstance(option, dict):
+        return
+    years = (option.get("xAxis") or {}).get("data") or []
+    lines = [
+        line
+        for line in option.get("series") or []
+        if line.get("name") and len(line.get("data") or []) == len(years)
+    ][:LINE_COLUMNS]
+    if not years or not lines:
+        return
+    head = [
+        Cell(_("Год"), header=True),
+        *(Cell(line["name"], numeric=True, header=True) for line in lines),
+    ]
+    body = [
+        [
+            Cell(str(year)),
+            *(Cell(ru_number(line["data"][index], precision), numeric=True) for line in lines),
+        ]
+        for index, year in enumerate(years)
+    ]
+    if unit:
+        document.paragraph(unit, "Meta")
+    document.table([head, *body])
 
 
 def _lead(study: Study) -> str:
@@ -215,6 +282,8 @@ class _CardReader(HTMLParser):
         self.style = ""
         self.table: _TableState | None = None
         self.lists: list[int | None] = []
+        # Места картинок, для которых картинки не пришло: отчёт подставит числа таблицей.
+        self.unpictured = 0
 
     # Пропуск: внутри пропускаемого элемента всё пропускается.
     def _skipping(self) -> bool:
@@ -231,13 +300,7 @@ class _CardReader(HTMLParser):
             self.stack.append(_Open(tag, skip=True))
             return
         if "data-report-image" in attributes:
-            self._flush()
-            if self.images:
-                self._picture(attributes)
-                self.stack.append(_Open(tag, skip=True))
-                return
-            # Без картинки карта бессмысленна, малые графики — названия и числа.
-            self.stack.append(_Open(tag, skip=tag == "rl-choropleth"))
+            self._image_place(tag, attributes)
             return
         if tag in _SKIP_TAGS or classes & _SKIP_CLASSES:
             self.stack.append(_Open(tag, skip=True))
@@ -346,6 +409,18 @@ class _CardReader(HTMLParser):
             self.document.item(text, marker)
             return
         self.document.paragraph(text, self.style)
+
+    def _image_place(self, tag: str, attributes: dict[str, str]) -> None:
+        """Место картинки: картинка со страницы, а без неё — содержимое или ничего."""
+        self._flush()
+        if self.images:
+            self._picture(attributes)
+            self.stack.append(_Open(tag, skip=True))
+            return
+        # Без картинки карта бессмысленна, малые графики — названия и числа.
+        if tag in {"rl-choropleth", "rl-chart"}:
+            self.unpictured += 1
+        self.stack.append(_Open(tag, skip=tag == "rl-choropleth"))
 
     def _picture(self, attributes: dict[str, str]) -> None:
         from apps.exports.renderers.docx import WordError

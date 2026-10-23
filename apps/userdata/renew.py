@@ -177,7 +177,7 @@ def questions(version: DatasetVersion, result: recognize.Recognition) -> list[st
         found.append(_("год значений"))
     if result.series > recognize.MAX_SERIES:
         found.append(
-            _("рядов получается %(count)s — больше %(limit)s")
+            _("показателей получается %(count)s — больше %(limit)s")
             % {"count": result.series, "limit": recognize.MAX_SERIES}
         )
     return found

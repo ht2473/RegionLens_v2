@@ -830,7 +830,7 @@ def reason(operation: Operation, info: Info, available: Mapping[str, bool] | Non
             bool(operation.min_regions) and info.regions < operation.min_regions,
             _("нужны значения хотя бы по %(count)s регионам") % {"count": operation.min_regions},
         ),
-        (missing, _("нужных официальных рядов нет на сайте")),
+        (missing, _("нужных показателей нет на сайте")),
     )
     return next((str(message) for failed, message in checks if failed), "")
 
@@ -1029,7 +1029,7 @@ def _sum_warnings(items: list[Info]) -> list[str]:
     units = list(dict.fromkeys(" ".join(item.unit.casefold().split()) for item in items))
     if len(units) > 1:
         found.append(
-            str(_("Складываются ряды в разных единицах: %(units)s. Приведите их к одной."))
+            str(_("Складываются показатели в разных единицах: %(units)s. Приведите их к одной."))
             % {"units": ", ".join(item for item in units if item) or "—"}
         )
     if any(not item.is_sum for item in items):

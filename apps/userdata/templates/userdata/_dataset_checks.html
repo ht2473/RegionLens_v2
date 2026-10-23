@@ -51,7 +51,7 @@
         <div class="callout__title">{% translate "Абсолютные величины" %}</div>
         <p>
           {% translate "На карте сумм крупные регионы выделяются размером: больше людей — больше преступлений, рублей и случаев." %}
-          {% if owner %}{% translate "Пересчёт на жителей — в исследовании: «Что сделать» → «Посчитать»." %}{% endif %}
+          {% if owner %}{% translate "Пересчитать на жителей можно в исследовании: нажмите на показатель, раздел «Новый показатель»." %}{% endif %}
         </p>
       </div>
     </div>
@@ -70,7 +70,7 @@
   {% if few_regions %}
     <div class="callout callout--info">
       <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
-      <div>{% translate "Субъектов меньше 20: неравенство и пространственный анализ по таблице не считаются. Карта, таблица и динамика работают." %}</div>
+      <div>{% translate "Регионов меньше 20: неравенство и соседство регионов по таблице не считаются. Карта, таблица и линии по годам работают." %}</div>
     </div>
   {% endif %}
 
@@ -116,7 +116,7 @@
   {% if checks %}
     <section class="page-section" aria-labelledby="own-checks">
       <div class="page-section__head">
-        <h2 class="page-section__title" id="own-checks">{% translate "Ряды" %}</h2>
+        <h2 class="page-section__title" id="own-checks">{% translate "Что заметно по показателям" %}</h2>
       </div>
       <ul class="compact-list own-checks" id="own-checks-list" data-more-list>
         {% for look in checks %}
@@ -124,7 +124,7 @@
             <b{% with lang=look.series.full_title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ look.series.full_title }}</b>.
             {% if look.kind_note %}{{ look.kind_note }}{% endif %}
             {% if look.composition_text %}{{ look.composition_text }}{% endif %}
-            {% if look.missing_count %}{% blocktranslate trimmed with year=look.last_year|year count=look.missing_count %}Субъектов без значений в {{ year }} году: {{ count }}{% endblocktranslate %}: {{ look.missing_last|join:", " }}{% if look.missing_count > look.missing_last|length %}…{% endif %}.{% endif %}
+            {% if look.missing_count %}{% blocktranslate trimmed with year=look.last_year|year count=look.missing_count %}Регионов без значений в {{ year }} году: {{ count }}{% endblocktranslate %}: {{ look.missing_last|join:", " }}{% if look.missing_count > look.missing_last|length %}…{% endif %}.{% endif %}
           </li>
         {% endfor %}
       </ul>
@@ -142,7 +142,7 @@
     <p class="page-section__lead">
       {% blocktranslate trimmed with count=version.regions_count %}Субъектов со значениями: {{ count }} из 85.{% endblocktranslate %}
       {% if nested %}
-        {% translate "Область с автономными округами в таблице — итогом вместе с ними; для сумм область без округов вычислена (пометка «расчёт RegionLens»):" %}
+        {% translate "Область с автономными округами в таблице дана итогом вместе с ними. Для сумм область без округов вычислена, у таких значений пометка «вычислено»:" %}
         {% for code in nested %}{{ code|territory_name }}{% if not forloop.last %}, {% endif %}{% endfor %}.
       {% endif %}
       {% if conflicts %}

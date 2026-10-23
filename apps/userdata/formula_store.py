@@ -294,7 +294,7 @@ def check(dataset: Dataset, data: Mapping[str, Any], *, code: str = "") -> Check
     sources = [
         (
             found.by_key[key].title,
-            {"this": _("эта таблица"), "official": _("официальный ряд")}.get(
+            {"this": _("эта таблица"), "official": _("показатель сайта")}.get(
                 found.by_key[key].source, found.by_key[key].table
             ),
         )

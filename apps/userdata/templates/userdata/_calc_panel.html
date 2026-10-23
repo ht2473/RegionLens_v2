@@ -141,7 +141,7 @@
         <div>{{ error }}</div>
       </div>
     {% elif recount_note %}
-      <p class="calc-preview__note">{% translate "Пересчёт считается при сборке таблицы: новый ряд встанет рядом с исходным, его карта — на поле." %}</p>
+      <p class="calc-preview__note">{% translate "Новый показатель встанет в таблице рядом с исходным, его карта — на поле." %}</p>
     {% elif preview %}
       <p class="calc-preview__count">
         {% blocktranslate trimmed with count=preview.count total=preview.total %}Посчитано для <b class="numeric">{{ count }}</b> из {{ total }}{% endblocktranslate %}{% if preview.year %} · <span class="numeric">{{ preview.year|year }}</span>{% endif %}
@@ -171,7 +171,7 @@
         </div>
       {% endfor %}
       {% if others %}
-        <p class="calc-preview__note">{% translate "Будут созданы и другие ряды:" %} <span lang="ru">{{ others|join:"; " }}</span>.</p>
+        <p class="calc-preview__note">{% translate "Будут созданы и другие показатели:" %} <span lang="ru">{{ others|join:"; " }}</span>.</p>
       {% endif %}
       <p class="calc-preview__formula"><span class="field__label">{% translate "Формула" %}</span> <code lang="ru">{{ expression }}</code></p>
     {% endif %}

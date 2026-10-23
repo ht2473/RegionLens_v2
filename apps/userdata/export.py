@@ -252,7 +252,7 @@ def _mark(quality: int, flags: int) -> str:
         parts.append(gettext("скрыто источником"))
     flag = ValueFlag(int(flags or 0))
     if ValueFlag.COMPUTED in flag:
-        parts.append(gettext("расчёт RegionLens"))
+        parts.append(gettext("вычислено"))
     if ValueFlag.FROZEN_DENOMINATOR in flag:
         parts.append(gettext("численность прошлого года"))
     return "; ".join(parts)

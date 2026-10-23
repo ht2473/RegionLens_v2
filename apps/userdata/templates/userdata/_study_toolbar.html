@@ -10,7 +10,7 @@
       aria-label="{% translate 'Общий год и регионы карточек' %}">
   {% if owner %}{% csrf_token %}<input type="hidden" name="action" value="common">{% else %}<input type="hidden" name="common" value="1">{% endif %}
   <div class="study-toolbar__year">
-    <label class="study-toolbar__label" for="study-year">{% translate "Год" %}</label>
+    <label class="study-toolbar__label" for="study-year">{% translate "Год на всех карточках" %}</label>
     <select class="select" id="study-year" name="year">
       <option value=""{% if year is None %} selected{% endif %}>{% translate "последний у каждой" %}</option>
       {% for item in years %}
@@ -19,7 +19,7 @@
     </select>
   </div>
   <div class="study-toolbar__regions">
-    <span class="study-toolbar__label" id="study-regions-label">{% translate "Регионы" %}</span>
+    <span class="study-toolbar__label" id="study-regions-label">{% translate "Регионы на всех карточках" %}</span>
     {% for code, name in selected_names %}
       <input type="hidden" name="territory" value="{{ code }}">
       <span class="chip">

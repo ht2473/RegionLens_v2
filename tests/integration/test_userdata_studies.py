@@ -97,7 +97,7 @@ class TestOwner:
         for block in studies.blocks_of(study):
             card = _card(member_client, study, block)
             assert card.status_code == 200, block["target"]
-            assert "Открыть вид" in card.text, block["target"]
+            assert "На отдельной странице" in card.text, block["target"]
         tool = studies.blocks_of(study)[-1]
         assert "analytics/correlation" in _card(member_client, study, tool).text
 
@@ -395,7 +395,7 @@ class TestLab:
         «Что заметно» — крайние значения числами; под первой карточкой своего ряда —
         «Дальше»: карта уже собранного пересчёта на жителя, рейтинг, сравнение с официальным.
         """
-        dataset = _built(member_client, "crime_wide.csv")
+        dataset = _built(member_client, "crime_wide.csv", per=("per100000",))
         key = _key(dataset, _first(dataset))
         study = _study(member_client)
         _edit(member_client, study, action="add", do="answer:notable", series=key)
@@ -621,7 +621,7 @@ class TestLab:
     def test_per_capita_unit_names_its_base(self, member_client: Client, warehouse: Any) -> None:
         from apps.userdata.models import DatasetSeries
 
-        dataset = _built(member_client, "crime_wide.csv")
+        dataset = _built(member_client, "crime_wide.csv", per=("per100000",))
         derived = DatasetSeries.objects.filter(
             version__dataset=dataset, derived=DatasetSeries.Derived.PER_100000
         ).first()

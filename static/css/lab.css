@@ -278,7 +278,7 @@
   gap: var(--space-1);
 }
 
-/* «Вид» карточки — слева от ручки и меню. */
+/* «Настроить» карточку — слева от ручки и меню. */
 .card-settings__toggle {
   position: absolute;
   top: var(--space-2);
@@ -315,7 +315,7 @@
   margin-top: var(--space-2);
 }
 
-/* Место под «Вид», ручку и меню — справа от строки вида и не ниже их: название под ними
+/* Место под «Настроить», ручку и меню — справа от строки вида и не ниже их: название под ними
    во всю ширину карточки, на телефоне оно не сжимается в узкий столбец. */
 .study-card__kicker {
   display: flex;
@@ -455,13 +455,6 @@
   font-size: var(--text-sm);
 }
 
-.study-card__source {
-  flex: 1 1 16rem;
-  margin: 0;
-  color: var(--text-muted);
-  overflow-wrap: anywhere;
-}
-
 .study-card__open {
   display: inline-flex;
   align-items: center;
@@ -517,6 +510,21 @@
 .study-card-menu__grip {
   cursor: grab;
   touch-action: none;
+}
+
+/* Ручка перетаскивания — при наведении на карточку и при фокусе; на сенсорном экране видна всегда. */
+@media (hover: hover) {
+  .study-card .study-card-menu__grip,
+  .study-note .study-card-menu__grip {
+    opacity: 0;
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
+
+  .study-card:hover .study-card-menu__grip,
+  .study-note:hover .study-card-menu__grip,
+  .study-card-menu__grip:focus-visible {
+    opacity: 1;
+  }
 }
 
 .menu-popover.study-card-menu__panel {
@@ -847,9 +855,17 @@
   color: var(--text-primary);
 }
 
-.study-source__facts {
+.study-source__open {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-1) var(--space-2);
   font-size: var(--text-xs);
-  color: var(--text-muted);
+}
+
+.study-source__open svg {
+  width: 14px;
+  height: 14px;
 }
 
 .study-source__chevron {
@@ -929,75 +945,6 @@
   color: var(--text-accent);
 }
 
-.study-actions {
-  display: grid;
-  gap: var(--space-3);
-  margin: var(--space-1) 0 var(--space-3);
-  padding: var(--space-3) var(--space-2);
-  background-color: var(--surface-raised);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  scroll-margin-top: var(--space-16);
-}
-
-.study-actions__title {
-  padding: 0 var(--space-3) var(--space-1);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.study-actions__list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.study-actions__list li {
-  max-width: none;
-}
-
-.study-actions__item {
-  align-items: flex-start;
-  padding-block: 6px;
-}
-
-.study-actions__item svg {
-  margin-top: 2px;
-}
-
-.study-actions__text {
-  display: grid;
-  gap: 1px;
-}
-
-.study-actions__away {
-  margin-left: auto;
-  color: var(--text-muted);
-}
-
-.study-actions__item.is-disabled {
-  color: var(--text-muted);
-  cursor: default;
-}
-
-.study-actions__item.is-disabled:hover {
-  background: none;
-  color: var(--text-muted);
-}
-
-.study-actions__reason {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-}
-
-.study-actions__group-reason {
-  margin: 0;
-  padding: 0 var(--space-3);
-}
-
 .study-site-pick {
   margin-top: var(--space-3);
 }
@@ -1022,8 +969,22 @@
   }
 }
 
-/* На телефоне два столбца ответа тесны: один под другим. */
+/* На телефоне два столбца ответа тесны: один под другим. «Настроить» — значком
+   с подсказкой: подпись теснила строку вида карточки. */
 @media (max-width: 639px) {
+  .study-card__kicker {
+    padding-right: calc(3 * 34px + var(--space-2));
+  }
+
+  .card-settings__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
   .study-card .answer__columns {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1059,6 +1020,229 @@
   }
 }
 
+}
+
+/* --- Окно «Что показать»: «Советуем» плитками, остальное — списками по разделам ---------- */
+
+.calc-dialog.choose-dialog {
+  width: min(100%, 38rem);
+}
+
+.choose {
+  display: grid;
+  gap: var(--space-5);
+  padding-bottom: var(--space-6);
+}
+
+.choose__head {
+  display: grid;
+  gap: var(--space-1);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.choose__title {
+  margin: 0;
+  font-size: var(--text-lg);
+  line-height: var(--leading-tight);
+}
+
+.choose__detail,
+.choose__facts,
+.choose__pair {
+  color: var(--text-secondary);
+  font-weight: var(--weight-regular);
+}
+
+.choose__facts,
+.choose__pair {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.choose__form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.choose__section {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.choose__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.choose__tiles,
+.choose__list,
+.choose__reasons {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.choose__tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.choose__list {
+  display: grid;
+  gap: 2px;
+}
+
+.choose-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  height: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.choose-item:hover {
+  background-color: var(--surface-raised);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+/* Термин пункта — «?» в правом верхнем углу строки, место под него — у самого пункта. */
+.choose-item-row {
+  position: relative;
+}
+
+.choose-item-row--term .choose-item {
+  padding-right: calc(var(--space-3) + 1.75rem);
+}
+
+.choose-item-row__term {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+}
+
+.choose-item-row__term .term__name {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+.choose-item-row__term .term__name:hover,
+.choose-item-row__term .term__name:focus-visible {
+  border-color: var(--accent);
+  color: var(--text-accent);
+}
+
+.choose-item__icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  color: var(--text-accent);
+}
+
+.choose-item__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.choose-item__title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: 1.3;
+}
+
+.choose-item__note {
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.choose-item--large {
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background-color: var(--surface-raised);
+  border-color: var(--border-subtle);
+}
+
+.choose-item--large:hover {
+  border-color: var(--accent);
+}
+
+.choose-item--large .choose-item__icon {
+  width: 24px;
+  height: 24px;
+}
+
+.choose__unavailable summary {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.choose__reasons {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.choose__reason-title {
+  color: var(--text-primary);
+}
+
+/* Источники данных поля — одним перечнем под карточками, а не под каждой. */
+.study-sources-list {
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.study-sources-list__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+.study-sources-list__items {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding-left: var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
 /* --- Панель расчёта: окно справа во всю высоту; на телефоне — во весь экран ------------- */

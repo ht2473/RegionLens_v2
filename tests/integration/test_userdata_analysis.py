@@ -323,7 +323,7 @@ class TestRelated:
             reverse("userdata:related", args=[dataset.public_id]),
             {"series": key_of(dataset, first_record(dataset))},
         )
-        assert "Смотреть ряд на жителя" in page.text
+        assert "Смотреть в пересчёте на жителя" in page.text
 
 
 ALL_TOOLS = (

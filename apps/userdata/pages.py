@@ -113,11 +113,17 @@ class SectionView(BreadcrumbMixin, TemplateView):
 
 
 class ExampleView(View):
-    """«Попробовать на примере»: таблица-пример собирается сразу и открывается в исследовании."""
+    """
+    «Посмотреть на примере»: таблица-пример собирается сразу и открывается в исследовании;
+    уже собранный пример открывается снова, а не копируется.
+    """
 
     def post(self, request: HttpRequest) -> HttpResponse:
         from .renew import after_build_url
 
+        built = services.example_of(request)
+        if built is not None and built.current_version is not None:
+            return redirect(after_build_url(built.current_version, request))
         try:
             services.check_limits(request)
             dataset = services.create_example(request)

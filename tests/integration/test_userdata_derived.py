@@ -300,8 +300,9 @@ class TestStability:
 
     def test_money_sum_per_person(self, client: Client, warehouse: Any) -> None:
         """
-        Денежная сумма по умолчанию делится на жителя, разряд единицы — по значениям:
-        «млрд руб.» дают «тыс. руб. на жителя», а не шесть нулей после запятой.
+        Пересчёт сам по себе не строится — таблица в числах человека; денежная сумма делится
+        на жителя по выбору, разряд единицы — по значениям: «млрд руб.» дают «тыс. руб.
+        на жителя», а не шесть нулей после запятой.
         """
         lines = ["Регион;2021;2022"] + [
             f"{territory.name_ru};{500 + index};{550 + index}"
@@ -310,6 +311,8 @@ class TestStability:
         dataset = _upload_text(client, "валовой продукт.csv", lines)
         describe(client, dataset)
         build(client, dataset, kind=indicators.SUM, extra={"unit-1": "млрд руб."})
+        assert not {derived for _code, derived in _records(dataset) if derived}
+        build(client, dataset, kind=indicators.SUM, per=("per1",), extra={"unit-1": "млрд руб."})
         records = _records(dataset)
         base = next(record for record in records.values() if not record.derived)
         assert {derived for _code, derived in records if derived} == {"per1"}

@@ -881,13 +881,21 @@ class TestDatasetPage:
         assert Dataset.objects.filter(pk=dataset.pk).exists()
 
     def test_example(self, client: Client, warehouse: Any) -> None:
+        # Пример — вклады населения по регионам (Банк России): собирается без вопросов,
+        # все 85 субъектов; повторное нажатие открывает его же, без копии.
         response = client.post(reverse("userdata:example"))
         assert response.status_code == 302
         assert "/own-data/studies/" in response["Location"]
         dataset = Dataset.objects.get()
-        assert dataset.source_url == "https://tochno.st/datasets/environment"
-        assert _version(dataset).regions_count == 85
+        assert dataset.source_title == "Банк России"
+        version = _version(dataset)
+        assert version.regions_count == 85
+        assert (version.first_year, version.last_year) == (2020, 2026)
         assert client.get(response["Location"]).status_code == 200
+        again = client.post(reverse("userdata:example"))
+        assert again.status_code == 302
+        assert Dataset.objects.count() == 1
+        assert again["Location"].split("?")[0] == response["Location"].split("?")[0]
 
 
 @pytest.mark.django_db

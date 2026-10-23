@@ -170,7 +170,7 @@ class UserSeries:
         return self.dataset.source_title or gettext("таблица пользователя")
 
     def source_line(self) -> str:
-        """Реквизит источника: «Данные: …; загружены пользователем; обработка RegionLens»."""
+        """Реквизит источника: «Данные: …, загружены пользователем»."""
         return source_line(self.dataset)
 
     def describe(self) -> FeaturedSeries:
@@ -299,13 +299,12 @@ def selected_options(keys: Iterable[str]) -> list[dict[str, Any]]:
 
 
 def source_line(dataset: Dataset) -> str:
-    """Реквизит источника набора для документов и ссылок на расчёт."""
+    """
+    Реквизит источника набора для документов и ссылок на расчёт: без адреса и имени сайта;
+    пометка «загружены пользователем» — по условиям использования.
+    """
     source = dataset.source_title or gettext("таблица пользователя")
-    if dataset.source_url:
-        source = f"{source} ({dataset.source_url})"
-    return gettext("Данные: %(source)s; загружены пользователем; обработка RegionLens.") % {
-        "source": source
-    }
+    return gettext("Данные: %(source)s, загружены пользователем.") % {"source": source}
 
 
 def detail_url(series: Any) -> str:

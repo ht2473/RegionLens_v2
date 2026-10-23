@@ -49,7 +49,7 @@
       </button>
       <button class="menu-item menu-item--danger" type="submit" name="action" value="remove"
               hx-post="{% url 'userdata:study-edit' study.public_id %}" hx-target="#block-{{ block.id }}"
-              hx-swap="delete" hx-select-oob="#study-toast,#study-meta,#study-sources,#study-toolbar">
+              hx-swap="delete" hx-select-oob="#study-toast,#study-meta,#study-sources,#study-toolbar,#study-sources-list">
         <svg aria-hidden="true"><use href="#icon-close"></use></svg>{% translate "Убрать с поля" %}
       </button>
     </form>

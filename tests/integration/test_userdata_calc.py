@@ -88,7 +88,7 @@ def test_recount_from_panel(member_client: Client, warehouse: Any) -> None:
 
 
 def test_free_formula_warns_about_units(member_client: Client, warehouse: Any) -> None:
-    dataset = _built(member_client, "crime_wide.csv")
+    dataset = _built(member_client, "crime_wide.csv", per=("per100000",))
     record = _first(dataset)
     per = _version(dataset).series.filter(base_code=record.code).first()
     assert per is not None

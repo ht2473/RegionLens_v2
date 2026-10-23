@@ -125,7 +125,7 @@
                 <a class="desk-row__title" href="{% if row.built %}{% url 'userdata:dataset' item.public_id %}{% else %}{{ row.continue_url }}{% endif %}"{% with lang=item.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.title }}</a>
                 <p class="desk-row__meta">
                   {% if row.built %}
-                    {% blocktranslate trimmed with series=version.series_count regions=version.regions_count %}рядов: {{ series }} · субъектов: {{ regions }}{% endblocktranslate %}{% if version.first_year %} · <span class="numeric">{{ version.first_year|year }}{% if version.last_year != version.first_year %}–{{ version.last_year|year }}{% endif %}</span>{% endif %}
+                    {% blocktranslate trimmed with regions=version.regions_count %}регионов: {{ regions }}{% endblocktranslate %}{% if version.first_year %} · <span class="numeric">{{ version.first_year|year }}{% if version.last_year != version.first_year %}–{{ version.last_year|year }}{% endif %}</span>{% endif %}
                     · {{ item.size_bytes|filesizeformat }}{% if row.studies %} · {% blocktranslate trimmed with count=row.studies %}исследований: {{ count }}{% endblocktranslate %}{% endif %}
                   {% else %}
                     {% blocktranslate trimmed with moment=item.created_at|date:"d.m.Y" %}не собрана · начата {{ moment }}{% endblocktranslate %} · {{ item.size_bytes|filesizeformat }}
@@ -191,8 +191,8 @@
       </div>
       <ul class="own-examples">
         <li class="own-examples__item">
-          <h3 class="own-examples__title">{% translate "Загрязнение воздуха в городах" %}</h3>
-          <p class="own-examples__shows">{% translate "Набор «Если быть точным» архивом, как он скачивается с сайта набора. Собирается сразу и открывается в исследовании." %}</p>
+          <h3 class="own-examples__title">{% translate "Вклады населения по регионам" %}</h3>
+          <p class="own-examples__shows">{% translate "Банк России, 2020–2026 годы: вклады в рублях и в валюте. Откроется сразу в исследовании." %}</p>
           <form method="post" action="{% url 'userdata:example' %}" class="own-examples__actions">
             {% csrf_token %}
             <button class="button button--secondary button--sm" type="submit">{% translate "Открыть пример" %}</button>
@@ -210,7 +210,8 @@
         {% blocktranslate trimmed %}
           CSV, TXT, XLSX, XLS, ODS, Parquet, документы Word (DOCX) и PDF с текстом, архив ZIP
           с таблицами. Таблицу можно и скопировать и вставить из буфера. Нужен столбец или строка
-          с названиями субъектов РФ. Значения по районам и городам на карту сайта не попадут.
+          с названиями субъектов РФ. Значения по районам, городам и федеральным округам на карту
+          сайта не попадут. Скан PDF без текста не читается.
         {% endblocktranslate %}
       </p>
       <ul class="table-forms">
@@ -239,7 +240,7 @@
             <tr><th>2025</th><th>2026</th></tr>
             <tr><td>…</td><td>101,2</td><td>99,8</td></tr>
           </table>
-          <p>{% translate "Месяцы, кварталы, «с начала года»: каждый период года — свой ряд по годам." %}</p>
+          <p>{% translate "Месяцы, кварталы, «с начала года»: каждый месяц или квартал станет отдельным показателем по годам." %}</p>
         </li>
         <li class="table-forms__item">
           <h3 class="table-forms__title">{% translate "Показатели в столбцах" %}</h3>

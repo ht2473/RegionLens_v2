@@ -28,9 +28,8 @@
     <p class="page-head__meta">
       {% if built %}
         <span>{% blocktranslate trimmed with count=indicator_count %}показателей: {{ count }}{% endblocktranslate %}</span>
-        <span>{% blocktranslate trimmed with count=version.series_count|ru_number:0 %}рядов: {{ count }}{% endblocktranslate %}</span>
-        <span>{% blocktranslate trimmed with count=version.values_count|ru_number:0 %}значений: {{ count }}{% endblocktranslate %}</span>
-        <span>{% blocktranslate trimmed with count=version.regions_count %}субъектов: {{ count }} из 85{% endblocktranslate %}</span>
+        <span>{% blocktranslate trimmed with count=version.values_count|ru_number:0 %}чисел: {{ count }}{% endblocktranslate %}</span>
+        <span>{% blocktranslate trimmed with count=version.regions_count %}регионов: {{ count }} из 85{% endblocktranslate %}</span>
         {% if version.first_year %}<span class="numeric">{{ version.first_year|year }}{% if version.last_year != version.first_year %}–{{ version.last_year|year }}{% endif %}</span>{% endif %}
       {% endif %}
       <span>{% translate "источник" %}:
