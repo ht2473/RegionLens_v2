@@ -5,6 +5,7 @@
 import * as announce from "./lib/announce.js";
 import * as highlight from "./lib/highlight.js";
 import * as theme from "./lib/theme.js";
+import * as toasts from "./lib/toasts.js";
 import * as dialogs from "./ui/dialogs.js";
 import * as fold from "./ui/fold.js";
 import * as palette from "./ui/palette.js";
@@ -90,6 +91,7 @@ function refresh(name, callback) {
 /* --------------------------------------------------------------------------------- */
 
 theme.init();
+toasts.init();
 highlight.init();
 dialogs.init();
 palette.init();
@@ -130,6 +132,8 @@ document.body.addEventListener("htmx:afterSwap", (event) => {
   });
   keptOpen = [];
   defineElements();
+  // Уведомления, пришедшие с фрагментом (внеполосные блоки — во всём документе).
+  toasts.init(document);
   // Весь документ: вместе с целью могли прийти внеполосные блоки (группа регионов рейля).
   refresh("forms", (forms) => {
     forms.enhance(document);
