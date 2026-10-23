@@ -30,10 +30,8 @@
         {% if compare_year %}
           {% translate "Изменение значения" %}
         {% else %}
-          {{ classification.method_label|capfirst }}
-          <span class="map-legend__term">({{ classification.method_term }})</span>
+          <span title="{% translate 'Способ разбиения' %}: {{ classification.method_term }}">{{ classification.legend_title }}</span>
         {% endif %}
-        · {% translate "классов" %}: {{ classification.class_count }}
       </span>
       {# Единица — из описания ряда: series.unit врёт у 642 рядов. #}
       {% if subject.unit %}

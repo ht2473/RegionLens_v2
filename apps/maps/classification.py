@@ -24,6 +24,13 @@ METHOD_TERMS: dict[str, Any] = {
     "jenks": _("естественные границы"),
     "stddev": _("стандартные отклонения"),
 }
+# Что значат цвета карты — заголовок легенды обычными словами; термин — в подсказке.
+LEGEND_TITLES: dict[str, Any] = {
+    "quantile": _("В каждом цвете — поровну регионов"),
+    "equal": _("Цвета делят значения на равные отрезки"),
+    "jenks": _("Цвета разделены по разрывам в значениях"),
+    "stddev": _("Цвета — отклонение от среднего"),
+}
 DEFAULT_METHOD = "quantile"
 
 # Допустимое число классов: больше семи соседние оттенки неразличимы.
@@ -64,6 +71,11 @@ class Classification:
     def method_label(self) -> Any:
         """Подпись способа разбиения словами для легенды."""
         return METHODS.get(self.method, self.method)
+
+    @property
+    def legend_title(self) -> Any:
+        """Что значат цвета карты — заголовок легенды."""
+        return LEGEND_TITLES.get(self.method, self.method_label)
 
     @property
     def method_term(self) -> Any:
