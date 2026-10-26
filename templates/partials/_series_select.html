@@ -7,9 +7,9 @@
     <label class="field__label" id="series-select-label" for="series-select">
       {% if select_label %}{{ select_label }}{% else %}{% translate "Показатель" %}{% endif %}
     </label>
-    {% translate "Показаны ряды с покрытием не менее 80 % субъектов и не менее десяти лет" as coverage_hint %}
+    {% translate "В перечне — показатели со значениями не меньше чем у 80 % регионов и хотя бы за десять лет" as coverage_hint %}
     {% with hint_name=select_name|default:"series" %}
-      {% include "partials/_hint.html" with hint_id="hint-"|add:hint_name hint_text=coverage_hint hint_label=_("Какие ряды в перечне") %}
+      {% include "partials/_hint.html" with hint_id="hint-"|add:hint_name hint_text=coverage_hint hint_label=_("Какие показатели в перечне") %}
     {% endwith %}
   </div>
   {# <rl-combobox> — выбор с поиском; в странице только выбранный ряд, перечень догружается. #}
@@ -19,9 +19,9 @@
                data-loading="{% translate 'Загрузка перечня…' %}"
                data-search="{% translate 'Отобрать: название, тема или слово' %}"
                data-recent="{% translate 'Недавние' %}"
-               data-rest="{% translate 'Остальные ряды' %}"
+               data-rest="{% translate 'Остальные показатели' %}"
                data-empty="{% translate 'Ничего не найдено' %}"
-               data-placeholder="{% translate 'Ряд не выбран' %}"
+               data-placeholder="{% translate 'Показатель не выбран' %}"
                data-found="{% translate 'найдено' %}"
                data-total="{% translate 'всего' %}"
                data-unnormalised="{% translate 'абс.' %}"
@@ -41,7 +41,7 @@
   </rl-combobox>
   {% if not request.GET.series_list %}
     <noscript>
-      <a class="field__hint" href="{% querystring series_list=1 %}">{% translate "Показать весь перечень рядов" %}</a>
+      <a class="field__hint" href="{% querystring series_list=1 %}">{% translate "Показать весь перечень показателей" %}</a>
     </noscript>
   {% endif %}
 

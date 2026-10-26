@@ -924,12 +924,15 @@ a.leader-list__name:hover {
   color: var(--text-accent);
 }
 
+/* Пояснение не наследует оформление заголовка, у которого стоит «?»: прописные, разрядка. */
 .menu-popover.hint__panel {
   width: min(22rem, calc(100vw - 2 * var(--space-4)));
   padding: var(--space-3) var(--space-4);
   font-size: var(--text-sm);
   font-weight: var(--weight-regular);
   line-height: var(--leading-normal);
+  letter-spacing: normal;
+  text-transform: none;
   color: var(--text-secondary);
   text-align: left;
   white-space: normal;
@@ -3912,14 +3915,11 @@ rl-combobox:defined > select {
   gap: var(--space-3);
 }
 
+/* Привязанная панель держится за окно и переставляется за кнопкой при прокрутке
+   (popovers.js): кнопка может стоять в закреплённом рейле или шапке. */
 .menu-popover[data-anchored] {
-  position: absolute;
-  margin: 0;
-}
-
-/* Панели шапки держатся за окно: шапка закреплена (app.js, placeMenuPopover). */
-.menu-popover[data-anchored][data-anchor-fixed] {
   position: fixed;
+  margin: 0;
 }
 
 /* --- Мой регион полосой: главная и обзор кабинета (catalog/_region_band) ------------------ */

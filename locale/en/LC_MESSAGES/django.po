@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-23 02:28+0000\n"
+"POT-Creation-Date: 2026-10-26 19:06+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -9754,7 +9754,6 @@ msgid "Наблюдения за год"
 msgstr "The observations for a year"
 
 #: apps/surface/state.py:90
-#: templates/partials/_series_select.html:24
 msgid "Ряд не выбран"
 msgstr "No series selected"
 
@@ -10002,6 +10001,7 @@ msgid "О показателе: источник, разрывы, пересмо
 msgstr "About the indicator: source, breaks, revisions"
 
 #: apps/surface/templates/surface/partials/_subject.html:42
+#: templates/partials/_series_select.html:24
 msgid "Показатель не выбран"
 msgstr "No indicator selected"
 
@@ -15411,8 +15411,8 @@ msgid "Выбрать из %(total)s показателей"
 msgstr "Choose from %(total)s indicators"
 
 #: templates/partials/_series_select.html:10
-msgid "Показаны ряды с покрытием не менее 80 %% субъектов и не менее десяти лет"
-msgstr "Series covering at least 80 %% of the regions and at least ten years are shown"
+msgid "В перечне — показатели со значениями не меньше чем у 80 %% регионов и хотя бы за десять лет"
+msgstr "The list shows indicators with values for at least 80%% of regions and for at least ten years"
 
 #: templates/partials/_series_select.html:20
 msgid "Отобрать: название, тема или слово"
@@ -15423,12 +15423,12 @@ msgid "Недавние"
 msgstr "Recent"
 
 #: templates/partials/_series_select.html:22
-msgid "Остальные ряды"
-msgstr "Other series"
+msgid "Остальные показатели"
+msgstr "Other indicators"
 
 #: templates/partials/_series_select.html:44
-msgid "Показать весь перечень рядов"
-msgstr "Show the full list of series"
+msgid "Показать весь перечень показателей"
+msgstr "Show the full list of indicators"
 
 #: templates/partials/_series_select.html:53
 msgid "Величина не приведена к численности"
@@ -15443,8 +15443,8 @@ msgid "Сравнение субъектов по этому ряду показ
 msgstr "Comparing regions on this series shows where the population is larger and the economy bigger, not where things are better."
 
 #: templates/partials/_series_select.html:12
-msgid "Какие ряды в перечне"
-msgstr "Which series are listed"
+msgid "Какие показатели в перечне"
+msgstr "Which indicators are listed"
 
 #: templates/partials/_series_select.html:57
 msgid "Почему"
