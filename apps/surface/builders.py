@@ -14,7 +14,7 @@ from django.utils.html import escape
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
-from apps.catalog.constants import ValueQuality
+from apps.catalog import value_notes
 from apps.catalog.indicator import describe_series
 from apps.catalog.models import Territory
 from apps.core.charts import strip_option
@@ -33,13 +33,6 @@ SORT_VALUE = "value"
 SORTS: dict[str, Any] = {
     SORT_NAME: _("по названию"),
     SORT_VALUE: _("по значению"),
-}
-
-# Пояснения к признаку качества — только для необычных наблюдений.
-QUALITY_LABELS: dict[int, Any] = {
-    ValueQuality.NO_DATA: _("нет данных в источнике"),
-    ValueQuality.HIDDEN: _("значение скрыто"),
-    ValueQuality.NOT_APPLICABLE: _("неприменимо"),
 }
 
 
@@ -211,12 +204,7 @@ def _year_cells(years: list[int], points: dict[int, dict[str, Any]]) -> list[dic
         if point is None:
             cells.append({"year": year, "value": None, "note": _("нет в источнике за этот год")})
             continue
-        quality = point["quality"]
-        note = (
-            ""
-            if point["value"] is not None
-            else QUALITY_LABELS.get(quality, _("значение неизвестно"))
-        )
+        note = value_notes.note(point["value"], point["quality"], point.get("flags"))
         cells.append({"year": year, "value": point["value"], "note": note})
     return cells
 
@@ -273,6 +261,4 @@ def _row_note(row: dict[str, Any] | None, quality: int | None) -> Any:
     """Составить пометку о причине отсутствия значения; обычное наблюдение её не получает."""
     if row is None:
         return _("нет в источнике за этот год")
-    if row["value"] is not None and quality == ValueQuality.OBSERVED:
-        return ""
-    return QUALITY_LABELS.get(quality, _("значение неизвестно")) if quality is not None else ""
+    return value_notes.note(row["value"], quality, row.get("flags"))

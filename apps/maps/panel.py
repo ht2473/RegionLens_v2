@@ -13,6 +13,8 @@ from django.http import HttpRequest
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
+from apps.catalog import value_notes
+from apps.catalog.constants import ValueQuality
 from apps.catalog.indicator import describe_series
 from apps.catalog.models import Territory
 from apps.core.templatetags.formatting import position_share, ru_number
@@ -342,9 +344,13 @@ def _tile_title(row: dict[str, Any], compare_year: int | None) -> str:
     При сравнении лет положение не называется: раскрашено изменение, а положение — об уровне.
     """
     if row["mapped"] is None:
-        return f"{row['name']} — {_('нет данных')}"
+        # Причина пропуска — когда она не просто «нет данных»: скрыто, явление отсутствует.
+        reason = row.get("note") if row.get("quality") != ValueQuality.NO_DATA else ""
+        return f"{row['name']} — {reason or _('нет данных')}"
 
     parts = [f"{row['name']} — {ru_number(row['mapped'])}"]
+    if row.get("note") and compare_year is None:
+        parts.append(f" ({row['note']})")
     if compare_year is not None:
         parts.append(f" ({_('изменение')})")
     elif row["percentile"] is not None:
@@ -434,6 +440,9 @@ def _merge_with_reference(
                 "mapped": mapped,
                 "change": change,
                 "quality": observation["quality"],
+                "note": value_notes.note(
+                    observation["value"], observation["quality"], observation.get("flags")
+                ),
                 "rank_desc": observation["rank_desc"],
                 "percentile": observation["percentile"],
                 "ratio_to_country": observation["ratio_to_country"],
