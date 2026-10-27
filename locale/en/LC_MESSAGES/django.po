@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-27 16:21+0000\n"
+"POT-Creation-Date: 2026-10-27 18:45+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -3972,7 +3972,7 @@ msgid "выпусков изданий"
 msgstr "editions of publications"
 
 #: apps/catalog/templates/catalog/dataset.html:54
-#: apps/userdata/views.py:610
+#: apps/userdata/views.py:615
 msgid "период"
 msgstr "period"
 
@@ -8087,7 +8087,7 @@ msgstr "parser version %(version)s"
 
 #: apps/dashboard/templates/dashboard/release.html:48
 #: apps/userdata/templates/userdata/_versions.html:42
-#: apps/userdata/templates/userdata/series_step.html:97
+#: apps/userdata/templates/userdata/series_step.html:98
 msgid "значений: %(count)s"
 msgstr "values: %(count)s"
 
@@ -10401,6 +10401,38 @@ msgstr "The target value cannot be zero."
 msgid "«%(label)s» — число."
 msgstr "“%(label)s” must be a number."
 
+#: apps/userdata/describe.py:75
+msgid "Год %(year)s взят %(where)s."
+msgstr "The year %(year)s is taken %(where)s."
+
+#: apps/userdata/describe.py:70
+msgid "Год %(year)s и период «%(period)s» взяты %(where)s."
+msgstr "The year %(year)s and the period “%(period)s” are taken %(where)s."
+
+#: apps/userdata/describe.py:61
+msgid "из шапки соседних столбцов"
+msgstr "from the header of neighbouring columns"
+
+#: apps/userdata/describe.py:62
+msgid "из заголовка таблицы «%(text)s»"
+msgstr "from the table heading “%(text)s”"
+
+#: apps/userdata/describe.py:63
+msgid "из шапки таблицы «%(text)s»"
+msgstr "from the table header “%(text)s”"
+
+#: apps/userdata/describe.py:64
+msgid "из подписи таблицы «%(text)s»"
+msgstr "from the table caption “%(text)s”"
+
+#: apps/userdata/describe.py:65
+msgid "из имени листа «%(text)s»"
+msgstr "from the sheet name “%(text)s”"
+
+#: apps/userdata/describe.py:66
+msgid "из имени файла «%(text)s»"
+msgstr "from the file name “%(text)s”"
+
 #: apps/userdata/documents.py:102
 #: apps/userdata/documents.py:106
 #: apps/userdata/documents.py:111
@@ -10510,7 +10542,7 @@ msgstr "not in the reference list"
 msgid "исключено из расчётов"
 msgstr "excluded from calculations"
 
-#: apps/userdata/extract.py:863
+#: apps/userdata/extract.py:868
 msgid "Разобрать таблицу не удалось. Мы получили сообщение об ошибке; сам файл не пересылался."
 msgstr "The table could not be parsed. We have received an error report; the file itself was not sent."
 
@@ -10532,7 +10564,7 @@ msgstr "The table contains no values by territory."
 
 #: apps/userdata/extract.py:242
 #: apps/userdata/extract.py:257
-#: apps/userdata/templates/userdata/table_step.html:200
+#: apps/userdata/templates/userdata/table_step.html:206
 msgid "Получается показателей: %(count)s, больше %(limit)s. Выберите значения разрезов."
 msgstr "Indicators to be created: %(count)s, more than %(limit)s. Choose breakdown values."
 
@@ -10823,7 +10855,7 @@ msgid "Значение России лежит между значениями 
 msgstr "The value for Russia lies between the regions’ values and is not their sum: this looks like a share or an average rather than a sum."
 
 #: apps/userdata/glance.py:105
-#: apps/userdata/templates/userdata/series_step.html:270
+#: apps/userdata/templates/userdata/series_step.html:271
 msgid "и ещё %(count)s"
 msgstr "and %(count)s more"
 
@@ -11450,12 +11482,12 @@ msgid "по полугодиям"
 msgstr "by half-year"
 
 #: apps/userdata/monthly.py:143
-#: apps/userdata/views.py:625
+#: apps/userdata/views.py:630
 msgid "с начала года"
 msgstr "year to date"
 
 #: apps/userdata/monthly.py:145
-#: apps/userdata/views.py:627
+#: apps/userdata/views.py:632
 msgid "на начало месяца"
 msgstr "at the start of the month"
 
@@ -12350,8 +12382,8 @@ msgid "Посчитано для <b class=\"numeric\">%(count)s</b> из %(total
 msgstr "Calculated for <b class=\"numeric\">%(count)s</b> of %(total)s"
 
 #: apps/userdata/templates/userdata/_column_role.html:5
-#: apps/userdata/templates/userdata/table_step.html:252
-#: apps/userdata/views.py:705
+#: apps/userdata/templates/userdata/table_step.html:258
+#: apps/userdata/views.py:711
 msgid "столбец %(number)s"
 msgstr "column %(number)s"
 
@@ -12497,7 +12529,7 @@ msgid "Повторов территории и года с разными чи�
 msgstr "Repeated territory and year with different numbers: %(count)s; the first value was kept."
 
 #: apps/userdata/templates/userdata/_dataset_checks.html:154
-#: apps/userdata/templates/userdata/table_step.html:186
+#: apps/userdata/templates/userdata/table_step.html:192
 msgid "Строк вне справочника: %(count)s"
 msgstr "Rows outside the reference list: %(count)s"
 
@@ -13043,7 +13075,7 @@ msgid "Загрузить"
 msgstr "Upload"
 
 #: apps/userdata/templates/userdata/_study_panel.html:45
-#: apps/userdata/templates/userdata/series_step.html:284
+#: apps/userdata/templates/userdata/series_step.html:285
 msgid "Страница таблицы"
 msgstr "Table page"
 
@@ -14024,13 +14056,13 @@ msgstr "Table layout"
 #: apps/userdata/templates/userdata/index.html:230
 #: apps/userdata/templates/userdata/index.html:239
 #: apps/userdata/templates/userdata/index.html:248
-#: apps/userdata/views.py:607
+#: apps/userdata/views.py:612
 msgid "регион"
 msgstr "region"
 
 #: apps/userdata/templates/userdata/index.html:221
-#: apps/userdata/templates/userdata/table_step.html:246
-#: apps/userdata/views.py:615
+#: apps/userdata/templates/userdata/table_step.html:252
+#: apps/userdata/views.py:620
 msgid "значение"
 msgstr "value"
 
@@ -14206,8 +14238,8 @@ msgid "Незначимые после поправки: %(count)s"
 msgstr "Not significant after adjustment: %(count)s"
 
 #: apps/userdata/templates/userdata/series_step.html:20
-#: apps/userdata/views.py:404
-#: apps/userdata/views.py:419
+#: apps/userdata/views.py:409
+#: apps/userdata/views.py:424
 msgid "Проверка таблицы"
 msgstr "Table check"
 
@@ -14219,107 +14251,107 @@ msgstr "Back to the table description"
 msgid "Что прочитано"
 msgstr "What was read"
 
-#: apps/userdata/templates/userdata/series_step.html:51
+#: apps/userdata/templates/userdata/series_step.html:52
 msgid "единица указана не у всех"
 msgstr "the unit is not given for all"
 
-#: apps/userdata/templates/userdata/series_step.html:55
+#: apps/userdata/templates/userdata/series_step.html:56
 msgid "Как устроена"
 msgstr "Layout"
 
-#: apps/userdata/templates/userdata/series_step.html:65
+#: apps/userdata/templates/userdata/series_step.html:66
 msgid "Таблица не собрана"
 msgstr "The table was not built"
 
-#: apps/userdata/templates/userdata/series_step.html:74
+#: apps/userdata/templates/userdata/series_step.html:75
 msgid "Регионов меньше 20. Карта, рейтинг и изменения по годам будут, а разрыв между регионами и сходство соседей — от 20 регионов."
 msgstr "Fewer than 20 regions. The map, ranking and changes by year will be available, while the gap between regions and similarity of neighbours need 20 regions."
 
-#: apps/userdata/templates/userdata/series_step.html:84
+#: apps/userdata/templates/userdata/series_step.html:85
 msgid "Коды вместо чисел"
 msgstr "Codes instead of numbers"
 
-#: apps/userdata/templates/userdata/series_step.html:102
+#: apps/userdata/templates/userdata/series_step.html:103
 msgid "Сохранить выбор кодов"
 msgstr "Save the choice of codes"
 
-#: apps/userdata/templates/userdata/series_step.html:152
+#: apps/userdata/templates/userdata/series_step.html:153
 msgid "Сборке это не мешает. Если в таблице ошибка, исправьте файл и загрузите его новой версией."
 msgstr "This does not stop the build. If the table has an error, fix the file and upload it as a new version."
 
-#: apps/userdata/templates/userdata/series_step.html:163
-#: apps/userdata/templates/userdata/series_step.html:275
-#: apps/userdata/templates/userdata/series_step.html:286
+#: apps/userdata/templates/userdata/series_step.html:164
+#: apps/userdata/templates/userdata/series_step.html:276
+#: apps/userdata/templates/userdata/series_step.html:287
 msgid "Изменить разметку"
 msgstr "Change the markup"
 
-#: apps/userdata/templates/userdata/series_step.html:171
+#: apps/userdata/templates/userdata/series_step.html:172
 msgid "В таблице есть область вместе с автономными округами. Для сумм область без округов вычислена, у таких значений пометка «вычислено». Для долей и средних её не вычислить, на карте она остаётся пустой:"
 msgstr "The table has a region together with its autonomous okrugs. For sums the region without the okrugs has been computed, and such values are marked “computed”. For shares and averages it cannot be computed and stays empty on the map:"
 
-#: apps/userdata/templates/userdata/series_step.html:184
+#: apps/userdata/templates/userdata/series_step.html:185
 msgid "Проверьте поля"
 msgstr "Check the fields"
 
-#: apps/userdata/templates/userdata/series_step.html:194
-#: apps/userdata/templates/userdata/series_step.html:197
+#: apps/userdata/templates/userdata/series_step.html:195
+#: apps/userdata/templates/userdata/series_step.html:198
 msgid "Что значит прочерк «–» в этой таблице?"
 msgstr "What does the dash “–” mean in this table?"
 
-#: apps/userdata/templates/userdata/series_step.html:198
+#: apps/userdata/templates/userdata/series_step.html:199
 msgid "Явления нет"
 msgstr "The phenomenon is absent"
 
-#: apps/userdata/templates/userdata/series_step.html:198
+#: apps/userdata/templates/userdata/series_step.html:199
 msgid "У сумм это ноль. У долей, средних и индексов значения нет."
 msgstr "For sums it is zero. Shares, averages and indices have no value."
 
-#: apps/userdata/templates/userdata/series_step.html:199
+#: apps/userdata/templates/userdata/series_step.html:200
 msgid "Данных нет"
 msgstr "No data"
 
-#: apps/userdata/templates/userdata/series_step.html:199
+#: apps/userdata/templates/userdata/series_step.html:200
 msgid "Прочерк — пропуск, как «…»."
 msgstr "The dash is a gap, like “…”."
 
-#: apps/userdata/templates/userdata/series_step.html:206
-#: apps/userdata/templates/userdata/series_step.html:210
+#: apps/userdata/templates/userdata/series_step.html:207
+#: apps/userdata/templates/userdata/series_step.html:211
 msgid "Нули, похожие на пропуски"
 msgstr "Zeros that look like gaps"
 
-#: apps/userdata/templates/userdata/series_step.html:208
+#: apps/userdata/templates/userdata/series_step.html:209
 msgid "Так иногда пишут «нет данных». Отметьте показатели, у которых ноль значит пропуск: такие нули не попадут на карту, в рейтинг и в расчёты."
 msgstr "Tables sometimes write “no data” this way. Tick the indicators where zero means a gap: such zeros will not appear on the map, in the ranking or in calculations."
 
-#: apps/userdata/templates/userdata/series_step.html:231
+#: apps/userdata/templates/userdata/series_step.html:232
 msgid "Этого не понять из таблицы. Ответ подсказан, проверьте его."
 msgstr "This cannot be told from the table. An answer is suggested, check it."
 
-#: apps/userdata/templates/userdata/series_step.html:256
+#: apps/userdata/templates/userdata/series_step.html:257
 msgid "Название таблицы и источник"
 msgstr "Table title and source"
 
-#: apps/userdata/templates/userdata/series_step.html:256
+#: apps/userdata/templates/userdata/series_step.html:257
 msgid "необязательно"
 msgstr "optional"
 
-#: apps/userdata/templates/userdata/series_step.html:266
+#: apps/userdata/templates/userdata/series_step.html:267
 msgid "Как прочитаны столбцы"
 msgstr "How the columns were read"
 
-#: apps/userdata/templates/userdata/series_step.html:281
+#: apps/userdata/templates/userdata/series_step.html:282
 msgid "Собрать заново и открыть"
 msgstr "Rebuild and open"
 
-#: apps/userdata/templates/userdata/series_step.html:281
+#: apps/userdata/templates/userdata/series_step.html:282
 msgid "Собрать и открыть"
 msgstr "Build and open"
 
-#: apps/userdata/templates/userdata/series_step.html:290
+#: apps/userdata/templates/userdata/series_step.html:291
 msgid "Вставили не всю таблицу? Добавить строки"
 msgstr "Pasted only part of the table? Add rows"
 
-#: apps/userdata/templates/userdata/series_step.html:298
+#: apps/userdata/templates/userdata/series_step.html:299
 msgid "Откроется исследование: карта, главное в цифрах, рейтинг и изменения по годам."
 msgstr "A study will open: map, key figures, ranking and changes by year."
 
@@ -14331,55 +14363,55 @@ msgstr "Check what the site found in the table and open the result. The title, u
 msgid "%(count)s из %(total)s"
 msgstr "%(count)s of %(total)s"
 
-#: apps/userdata/templates/userdata/series_step.html:86
+#: apps/userdata/templates/userdata/series_step.html:87
 msgid "Эти числа из одинаковых цифр в десять и более раз больше почти всех остальных значений своих показателей. Так в таблицах обозначают пропуски и значения без точного числа. Отмеченные считаются пропусками и на карту не попадают."
 msgstr "These numbers of repeated digits are ten or more times larger than almost all other values of their indicators. Tables use them to mark gaps and values without an exact number. The marked ones are treated as gaps and do not reach the map."
 
-#: apps/userdata/templates/userdata/series_step.html:111
+#: apps/userdata/templates/userdata/series_step.html:112
 msgid "Одна территория и год встречаются дважды с разными числами: %(count)s. Оставлено первое значение."
 msgstr "The same territory and year appear twice with different numbers: %(count)s. The first value was kept."
 
-#: apps/userdata/templates/userdata/series_step.html:122
+#: apps/userdata/templates/userdata/series_step.html:123
 msgid "Ячеек не с числами: %(count)s. Они сохранены как пропуски."
 msgstr "Cells without numbers: %(count)s. They are kept as missing values."
 
-#: apps/userdata/templates/userdata/series_step.html:135
+#: apps/userdata/templates/userdata/series_step.html:136
 msgid "Прочерков «–»: %(count)s. У Росстата прочерк значит «явление отсутствует»: у сумм это ноль, у долей, средних и индексов значения нет."
 msgstr "Dashes “–”: %(count)s. In Rosstat tables a dash means “phenomenon absent”: zero for sums, no value for shares, averages and indices."
 
-#: apps/userdata/templates/userdata/series_step.html:138
+#: apps/userdata/templates/userdata/series_step.html:139
 msgid "Скрыто источником: %(count)s. Такие значения не публикуются, чтобы сохранить тайну данных организаций."
 msgstr "Hidden by the source: %(count)s. Such values are not published to keep data on organisations confidential."
 
-#: apps/userdata/templates/userdata/series_step.html:141
+#: apps/userdata/templates/userdata/series_step.html:142
 msgid "Значений «0,0»: %(count)s. Это меньше единицы измерения: ноль с пометкой, в темпы роста он не идёт."
 msgstr "Values “0.0”: %(count)s. This is less than the unit of measurement: a marked zero that is left out of growth rates."
 
-#: apps/userdata/templates/userdata/series_step.html:148
+#: apps/userdata/templates/userdata/series_step.html:149
 msgid "Проверьте данные: %(count)s"
 msgstr "Check the data: %(count)s"
 
-#: apps/userdata/templates/userdata/series_step.html:159
+#: apps/userdata/templates/userdata/series_step.html:160
 msgid "Строк вне справочника: %(count)s — на карту и в рейтинг они не попадут"
 msgstr "Rows outside the reference: %(count)s — they do not reach the map or ranking"
 
-#: apps/userdata/templates/userdata/series_step.html:195
+#: apps/userdata/templates/userdata/series_step.html:196
 msgid "Прочерков: %(count)s. Ответ подсказан: так прочерк пишут Росстат и большинство ведомств."
 msgstr "Dashes: %(count)s. The answer is suggested: this is how Rosstat and most agencies use the dash."
 
-#: apps/userdata/templates/userdata/series_step.html:228
+#: apps/userdata/templates/userdata/series_step.html:229
 msgid "Показателей с вопросами: %(count)s"
 msgstr "Indicators with questions: %(count)s"
 
-#: apps/userdata/templates/userdata/series_step.html:243
+#: apps/userdata/templates/userdata/series_step.html:244
 msgid "Остальные показатели: %(count)s"
 msgstr "Other indicators: %(count)s"
 
-#: apps/userdata/templates/userdata/series_step.html:245
+#: apps/userdata/templates/userdata/series_step.html:246
 msgid "Показатели: %(count)s"
 msgstr "Indicators: %(count)s"
 
-#: apps/userdata/templates/userdata/series_step.html:296
+#: apps/userdata/templates/userdata/series_step.html:297
 msgid "Карта собранной таблицы добавится в исследование «%(study)s»."
 msgstr "The map of the built table will be added to the study “%(study)s”."
 
@@ -14619,87 +14651,91 @@ msgstr "without the okrug"
 msgid "Годы в таблице не найдены. Укажите год значений:"
 msgstr "No years were found in the table. Enter the year of the values:"
 
-#: apps/userdata/templates/userdata/table_step.html:111
+#: apps/userdata/templates/userdata/table_step.html:105
+msgid "Если неверно — исправьте год:"
+msgstr "If it is wrong, correct the year:"
+
+#: apps/userdata/templates/userdata/table_step.html:117
 msgid "Подпись сравнивается со справочником сайта. Сокращения, латинские буквы в русских словах и слипшиеся слова исправляются. Узнаются разговорные и английские названия, коды ISO 3166-2 и ОКАТО. Подпись с опечаткой принимается, если почти совпадает с одним названием. Иначе сайт спрашивает, как здесь."
 msgstr "A label is compared with the site’s directory. Abbreviations, Latin letters inside Russian words and words run together are corrected. Colloquial and English names, ISO 3166-2 and OKATO codes are recognised. A label with a typo is accepted if it almost matches one name. Otherwise the site asks, as here."
 
-#: apps/userdata/templates/userdata/table_step.html:120
+#: apps/userdata/templates/userdata/table_step.html:126
 msgid "не территория — пропустить строку"
 msgstr "not a territory — skip the row"
 
-#: apps/userdata/templates/userdata/table_step.html:121
+#: apps/userdata/templates/userdata/table_step.html:127
 msgid "территории нет в справочнике"
 msgstr "the territory is not in the reference list"
 
-#: apps/userdata/templates/userdata/table_step.html:123
+#: apps/userdata/templates/userdata/table_step.html:129
 msgid "Похоже на"
 msgstr "Looks like"
 
-#: apps/userdata/templates/userdata/table_step.html:137
+#: apps/userdata/templates/userdata/table_step.html:143
 msgid "Запомнить выбор для следующих таблиц"
 msgstr "Remember the choice for the next tables"
 
-#: apps/userdata/templates/userdata/table_step.html:146
+#: apps/userdata/templates/userdata/table_step.html:152
 msgid "Одна территория дважды с разными числами"
 msgstr "One territory twice with different numbers"
 
-#: apps/userdata/templates/userdata/table_step.html:152
+#: apps/userdata/templates/userdata/table_step.html:158
 msgid "При сборке остаётся первое значение."
 msgstr "The first value is kept when building."
 
-#: apps/userdata/templates/userdata/table_step.html:161
+#: apps/userdata/templates/userdata/table_step.html:167
 msgid "Одинаковые подписи у разных столбцов"
 msgstr "Identical headings on different columns"
 
-#: apps/userdata/templates/userdata/table_step.html:167
+#: apps/userdata/templates/userdata/table_step.html:173
 msgid "Числа из них попадут в один период. Проверьте подписи в файле или выберите «пропустить» у лишнего столбца в списке ниже."
 msgstr "Their numbers will fall into one period. Check the headings in the file or choose “skip” for the extra column in the list below."
 
-#: apps/userdata/templates/userdata/table_step.html:187
+#: apps/userdata/templates/userdata/table_step.html:193
 msgid "Эти строки сохранены в наборе, но на карту и в рейтинг не попадут: таких территорий нет в справочнике сайта."
 msgstr "These rows are kept in the dataset but will not appear on the map or in the ranking: the site reference list has no such territories."
 
-#: apps/userdata/templates/userdata/table_step.html:197
+#: apps/userdata/templates/userdata/table_step.html:203
 msgid "Разрезы: показателей слишком много"
 msgstr "Breakdowns: too many indicators"
 
-#: apps/userdata/templates/userdata/table_step.html:197
+#: apps/userdata/templates/userdata/table_step.html:203
 msgid "Разрезы: отбор значений"
 msgstr "Breakdowns: choice of values"
 
-#: apps/userdata/templates/userdata/table_step.html:218
+#: apps/userdata/templates/userdata/table_step.html:224
 msgid "Разрез строками под регионом"
 msgstr "Breakdown in rows under each region"
 
-#: apps/userdata/templates/userdata/table_step.html:219
+#: apps/userdata/templates/userdata/table_step.html:225
 msgid "Под каждым регионом идут строки с числами. Каждая такая строка станет отдельным показателем."
 msgstr "Under each region there are rows with numbers. Each such row becomes a separate indicator."
 
-#: apps/userdata/templates/userdata/table_step.html:231
+#: apps/userdata/templates/userdata/table_step.html:237
 msgid "Таблица с ролями столбцов — прокрутка"
 msgstr "Table with column roles, scrollable"
 
-#: apps/userdata/templates/userdata/table_step.html:233
+#: apps/userdata/templates/userdata/table_step.html:239
 msgid "Первые строки таблицы и роли столбцов"
 msgstr "First rows of the table and column roles"
 
-#: apps/userdata/templates/userdata/table_step.html:293
+#: apps/userdata/templates/userdata/table_step.html:299
 msgid "Дальше: показатели"
 msgstr "Next: indicators"
 
-#: apps/userdata/templates/userdata/table_step.html:294
+#: apps/userdata/templates/userdata/table_step.html:300
 msgid "Сохранить описание"
 msgstr "Save the description"
 
-#: apps/userdata/templates/userdata/table_step.html:295
+#: apps/userdata/templates/userdata/table_step.html:301
 msgid "Назад к файлу"
 msgstr "Back to the file"
 
-#: apps/userdata/templates/userdata/table_step.html:112
+#: apps/userdata/templates/userdata/table_step.html:118
 msgid "Как узнаются регионы"
 msgstr "How regions are recognised"
 
-#: apps/userdata/templates/userdata/table_step.html:239
+#: apps/userdata/templates/userdata/table_step.html:245
 msgid "без названия"
 msgstr "untitled"
 
@@ -14731,31 +14767,31 @@ msgstr "Is “%(label)s” in the table with its autonomous okrugs (as Rosstat c
 msgid "«%(label)s» в таблице — вместе с автономным округом (так считает Росстат) или без него?"
 msgstr "Is “%(label)s” in the table with its autonomous okrug (as Rosstat counts it) or without it?"
 
-#: apps/userdata/templates/userdata/table_step.html:110
+#: apps/userdata/templates/userdata/table_step.html:116
 msgid "Подписи без территории: %(count)s. Выберите территорию для каждой."
 msgstr "Labels without a territory: %(count)s. Choose a territory for each."
 
-#: apps/userdata/templates/userdata/table_step.html:149
+#: apps/userdata/templates/userdata/table_step.html:155
 msgid "%(name)s, «%(column)s»: строки %(first)s и %(second)s."
 msgstr "%(name)s, “%(column)s”: rows %(first)s and %(second)s."
 
-#: apps/userdata/templates/userdata/table_step.html:164
+#: apps/userdata/templates/userdata/table_step.html:170
 msgid "«%(header)s»: столбцы %(columns)s."
 msgstr "“%(header)s”: columns %(columns)s."
 
-#: apps/userdata/templates/userdata/table_step.html:176
+#: apps/userdata/templates/userdata/table_step.html:182
 msgid "Ячеек не с числами: %(count)s. Они сохранятся как пропуски:"
 msgstr "Cells without numbers: %(count)s. They will be kept as missing values:"
 
-#: apps/userdata/templates/userdata/table_step.html:239
+#: apps/userdata/templates/userdata/table_step.html:245
 msgid "Роль столбца «%(header)s»"
 msgstr "Role of the column “%(header)s”"
 
-#: apps/userdata/templates/userdata/table_step.html:257
+#: apps/userdata/templates/userdata/table_step.html:263
 msgid "ещё столбцов с периодами: %(count)s"
 msgstr "more columns with periods: %(count)s"
 
-#: apps/userdata/templates/userdata/table_step.html:279
+#: apps/userdata/templates/userdata/table_step.html:285
 msgid "Ещё столбцы с периодами: %(count)s (от «%(first)s» до «%(last)s»)"
 msgstr "More columns with periods: %(count)s (from “%(first)s” to “%(last)s”)"
 
@@ -14909,87 +14945,87 @@ msgstr "The file has several tables: choose the one used in the previous version
 msgid "Таблица снова в версии %(number)s."
 msgstr "The table is back at version %(number)s."
 
-#: apps/userdata/views.py:621
+#: apps/userdata/views.py:626
 msgid "годы"
 msgstr "years"
 
-#: apps/userdata/views.py:622
+#: apps/userdata/views.py:627
 msgid "месяцы"
 msgstr "months"
 
-#: apps/userdata/views.py:623
+#: apps/userdata/views.py:628
 msgid "кварталы"
 msgstr "quarters"
 
-#: apps/userdata/views.py:624
+#: apps/userdata/views.py:629
 msgid "полугодия"
 msgstr "half-years"
 
-#: apps/userdata/views.py:626
+#: apps/userdata/views.py:631
 msgid "скользящие месяцы"
 msgstr "rolling months"
 
-#: apps/userdata/views.py:630
+#: apps/userdata/views.py:635
 msgid "Длинная таблица: регион, период и значение — в своих столбцах."
 msgstr "A long table: region, period and value in their own columns."
 
-#: apps/userdata/views.py:631
+#: apps/userdata/views.py:636
 msgid "Годы или периоды — в столбцах, регионы — в строках."
 msgstr "Years or periods in columns, regions in rows."
 
-#: apps/userdata/views.py:632
+#: apps/userdata/views.py:637
 msgid "Показатели — в столбцах, регионы — в строках; года в таблице нет."
 msgstr "Indicators in columns, regions in rows; the table has no year."
 
-#: apps/userdata/views.py:633
+#: apps/userdata/views.py:638
 msgid "Регионы — в столбцах, годы — в строках."
 msgstr "Regions in columns, years in rows."
 
-#: apps/userdata/views.py:634
+#: apps/userdata/views.py:639
 msgid "Регионы в таблице не найдены."
 msgstr "No regions were found in the table."
 
-#: apps/userdata/views.py:608
+#: apps/userdata/views.py:613
 msgid "код региона"
 msgstr "region code"
 
-#: apps/userdata/views.py:609
+#: apps/userdata/views.py:614
 msgid "уровень территории"
 msgstr "territory level"
 
-#: apps/userdata/views.py:611
+#: apps/userdata/views.py:616
 msgid "показатель"
 msgstr "indicator"
 
-#: apps/userdata/views.py:612
+#: apps/userdata/views.py:617
 msgid "код показателя"
 msgstr "indicator code"
 
-#: apps/userdata/views.py:613
+#: apps/userdata/views.py:618
 msgid "единица"
 msgstr "unit"
 
-#: apps/userdata/views.py:614
+#: apps/userdata/views.py:619
 msgid "разрез"
 msgstr "breakdown"
 
-#: apps/userdata/views.py:616
+#: apps/userdata/views.py:621
 msgid "причина пропуска"
 msgstr "reason for a missing value"
 
-#: apps/userdata/views.py:617
+#: apps/userdata/views.py:622
 msgid "примечание"
 msgstr "note"
 
-#: apps/userdata/views.py:618
+#: apps/userdata/views.py:623
 msgid "пропустить"
 msgstr "skip"
 
-#: apps/userdata/views.py:359
+#: apps/userdata/views.py:364
 msgid "Описание таблицы сохранено."
 msgstr "The table description has been saved."
 
-#: apps/userdata/views.py:394
+#: apps/userdata/views.py:399
 msgid "Сначала сохраните описание таблицы."
 msgstr "Save the table description first."
 
