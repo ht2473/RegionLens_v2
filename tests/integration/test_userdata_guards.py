@@ -1,7 +1,7 @@
 """
 Ограждения анализа своих данных: сумма — через значение на жителя (окно, новая карточка,
 сохранённая карточка), «С чем связано» — только с относительными показателями сайта,
-резкий скачок региона — замечанием на шаге «Проверка».
+скачок одного региона — не замечание шага «Проверка».
 """
 
 from __future__ import annotations
@@ -105,7 +105,7 @@ class TestRelatedAndJumps:
         assert links
         assert not any(link.item.absolute for link in links)
 
-    def test_check_step_reports_a_typo(self, member_client: Client, warehouse: Any) -> None:
+    def test_check_step_does_not_guess_typos(self, member_client: Client, warehouse: Any) -> None:
         payload = json.loads((settings.REFERENCE_DIR / "territories.json").read_bytes())
         names = [record["name_ru"] for record in payload["regions"][:30]]
         lines = ["Регион;2020;2021"]
@@ -115,5 +115,5 @@ class TestRelatedAndJumps:
         dataset = upload(member_client, "доход.csv", "\n".join(lines).encode("utf-8"))
         describe(member_client, dataset)
         page = member_client.get(reverse("userdata:series", args=[dataset.public_id]))
-        assert "резкий скачок" in page.text
-        assert "Белгородская область, 2020 → 2021: 50 → 5 000" in page.text
+        # Скачок одного региона не замечание: правило не отличает опечатку от события.
+        assert "резкий скачок" not in page.text

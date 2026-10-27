@@ -1,5 +1,5 @@
 {% load i18n formatting %}
-{# Что заметно: крайние значения года и их отношение, рост с первого года ряда, пропуски — числами; кто выделяется и резкие скачки. #}
+{# Что заметно: крайние значения года и их отношение, рост с первого года ряда, пропуски — числами; кто выделяется. #}
 <ul class="answer-list answer-list--plain study-card__answer">
   <li data-territory="{{ card.high.code }}">{% blocktranslate trimmed with name=card.high.name value=card.high.value %}Больше всего — {{ name }}: <span class="numeric">{{ value }}</span>.{% endblocktranslate %}</li>
   <li data-territory="{{ card.low.code }}">{% blocktranslate trimmed with name=card.low.name value=card.low.value %}Меньше всего — {{ name }}: <span class="numeric">{{ value }}</span>.{% endblocktranslate %}</li>
@@ -12,9 +12,6 @@
   {% if card.standing %}
     <li>{% blocktranslate trimmed with names=card.standing|join:", " %}Заметно выделяются: {{ names }} — их значения далеко от остальных.{% endblocktranslate %}{% if card.standing_more %} {% blocktranslate trimmed with count=card.standing_more %}И ещё регионов: {{ count }}.{% endblocktranslate %}{% endif %}</li>
   {% endif %}
-  {% for jump in card.jumps %}
-    <li data-territory="{{ jump.code }}">{% blocktranslate trimmed with name=jump.name before=jump.year_before|year year=card.year|year times=jump.times %}Резкий скачок: {{ name }}, {{ before }} → {{ year }} — {{ times }}. Проверьте, нет ли ошибки.{% endblocktranslate %}</li>
-  {% endfor %}
   {% if card.missing %}
     <li>{% blocktranslate trimmed with missing=card.missing %}Без значения за год — регионов: <span class="numeric">{{ missing }}</span>.{% endblocktranslate %}</li>
   {% endif %}

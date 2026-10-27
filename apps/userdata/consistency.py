@@ -2,10 +2,9 @@
 Проверки данных таблицы до сборки: нули, похожие на пропуски, и согласованность.
 
 Правила — постоянными ниже. Сумма регионов против строки «Российская Федерация» и части
-против итога — правила, которые в верной таблице выполняются; скачок разряда между годами
-и резкий скачок одного региона (``unusual``) — подозрения. Все дают замечание «проверьте»
-с местом и сборку не останавливают; какие из них показывать, решает шаг «Проверка» по типу
-величины (суммы складываются, доли — нет; скачок региона — у любой величины).
+против итога — правила, которые в верной таблице выполняются; скачок разряда между годами —
+подозрение. Все три дают замечание «проверьте» с местом и сборку не останавливают; какие
+из них показывать, решает шаг «Проверка» по типу величины (суммы складываются, доли — нет).
 
 Нули, похожие на пропуски, — вопрос на шаге «Проверка»: у отмеченного показателя нули при
 сборке становятся пропусками (``build``). Учитываются только нули, записанные числом: ноль
@@ -18,12 +17,11 @@ import re
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any
 
-import numpy as np
 import pandas as pd
 
 from apps.catalog.constants import ValueQuality
 
-from . import matching, unusual
+from . import matching
 
 if TYPE_CHECKING:
     from .extract import Collector
@@ -56,7 +54,6 @@ CHECKS_KEPT = 30
 COUNTRY = "country"
 SCALE = "scale"
 PARTS = "parts"
-JUMP = "jump"
 
 
 def review(collector: Collector) -> dict[str, Any]:
@@ -73,7 +70,6 @@ def review(collector: Collector) -> dict[str, Any]:
             *country_sums(frame, names),
             *scale_jumps(regions, names),
             *parts_over_total(regions, collector),
-            *region_jumps(regions, names),
         ],
     }
 
@@ -269,51 +265,6 @@ def scale_jumps(regions: pd.DataFrame, names: list[str]) -> list[dict[str, Any]]
                 "step": step,
                 "up": ratio > 1,
             }
-    return _by_indicator(found.values())
-
-
-def region_jumps(regions: pd.DataFrame, names: list[str]) -> list[dict[str, Any]]:
-    """
-    Резкий скачок региона между соседними годами ряда — правило ``unusual.jumps`` на всю
-    таблицу разом: у показателя — самый сильный скачок и число таких мест.
-    """
-    frame = regions.sort_values(["series", "code", "year"]).reset_index(drop=True)
-    grouped = frame.groupby(["series", "code"], sort=False)
-    frame["before"] = grouped["value"].shift(1)
-    frame["year_before"] = grouped["year"].shift(1)
-    pairs = frame[(frame["before"] > 0) & (frame["value"] > 0)].copy()
-    if pairs.empty:
-        return []
-    pairs["change"] = np.log(pairs["value"] / pairs["before"])
-    by_year = pairs.groupby(["series", "year"])["change"]
-    quartiles = by_year.quantile([0.25, 0.75]).unstack()
-    quartiles.columns = ["low", "high"]
-    quartiles["count"] = by_year.size()
-    pairs = pairs.join(quartiles, on=["series", "year"])
-    spread = pairs["high"] - pairs["low"]
-    flagged = pairs[
-        (pairs["count"] >= unusual.MIN_REGIONS)
-        & (pairs["change"].abs() >= np.log(unusual.JUMP_RATIO))
-        & (
-            (pairs["change"] < pairs["low"] - unusual.JUMP_IQR * spread)
-            | (pairs["change"] > pairs["high"] + unusual.JUMP_IQR * spread)
-        )
-    ]
-    found: dict[str, dict[str, Any]] = {}
-    for row in flagged.assign(size=flagged["change"].abs()).sort_values("size").itertuples():
-        indicator = names[int(row.series)]
-        entry = found.setdefault(indicator, {"places": 0})
-        entry.update(
-            kind=JUMP,
-            indicator=indicator,
-            series=int(row.series),
-            code=row.code,
-            year_before=int(row.year_before),
-            year=int(row.year),
-            before=float(row.before),
-            after=float(row.value),
-            places=entry["places"] + 1,
-        )
     return _by_indicator(found.values())
 
 

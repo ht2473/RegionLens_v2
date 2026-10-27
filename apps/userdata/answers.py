@@ -34,7 +34,7 @@ LEADERS = 3
 TREND_YEARS = 5
 # Связей в ответе «С чем связан».
 RELATED_SHOWN = 3
-# Названий в строках «заметно выделяются» и «резкий скачок».
+# Названий в строке «заметно выделяются».
 UNUSUAL_SHOWN = 5
 # Регионов в перечнях «вырос сильнее» и «меньше всего».
 GROWTH_SHOWN = 5
@@ -880,8 +880,8 @@ def notable(asked: Asked) -> dict[str, Any]:
     Что заметно в ряду, числами и без оценок: наибольшее и наименьшее значение года и их
     отношение (у положительных), в скольких регионах значение выросло с первого года ряда,
     у скольких значения за год нет — из регионов, что есть в ряду хоть за один год: таблица
-    по двадцати регионам не «теряет» остальные шестьдесят пять. Ещё — необычные значения
-    (``unusual``): кто заметно выделяется (не у сумм) и резкие скачки к прошлому году ряда.
+    по двадцати регионам не «теряет» остальные шестьдесят пять. Ещё — кто заметно
+    выделяется (``unusual``, не у сумм).
     """
     from apps.analytics.selectors import region_rows
     from apps.warehouse.queries import region_panel
@@ -914,10 +914,6 @@ def notable(asked: Asked) -> dict[str, Any]:
                 "total": len(both),
             }
     standing = [] if subject.item.absolute else unusual.standing_out(values)
-    sharp: list[unusual.Jump] = []
-    if earlier:
-        previous = max(earlier)
-        sharp = unusual.jumps(panel[previous], values, (previous, state.year))
     return {
         "year": state.year,
         "high": point(high),
@@ -927,16 +923,6 @@ def notable(asked: Asked) -> dict[str, Any]:
         "missing": len(covered - set(values)),
         "standing": [names[code] for code in standing[:UNUSUAL_SHOWN]],
         "standing_more": max(len(standing) - UNUSUAL_SHOWN, 0),
-        "jumps": [
-            {
-                "code": jump.code,
-                "name": names[jump.code],
-                "year_before": jump.year_before,
-                "times": unusual.times(jump.ratio),
-            }
-            for jump in sharp[:UNUSUAL_SHOWN]
-            if jump.code in names
-        ],
         "open_url": _url("rankings:index", series=state.series.key, year=state.year),
     }
 
