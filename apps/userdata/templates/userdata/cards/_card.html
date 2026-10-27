@@ -16,6 +16,7 @@
               aria-label="{% blocktranslate trimmed with title=card.title|default:card.target_title %}Название карточки «{{ title }}» — изменить{% endblocktranslate %}">{{ card.title|default:card.target_title }}</button>{% else %}{{ card.title|default:card.target_title }}{% endif %}
     </h2>
     {% if card.block.note %}<p class="study-card__note"{% with lang=card.block.note|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ card.block.note }}</p>{% endif %}
+    {% if card.via_note %}<p class="study-card__note">{{ card.via_note }}</p>{% endif %}
   </header>
 
   {% include card.template %}

@@ -24,7 +24,7 @@ from django.utils.translation import gettext_lazy
 
 from apps.warehouse import routing
 
-from . import access, build, extract, indicators, jobs, operations, semantics, studies
+from . import access, build, extract, indicators, jobs, operations, semantics, studies, via
 from .models import Dataset, DatasetSeries, DatasetVersion, Study
 from .series import PER_CAPITA, UserSeries
 
@@ -489,15 +489,40 @@ def actions(
     value = entry.value
 
     def why(action: str) -> str:
-        return semantics.verdict(action, value, region_known=region_known).reason
+        found = semantics.verdict(action, value, region_known=region_known)
+        return "" if via.passable(found, is_user=entry.is_user) else found.reason
 
-    return [
+    groups = [
         Group(LOOK, _("Посмотреть"), _look(entry, why)),
         Group(ASK, _("Ответить на вопрос"), _ask(entry, why)),
         Group(PAIR, _("Сравнить"), _pair(entry, partner, partners, why, group_url)),
         _compute_group(entry),
         Group(SETS, _("Сразу несколько карточек"), _sets(why), hint=str(SETS_HINT)),
     ]
+    return [
+        replace(group, actions=[_via_note(action, entry) for action in group.actions])
+        for group in groups
+    ]
+
+
+def _via_note(action: Action, entry: Entry) -> Action:
+    """У суммы пункт, который считается по пересчёту: какой пересчёт и есть ли он уже."""
+    if action.reason or action.value not in semantics.RULES:
+        return action
+    found = semantics.verdict(action.value, entry.value, data=False)
+    if not via.passable(found, is_user=entry.is_user):
+        return action
+    area = found.via == semantics.PER_KM2
+    if via.built(entry.key, found.via):
+        note = _("считается по значению на км²") if area else _("считается по значению на жителя")
+    else:
+        note = (
+            _("сначала посчитает значение на км² — оно встанет в таблицу")
+            if area
+            else _("сначала посчитает значение на жителя — оно встанет в таблицу")
+        )
+    description = f"{action.description}. {str(note).capitalize()}" if action.description else note
+    return replace(action, description=description)
 
 
 def _look(entry: Entry, why: Any) -> list[Action]:
@@ -849,6 +874,11 @@ def add(
     if value.startswith(VIEW_PREFIX):
         target = value.removeprefix(VIEW_PREFIX)
         return studies.add_view(study, target, urlencode({"series": series_key}))
+    if value in semantics.RULES and value.startswith((ANSWER_PREFIX, SET_PREFIX)):
+        # Сумма — через пересчёт на жителя: карточка ставится на него.
+        series_key = via.target(request, value, series_key)
+        if other and value == f"{ANSWER_PREFIX}relation":
+            other = via.target(request, value, other)
     if value.startswith(ANSWER_PREFIX):
         question = value.removeprefix(ANSWER_PREFIX)
         return _add_answer(request, study, question, series_key, other, parts=parts, group=group)

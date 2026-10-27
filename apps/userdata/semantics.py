@@ -263,13 +263,14 @@ def series_type(
     kind: str, *, derived: str = "", name: str = "", unit: str = "", chosen: str = ""
 ) -> str:
     """
-    Тип ряда: выбранный человеком; у пересчёта — по пересчёту; иначе прежний вид,
+    Тип ряда: у пересчёта — по пересчёту (выбор человека относится к исходному показателю:
+    «на жителя» от суммы — уже относительная); иначе выбранный человеком; иначе прежний вид,
     уточнённый по названию.
     """
-    if chosen in TYPES:
-        return chosen
     if derived in DERIVED_TYPES:
         return DERIVED_TYPES[derived]
+    if chosen in TYPES:
+        return chosen
     return refine(kind, name, unit) or RELATIVE
 
 

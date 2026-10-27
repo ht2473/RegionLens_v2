@@ -16,6 +16,7 @@ from typing import Any
 
 from django.http import Http404, HttpRequest, QueryDict
 from django.urls import reverse
+from django.utils.translation import gettext as _
 
 from apps.core.citation import series_source
 from apps.core.templatetags.formatting import ru_number
@@ -28,7 +29,7 @@ from apps.warehouse.duckdb_client import WarehouseNotBuiltError
 from apps.workspace.constants import QUERY_TARGETS_BY_CODE
 from apps.workspace.describe import describe_parameters
 
-from . import answers, operations, semantics
+from . import answers, operations, semantics, via
 from .studies import ANSWER, CANVAS_TARGETS, PAIR_QUESTIONS, VIEW
 
 # Строк рейтинга и таблицы на карточке; остальное — по ссылке «Открыть».
@@ -298,22 +299,26 @@ def _answer(
         "icon": answers.ICONS[question],
         "prefix": f"b{block['id']}",
     }
+    action = f"answer:{question}"
+    # Сумма — по собранному пересчёту на жителя (на км²): ключ ряда и пометка на карточке.
+    own, own_via = via.through(action, block["series"])
+    other_key, other_via = (
+        via.through(action, block["other"]) if question in PAIR_QUESTIONS else ("", "")
+    )
     try:
         _clone, state = _state(
-            request, card_query({"series": block["series"]}, year=year, territories=territories)
+            request, card_query({"series": own}, year=year, territories=territories)
         )
         subject = describe_subject(state)
         if subject is None or state.series is None:
             raise Http404
-        _refuse(
-            question, [state.series.key, *([block["other"]] if question in PAIR_QUESTIONS else [])]
-        )
+        _refuse(question, [state.series.key, *([other_key] if question in PAIR_QUESTIONS else [])])
         if state.year is None:
             # Лет со значениями регионов нет: ответ «по России» — за последний год ряда.
             state = _country_year(state)
         if question in PAIR_QUESTIONS:
             _other_clone, other = _state(
-                request, card_query({"series": block["other"]}, year=year, territories=[])
+                request, card_query({"series": other_key}, year=year, territories=[])
             )
             partner = describe_subject(other)
             if partner is None:
@@ -336,6 +341,12 @@ def _answer(
         )
         return card
     assert state.series is not None and state.year is not None
+    if own != block["series"] or (other_via and other_key != block.get("other")):
+        card["via_note"] = (
+            _("Посчитано по значению на км².")
+            if semantics.PER_KM2 in {own_via, other_via}
+            else _("Посчитано по значению на жителя.")
+        )
     card.update(
         built,
         template=f"userdata/cards/_{question}.html",
