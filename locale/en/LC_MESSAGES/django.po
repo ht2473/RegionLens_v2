@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-27 02:58+0000\n"
+"POT-Creation-Date: 2026-10-27 16:21+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -3651,7 +3651,6 @@ msgid "одно из самых низких значений в стране"
 msgstr "among the lowest in the country"
 
 #: apps/catalog/passport.py:131
-#: apps/userdata/unusual.py:56
 msgid "в %(ratio)s раз"
 msgstr "%(ratio)s times"
 
@@ -3682,7 +3681,6 @@ msgid "%(head)s и %(last)s"
 msgstr "%(head)s and %(last)s"
 
 #: apps/catalog/passport.py:130
-#: apps/userdata/unusual.py:56
 msgid "в %(ratio)s раза"
 msgstr "%(ratio)s times"
 
@@ -5427,7 +5425,7 @@ msgid "к базовому году"
 msgstr "rebased"
 
 #: apps/compare/panel.py:208
-#: apps/userdata/answers.py:1328
+#: apps/userdata/answers.py:1314
 msgid "%(year)s = 100"
 msgstr "%(year)s = 100"
 
@@ -10291,27 +10289,27 @@ msgstr "The regions of the group have no values of this indicator."
 msgid "За этот год значений по округам нет."
 msgstr "There are no values by federal district in this year."
 
-#: apps/userdata/answers.py:963
+#: apps/userdata/answers.py:949
 msgid "Для малых графиков нужны хотя бы два года."
 msgstr "Small multiples need at least two years."
 
-#: apps/userdata/answers.py:972
+#: apps/userdata/answers.py:958
 msgid "За эти годы значений по регионам нет."
 msgstr "There are no regional values for these years."
 
-#: apps/userdata/answers.py:1081
+#: apps/userdata/answers.py:1067
 msgid "Индекс не рассчитать: значения регионов одинаковы."
 msgstr "The index cannot be calculated: the regions’ values are equal."
 
-#: apps/userdata/answers.py:1255
+#: apps/userdata/answers.py:1241
 msgid "У показателей нет общего года."
 msgstr "The indicators have no year in common."
 
-#: apps/userdata/answers.py:1267
+#: apps/userdata/answers.py:1253
 msgid "Пар значений слишком мало для оценки связи."
 msgstr "There are too few pairs of values to estimate a relationship."
 
-#: apps/userdata/answers.py:1272
+#: apps/userdata/answers.py:1258
 msgid "Связь не рассчитать: у одного из показателей значения одинаковы."
 msgstr "The relationship cannot be calculated: one of the indicators has equal values."
 
@@ -10331,11 +10329,11 @@ msgstr "%(first)s and others (%(count)s)"
 msgid "прочие"
 msgstr "other"
 
-#: apps/userdata/answers.py:1129
+#: apps/userdata/answers.py:1115
 msgid "Нужно не меньше %(count)s лет между первым и последним годом."
 msgstr "At least %(count)s years are needed between the first and the last year."
 
-#: apps/userdata/answers.py:1153
+#: apps/userdata/answers.py:1139
 msgid "Нужны положительные значения хотя бы по %(count)s регионам каждый год."
 msgstr "Positive values for at least %(count)s regions are needed in every year."
 
@@ -10512,7 +10510,7 @@ msgstr "not in the reference list"
 msgid "исключено из расчётов"
 msgstr "excluded from calculations"
 
-#: apps/userdata/extract.py:858
+#: apps/userdata/extract.py:863
 msgid "Разобрать таблицу не удалось. Мы получили сообщение об ошибке; сам файл не пересылался."
 msgstr "The table could not be parsed. We have received an error report; the file itself was not sent."
 
@@ -10546,7 +10544,7 @@ msgstr "No value column was found. Mark it at the “What is in the table” ste
 msgid "Столбец с годами не найден. Отметьте его на шаге «Что в таблице»."
 msgstr "No column with years was found. Mark it at the “What is in the table” step."
 
-#: apps/userdata/extract.py:593
+#: apps/userdata/extract.py:598
 msgid "Столбцы значений не найдены. Отметьте их на шаге «Что в таблице»."
 msgstr "No value columns were found. Mark them at the “What is in the table” step."
 
@@ -11949,51 +11947,43 @@ msgstr "The top and bottom %(count)s regions"
 msgid "Карточек с данными"
 msgstr "Cards with data"
 
-#: apps/userdata/review.py:143
+#: apps/userdata/review.py:140
 msgid "части разреза «%(header)s» в сумме больше итога в %(count)s местах, например %(region)s, %(year)s: %(sum)s против %(total)s."
 msgstr "the parts of the breakdown “%(header)s” add up to more than the total in %(count)s places, for example %(region)s, %(year)s: %(sum)s against %(total)s."
 
-#: apps/userdata/review.py:157
-msgid "резкий скачок: %(region)s, %(before_year)s → %(year)s: %(before)s → %(after)s. Проверьте, нет ли ошибки."
-msgstr "sharp jump: %(region)s, %(before_year)s → %(year)s: %(before)s → %(after)s. Check for an error."
-
-#: apps/userdata/review.py:118
+#: apps/userdata/review.py:115
 msgid "сумма регионов больше значения России на %(percent)s %% в %(year)s году."
 msgstr "the sum of the regions is %(percent)s %% above the value for Russia in %(year)s."
 
-#: apps/userdata/review.py:120
+#: apps/userdata/review.py:117
 msgid "сумма регионов меньше значения России на %(percent)s %% в %(year)s году."
 msgstr "the sum of the regions is %(percent)s %% below the value for Russia in %(year)s."
 
-#: apps/userdata/review.py:134
+#: apps/userdata/review.py:131
 msgid "значения регионов в %(year)s году в %(step)s раз больше, чем в %(before)s."
 msgstr "regional values in %(year)s are %(step)s times larger than in %(before)s."
 
-#: apps/userdata/review.py:136
+#: apps/userdata/review.py:133
 msgid "значения регионов в %(year)s году в %(step)s раз меньше, чем в %(before)s."
 msgstr "regional values in %(year)s are %(step)s times smaller than in %(before)s."
 
-#: apps/userdata/review.py:138
+#: apps/userdata/review.py:135
 msgid "Проверьте единицу: тысячи или миллионы."
 msgstr "Check the unit: thousands or millions."
 
-#: apps/userdata/review.py:67
+#: apps/userdata/review.py:66
 msgid "Нулей: %(zeros)s из %(values)s."
 msgstr "Zeros: %(zeros)s of %(values)s."
 
-#: apps/userdata/review.py:123
+#: apps/userdata/review.py:120
 msgid "Лет с расхождением больше 1 %%: %(count)s."
 msgstr "Years with a gap over 1 %%: %(count)s."
 
-#: apps/userdata/review.py:168
-msgid "Таких мест: %(count)s."
-msgstr "Such places: %(count)s."
-
-#: apps/userdata/review.py:71
+#: apps/userdata/review.py:70
 msgid "Между обычными годами: %(count)s, например %(region)s: %(before)s → 0 → %(after)s (%(first)s–%(last)s)."
 msgstr "Between ordinary years: %(count)s, for example %(region)s: %(before)s → 0 → %(after)s (%(first)s–%(last)s)."
 
-#: apps/userdata/review.py:86
+#: apps/userdata/review.py:85
 msgid "Ноль у всех регионов: %(years)s."
 msgstr "Zero in every region: %(years)s."
 
@@ -13469,10 +13459,6 @@ msgid "И ещё регионов: %(count)s."
 msgstr "And %(count)s more regions."
 
 #: apps/userdata/templates/userdata/cards/_notable.html:16
-msgid "Резкий скачок: %(name)s, %(before)s → %(year)s — %(times)s. Проверьте, нет ли ошибки."
-msgstr "Sharp jump: %(name)s, %(before)s → %(year)s — %(times)s. Check for an error."
-
-#: apps/userdata/templates/userdata/cards/_notable.html:19
 msgid "Без значения за год — регионов: <span class=\"numeric\">%(missing)s</span>."
 msgstr "Regions without a value for the year: <span class=\"numeric\">%(missing)s</span>."
 
