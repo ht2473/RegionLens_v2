@@ -444,6 +444,63 @@ class TestOtherAgencies:
         assert result.year_from == recognize.YEAR_FROM_FILE
 
     @pytest.mark.parametrize(
+        "file_name",
+        [
+            # Даты — версии набора и структуры, цифры кода набора — не год (возраст 20–24).
+            "7708234640-healthregions-2021_data-20220624T1406-structure-20220624T1406.csv",
+            "7708234640-totalnotmarried16th2024th_data-20161226T1712-structure-20161225T1712.csv",
+            "data-20140221-structure-20140221.csv",
+        ],
+    )
+    def test_open_data_file_name_gives_no_year(self, file_name: str) -> None:
+        rows = [
+            ["Регион", "Кредиты", "Задолженность"],
+            ["Москва", "13", "25"],
+            ["Тверская область", "1,2", "0,5"],
+            ["Курская область", "1,1", "0,6"],
+        ]
+        table = ingest.TableInfo(key="", name="t", kind=ingest.PASTE, size=0)
+        loaded = Loaded(rows=rows, complete=True, total=len(rows))
+        result = recognize.recognize(loaded, table, file_name=file_name)
+        assert result.year is None
+        assert result.needs_year
+
+    def test_numbers_named_with_period_or_level_are_values(self) -> None:
+        rows = [
+            ["Регион", "Количество карт на конец периода, ед.", "Уровень безработицы, %"],
+            ["Москва", "40211953", "1,3"],
+            ["Тверская область", "1622513", "2,9"],
+            ["Курская область", "1490722", "3,1"],
+        ]
+        roles = _roles(_recognize(rows))
+        assert roles["Количество карт на конец периода, ед."] == VALUE
+        assert roles["Уровень безработицы, %"] == VALUE
+
+    def test_small_numbers_named_month_or_level_are_not_values(self) -> None:
+        rows = [
+            ["Регион", "Месяц", "Уровень", "Значение"],
+            ["Москва", "1", "1", "13"],
+            ["Москва", "2", "2", "12"],
+            ["Тверская область", "1", "1", "5"],
+            ["Курская область", "2", "2", "6"],
+        ]
+        roles = _roles(_recognize(rows))
+        assert roles.get("Уровень") != VALUE
+        assert roles.get("Месяц") != VALUE
+
+    def test_year_with_digit_group_space_is_not_value(self) -> None:
+        # Выгрузка СФР пишет год с пробелом между разрядами: «2 025».
+        rows = [
+            ["Регион", "Численность, чел.", "Год"],
+            ["Москва", "104 749", "2 025"],
+            ["Тверская область", "11 977", "2 025"],
+            ["Курская область", "30 867", "2 025"],
+        ]
+        roles = _roles(_recognize(rows))
+        assert roles["Численность, чел."] == VALUE
+        assert roles.get("Год") != VALUE
+
+    @pytest.mark.parametrize(
         ("text", "year", "period"),
         [
             ("за I квартал 2023 года", 2023, "quarter:1"),
