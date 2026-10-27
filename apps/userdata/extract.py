@@ -564,8 +564,13 @@ class _Reader:
         yield from self._duckdb_rows()
 
     def _duckdb_rows(self) -> Iterator[tuple[Any, ...]]:
-        """Большая таблица: в DuckDB остаются строки с отобранными значениями разрезов."""
+        """
+        Большая таблица: в DuckDB остаются строки с отобранными значениями разрезов — в порядке
+        файла. Иначе порядок показателей и «первое значение» у повтора менялись бы от разбора
+        к разбору.
+        """
         connection = tables.parse_connection(self.path)
+        connection.execute("SET preserve_insertion_order = true")
         try:
             names = tables.read_into(connection, self.path, self.table)
             conditions = []
