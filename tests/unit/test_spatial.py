@@ -181,6 +181,38 @@ class TestLocalMoran:
         total = sum(group["count"] for group in spatial.summarize_quadrants(entries))
         assert total == len([entry for entry in entries if entry.is_significant])
 
+    def test_permutation_p_has_ten_thousandth_steps(self) -> None:
+        """9 999 перестановок: уровень — целое число десятитысячных, не меньше одной."""
+        codes, matrix, values = self.setup_chain()
+        entries = spatial.local_moran(values, matrix, codes, {})
+        steps = [entry.p_value * (spatial.LOCAL_PERMUTATIONS + 1) for entry in entries]
+        assert all(step >= 1 and step == pytest.approx(round(step)) for step in steps)
+
+    def test_correction_is_not_weaker_than_raw(self) -> None:
+        """Поправка Бенджамини — Хохберга не прибавляет значимых и не уменьшает уровень."""
+        codes, matrix, values = self.setup_chain()
+        raw = spatial.local_moran(values, matrix, codes, {})
+        corrected = spatial.adjusted(raw)
+        assert all(
+            entry.p_adjusted is not None and entry.p_adjusted >= entry.p_value
+            for entry in corrected
+        )
+        assert sum(entry.is_significant for entry in corrected) <= sum(
+            entry.is_significant for entry in raw
+        )
+
+    def test_noise_has_few_corrected_clusters(self) -> None:
+        """На случайных значениях без поправки «кластеры» находятся, с поправкой — почти нет."""
+        codes, matrix, _values = self.setup_chain()
+        rng = np.random.default_rng(7)
+        found = raw = 0
+        for _round in range(10):
+            entries = spatial.local_moran(rng.normal(size=CHAIN_SIZE), matrix, codes, {})
+            raw += sum(entry.is_significant for entry in entries)
+            found += sum(entry.is_significant for entry in spatial.adjusted(entries))
+        assert raw > found
+        assert found <= 2
+
 
 class TestNearestNeighbours:
     """Соседство по расстоянию между центрами территорий."""

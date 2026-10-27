@@ -240,6 +240,8 @@ def test_series_type() -> None:
     assert semantics.series_type(RELATIVE, derived="growth") == INDEX
     assert semantics.series_type(SUM, name="Вклады на 1 января", unit="млн руб.") == STOCK
     assert semantics.series_type(SUM, name="Вклады на 1 января", chosen=SUM) == SUM
+    # Выбор человека — у исходного показателя; пересчёт на жителя от суммы — относительная.
+    assert semantics.series_type(SUM, derived="per1", chosen=STOCK) == RELATIVE
 
 
 def test_months_by_type() -> None:

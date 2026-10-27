@@ -264,3 +264,20 @@ class TestHiddenBounds:
         found = inequality.hidden_bounds([0.0, *SKEWED], 2)
         assert "theil" not in found
         assert "gini" in found
+
+
+class TestVariation:
+    """Коэффициент вариации: одна σ на сайте — выборочная, как в витрине статистик."""
+
+    def test_unweighted_uses_sample_deviation(self) -> None:
+        values = np.asarray(SKEWED, dtype=float)
+        found = inequality.coefficient_of_variation(values, np.ones_like(values))
+        assert found == pytest.approx(np.std(values, ddof=1) / np.mean(values))
+
+    def test_weighted_keeps_weighted_variance(self) -> None:
+        values = np.asarray([1.0, 2.0, 3.0, 4.0])
+        weights = np.asarray([1.0, 1.0, 1.0, 5.0])
+        mean = float(np.average(values, weights=weights))
+        variance = float(np.average((values - mean) ** 2, weights=weights))
+        found = inequality.coefficient_of_variation(values, weights)
+        assert found == pytest.approx(variance**0.5 / mean)

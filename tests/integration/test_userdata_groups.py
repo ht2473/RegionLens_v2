@@ -210,17 +210,15 @@ class TestSets:
         assert response["HX-Redirect"].startswith(reverse("userdata:study", args=[study.public_id]))
 
     def test_inequality(self, member_client: Client, warehouse: Any) -> None:
-        # Сумме неравенство — только через показатель на жителя: набор не ставится.
+        # Сумме неравенство — через показатель на жителя: набор ставится на пересчёт.
         dataset = _built(member_client, "crime_wide.csv")
         study = _study(member_client)
-        _edit(
-            member_client,
-            study,
-            action="add",
-            do="set:inequality",
-            series=_key(dataset, _first(dataset)),
-        )
-        assert _blocks(study) == []
+        key = _key(dataset, _first(dataset))
+        _edit(member_client, study, action="add", do="set:inequality", series=key)
+        recount = {block.get("series") for block in _blocks(study) if block.get("series")}
+        assert recount and key not in recount
+        assert all(found.startswith(f"{key}-p") for found in recount)
+        study = _study(member_client)
         rates = _built(member_client, "crime_wide.csv", kind="relative")
         _edit(
             member_client,
