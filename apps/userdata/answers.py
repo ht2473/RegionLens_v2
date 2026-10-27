@@ -23,9 +23,10 @@ from django.utils.translation import gettext as _
 
 from apps.analytics.core import correlation, inequality, spatial
 from apps.analytics.selectors import cached_result, neighbour_map, region_rows
-from apps.core.templatetags.formatting import NBSP, ru_number
+from apps.core.templatetags.formatting import NBSP, permutation_p, ru_number
 from apps.surface.state import SurfaceState
 
+from . import unusual
 from .series import FEW_REGIONS
 
 # Регионов в перечнях «больше всего» и «меньше всего»; лет в изменении — как в ответах поиска.
@@ -33,6 +34,8 @@ LEADERS = 3
 TREND_YEARS = 5
 # Связей в ответе «С чем связан».
 RELATED_SHOWN = 3
+# Названий в строках «заметно выделяются» и «резкий скачок».
+UNUSUAL_SHOWN = 5
 # Регионов в перечнях «вырос сильнее» и «меньше всего».
 GROWTH_SHOWN = 5
 # Малые графики: лет в клетке и размер клетки в единицах чертежа.
@@ -877,7 +880,8 @@ def notable(asked: Asked) -> dict[str, Any]:
     Что заметно в ряду, числами и без оценок: наибольшее и наименьшее значение года и их
     отношение (у положительных), в скольких регионах значение выросло с первого года ряда,
     у скольких значения за год нет — из регионов, что есть в ряду хоть за один год: таблица
-    по двадцати регионам не «теряет» остальные шестьдесят пять.
+    по двадцати регионам не «теряет» остальные шестьдесят пять. Ещё — необычные значения
+    (``unusual``): кто заметно выделяется (не у сумм) и резкие скачки к прошлому году ряда.
     """
     from apps.analytics.selectors import region_rows
     from apps.warehouse.queries import region_panel
@@ -909,6 +913,11 @@ def notable(asked: Asked) -> dict[str, Any]:
                 "up": sum(1 for code in both if values[code] > panel[first][code]),
                 "total": len(both),
             }
+    standing = [] if subject.item.absolute else unusual.standing_out(values)
+    sharp: list[unusual.Jump] = []
+    if earlier:
+        previous = max(earlier)
+        sharp = unusual.jumps(panel[previous], values, (previous, state.year))
     return {
         "year": state.year,
         "high": point(high),
@@ -916,6 +925,18 @@ def notable(asked: Asked) -> dict[str, Any]:
         "ratio": ru_number(ratio, 1 if ratio < 10 else 0) if ratio else "",  # noqa: PLR2004
         "growth": growth,
         "missing": len(covered - set(values)),
+        "standing": [names[code] for code in standing[:UNUSUAL_SHOWN]],
+        "standing_more": max(len(standing) - UNUSUAL_SHOWN, 0),
+        "jumps": [
+            {
+                "code": jump.code,
+                "name": names[jump.code],
+                "year_before": jump.year_before,
+                "times": unusual.times(jump.ratio),
+            }
+            for jump in sharp[:UNUSUAL_SHOWN]
+            if jump.code in names
+        ],
         "open_url": _url("rankings:index", series=state.series.key, year=state.year),
     }
 
@@ -1062,7 +1083,7 @@ def neighbours(asked: Asked) -> dict[str, Any]:
         "year": state.year,
         "value": ru_number(found["value"], 2),
         "direction": DIRECTIONS[found["direction"]],
-        "p_value": ru_number(found["p_value"], 3),
+        "p_value": permutation_p(found["p_value"], found.get("permutations", 999)),
         "regions": found["observations"],
         "open_url": _url("analytics:spatial", series=state.series.key, year=state.year),
     }
@@ -1079,6 +1100,7 @@ def _moran(values: dict[str, float]) -> dict[str, Any] | None:
         "value": found.value,
         "direction": found.direction,
         "p_value": found.p_value,
+        "permutations": found.permutations,
         "observations": found.observations,
     }
 
@@ -1168,11 +1190,14 @@ def related(asked: Asked) -> dict[str, Any]:
                 "strength": link.result.strength,
                 "direct": (link.result.coefficient or 0) > 0,
                 "url": link.url,
+                # Год показателя сайта, если у него нет значений за год таблицы.
+                "other_year": link.year if link.year != found["year"] else None,
             }
             for link in links[:RELATED_SHOWN]
         ],
         "significant": len(links),
         "pairs": found["pairs"],
+        "other_years": any(link.year != found["year"] for link in links[:RELATED_SHOWN]),
         "open_url": more,
     }
 

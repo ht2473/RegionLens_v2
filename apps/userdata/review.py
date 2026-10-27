@@ -4,7 +4,8 @@
 
 Прочерк у Росстата — «явление отсутствует»: вопроса нет. У таблицы другого источника
 человек выбирает, что значит прочерк; подсказан тот же ответ. Замечания о согласованности
-показываются только у сумм: доли и средние не складываются по регионам.
+показываются только у сумм: доли и средние не складываются по регионам. Резкий скачок
+региона — у любой величины.
 """
 
 from __future__ import annotations
@@ -102,7 +103,9 @@ def _checks(report: dict[str, Any], items: list[Indicator]) -> list[str]:
     found = []
     for check in report.get("checks") or []:
         item = by_name.get(check["indicator"])
-        if item is None or item.hidden or not semantics.is_additive(item.kind):
+        if item is None or item.hidden:
+            continue
+        if check["kind"] != consistency.JUMP and not semantics.is_additive(item.kind):
             continue
         text = _CHECK_TEXTS[check["kind"]](check)
         found.append(f"«{item.title}»: {text}")
@@ -145,13 +148,35 @@ def _parts(check: dict[str, Any]) -> str:
         "count": check["places"],
         "region": territory_name(example["code"]),
         "year": example["year"],
-        "sum": ru_number(example["sum"]),
-        "total": ru_number(example["total"]),
+        "sum": _number(example["sum"]),
+        "total": _number(example["total"]),
     }
+
+
+def _jump(check: dict[str, Any]) -> str:
+    text = _(
+        "резкий скачок: %(region)s, %(before_year)s → %(year)s: %(before)s → %(after)s. "
+        "Проверьте, нет ли ошибки."
+    ) % {
+        "region": territory_name(check["code"]),
+        "before_year": check["year_before"],
+        "year": check["year"],
+        "before": _number(check["before"]),
+        "after": _number(check["after"]),
+    }
+    if check["places"] > 1:
+        text += " " + _("Таких мест: %(count)s.") % {"count": check["places"]}
+    return text
+
+
+def _number(value: float) -> str:
+    """Число как в таблице: целое — без дробной части."""
+    return ru_number(value, 0) if float(value).is_integer() else ru_number(value)
 
 
 _CHECK_TEXTS = {
     consistency.COUNTRY: _country,
     consistency.SCALE: _scale,
     consistency.PARTS: _parts,
+    consistency.JUMP: _jump,
 }

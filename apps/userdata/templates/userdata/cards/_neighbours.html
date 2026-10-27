@@ -9,5 +9,5 @@
 <p class="answer__meta">
   <span><b>{{ card.direction }}</b></span>
   <span>{% blocktranslate trimmed with count=card.regions %}регионов: {{ count }}{% endblocktranslate %}</span>
-  <span>p = <span class="numeric">{{ card.p_value }}</span></span>
+  <span>p {% if card.p_value|slice:":1" != "≤" %}= {% endif %}<span class="numeric">{{ card.p_value }}</span></span>
 </p>
