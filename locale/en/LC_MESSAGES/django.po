@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 19:06+0000\n"
+"POT-Creation-Date: 2026-10-26 22:48+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1519,7 +1519,7 @@ msgstr "No steady change in the spread was found."
 #: apps/analytics/templates/analytics/partials/_convergence_results.html:55
 #: apps/analytics/templates/analytics/partials/_revisions_results.html:198
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:500
-#: apps/userdata/operations.py:31
+#: apps/userdata/operations.py:32
 #: apps/userdata/templates/userdata/version.html:109
 msgid "Изменение"
 msgstr "Change"
@@ -2075,7 +2075,7 @@ msgid "Направленность"
 msgstr "Polarity"
 
 #: apps/analytics/templates/analytics/partials/_index_results.html:250
-#: apps/userdata/operations.py:760
+#: apps/userdata/operations.py:762
 msgid "Вес"
 msgstr "Weight"
 
@@ -3898,7 +3898,7 @@ msgid "Основные показатели"
 msgstr "Key indicators"
 
 #: apps/catalog/selectors.py:60
-#: apps/userdata/series.py:243
+#: apps/userdata/series.py:289
 msgid "Мои таблицы: %(title)s"
 msgstr "My tables: %(title)s"
 
@@ -3947,7 +3947,7 @@ msgid "выпусков изданий"
 msgstr "editions of publications"
 
 #: apps/catalog/templates/catalog/dataset.html:54
-#: apps/userdata/views.py:588
+#: apps/userdata/views.py:594
 msgid "период"
 msgstr "period"
 
@@ -4278,13 +4278,13 @@ msgstr "No data for %(count)s regions."
 
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:12
 #: apps/surface/templates/surface/partials/_subject.html:8
-#: apps/userdata/models.py:162
+#: apps/userdata/models.py:167
 msgid "рост — к лучшему"
 msgstr "higher is better"
 
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:13
 #: apps/surface/templates/surface/partials/_subject.html:8
-#: apps/userdata/models.py:163
+#: apps/userdata/models.py:168
 msgid "рост — к худшему"
 msgstr "higher is worse"
 
@@ -4898,7 +4898,7 @@ msgid "ещё не получен"
 msgstr "not received yet"
 
 #: apps/catalog/templates/catalog/sources.html:62
-#: apps/userdata/views.py:45
+#: apps/userdata/views.py:46
 msgid "Проверка"
 msgstr "Check"
 
@@ -4999,7 +4999,7 @@ msgid "км²"
 msgstr "km²"
 
 #: apps/catalog/templates/catalog/territory_detail.html:47
-#: apps/userdata/lab.py:474
+#: apps/userdata/lab.py:497
 msgid "Сравнить"
 msgstr "Compare"
 
@@ -5284,7 +5284,7 @@ msgstr "No district"
 #: apps/core/navigation.py:53
 #: apps/maps/templates/maps/partials/_view.html:7
 #: apps/surface/panels.py:67
-#: apps/userdata/lab.py:484
+#: apps/userdata/lab.py:506
 msgid "Карта"
 msgstr "Map"
 
@@ -5299,8 +5299,8 @@ msgstr "The course of the value in selected regions next to the country"
 #: apps/catalog/views/series.py:270
 #: apps/core/navigation.py:63
 #: apps/surface/panels.py:98
-#: apps/userdata/lab.py:1067
-#: apps/userdata/lab.py:500
+#: apps/userdata/lab.py:1112
+#: apps/userdata/lab.py:523
 msgid "Рейтинг"
 msgstr "Ranking"
 
@@ -5311,7 +5311,7 @@ msgstr "All regions by rank and who moved up or down"
 #: apps/catalog/views/series.py:276
 #: apps/core/navigation.py:68
 #: apps/surface/panels.py:113
-#: apps/userdata/lab.py:506
+#: apps/userdata/lab.py:530
 #: apps/userdata/pages.py:49
 msgid "Распределение"
 msgstr "Distribution"
@@ -5372,7 +5372,7 @@ msgid "к базовому году"
 msgstr "rebased"
 
 #: apps/compare/panel.py:208
-#: apps/userdata/answers.py:1299
+#: apps/userdata/answers.py:1303
 msgid "%(year)s = 100"
 msgstr "%(year)s = 100"
 
@@ -10105,7 +10105,7 @@ msgid "Как изменился"
 msgstr "How it changed"
 
 #: apps/userdata/answers.py:54
-#: apps/userdata/lab.py:1143
+#: apps/userdata/lab.py:1189
 msgid "Кто вырос сильнее"
 msgstr "Who grew the most"
 
@@ -10114,7 +10114,7 @@ msgid "Итоги по округам"
 msgstr "Totals by federal district"
 
 #: apps/userdata/answers.py:56
-#: apps/userdata/lab.py:518
+#: apps/userdata/lab.py:544
 msgid "Малые графики"
 msgstr "Small multiples"
 
@@ -10142,7 +10142,7 @@ msgid "Структура"
 msgstr "Structure"
 
 #: apps/userdata/answers.py:62
-#: apps/userdata/lab.py:1140
+#: apps/userdata/lab.py:1186
 msgid "Почему изменилось"
 msgstr "Why it changed"
 
@@ -10163,7 +10163,7 @@ msgid "в процентных пунктах"
 msgstr "in percentage points"
 
 #: apps/userdata/answers.py:302
-#: apps/userdata/operations.py:75
+#: apps/userdata/operations.py:76
 msgid "в процентах"
 msgstr "in per cent"
 
@@ -10176,8 +10176,8 @@ msgid "Россия (сумма регионов)"
 msgstr "Russia (sum of regions)"
 
 #: apps/userdata/answers.py:120
-#: apps/userdata/answers.py:794
-#: apps/userdata/answers.py:887
+#: apps/userdata/answers.py:798
+#: apps/userdata/answers.py:891
 msgid "За этот год значений по регионам нет."
 msgstr "There are no regional values for this year."
 
@@ -10245,35 +10245,35 @@ msgstr "other parts (%(count)s)"
 msgid "Группа регионов удалена."
 msgstr "The region group was deleted."
 
-#: apps/userdata/answers.py:700
+#: apps/userdata/answers.py:703
 msgid "У регионов группы нет значений этого показателя."
 msgstr "The regions of the group have no values of this indicator."
 
-#: apps/userdata/answers.py:834
+#: apps/userdata/answers.py:838
 msgid "За этот год значений по округам нет."
 msgstr "There are no values by federal district in this year."
 
-#: apps/userdata/answers.py:938
+#: apps/userdata/answers.py:942
 msgid "Для малых графиков нужны хотя бы два года."
 msgstr "Small multiples need at least two years."
 
-#: apps/userdata/answers.py:947
+#: apps/userdata/answers.py:951
 msgid "За эти годы значений по регионам нет."
 msgstr "There are no regional values for these years."
 
-#: apps/userdata/answers.py:1056
+#: apps/userdata/answers.py:1060
 msgid "Индекс не рассчитать: значения регионов одинаковы."
 msgstr "The index cannot be calculated: the regions’ values are equal."
 
-#: apps/userdata/answers.py:1226
+#: apps/userdata/answers.py:1230
 msgid "У показателей нет общего года."
 msgstr "The indicators have no year in common."
 
-#: apps/userdata/answers.py:1238
+#: apps/userdata/answers.py:1242
 msgid "Пар значений слишком мало для оценки связи."
 msgstr "There are too few pairs of values to estimate a relationship."
 
-#: apps/userdata/answers.py:1243
+#: apps/userdata/answers.py:1247
 msgid "Связь не рассчитать: у одного из показателей значения одинаковы."
 msgstr "The relationship cannot be calculated: one of the indicators has equal values."
 
@@ -10293,75 +10293,75 @@ msgstr "%(first)s and others (%(count)s)"
 msgid "прочие"
 msgstr "other"
 
-#: apps/userdata/answers.py:1103
+#: apps/userdata/answers.py:1107
 msgid "Нужно не меньше %(count)s лет между первым и последним годом."
 msgstr "At least %(count)s years are needed between the first and the last year."
 
-#: apps/userdata/answers.py:1127
+#: apps/userdata/answers.py:1131
 msgid "Нужны положительные значения хотя бы по %(count)s регионам каждый год."
 msgstr "Positive values for at least %(count)s regions are needed in every year."
 
-#: apps/userdata/answers.py:714
+#: apps/userdata/answers.py:717
 msgid "доля группы в сумме регионов"
 msgstr "group share of the regional total"
 
-#: apps/userdata/answers.py:727
+#: apps/userdata/answers.py:730
 msgid "остальные регионы"
 msgstr "other regions"
 
-#: apps/userdata/build.py:567
+#: apps/userdata/build.py:573
 msgid "Пересчётов и свёрток получается %(count)s — больше %(limit)s. Отметьте их только у нужных показателей."
 msgstr "This gives %(count)s recalculations and folds — more than %(limit)s. Select them only for the indicators you need."
 
-#: apps/userdata/build.py:875
+#: apps/userdata/build.py:888
 msgid "Нет значений показателей: %(names)s."
 msgstr "No values for indicators: %(names)s."
 
-#: apps/userdata/calc_views.py:155
-#: apps/userdata/calc_views.py:231
-#: apps/userdata/lab.py:763
+#: apps/userdata/calc_views.py:158
+#: apps/userdata/calc_views.py:234
+#: apps/userdata/lab.py:791
 #: apps/userdata/templates/userdata/calc.html:17
 #: apps/userdata/templates/userdata/study.html:299
 msgid "Новый показатель"
 msgstr "New indicator"
 
-#: apps/userdata/calc_views.py:365
+#: apps/userdata/calc_views.py:368
 msgid "Первый год периода должен быть раньше последнего."
 msgstr "The first year of the period must be earlier than the last."
 
-#: apps/userdata/calc_views.py:159
+#: apps/userdata/calc_views.py:162
 msgid "Этот расчёт не подходит показателю: %(reason)s."
 msgstr "This calculation does not suit the indicator: %(reason)s."
 
-#: apps/userdata/calc_views.py:168
+#: apps/userdata/calc_views.py:171
 msgid "Проверок слишком много подряд — подождите минуту."
 msgstr "Too many checks in a row — wait a minute."
 
-#: apps/userdata/calc_views.py:219
+#: apps/userdata/calc_views.py:222
 msgid "Новый показатель сохраняется в свою таблицу — загрузите её."
 msgstr "A new indicator is saved to your own table — upload a table first."
 
-#: apps/userdata/calc_views.py:204
+#: apps/userdata/calc_views.py:207
 msgid "Показатели сайта на поле"
 msgstr "Site indicators on the board"
 
-#: apps/userdata/calc_views.py:338
+#: apps/userdata/calc_views.py:341
 msgid "Выберите показатель «%(label)s»."
 msgstr "Choose an indicator for “%(label)s”."
 
-#: apps/userdata/calc_views.py:348
+#: apps/userdata/calc_views.py:351
 msgid "Отметьте хотя бы две составляющие."
 msgstr "Select at least two components."
 
-#: apps/userdata/calc_views.py:352
+#: apps/userdata/calc_views.py:355
 msgid "Выберите «%(label)s»."
 msgstr "Choose “%(label)s”."
 
-#: apps/userdata/calc_views.py:360
+#: apps/userdata/calc_views.py:363
 msgid "Целевое значение не может быть нулём."
 msgstr "The target value cannot be zero."
 
-#: apps/userdata/calc_views.py:358
+#: apps/userdata/calc_views.py:361
 msgid "«%(label)s» — число."
 msgstr "“%(label)s” must be a number."
 
@@ -10439,7 +10439,7 @@ msgstr "federal subject"
 
 #: apps/userdata/export.py:230
 #: apps/userdata/export.py:46
-#: apps/userdata/operations.py:542
+#: apps/userdata/operations.py:565
 #: apps/userdata/templates/userdata/_group_pick.html:13
 msgid "Группа"
 msgstr "Group"
@@ -10579,7 +10579,7 @@ msgid "По этой формуле не получилось ни одного 
 msgstr "This formula produced no values: the indicators have no years and regions in common."
 
 #: apps/userdata/formula_store.py:316
-#: apps/userdata/lab.py:970
+#: apps/userdata/lab.py:1014
 msgid "Таблица ещё не собрана."
 msgstr "The table has not been built yet."
 
@@ -10830,19 +10830,19 @@ msgstr "Group “%(title)s” saved."
 msgid "Группа «%(title)s» удалена."
 msgstr "Group “%(title)s” deleted."
 
-#: apps/userdata/groups.py:68
+#: apps/userdata/groups.py:69
 msgid "Назовите группу."
 msgstr "Name the group."
 
-#: apps/userdata/groups.py:70
+#: apps/userdata/groups.py:71
 msgid "Отметьте регионы группы."
 msgstr "Tick the regions of the group."
 
-#: apps/userdata/groups.py:72
+#: apps/userdata/groups.py:73
 msgid "В группе все регионы — сравнивать её не с чем."
 msgstr "The group contains all regions, so there is nothing to compare it with."
 
-#: apps/userdata/groups.py:76
+#: apps/userdata/groups.py:77
 msgid "Групп уже %(count)s — это предел. Удалите ненужные."
 msgstr "You already have %(count)s groups, which is the limit. Delete the ones you no longer need."
 
@@ -10930,377 +10930,340 @@ msgstr "The file “%(name)s” is damaged."
 msgid "Разбор прервался. Попробуйте ещё раз или оставьте в таблице только нужные показатели и годы."
 msgstr "Parsing was interrupted. Try again, or keep only the indicators and years you need in the table."
 
-#: apps/userdata/lab.py:53
+#: apps/userdata/lab.py:52
 msgid "Набор ставит на поле сразу несколько карточек по выбранному показателю. Карточки, которые показателю не подходят, в набор не входят. Лишние убираются из меню карточки."
 msgstr "A set adds several cards for the chosen indicator at once. Cards that do not suit the indicator are left out. Remove extra cards from the card menu."
 
-#: apps/userdata/lab.py:85
+#: apps/userdata/lab.py:84
 msgid "Новый показатель встаёт рядом с исходным в вашей таблице. На жителей значение делится на среднегодовую численность населения года. Доля берётся от суммы субъектов за тот же год. Процент к прошлому году считается только у положительных значений."
 msgstr "The new indicator appears next to the original in your table. Per inhabitant, the value is divided by the average annual population of the year. A share is taken of the sum of regions for the same year. The percentage to the previous year is computed only for positive values."
 
-#: apps/userdata/lab.py:73
+#: apps/userdata/lab.py:72
 msgid "Сумма, делённая на число жителей региона"
 msgstr "The sum divided by the region’s population"
 
-#: apps/userdata/lab.py:74
+#: apps/userdata/lab.py:73
 msgid "Сколько приходится на 100 000 жителей — как у преступности и заболеваемости"
 msgstr "How much there is per 100,000 inhabitants, as with crime and morbidity"
 
-#: apps/userdata/lab.py:77
+#: apps/userdata/lab.py:76
 msgid "Какая часть общей суммы у каждого региона"
 msgstr "What part of the total each region has"
 
-#: apps/userdata/lab.py:78
+#: apps/userdata/lab.py:77
 msgid "Насколько значение выросло за год"
 msgstr "How much the value grew over the year"
 
-#: apps/userdata/lab.py:462
-msgid "у показателя один год"
-msgstr "the indicator has a single year"
-
-#: apps/userdata/lab.py:464
-msgid "нужно не меньше шести лет значений"
-msgstr "at least six years of values are needed"
-
-#: apps/userdata/lab.py:470
-msgid "мой регион не выбран — выберите его в шапке сайта"
-msgstr "my region is not chosen: choose it in the site header"
-
-#: apps/userdata/lab.py:628
+#: apps/userdata/lab.py:657
 msgid "Моя группа регионов против остальных"
 msgstr "My group of regions against the rest"
 
-#: apps/userdata/lab.py:746
-msgid "структура — для своих таблиц"
-msgstr "structure is for your own tables"
-
-#: apps/userdata/lab.py:748
-msgid "доли считаются у сумм"
-msgstr "shares are computed for totals"
-
-#: apps/userdata/lab.py:750
-msgid "нужны две суммы в одной единице: части показателя или показатели таблицы"
-msgstr "two sums in one unit are needed: parts of an indicator or indicators of the table"
-
-#: apps/userdata/lab.py:765
+#: apps/userdata/lab.py:793
 msgid "Другие расчёты и формула"
 msgstr "Other calculations and a formula"
 
-#: apps/userdata/lab.py:836
+#: apps/userdata/lab.py:867
 #: apps/userdata/studies.py:284
 msgid "Такой карточки нет."
 msgstr "There is no such card."
 
-#: apps/userdata/lab.py:1098
-#: apps/userdata/lab.py:1102
-#: apps/userdata/operations.py:29
-#: apps/userdata/operations.py:489
+#: apps/userdata/lab.py:1144
+#: apps/userdata/lab.py:1148
+#: apps/userdata/operations.py:30
+#: apps/userdata/operations.py:518
 msgid "На жителя"
 msgstr "Per resident"
 
-#: apps/userdata/lab.py:1237
+#: apps/userdata/lab.py:1285
 msgid "Таблица «%(table)s» собрана: карта, рейтинг и первые выводы — в новом исследовании."
 msgstr "The table “%(table)s” is built: its map, ranking and first findings are in a new study."
 
-#: apps/userdata/lab.py:1239
+#: apps/userdata/lab.py:1287
 msgid "Таблица «%(table)s» собрана, её карта добавлена в исследование «%(study)s»."
 msgstr "The table “%(table)s” is built, its map has been added to the study “%(study)s”."
 
-#: apps/userdata/lab.py:466
-#: apps/userdata/operations.py:831
-msgid "нужны значения хотя бы по %(count)s регионам"
-msgstr "values for at least %(count)s regions are needed"
-
-#: apps/userdata/lab.py:472
+#: apps/userdata/lab.py:495
 msgid "Посмотреть"
 msgstr "View"
 
-#: apps/userdata/lab.py:473
+#: apps/userdata/lab.py:496
 msgid "Ответить на вопрос"
 msgstr "Answer a question"
 
-#: apps/userdata/lab.py:476
+#: apps/userdata/lab.py:499
 msgid "Сразу несколько карточек"
 msgstr "Several cards at once"
 
-#: apps/userdata/lab.py:1070
-#: apps/userdata/lab.py:493
+#: apps/userdata/lab.py:1115
+#: apps/userdata/lab.py:516
 msgid "Линии по годам"
 msgstr "Lines by year"
 
-#: apps/userdata/lab.py:525
+#: apps/userdata/lab.py:551
 msgid "Из чего складывается"
 msgstr "What it is made of"
 
-#: apps/userdata/lab.py:539
+#: apps/userdata/lab.py:565
 msgid "Главное в цифрах"
 msgstr "Key figures"
 
-#: apps/userdata/lab.py:545
+#: apps/userdata/lab.py:572
 msgid "Кто впереди и кто позади"
 msgstr "Who is ahead and who is behind"
 
-#: apps/userdata/lab.py:551
+#: apps/userdata/lab.py:579
 msgid "Где мой регион"
 msgstr "Where my region stands"
 
-#: apps/userdata/lab.py:558
+#: apps/userdata/lab.py:586
 msgid "Как изменилось по России"
 msgstr "How it changed across Russia"
 
-#: apps/userdata/lab.py:565
+#: apps/userdata/lab.py:593
 msgid "У кого рост больше всего"
 msgstr "Who grew the most"
 
-#: apps/userdata/lab.py:572
+#: apps/userdata/lab.py:600
 msgid "За счёт каких регионов изменилась сумма"
 msgstr "Which regions changed the total"
 
-#: apps/userdata/lab.py:580
+#: apps/userdata/lab.py:608
 msgid "Сравнить федеральные округа"
 msgstr "Compare federal districts"
 
-#: apps/userdata/lab.py:586
+#: apps/userdata/lab.py:615
 msgid "Велик ли разрыв между регионами"
 msgstr "How wide is the gap between regions"
 
-#: apps/userdata/lab.py:594
+#: apps/userdata/lab.py:623
 msgid "Догоняют ли отстающие"
 msgstr "Are those behind catching up"
 
-#: apps/userdata/lab.py:602
+#: apps/userdata/lab.py:631
 msgid "Похожи ли соседние регионы"
 msgstr "Are neighbouring regions alike"
 
-#: apps/userdata/lab.py:610
+#: apps/userdata/lab.py:639
 msgid "С чем это связано"
 msgstr "What it is related to"
 
-#: apps/userdata/lab.py:633
+#: apps/userdata/lab.py:662
 msgid "Итог вашей группы и остальных регионов по годам"
 msgstr "Total of your group and of the other regions by year"
 
-#: apps/userdata/lab.py:674
+#: apps/userdata/lab.py:709
 msgid "Выбрать второй показатель"
 msgstr "Choose a second indicator"
 
-#: apps/userdata/lab.py:686
+#: apps/userdata/lab.py:721
 msgid "Профиль показателя"
 msgstr "Indicator profile"
 
-#: apps/userdata/lab.py:692
+#: apps/userdata/lab.py:728
 msgid "Неравенство и сближение"
 msgstr "Inequality and convergence"
 
-#: apps/userdata/lab.py:699
+#: apps/userdata/lab.py:735
 msgid "Мой регион среди соседей"
 msgstr "My region among its neighbours"
 
-#: apps/userdata/lab.py:769
+#: apps/userdata/lab.py:797
 msgid "Доля, темп роста, базовый год, Россия = 100 и своя формула"
 msgstr "Share, growth rate, base year, Russia = 100 and your own formula"
 
-#: apps/userdata/lab.py:881
+#: apps/userdata/lab.py:912
 msgid "Такого показателя нет."
 msgstr "There is no such indicator."
 
-#: apps/userdata/lab.py:888
+#: apps/userdata/lab.py:919
 msgid "Такого набора нет."
 msgstr "There is no such set."
 
-#: apps/userdata/lab.py:933
+#: apps/userdata/lab.py:974
 msgid "Мой регион не выбран — выберите его в шапке."
 msgstr "My region is not chosen: choose it in the header."
 
-#: apps/userdata/lab.py:965
+#: apps/userdata/lab.py:1009
 msgid "Такого пересчёта нет."
 msgstr "There is no such calculation."
 
-#: apps/userdata/lab.py:973
+#: apps/userdata/lab.py:1017
 msgid "Пересчитывается исходный показатель таблицы."
 msgstr "The original indicator of the table is recalculated."
 
-#: apps/userdata/lab.py:978
+#: apps/userdata/lab.py:1022
 msgid "Таблицу нужно разобрать заново: откройте её шаг «Показатели»."
 msgstr "The table has to be parsed again: open its “Indicators” step."
 
-#: apps/userdata/lab.py:981
+#: apps/userdata/lab.py:1025
 msgid "Таблица не пересобрана. Причина — на её шаге «Показатели»."
 msgstr "The table was not rebuilt. The reason is on its “Indicators” step."
 
-#: apps/userdata/lab.py:998
+#: apps/userdata/lab.py:1042
 msgid "Этот пересчёт показателю не подходит."
 msgstr "This calculation does not suit the indicator."
 
-#: apps/userdata/lab.py:1015
+#: apps/userdata/lab.py:1060
 msgid "Показателя нет в описании таблицы."
 msgstr "The indicator is not in the table description."
 
-#: apps/userdata/lab.py:1068
+#: apps/userdata/lab.py:1113
 msgid "Сравнить с официальным"
 msgstr "Compare with official"
 
-#: apps/userdata/lab.py:1127
+#: apps/userdata/lab.py:1173
 msgid "Почему изменилась сумма"
 msgstr "Why the total changed"
 
-#: apps/userdata/lab.py:497
+#: apps/userdata/lab.py:520
 msgid "Как менялось значение у отмеченных регионов и по России"
 msgstr "How the value changed in the marked regions and across Russia"
 
-#: apps/userdata/lab.py:503
+#: apps/userdata/lab.py:527
 msgid "Все регионы по порядку: место и значение"
 msgstr "All regions in order: place and value"
 
-#: apps/userdata/lab.py:509
+#: apps/userdata/lab.py:534
 msgid "Как разбросаны значения и где большинство регионов"
 msgstr "How the values spread and where most regions are"
 
-#: apps/userdata/lab.py:515
+#: apps/userdata/lab.py:541
 msgid "Значения регионов по годам числами"
 msgstr "Region values by year as numbers"
 
-#: apps/userdata/lab.py:522
+#: apps/userdata/lab.py:548
 msgid "Ход по годам у каждого региона, по федеральным округам"
 msgstr "The course by year for each region, by federal district"
 
-#: apps/userdata/lab.py:530
+#: apps/userdata/lab.py:556
 msgid "Доли частей в каждом регионе — столбцы по 100 %"
 msgstr "Shares of the parts in each region, 100% bars"
 
-#: apps/userdata/lab.py:542
+#: apps/userdata/lab.py:569
 msgid "Наибольшее и наименьшее значение и сколько регионов выросло"
 msgstr "The highest and lowest values and how many regions grew"
 
-#: apps/userdata/lab.py:548
+#: apps/userdata/lab.py:576
 msgid "Три первых и три последних региона"
 msgstr "The top three and bottom three regions"
 
-#: apps/userdata/lab.py:555
+#: apps/userdata/lab.py:583
 msgid "Место вашего региона среди всех и в своём округе"
 msgstr "Your region’s place among all and within its district"
 
-#: apps/userdata/lab.py:562
+#: apps/userdata/lab.py:590
 msgid "Значение по России и изменение за последние годы"
 msgstr "The value for Russia and its change in recent years"
 
-#: apps/userdata/lab.py:569
+#: apps/userdata/lab.py:597
 msgid "Регионы с наибольшим и наименьшим изменением"
 msgstr "Regions with the largest and smallest change"
 
-#: apps/userdata/lab.py:576
+#: apps/userdata/lab.py:604
 msgid "Сколько добавил или убавил каждый регион"
 msgstr "How much each region added or took away"
 
-#: apps/userdata/lab.py:583
+#: apps/userdata/lab.py:612
 msgid "Значение каждого федерального округа и его доля"
 msgstr "The value of each federal district and its share"
 
-#: apps/userdata/lab.py:590
+#: apps/userdata/lab.py:619
 msgid "Во сколько раз верхние регионы опережают нижние и как менялся разрыв"
 msgstr "How many times the top regions exceed the bottom ones and how the gap changed"
 
-#: apps/userdata/lab.py:598
+#: apps/userdata/lab.py:627
 msgid "Сокращается ли разброс и растут ли быстрее отстающие регионы"
 msgstr "Whether the spread narrows and lagging regions grow faster"
 
-#: apps/userdata/lab.py:606
+#: apps/userdata/lab.py:635
 msgid "Есть ли на карте сгущения высоких и низких значений"
 msgstr "Whether high and low values cluster on the map"
 
-#: apps/userdata/lab.py:614
+#: apps/userdata/lab.py:643
 msgid "Показатели сайта, сильнее всего связанные с вашим"
 msgstr "Site indicators most closely related to yours"
 
-#: apps/userdata/lab.py:631
-msgid "группы — в исследовании"
-msgstr "groups are available in a study"
-
-#: apps/userdata/lab.py:645
+#: apps/userdata/lab.py:679
 msgid "Связь и облако точек"
 msgstr "Relationship and scatter plot"
 
-#: apps/userdata/lab.py:653
+#: apps/userdata/lab.py:687
 msgid "Сравнить два показателя — несколько карточек"
 msgstr "Compare two indicators: several cards"
 
-#: apps/userdata/lab.py:662
+#: apps/userdata/lab.py:697
 msgid "Сравнить с «%(title)s»"
 msgstr "Compare with “%(title)s”"
 
-#: apps/userdata/lab.py:677
+#: apps/userdata/lab.py:712
 msgid "Свой или сайта — из панели «Данные»"
 msgstr "Your own or the site’s, from the “Data” panel"
 
-#: apps/userdata/lab.py:689
+#: apps/userdata/lab.py:725
 msgid "Карта, главное, рейтинг, линии, распределение, округа, изменение"
 msgstr "Map, key figures, ranking, lines, distribution, districts, change"
 
-#: apps/userdata/lab.py:696
+#: apps/userdata/lab.py:732
 msgid "Разрыв, сближение, распределение и малые графики"
 msgstr "Gap, convergence, distribution and small multiples"
 
-#: apps/userdata/lab.py:703
+#: apps/userdata/lab.py:739
 msgid "Ваш регион и соседи на карте, в рейтинге и на линиях"
 msgstr "Your region and its neighbours on the map, in the ranking and on lines"
 
-#: apps/userdata/lab.py:772
+#: apps/userdata/lab.py:800
 msgid "новый показатель считается из своих таблиц"
 msgstr "a new indicator is computed from your own tables"
 
-#: apps/userdata/lab.py:858
+#: apps/userdata/lab.py:889
 #: apps/userdata/studies.py:281
 msgid "Выберите группу регионов."
 msgstr "Choose a region group."
 
-#: apps/userdata/lab.py:865
+#: apps/userdata/lab.py:896
 #: apps/userdata/studies.py:276
 msgid "Для вкладов составляющих нужны хотя бы две части."
 msgstr "Contributions of components need at least two parts."
 
-#: apps/userdata/lab.py:912
-msgid "Для неравенства нужны значения хотя бы по %(count)s регионам."
-msgstr "Inequality needs values for at least %(count)s regions."
-
-#: apps/userdata/lab.py:487
+#: apps/userdata/lab.py:510
 msgid "Значения регионов на карте; у сумм — кругами по величине"
 msgstr "Region values on the map, with sums as circles by size"
 
-#: apps/userdata/lab.py:489
+#: apps/userdata/lab.py:512
 msgid "Значения регионов на карте цветом"
 msgstr "Region values on the map in colour"
 
-#: apps/userdata/lab.py:639
+#: apps/userdata/lab.py:660
+msgid "группы — в исследовании"
+msgstr "groups are available in a study"
+
+#: apps/userdata/lab.py:672
 msgid "Сравнение с «%(title)s»"
 msgstr "Comparison with “%(title)s”"
 
-#: apps/userdata/lab.py:642
+#: apps/userdata/lab.py:676
 msgid "Оба показателя по годам и где места регионов расходятся"
 msgstr "Both indicators by year and where the regions’ places differ"
 
-#: apps/userdata/lab.py:649
+#: apps/userdata/lab.py:683
 msgid "Насколько регионы с высоким одним показателем высоки и по другому"
 msgstr "How far regions high on one indicator are high on the other"
 
-#: apps/userdata/lab.py:656
+#: apps/userdata/lab.py:691
 msgid "Сравнение, связь и карта каждого показателя"
 msgstr "Comparison, relationship and a map of each indicator"
 
-#: apps/userdata/lab.py:665
+#: apps/userdata/lab.py:700
 msgid "Официальный показатель сайта"
 msgstr "Official site indicator"
 
-#: apps/userdata/lab.py:667
+#: apps/userdata/lab.py:702
 msgid "Показатель с этого поля"
 msgstr "Indicator from this board"
 
-#: apps/userdata/lab.py:792
+#: apps/userdata/lab.py:823
 msgid "Уже посчитано — карта встанет на поле"
 msgstr "Already computed: the map will be placed on the board"
-
-#: apps/userdata/lab.py:575
-msgid "складывать вклады можно только у сумм"
-msgstr "contributions can be added up only for sums"
 
 #: apps/userdata/management/commands/userdata_build.py:50
 msgid "Разбор занял слишком много времени. Оставьте в таблице только нужные показатели или годы и загрузите её снова."
@@ -11335,73 +11298,81 @@ msgstr "built"
 msgid "не разобран"
 msgstr "not read"
 
-#: apps/userdata/models.py:158
-#: apps/userdata/templates/userdata/_dataset_data.html:82
-#: apps/userdata/templates/userdata/_indicator.html:17
+#: apps/userdata/models.py:160
+msgid "сумма за период"
+msgstr "total for a period"
+
+#: apps/userdata/models.py:161
+msgid "сумма на дату"
+msgstr "total at a date"
+
+#: apps/userdata/models.py:162
 msgid "сумма"
 msgstr "sum"
 
-#: apps/userdata/models.py:159
-#: apps/userdata/templates/userdata/_dataset_data.html:82
-#: apps/userdata/templates/userdata/_indicator.html:17
-msgid "относительная величина"
-msgstr "relative value"
+#: apps/userdata/models.py:163
+msgid "доля, среднее или на жителя"
+msgstr "share, average or per resident"
 
 #: apps/userdata/models.py:164
+msgid "изменение к другому периоду"
+msgstr "change against another period"
+
+#: apps/userdata/models.py:169
 msgid "без оценки"
 msgstr "not assessed"
 
-#: apps/userdata/models.py:167
+#: apps/userdata/models.py:172
 msgid "из таблицы"
 msgstr "from the table"
 
-#: apps/userdata/models.py:168
+#: apps/userdata/models.py:173
 msgid "на жителя"
 msgstr "per resident"
 
-#: apps/userdata/models.py:169
+#: apps/userdata/models.py:174
 msgid "на 1 000 жителей"
 msgstr "per 1,000 inhabitants"
 
-#: apps/userdata/models.py:170
+#: apps/userdata/models.py:175
 msgid "на 10 000 жителей"
 msgstr "per 10,000 inhabitants"
 
-#: apps/userdata/models.py:171
+#: apps/userdata/models.py:176
 msgid "на 100 000 жителей"
 msgstr "per 100,000 inhabitants"
 
-#: apps/userdata/models.py:172
+#: apps/userdata/models.py:177
 msgid "на км²"
 msgstr "per km²"
 
-#: apps/userdata/models.py:173
+#: apps/userdata/models.py:178
 msgid "в ценах последнего года"
 msgstr "in prices of the last year"
 
-#: apps/userdata/models.py:174
-#: apps/userdata/operations.py:694
+#: apps/userdata/models.py:179
+#: apps/userdata/operations.py:699
 msgid "Россия = 100"
 msgstr "Russia = 100"
 
-#: apps/userdata/models.py:175
-#: apps/userdata/operations.py:621
+#: apps/userdata/models.py:180
+#: apps/userdata/operations.py:635
 msgid "% к предыдущему году"
 msgstr "% of the previous year"
 
-#: apps/userdata/models.py:176
+#: apps/userdata/models.py:181
 msgid "доля в сумме по субъектам"
 msgstr "share of the sum over subjects"
 
-#: apps/userdata/models.py:177
+#: apps/userdata/models.py:182
 msgid "сумма по разрезу"
 msgstr "sum over a breakdown"
 
-#: apps/userdata/models.py:178
+#: apps/userdata/models.py:183
 msgid "месяцы, свёрнутые в год"
 msgstr "months folded into a year"
 
-#: apps/userdata/models.py:179
+#: apps/userdata/models.py:184
 #: apps/userdata/templates/userdata/_dataset_data.html:49
 msgid "формула"
 msgstr "formula"
@@ -11427,12 +11398,12 @@ msgid "по полугодиям"
 msgstr "by half-year"
 
 #: apps/userdata/monthly.py:143
-#: apps/userdata/views.py:603
+#: apps/userdata/views.py:609
 msgid "с начала года"
 msgstr "year to date"
 
 #: apps/userdata/monthly.py:145
-#: apps/userdata/views.py:605
+#: apps/userdata/views.py:611
 msgid "на начало месяца"
 msgstr "at the start of the month"
 
@@ -11460,267 +11431,267 @@ msgstr "Q%(number)s"
 msgid "на 1 %(month)s"
 msgstr "as of 1 %(month)s"
 
-#: apps/userdata/operations.py:481
+#: apps/userdata/operations.py:510
 msgid "Составляющие"
 msgstr "Components"
 
-#: apps/userdata/operations.py:482
+#: apps/userdata/operations.py:511
 msgid "Итог"
 msgstr "Total"
 
-#: apps/userdata/operations.py:30
+#: apps/userdata/operations.py:31
 msgid "Доля и структура"
 msgstr "Share and structure"
 
-#: apps/userdata/operations.py:32
+#: apps/userdata/operations.py:33
 msgid "Сравнение"
 msgstr "Comparison"
 
-#: apps/userdata/operations.py:33
+#: apps/userdata/operations.py:34
 msgid "Сложение"
 msgstr "Addition"
 
-#: apps/userdata/operations.py:34
+#: apps/userdata/operations.py:35
 msgid "Региональные методы"
 msgstr "Regional methods"
 
-#: apps/userdata/operations.py:61
+#: apps/userdata/operations.py:62
 msgid "дети до 15 лет"
 msgstr "children under 15"
 
-#: apps/userdata/operations.py:62
+#: apps/userdata/operations.py:63
 msgid "трудоспособного возраста"
 msgstr "working age"
 
-#: apps/userdata/operations.py:63
+#: apps/userdata/operations.py:64
 msgid "пенсионеры"
 msgstr "pensioners"
 
-#: apps/userdata/operations.py:64
+#: apps/userdata/operations.py:65
 msgid "занятые"
 msgstr "employed"
 
-#: apps/userdata/operations.py:76
+#: apps/userdata/operations.py:77
 msgid "в единицах показателя"
 msgstr "in the indicator’s units"
 
-#: apps/userdata/operations.py:79
+#: apps/userdata/operations.py:80
 msgid "процент цели"
 msgstr "per cent of target"
 
-#: apps/userdata/operations.py:80
+#: apps/userdata/operations.py:81
 msgid "отклонение от цели"
 msgstr "deviation from target"
 
-#: apps/userdata/operations.py:480
+#: apps/userdata/operations.py:509
 msgid "С года"
 msgstr "From year"
 
-#: apps/userdata/operations.py:480
+#: apps/userdata/operations.py:509
 msgid "По год"
 msgstr "To year"
 
-#: apps/userdata/operations.py:490
+#: apps/userdata/operations.py:519
 msgid "Сумма делится на среднегодовую численность населения года. Разряд единицы подбирается по значениям: тыс. руб. на жителя, а не дробь с нулями."
 msgstr "The sum is divided by the average annual population of the year. The unit’s order is chosen from the values: thousand roubles per resident, not a fraction with zeros."
 
-#: apps/userdata/operations.py:501
+#: apps/userdata/operations.py:528
 msgid "На 1 000 жителей"
 msgstr "Per 1,000 inhabitants"
 
-#: apps/userdata/operations.py:502
+#: apps/userdata/operations.py:529
 msgid "Сумма делится на среднегодовую численность населения и умножается на 1 000."
 msgstr "The sum is divided by the average annual population and multiplied by 1,000."
 
-#: apps/userdata/operations.py:509
+#: apps/userdata/operations.py:535
 msgid "На 10 000 жителей"
 msgstr "Per 10,000 inhabitants"
 
-#: apps/userdata/operations.py:510
+#: apps/userdata/operations.py:536
 msgid "Сумма делится на среднегодовую численность населения и умножается на 10 000."
 msgstr "The sum is divided by the average annual population and multiplied by 10,000."
 
-#: apps/userdata/operations.py:517
+#: apps/userdata/operations.py:542
 msgid "На 100 000 жителей"
 msgstr "Per 100,000 inhabitants"
 
-#: apps/userdata/operations.py:518
+#: apps/userdata/operations.py:543
 msgid "Сумма делится на среднегодовую численность населения и умножается на 100 000. Так считают преступность и заболеваемость."
 msgstr "The sum is divided by the average annual population and multiplied by 100,000. Crime and morbidity are counted this way."
 
-#: apps/userdata/operations.py:528
+#: apps/userdata/operations.py:552
 msgid "На км²"
 msgstr "Per km²"
 
-#: apps/userdata/operations.py:529
+#: apps/userdata/operations.py:553
 msgid "Сумма делится на площадь территории региона."
 msgstr "The sum is divided by the area of the region."
 
-#: apps/userdata/operations.py:536
+#: apps/userdata/operations.py:559
 msgid "На 1 000 человек группы"
 msgstr "Per 1,000 people in a group"
 
-#: apps/userdata/operations.py:537
+#: apps/userdata/operations.py:560
 msgid "Сумма делится на численность группы — детей, жителей трудоспособного возраста, пенсионеров или занятых — по официальным рядам. Значения — за годы, где есть численность группы."
 msgstr "The sum is divided by the size of a group — children, working-age residents, pensioners or the employed — from official series. Values are for the years with the group size."
 
-#: apps/userdata/operations.py:550
+#: apps/userdata/operations.py:572
 msgid "С поправкой на уровень цен"
 msgstr "Adjusted for the price level"
 
-#: apps/userdata/operations.py:551
+#: apps/userdata/operations.py:573
 msgid "Значение делится на стоимость фиксированного набора товаров и услуг региона в процентах к средней по России. Получаются рубли в ценах России."
 msgstr "The value is divided by the cost of the region’s fixed basket of goods and services as a percentage of the Russian average. The result is in roubles at Russian prices."
 
-#: apps/userdata/operations.py:564
+#: apps/userdata/operations.py:584
 msgid "В прожиточных минимумах"
 msgstr "In subsistence minimums"
 
-#: apps/userdata/operations.py:565
+#: apps/userdata/operations.py:585
 msgid "Значение в рублях в месяц на человека делится на прожиточный минимум региона на душу населения."
 msgstr "A value in roubles per person per month is divided by the region’s per-capita subsistence minimum."
 
-#: apps/userdata/operations.py:579
+#: apps/userdata/operations.py:597
 msgid "Доля в сумме по субъектам"
 msgstr "Share of the regions’ sum"
 
-#: apps/userdata/operations.py:580
+#: apps/userdata/operations.py:598
 msgid "Значение региона делится на сумму значений субъектов за тот же год."
 msgstr "The region’s value is divided by the sum of the regions’ values for the same year."
 
-#: apps/userdata/operations.py:587
+#: apps/userdata/operations.py:604
 msgid "Доля в значении по России"
 msgstr "Share of the Russia value"
 
-#: apps/userdata/operations.py:588
+#: apps/userdata/operations.py:605
 msgid "Значение региона делится на значение России из таблицы. Отличается от доли в сумме субъектов, когда часть итога не распределена по регионам."
 msgstr "The region’s value is divided by the Russia value from the table. It differs from the share of the regions’ sum when part of the total is not allocated to regions."
 
-#: apps/userdata/operations.py:599
+#: apps/userdata/operations.py:615
 msgid "Доля составляющей в итоге"
 msgstr "Component’s share of the total"
 
-#: apps/userdata/operations.py:600
+#: apps/userdata/operations.py:616
 msgid "Составляющая делится на итог того же региона и года, в процентах."
 msgstr "The component is divided by the total of the same region and year, as a percentage."
 
-#: apps/userdata/operations.py:608
+#: apps/userdata/operations.py:623
 msgid "Индекс Херфиндаля — Хиршмана"
 msgstr "Herfindahl–Hirschman index"
 
-#: apps/userdata/operations.py:609
+#: apps/userdata/operations.py:624
 msgid "Сумма квадратов долей составляющих в итоге, умноженная на 10 000. Чем ближе к 10 000, тем сильнее итог сосредоточен в одной составляющей."
 msgstr "The sum of the squared shares of the components in the total, multiplied by 10,000. The closer to 10,000, the more the total is concentrated in one component."
 
-#: apps/userdata/operations.py:622
+#: apps/userdata/operations.py:636
 msgid "Значение делится на значение того же периода прошлого года, только у положительных."
 msgstr "The value is divided by the value of the same period of the previous year, for positive values only."
 
-#: apps/userdata/operations.py:629
+#: apps/userdata/operations.py:642
 msgid "Базовый год = 100"
 msgstr "Base year = 100"
 
-#: apps/userdata/operations.py:630
+#: apps/userdata/operations.py:643
 msgid "Значение каждого года делится на значение базового года того же региона."
 msgstr "Each year’s value is divided by the base-year value of the same region."
 
-#: apps/userdata/operations.py:638
+#: apps/userdata/operations.py:650
 msgid "Изменение между двумя годами"
 msgstr "Change between two years"
 
-#: apps/userdata/operations.py:639
+#: apps/userdata/operations.py:651
 msgid "Разность значений или их отношение в процентах. Результат — одно значение у региона за последний год периода."
 msgstr "The difference of the values or their ratio as a percentage. The result is one value per region, for the last year of the period."
 
-#: apps/userdata/operations.py:650
+#: apps/userdata/operations.py:661
 msgid "Среднегодовой темп за период"
 msgstr "Average annual rate over the period"
 
-#: apps/userdata/operations.py:651
+#: apps/userdata/operations.py:662
 msgid "Корень из отношения последнего года к первому, степень — число лет между ними. Только у положительных значений."
 msgstr "The root of the ratio of the last year to the first, of the degree equal to the number of years between them. For positive values only."
 
-#: apps/userdata/operations.py:662
+#: apps/userdata/operations.py:672
 msgid "Скользящее среднее"
 msgstr "Moving average"
 
-#: apps/userdata/operations.py:663
+#: apps/userdata/operations.py:673
 msgid "Среднее за окно лет, считая текущий. Неполное окно или пропуск в нём — без значения."
 msgstr "The mean over a window of years including the current one. An incomplete window or a gap in it gives no value."
 
-#: apps/userdata/operations.py:671
+#: apps/userdata/operations.py:680
 msgid "Накопленный итог"
 msgstr "Cumulative total"
 
-#: apps/userdata/operations.py:672
+#: apps/userdata/operations.py:681
 msgid "Сумма с первого года со значением. После пропуска года итог не продолжается."
 msgstr "The sum from the first year with a value. After a missing year the total does not continue."
 
-#: apps/userdata/operations.py:681
+#: apps/userdata/operations.py:688
 msgid "В ценах последнего года"
 msgstr "In prices of the last year"
 
-#: apps/userdata/operations.py:682
+#: apps/userdata/operations.py:689
 msgid "Значение умножается на индексы потребительских цен региона за следующие годы. При пропуске индекса не считается."
 msgstr "The value is multiplied by the region’s consumer price indices for the following years. With a missing index it is not computed."
 
-#: apps/userdata/operations.py:695
+#: apps/userdata/operations.py:700
 msgid "Значение региона делится на значение России за тот же год и умножается на 100."
 msgstr "The region’s value is divided by the Russia value for the same year and multiplied by 100."
 
-#: apps/userdata/operations.py:701
+#: apps/userdata/operations.py:706
 msgid "Отклонение от России"
 msgstr "Deviation from Russia"
 
-#: apps/userdata/operations.py:702
+#: apps/userdata/operations.py:707
 msgid "Из значения региона вычитается значение России за тот же год."
 msgstr "The Russia value for the same year is subtracted from the region’s value."
 
-#: apps/userdata/operations.py:710
+#: apps/userdata/operations.py:714
 msgid "Отклонение от среднего по округу"
 msgstr "Deviation from the district mean"
 
-#: apps/userdata/operations.py:711
+#: apps/userdata/operations.py:715
 msgid "Из значения региона вычитается простое среднее субъектов его федерального округа за тот же год."
 msgstr "The simple mean of the regions of its federal district for the same year is subtracted from the region’s value."
 
-#: apps/userdata/operations.py:722
+#: apps/userdata/operations.py:725
 msgid "z-оценка"
 msgstr "z-score"
 
-#: apps/userdata/operations.py:723
+#: apps/userdata/operations.py:726
 msgid "Отклонение от среднего по субъектам за год, деленное на стандартное отклонение. Показывает, насколько регион необычен в своём году."
 msgstr "The deviation from the regions’ mean for the year divided by the standard deviation. It shows how unusual the region is in its year."
 
-#: apps/userdata/operations.py:734
+#: apps/userdata/operations.py:736
 msgid "Достижение цели"
 msgstr "Target attainment"
 
-#: apps/userdata/operations.py:735
+#: apps/userdata/operations.py:737
 msgid "Значение делится на целевое значение, в процентах, или из него вычитается цель."
 msgstr "The value is divided by the target value, as a percentage, or the target is subtracted from it."
 
-#: apps/userdata/operations.py:747
+#: apps/userdata/operations.py:749
 msgid "Сумма показателей"
 msgstr "Sum of indicators"
 
-#: apps/userdata/operations.py:748
+#: apps/userdata/operations.py:750
 msgid "Значения складываются по региону и году. Пропуск у любого слагаемого — пропуск суммы."
 msgstr "Values are added by region and year. A gap in any term makes the sum a gap."
 
-#: apps/userdata/operations.py:755
+#: apps/userdata/operations.py:757
 msgid "Взвешенное среднее по округу"
 msgstr "Weighted district mean"
 
-#: apps/userdata/operations.py:756
+#: apps/userdata/operations.py:758
 msgid "Среднее субъектов федерального округа, взвешенное по второму показателю, — например, средняя зарплата по численности работников."
 msgstr "The mean of the regions of a federal district weighted by a second indicator — for example, the average wage weighted by the number of employees."
 
-#: apps/userdata/operations.py:768
+#: apps/userdata/operations.py:769
 msgid "Коэффициент локализации"
 msgstr "Location quotient"
 
-#: apps/userdata/operations.py:769
+#: apps/userdata/operations.py:770
 msgid "Доля отрасли в итоге региона, деленная на ту же долю по России. Больше 1 — отрасль в регионе представлена сильнее, чем в стране."
 msgstr "The industry’s share in the region’s total divided by the same share for Russia. Above 1, the industry is more strongly represented in the region than in the country."
 
@@ -11732,84 +11703,72 @@ msgstr "Structural shift index"
 msgid "Квадратичное среднее изменений долей составляющих в итоге между двумя годами, в процентных пунктах."
 msgstr "The root mean square of the changes in the components’ shares of the total between two years, in percentage points."
 
-#: apps/userdata/operations.py:793
+#: apps/userdata/operations.py:791
 msgid "Разложение «сдвиг-доля»"
 msgstr "Shift-share decomposition"
 
-#: apps/userdata/operations.py:794
+#: apps/userdata/operations.py:792
 msgid "Изменение суммы отраслей за период раскладывается на три части. Общероссийский рост, отраслевая структура региона и региональный сдвиг. Значение России — из таблицы, нет его — сумма субъектов."
 msgstr "The change in the sum of industries over the period is split into three parts. National growth, the region’s industry mix and the regional shift. The Russia value comes from the table, or the sum of regions if it is missing."
 
-#: apps/userdata/operations.py:821
-msgid "только для сумм по регионам"
-msgstr "only for sums across regions"
-
 #: apps/userdata/operations.py:822
-msgid "только для относительных величин"
-msgstr "relative quantities only"
-
-#: apps/userdata/operations.py:823
-msgid "только для денежных показателей"
-msgstr "only for monetary indicators"
-
-#: apps/userdata/operations.py:824
-msgid "только для показателей в рублях"
-msgstr "indicators in roubles only"
-
-#: apps/userdata/operations.py:833
 msgid "нужных показателей нет на сайте"
 msgstr "the required indicators are not on the site"
 
-#: apps/userdata/operations.py:1083
+#: apps/userdata/operations.py:1091
 msgid "У числителя и знаменателя нет общих лет: значений не будет."
 msgstr "The numerator and the denominator have no years in common: there will be no values."
 
-#: apps/userdata/operations.py:1085
+#: apps/userdata/operations.py:1093
 msgid "Числитель и знаменатель — за разные годы. Значения будут только за общие годы: %(first)s–%(last)s."
 msgstr "The numerator and the denominator cover different years. Values will be only for the common years: %(first)s–%(last)s."
 
-#: apps/userdata/operations.py:827
-msgid "нужно лет не меньше: %(count)s"
-msgstr "needs at least %(count)s years"
+#: apps/userdata/operations.py:1035
+msgid "Складываются значения за период и на дату: выдано за год и остаток на 1 января не складываются."
+msgstr "Values for a period and at a date are added together: the amount issued in a year and the balance on 1 January cannot be added."
 
-#: apps/userdata/operations.py:1038
+#: apps/userdata/operations.py:1042
+msgid "Среди слагаемых — индексы: темпы роста не складываются."
+msgstr "Some terms are indices: growth rates cannot be added."
+
+#: apps/userdata/operations.py:1046
 msgid "Среди слагаемых — относительные величины: доли и средние не складываются. Сумма имеет смысл для численности, денег и объёмов целиком."
 msgstr "Some terms are relative quantities: shares and means do not add up. A sum makes sense for whole counts, money and volumes."
 
-#: apps/userdata/operations.py:1057
+#: apps/userdata/operations.py:1065
 msgid "Сумма добавленной стоимости по видам деятельности — не ВРП: в ВРП входят ещё чистые налоги на продукты."
 msgstr "The sum of value added by activity is not GRP: GRP also includes net taxes on products."
 
-#: apps/userdata/operations.py:601
+#: apps/userdata/operations.py:617
 msgid "Составляющая"
 msgstr "Component"
 
-#: apps/userdata/operations.py:631
+#: apps/userdata/operations.py:644
 msgid "Базовый год"
 msgstr "Base year"
 
-#: apps/userdata/operations.py:643
-#: apps/userdata/operations.py:739
+#: apps/userdata/operations.py:655
+#: apps/userdata/operations.py:741
 msgid "Как"
 msgstr "How"
 
-#: apps/userdata/operations.py:664
+#: apps/userdata/operations.py:674
 msgid "Окно, лет"
 msgstr "Window, years"
 
-#: apps/userdata/operations.py:738
+#: apps/userdata/operations.py:740
 msgid "Целевое значение"
 msgstr "Target value"
 
-#: apps/userdata/operations.py:773
+#: apps/userdata/operations.py:774
 msgid "Отрасль"
 msgstr "Industry"
 
-#: apps/userdata/operations.py:1032
+#: apps/userdata/operations.py:1028
 msgid "Складываются показатели в разных единицах: %(units)s. Приведите их к одной."
 msgstr "Indicators in different units are being added: %(units)s. Bring them to one unit."
 
-#: apps/userdata/operations.py:1051
+#: apps/userdata/operations.py:1059
 msgid "Среди слагаемых — итог «%(total)s» и его части: значения посчитаются дважды."
 msgstr "The terms include the total “%(total)s” and its parts: values will be counted twice."
 
@@ -11854,19 +11813,19 @@ msgstr "a federal territory, not a federal subject"
 msgid "Версии"
 msgstr "Versions"
 
-#: apps/userdata/pages.py:625
+#: apps/userdata/pages.py:626
 msgid "Отметьте, что таблицу нужно удалить."
 msgstr "Tick the box to confirm that the table should be deleted."
 
-#: apps/userdata/pages.py:629
+#: apps/userdata/pages.py:630
 msgid "Таблица «%(title)s» удалена."
 msgstr "The table “%(title)s” has been deleted."
 
-#: apps/userdata/pages.py:607
+#: apps/userdata/pages.py:608
 msgid "Исключения сохранены, таблица пересобирается."
 msgstr "Exclusions saved; the table is being rebuilt."
 
-#: apps/userdata/pages.py:609
+#: apps/userdata/pages.py:610
 msgid "Исключения сохранены, таблица пересобрана."
 msgstr "Exclusions saved; the table has been rebuilt."
 
@@ -11936,12 +11895,156 @@ msgstr "The top and bottom %(count)s regions"
 msgid "Карточек с данными"
 msgstr "Cards with data"
 
-#: apps/userdata/series.py:170
-#: apps/userdata/series.py:306
+#: apps/userdata/semantics.py:390
+msgid "только для сумм по регионам"
+msgstr "only for sums across regions"
+
+#: apps/userdata/semantics.py:391
+msgid "только для относительных величин"
+msgstr "relative quantities only"
+
+#: apps/userdata/semantics.py:392
+msgid "у индекса не считается: он уже показывает изменение к другому периоду"
+msgstr "not calculated for an index: it already shows change against another period"
+
+#: apps/userdata/semantics.py:393
+msgid "разрыв и сближение меряют по уровням, а не по темпам"
+msgstr "gaps and convergence are measured on levels, not on growth rates"
+
+#: apps/userdata/semantics.py:394
+msgid "вклады регионов складываются только у сумм: у относительной величины смотрите «У кого рост больше всего»"
+msgstr "regional contributions add up only for totals: for a relative value see “Who grew the most”"
+
+#: apps/userdata/semantics.py:398
+msgid "доли считаются у сумм"
+msgstr "shares are computed for totals"
+
+#: apps/userdata/semantics.py:399
+msgid "темп от темпа не считается"
+msgstr "a rate of a rate is not calculated"
+
+#: apps/userdata/semantics.py:400
+msgid "остатки на дату по годам не складываются"
+msgstr "balances at a date cannot be added across years"
+
+#: apps/userdata/semantics.py:401
+msgid "укажите, что значения за период: «Изменить» → «Что это за величина»"
+msgstr "mark the values as totals for a period: “Edit” → “What kind of value is this”"
+
+#: apps/userdata/semantics.py:402
+msgid "у суммы это доля в значении по России: смотрите «Долю»"
+msgstr "for a total this is the share of the Russia value: see “Share”"
+
+#: apps/userdata/semantics.py:44
+msgid "Складывается по регионам и по месяцам: выдано, произведено, зарегистрировано"
+msgstr "Adds up across regions and months: issued, produced, registered"
+
+#: apps/userdata/semantics.py:45
+msgid "Складывается по регионам, но не по месяцам: остаток, численность, задолженность"
+msgstr "Adds up across regions but not across months: balance, population, debt"
+
+#: apps/userdata/semantics.py:46
+msgid "Складывается по регионам; за период или на дату — не указано"
+msgstr "Adds up across regions; whether for a period or at a date is not stated"
+
+#: apps/userdata/semantics.py:47
+msgid "Не складывается: %, средняя зарплата, на 100 000 жителей"
+msgstr "Does not add up: %, average wage, per 100,000 residents"
+
+#: apps/userdata/semantics.py:48
+msgid "% к прошлому году, к декабрю, «2020 = 100»"
+msgstr "% of the previous year, of December, “2020 = 100”"
+
+#: apps/userdata/semantics.py:526
+msgid "значения не зависят от числа жителей: на жителей не пересчитываются"
+msgstr "the values do not depend on the number of residents: they are not recalculated per resident"
+
+#: apps/userdata/semantics.py:38
+msgid "жителей"
+msgstr "residents"
+
+#: apps/userdata/semantics.py:39
+msgid "площадь"
+msgstr "area"
+
+#: apps/userdata/semantics.py:40
+msgid "не делить"
+msgstr "do not divide"
+
+#: apps/userdata/semantics.py:525
+msgid "основа сравнения — площадь: пересчитайте на км²"
+msgstr "the comparison base is area: recalculate per km²"
+
+#: apps/userdata/semantics.py:548
+msgid "для суммы считается по значению на жителя: сначала пересчитайте на жителя"
+msgstr "for a total this is calculated on the per-resident value: recalculate per resident first"
+
+#: apps/userdata/semantics.py:562
+msgid "мой регион не выбран — выберите его в шапке сайта"
+msgstr "my region is not chosen: choose it in the site header"
+
+#: apps/userdata/semantics.py:564
+msgid "нужны две суммы в одной единице: части показателя или показатели таблицы"
+msgstr "two sums in one unit are needed: parts of an indicator or indicators of the table"
+
+#: apps/userdata/semantics.py:579
+msgid "Части и слагаемые — только суммы: доли, средние и индексы не складываются."
+msgstr "Parts and terms must be totals: shares, averages and indices cannot be added."
+
+#: apps/userdata/semantics.py:582
+msgid "Среди частей — значения за период и на дату: их нельзя складывать."
+msgstr "The parts include values for a period and at a date: they cannot be added."
+
+#: apps/userdata/semantics.py:584
+msgid "Части и слагаемые — в одной единице: приведите их к одной."
+msgstr "Parts and terms must be in one unit: bring them to the same unit."
+
+#: apps/userdata/semantics.py:498
+msgid "структура — для своих таблиц"
+msgstr "structure is for your own tables"
+
+#: apps/userdata/semantics.py:506
+msgid "только для показателей в рублях"
+msgstr "indicators in roubles only"
+
+#: apps/userdata/semantics.py:508
+msgid "только для рублей в месяц на человека"
+msgstr "only for roubles per month per person"
+
+#: apps/userdata/semantics.py:533
+msgid "у показателя нет основы для сравнения регионов: значения показывают размер"
+msgstr "the indicator has no base for comparing regions: the values show size"
+
+#: apps/userdata/semantics.py:539
+msgid "для суммы считается по значению на км²: сначала пересчитайте на км²"
+msgstr "for a total this is calculated on the per-km² value: recalculate per km² first"
+
+#: apps/userdata/semantics.py:544
+msgid "для суммы считается по значению на жителя: выберите такой показатель сайта"
+msgstr "for a total this is calculated on the per-resident value: choose such an indicator on the site"
+
+#: apps/userdata/semantics.py:557
+msgid "у показателя один год"
+msgstr "the indicator has a single year"
+
+#: apps/userdata/semantics.py:558
+msgid "нужно лет не меньше: %(count)s"
+msgstr "needs at least %(count)s years"
+
+#: apps/userdata/semantics.py:560
+msgid "нужны значения хотя бы по %(count)s регионам"
+msgstr "values for at least %(count)s regions are needed"
+
+#: apps/userdata/semantics.py:537
+msgid "для суммы считается по значению на км²"
+msgstr "for a total this is calculated on the per-km² value"
+
+#: apps/userdata/series.py:216
+#: apps/userdata/series.py:352
 msgid "таблица пользователя"
 msgstr "user’s table"
 
-#: apps/userdata/series.py:307
+#: apps/userdata/series.py:353
 msgid "Данные: %(source)s, загружены пользователем."
 msgstr "Data: %(source)s, uploaded by the user."
 
@@ -12099,7 +12202,6 @@ msgid "Показатель — в квадратных скобках: начн
 msgstr "An indicator goes in square brackets: type “[” and matching names appear. A condition is IF([X] > 0; [X]; 0), a year is AT([X]; 2015), Russia is RUSSIA([X])."
 
 #: apps/userdata/templates/userdata/_calc_panel.html:110
-#: apps/userdata/templates/userdata/_indicator_field.html:53
 #: apps/userdata/templates/userdata/formula.html:165
 msgid "Вид величины"
 msgstr "Kind of value"
@@ -12145,7 +12247,7 @@ msgstr "Calculated for <b class=\"numeric\">%(count)s</b> of %(total)s"
 
 #: apps/userdata/templates/userdata/_column_role.html:5
 #: apps/userdata/templates/userdata/table_step.html:252
-#: apps/userdata/views.py:683
+#: apps/userdata/views.py:689
 msgid "столбец %(number)s"
 msgstr "column %(number)s"
 
@@ -12321,7 +12423,7 @@ msgid "без значений"
 msgstr "no values"
 
 #: apps/userdata/templates/userdata/_dataset_data.html:87
-#: apps/userdata/templates/userdata/_indicator_field.html:85
+#: apps/userdata/templates/userdata/_indicator_field.html:93
 msgid "Смена методики"
 msgstr "Change of methodology"
 
@@ -12544,81 +12646,89 @@ msgstr "Hide: do not show this indicator"
 msgid "Показатель остаётся в файле, его можно вернуть, сняв отметку."
 msgstr "The indicator stays in the file; untick the box to bring it back."
 
-#: apps/userdata/templates/userdata/_indicator_field.html:53
-msgid "Складывается ли по регионам?"
-msgstr "Does it add up across regions?"
+#: apps/userdata/templates/userdata/_indicator_field.html:54
+msgid "Что это за величина?"
+msgstr "What kind of value is this?"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:58
-msgid "Сумма складывается по регионам: люди, случаи, рубли всего. Доля, среднее и значение на жителя — нет."
-msgstr "A sum adds up across regions: people, cases, roubles in total. A share, an average and a value per resident do not."
+#: apps/userdata/templates/userdata/_indicator_field.html:54
+msgid "Что это за величина"
+msgstr "What kind of value is this"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:64
+#: apps/userdata/templates/userdata/_indicator_field.html:63
+msgid "Чтобы сравнивать регионы, делить на"
+msgstr "To compare regions, divide by"
+
+#: apps/userdata/templates/userdata/_indicator_field.html:67
+msgid "Сумма по региону показывает его размер. Посты наблюдения, ООПТ и другие объекты территории на жителей не делят."
+msgstr "A regional total shows the size of the region. Monitoring posts, protected areas and other features of the territory are not divided by residents."
+
+#: apps/userdata/templates/userdata/_indicator_field.html:72
 msgid "Только месяцы — свести в год?"
 msgstr "Months only: fold them into a year?"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:64
+#: apps/userdata/templates/userdata/_indicator_field.html:72
 msgid "Месяцы — в год"
 msgstr "Months into a year"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:66
+#: apps/userdata/templates/userdata/_indicator_field.html:74
 msgid "не сворачивать"
 msgstr "do not fold"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:68
-msgid "сумма за 12 месяцев"
-msgstr "sum of 12 months"
+#: apps/userdata/templates/userdata/_indicator_field.html:76
+msgid "сложить 12 месяцев (значения за месяц)"
+msgstr "add up 12 months (values for the month)"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:68
+#: apps/userdata/templates/userdata/_indicator_field.html:76
 msgid "среднее за месяц"
 msgstr "monthly average"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:68
-msgid "значение за декабрь"
-msgstr "December value"
+#: apps/userdata/templates/userdata/_indicator_field.html:76
+msgid "декабрь (значения на конец месяца)"
+msgstr "December (values at the end of the month)"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:68
+#: apps/userdata/templates/userdata/_indicator_field.html:76
 msgid "январь–декабрь из итогов с начала года"
 msgstr "January–December from year-to-date totals"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:71
-msgid "Год из месяцев: суммы складываются, у долей и средних берётся среднее за месяц. Год без всех месяцев остаётся пустым."
-msgstr "A year from months: sums are added up, shares and averages take the monthly mean. A year without all months stays empty."
+#: apps/userdata/templates/userdata/_indicator_field.html:79
+msgid "Значения за месяц складываются, на конец месяца — берётся декабрь, у долей и средних — среднее за месяц. Год без всех месяцев остаётся пустым."
+msgstr "Monthly values are added up; for end-of-month values December is taken; for shares and averages, the monthly average. A year without all months stays empty."
 
-#: apps/userdata/templates/userdata/_indicator_field.html:76
+#: apps/userdata/templates/userdata/_indicator_field.html:84
 #: apps/userdata/templates/userdata/formula.html:171
 msgid "Как оценивать рост"
 msgstr "How to judge growth"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:86
+#: apps/userdata/templates/userdata/_indicator_field.html:94
 msgid "С какого года значения считаются по-другому"
 msgstr "From which year values are calculated differently"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:88
+#: apps/userdata/templates/userdata/_indicator_field.html:96
 #: apps/userdata/templates/userdata/_versions.html:55
 msgid "Что изменилось"
 msgstr "What changed"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:90
+#: apps/userdata/templates/userdata/_indicator_field.html:98
 msgid "Несколько лет — через запятую. Динамика и инструменты анализа покажут разрыв и предложат сравнивать годы по одной методике."
 msgstr "Several years are separated by commas. Dynamics and the analysis tools will show the break and offer to compare years under one methodology."
 
-#: apps/userdata/templates/userdata/_indicator_field.html:95
+#: apps/userdata/templates/userdata/_indicator_field.html:103
 msgid "Сложить значения разреза"
 msgstr "Add up the values of a breakdown"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:99
+#: apps/userdata/templates/userdata/_indicator_field.html:107
 msgid "Сумма по всем отобранным значениям разреза — например, по всем возрастам, если итога в таблице нет. Итог («Всего», «Оба пола») в сумму не входит. Только для сумм."
 msgstr "The sum over all selected values of the breakdown — for example, over all ages if the table has no total. A total (“Total”, “Both sexes”) is not included. Sums only."
 
-#: apps/userdata/templates/userdata/_indicator_field.html:104
+#: apps/userdata/templates/userdata/_indicator_field.html:112
 msgid "Пересчёты"
 msgstr "Recalculations"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:112
+#: apps/userdata/templates/userdata/_indicator_field.html:120
 msgid "Снимите отметку, чтобы убрать пересчёт. Новые пересчёты — в исследовании: нажмите на показатель, раздел «Новый показатель»."
 msgstr "Clear the tick to remove the recalculation. New recalculations are in a study: click the indicator, section “New indicator”."
 
-#: apps/userdata/templates/userdata/_indicator_field.html:112
+#: apps/userdata/templates/userdata/_indicator_field.html:120
 msgid "Пересчёты — в исследовании: нажмите на показатель, раздел «Новый показатель»."
 msgstr "Recalculations are in a study: click the indicator, section “New indicator”."
 
@@ -13135,6 +13245,10 @@ msgstr "Other regions"
 #: apps/userdata/templates/userdata/cards/_group.html:41
 msgid "Доля группы, %%"
 msgstr "Group share, %%"
+
+#: apps/userdata/templates/userdata/cards/_group.html:57
+msgid "У индекса — медиана регионов группы и остальных: средний темп по регионам без весов не считается."
+msgstr "For an index, the median of the group's regions and of the others is shown: an unweighted average rate across regions is not calculated."
 
 #: apps/userdata/templates/userdata/cards/_group.html:57
 msgid "Среднее группы и остальных взвешено по среднегодовой численности населения."
@@ -13790,13 +13904,13 @@ msgstr "Table layout"
 #: apps/userdata/templates/userdata/index.html:230
 #: apps/userdata/templates/userdata/index.html:239
 #: apps/userdata/templates/userdata/index.html:248
-#: apps/userdata/views.py:585
+#: apps/userdata/views.py:591
 msgid "регион"
 msgstr "region"
 
 #: apps/userdata/templates/userdata/index.html:221
 #: apps/userdata/templates/userdata/table_step.html:246
-#: apps/userdata/views.py:593
+#: apps/userdata/views.py:599
 msgid "значение"
 msgstr "value"
 
@@ -13972,8 +14086,8 @@ msgid "Незначимые после поправки: %(count)s"
 msgstr "Not significant after adjustment: %(count)s"
 
 #: apps/userdata/templates/userdata/series_step.html:20
-#: apps/userdata/views.py:401
-#: apps/userdata/views.py:416
+#: apps/userdata/views.py:402
+#: apps/userdata/views.py:417
 msgid "Проверка таблицы"
 msgstr "Table check"
 
@@ -14289,9 +14403,9 @@ msgid "изменено %(moment)s"
 msgstr "changed %(moment)s"
 
 #: apps/userdata/templates/userdata/table_step.html:17
-#: apps/userdata/views.py:294
-#: apps/userdata/views.py:319
-#: apps/userdata/views.py:44
+#: apps/userdata/views.py:295
+#: apps/userdata/views.py:320
+#: apps/userdata/views.py:45
 msgid "Что в таблице"
 msgstr "What is in the table"
 
@@ -14621,99 +14735,99 @@ msgstr "The file has several tables: choose the one used in the previous version
 msgid "Таблица снова в версии %(number)s."
 msgstr "The table is back at version %(number)s."
 
-#: apps/userdata/views.py:599
+#: apps/userdata/views.py:605
 msgid "годы"
 msgstr "years"
 
-#: apps/userdata/views.py:600
+#: apps/userdata/views.py:606
 msgid "месяцы"
 msgstr "months"
 
-#: apps/userdata/views.py:601
+#: apps/userdata/views.py:607
 msgid "кварталы"
 msgstr "quarters"
 
-#: apps/userdata/views.py:602
+#: apps/userdata/views.py:608
 msgid "полугодия"
 msgstr "half-years"
 
-#: apps/userdata/views.py:604
+#: apps/userdata/views.py:610
 msgid "скользящие месяцы"
 msgstr "rolling months"
 
-#: apps/userdata/views.py:608
+#: apps/userdata/views.py:614
 msgid "Длинная таблица: регион, период и значение — в своих столбцах."
 msgstr "A long table: region, period and value in their own columns."
 
-#: apps/userdata/views.py:609
+#: apps/userdata/views.py:615
 msgid "Годы или периоды — в столбцах, регионы — в строках."
 msgstr "Years or periods in columns, regions in rows."
 
-#: apps/userdata/views.py:610
+#: apps/userdata/views.py:616
 msgid "Показатели — в столбцах, регионы — в строках; года в таблице нет."
 msgstr "Indicators in columns, regions in rows; the table has no year."
 
-#: apps/userdata/views.py:611
+#: apps/userdata/views.py:617
 msgid "Регионы — в столбцах, годы — в строках."
 msgstr "Regions in columns, years in rows."
 
-#: apps/userdata/views.py:612
+#: apps/userdata/views.py:618
 msgid "Регионы в таблице не найдены."
 msgstr "No regions were found in the table."
 
-#: apps/userdata/views.py:586
+#: apps/userdata/views.py:592
 msgid "код региона"
 msgstr "region code"
 
-#: apps/userdata/views.py:587
+#: apps/userdata/views.py:593
 msgid "уровень территории"
 msgstr "territory level"
 
-#: apps/userdata/views.py:589
+#: apps/userdata/views.py:595
 msgid "показатель"
 msgstr "indicator"
 
-#: apps/userdata/views.py:590
+#: apps/userdata/views.py:596
 msgid "код показателя"
 msgstr "indicator code"
 
-#: apps/userdata/views.py:591
+#: apps/userdata/views.py:597
 msgid "единица"
 msgstr "unit"
 
-#: apps/userdata/views.py:592
+#: apps/userdata/views.py:598
 msgid "разрез"
 msgstr "breakdown"
 
-#: apps/userdata/views.py:594
+#: apps/userdata/views.py:600
 msgid "причина пропуска"
 msgstr "reason for a missing value"
 
-#: apps/userdata/views.py:595
+#: apps/userdata/views.py:601
 msgid "примечание"
 msgstr "note"
 
-#: apps/userdata/views.py:596
+#: apps/userdata/views.py:602
 msgid "пропустить"
 msgstr "skip"
 
-#: apps/userdata/views.py:356
+#: apps/userdata/views.py:357
 msgid "Описание таблицы сохранено."
 msgstr "The table description has been saved."
 
-#: apps/userdata/views.py:391
+#: apps/userdata/views.py:392
 msgid "Сначала сохраните описание таблицы."
 msgstr "Save the table description first."
 
-#: apps/userdata/views.py:203
+#: apps/userdata/views.py:204
 msgid "Файл: %(name)s"
 msgstr "File: %(name)s"
 
-#: apps/userdata/views.py:248
+#: apps/userdata/views.py:249
 msgid "Новых строк во вставке нет."
 msgstr "The pasted text has no new rows."
 
-#: apps/userdata/views.py:246
+#: apps/userdata/views.py:247
 msgid "Строк добавлено: %(count)s."
 msgstr "Rows added: %(count)s."
 
