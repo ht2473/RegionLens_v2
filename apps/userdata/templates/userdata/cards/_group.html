@@ -54,4 +54,4 @@
     </table>
   </div>
 </details>
-{% if not card.is_sum %}<p class="answer__meta"><span>{% translate "Среднее группы и остальных взвешено по среднегодовой численности населения." %}</span></p>{% endif %}
+{% if card.median %}<p class="answer__meta"><span>{% translate "У индекса — медиана регионов группы и остальных: средний темп по регионам без весов не считается." %}</span></p>{% elif not card.is_sum %}<p class="answer__meta"><span>{% translate "Среднее группы и остальных взвешено по среднегодовой численности населения." %}</span></p>{% endif %}

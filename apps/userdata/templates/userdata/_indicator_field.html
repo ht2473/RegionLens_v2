@@ -49,15 +49,23 @@
     <span class="field__hint">{% translate "Показатель остаётся в файле, его можно вернуть, сняв отметку." %}</span>
   </div>
 {% elif name == "kind" %}
+  {% comment %} В вопросе — сумма, относительная или индекс; за период или на дату уточняется в «Изменить» и способом свёртки месяцев. {% endcomment %}
   <fieldset class="field">
-    <legend class="field__label">{% if "kind" in item.questions %}{% translate "Складывается ли по регионам?" %}{% else %}{% translate "Вид величины" %}{% endif %}</legend>
-    {% for value, label in kinds %}
-      <label class="radio"><input type="radio" name="kind-{{ number }}" value="{{ value }}"{% if item.kind == value %} checked{% endif %}> {{ label }}</label>
+    <legend class="field__label">{% if "kind" in item.questions %}{% translate "Что это за величина?" %}{% else %}{% translate "Что это за величина" %}{% endif %}</legend>
+    {% for value, label, hint in kinds %}
+      {% if "kind" not in item.questions or value != "flow" and value != "stock" %}
+        <label class="radio"><input type="radio" name="kind-{{ number }}" value="{{ value }}"{% if item.kind == value %} checked{% endif %}> <span>{{ label|capfirst }}<span class="field__hint">{{ hint }}</span></span></label>
+      {% endif %}
     {% endfor %}
-    {% if "kind" in item.questions %}
-      <span class="field__hint">{% translate "Сумма складывается по регионам: люди, случаи, рубли всего. Доля, среднее и значение на жителя — нет." %}</span>
-    {% endif %}
   </fieldset>
+{% elif name == "base" %}
+  <div class="field" data-sum-only>
+    <label class="field__label" for="base-{{ number }}">{% translate "Чтобы сравнивать регионы, делить на" %}</label>
+    <select class="select" id="base-{{ number }}" name="base-{{ number }}" aria-describedby="base-hint-{{ number }}">
+      {% for value, label in bases %}<option value="{{ value }}"{% if item.base == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <span class="field__hint" id="base-hint-{{ number }}">{% translate "Сумма по региону показывает его размер. Посты наблюдения, ООПТ и другие объекты территории на жителей не делят." %}</span>
+  </div>
 {% elif name == "months" %}
   {% if item.month_options %}
     <div class="field">
@@ -65,10 +73,10 @@
       <select class="select" id="months-{{ number }}" name="months-{{ number }}" aria-describedby="months-hint-{{ number }}">
         <option value="">{% translate "не сворачивать" %}</option>
         {% for method in item.month_options %}
-          <option value="{{ method }}"{% if item.months == method %} selected{% endif %}{% if method == "sum" %} data-sum-only{% endif %}>{% if method == "sum" %}{% translate "сумма за 12 месяцев" %}{% elif method == "mean" %}{% translate "среднее за месяц" %}{% elif method == "december" %}{% translate "значение за декабрь" %}{% else %}{% translate "январь–декабрь из итогов с начала года" %}{% endif %}</option>
+          <option value="{{ method }}"{% if item.months == method %} selected{% endif %} data-types="{{ item.month_types|dict_value:method }}">{% if method == "sum" %}{% translate "сложить 12 месяцев (значения за месяц)" %}{% elif method == "mean" %}{% translate "среднее за месяц" %}{% elif method == "december" %}{% translate "декабрь (значения на конец месяца)" %}{% else %}{% translate "январь–декабрь из итогов с начала года" %}{% endif %}</option>
         {% endfor %}
       </select>
-      <span class="field__hint" id="months-hint-{{ number }}">{% translate "Год из месяцев: суммы складываются, у долей и средних берётся среднее за месяц. Год без всех месяцев остаётся пустым." %}</span>
+      <span class="field__hint" id="months-hint-{{ number }}">{% translate "Значения за месяц складываются, на конец месяца — берётся декабрь, у долей и средних — среднее за месяц. Год без всех месяцев остаётся пустым." %}</span>
     </div>
   {% endif %}
 {% elif name == "polarity" %}

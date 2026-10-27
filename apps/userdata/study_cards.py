@@ -27,7 +27,7 @@ from apps.warehouse.duckdb_client import WarehouseNotBuiltError
 from apps.workspace.constants import QUERY_TARGETS_BY_CODE
 from apps.workspace.describe import describe_parameters
 
-from . import answers
+from . import answers, operations, semantics
 from .studies import ANSWER, CANVAS_TARGETS, PAIR_QUESTIONS, VIEW
 
 # Строк рейтинга и таблицы на карточке; остальное — по ссылке «Открыть».
@@ -255,6 +255,23 @@ def _colour_table(rows: list[dict[str, Any]], precision: int | None) -> list[dic
     ]
 
 
+def _refuse(question: str, keys: list[str]) -> None:
+    """
+    Ответа нет по типу ряда — с той же причиной, что у пункта окна «Что показать». Условия
+    данных проверяет сам ответ.
+    """
+    action = f"answer:{question}"
+    if action not in semantics.RULES:
+        return
+    for key in keys:
+        info = operations.info_of(key)
+        if info is None:
+            continue
+        verdict = semantics.verdict(action, info.value, data=False)
+        if not verdict:
+            raise answers.NoAnswerError(semantics.sentence(verdict.reason))
+
+
 def _answer(
     request: HttpRequest,
     block: dict[str, Any],
@@ -276,8 +293,11 @@ def _answer(
             request, card_query({"series": block["series"]}, year=year, territories=territories)
         )
         subject = describe_subject(state)
-        if subject is None or state.year is None:
+        if subject is None or state.year is None or state.series is None:
             raise Http404
+        _refuse(
+            question, [state.series.key, *([block["other"]] if question in PAIR_QUESTIONS else [])]
+        )
         if question in PAIR_QUESTIONS:
             _other_clone, other = _state(
                 request, card_query({"series": block["other"]}, year=year, territories=[])

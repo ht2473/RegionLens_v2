@@ -677,7 +677,7 @@ def group(asked: Asked) -> dict[str, Any]:
     """
     from apps.core.charts import timeline_option
 
-    from . import groups
+    from . import groups, operations, semantics
     from .models import RegionGroup
 
     state, subject = asked.state, asked.subject
@@ -690,10 +690,13 @@ def group(asked: Asked) -> dict[str, Any]:
         found = None
     if found is None:
         raise NoAnswerError(_("Группа регионов удалена."))
-    is_sum = bool(subject.item.absolute)
+    info = operations.info_of(state.series.key)
+    kind = info.type if info is not None else ""
+    is_sum = semantics.is_additive(kind) if info is not None else bool(subject.item.absolute)
+    median = kind == semantics.INDEX
     years = [
         item
-        for item in groups.totals(state.series.key, found.codes, is_sum=is_sum)
+        for item in groups.totals(state.series.key, found.codes, is_sum=is_sum, median=median)
         if item.group is not None and item.rest is not None
     ]
     if not years:
@@ -735,6 +738,7 @@ def group(asked: Asked) -> dict[str, Any]:
         "year": chosen.year,
         "group_title": found.title,
         "is_sum": is_sum,
+        "median": median,
         "group_value": ru_number(chosen.group, precision),
         "rest_value": ru_number(chosen.rest, precision),
         "share": ru_number(share(chosen), 1),

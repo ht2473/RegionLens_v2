@@ -21,8 +21,9 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.warehouse import routing
 
-from .indicators import RELATIVE, SUM
+from . import semantics
 from .models import DatasetSeries
+from .semantics import FLOW, INDEX, RELATIVE, STOCK
 
 # Группы каталога по порядку.
 GROUPS: tuple[tuple[str, Promise], ...] = (
@@ -93,7 +94,10 @@ class Field:
 
 @dataclass(frozen=True, slots=True)
 class Info:
-    """Что о ряде нужно каталогу: название, единица, вид величины, деньги, годы, регионы."""
+    """
+    Что о ряде нужно каталогу: название, единица, тип величины и основа, деньги, годы,
+    регионы. ``kind`` пусто — сумма или относительная по ``is_sum``.
+    """
 
     key: str
     title: str
@@ -106,12 +110,34 @@ class Info:
     last_year: int | None = None
     regions: int = 0
     derived: str = ""
+    kind: str = ""
+    base: str = semantics.PEOPLE
+    monthly: bool = False
+    is_user: bool = True
 
     @property
     def years(self) -> int:
         if self.first_year is None or self.last_year is None:
             return 0
         return self.last_year - self.first_year + 1
+
+    @property
+    def type(self) -> str:
+        """Тип величины для таблицы правил."""
+        return self.kind or (semantics.SUM if self.is_sum else RELATIVE)
+
+    @property
+    def value(self) -> semantics.Value:
+        return semantics.Value(
+            type=self.type,
+            base=self.base,
+            is_rubles=self.is_rubles,
+            is_currency=self.is_currency,
+            monthly=self.monthly,
+            years=self.years,
+            regions=self.regions,
+            is_user=self.is_user,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -128,7 +154,7 @@ class Output:
 class Operation:
     """
     Расчёт каталога. ``recount`` — код пересчёта сборки; иначе ``outputs`` строит формулы
-    по значениям полей. ``sums_only`` и ``currency_only`` — к какому первому ряду применимо.
+    по значениям полей. К какому ряду применимо — правило ``calc:<код>`` в ``semantics``.
     """
 
     code: str
@@ -137,12 +163,6 @@ class Operation:
     method: Promise
     fields: tuple[Field, ...] = ()
     recount: str = ""
-    sums_only: bool = False
-    currency_only: bool = False
-    rubles_only: bool = False
-    relative_only: bool = False
-    min_years: int = 1
-    min_regions: int = 0
     official: tuple[str, ...] = ()
     outputs: Callable[[Values], list[Output]] | None = None
 
@@ -177,6 +197,11 @@ class Values:
     def is_sum(self, name: str) -> bool:
         found = self.info.get(self.series.get(name, ""))
         return bool(found and found.is_sum)
+
+    def kind(self, name: str) -> str:
+        """Тип величины ряда поля; неизвестный ряд — относительная."""
+        found = self.info.get(self.series.get(name, ""))
+        return found.type if found else RELATIVE
 
 
 A = Field("a", SERIES, _("Показатель"))
@@ -265,6 +290,7 @@ def _base_year(values: Values) -> list[Output]:
             f"{values.title('a')}, {year} = 100",
             f"{values.ref('a')} / ВГОДУ({values.ref('a')}; {year}) * 100",
             f"{year} = 100",
+            INDEX,
         )
     ]
 
@@ -278,7 +304,7 @@ def _between(values: Values) -> list[Output]:
                 f"{values.title('a')}: изменение за {first}–{last}",
                 f"ЗАГОД({reference} - ВГОДУ({reference}; {first}); {last})",
                 values.unit("a"),
-                SUM if values.is_sum("a") else RELATIVE,
+                values.kind("a"),
             )
         ]
     return [
@@ -286,6 +312,7 @@ def _between(values: Values) -> list[Output]:
             f"{values.title('a')}: изменение за {first}–{last}, %",
             f"ЗАГОД({reference} / ВГОДУ({reference}; {first}) * 100 - 100; {last})",
             "%",
+            INDEX,
         )
     ]
 
@@ -300,13 +327,13 @@ def _annual_rate(values: Values) -> list[Output]:
             f"ЗАГОД(({reference} / ВГОДУ({reference}; {first})) ^ (1 / {span}) * 100 - 100; "
             f"{last})",
             "% в год",
+            INDEX,
         )
     ]
 
 
 def _moving(values: Values) -> list[Output]:
     window = int(values.numbers["window"])
-    is_sum = values.is_sum("a")
     return [
         Output(
             f"{values.title('a')}: скользящее среднее за {window} года"
@@ -314,7 +341,7 @@ def _moving(values: Values) -> list[Output]:
             else f"{values.title('a')}: скользящее среднее за {window} лет",
             f"СКОЛЬЗЯЩЕЕ({values.ref('a')}; {window})",
             values.unit("a"),
-            SUM if is_sum else RELATIVE,
+            values.kind("a"),
         )
     ]
 
@@ -325,7 +352,7 @@ def _cumulative(values: Values) -> list[Output]:
             f"{values.title('a')}: накопленный итог",
             f"НАКОПЛЕННОЕ({values.ref('a')})",
             values.unit("a"),
-            SUM,
+            STOCK,
         )
     ]
 
@@ -334,13 +361,15 @@ def _sum(values: Values) -> list[Output]:
     keys = values.lists["parts"]
     titles = [values.info[key].title if key in values.info else key for key in keys]
     units = [values.info[key].unit for key in keys if key in values.info]
-    all_sums = all(values.info[key].is_sum for key in keys if key in values.info)
+    kinds = {values.info[key].type for key in keys if key in values.info}
+    exact = kinds - {semantics.SUM}
+    kind = exact.pop() if len(exact) == 1 else semantics.SUM
     return [
         Output(
             "Сумма: " + " + ".join(titles),
             _joined([_ref(key) for key in keys], "+"),
             units[0] if units else "",
-            SUM if all_sums else RELATIVE,
+            kind,
         )
     ]
 
@@ -469,9 +498,9 @@ def _shift_share(values: Values) -> list[Output]:
     unit = values.info[parts[0]].unit if parts[0] in values.info else ""
     period = f"{first}–{last}"
     return [
-        Output(f"Сдвиг-доля {period}: общероссийский рост", national, unit, SUM),
-        Output(f"Сдвиг-доля {period}: отраслевая структура", mix, unit, SUM),
-        Output(f"Сдвиг-доля {period}: региональный сдвиг", regional, unit, SUM),
+        Output(f"Сдвиг-доля {period}: общероссийский рост", national, unit, FLOW),
+        Output(f"Сдвиг-доля {period}: отраслевая структура", mix, unit, FLOW),
+        Output(f"Сдвиг-доля {period}: региональный сдвиг", regional, unit, FLOW),
     ]
 
 
@@ -492,8 +521,6 @@ OPERATIONS: tuple[Operation, ...] = (
             "подбирается по значениям: тыс. руб. на жителя, а не дробь с нулями."
         ),
         recount=DatasetSeries.Derived.PER_1.value,
-        sums_only=True,
-        currency_only=True,
     ),
     Operation(
         "per1000",
@@ -501,7 +528,6 @@ OPERATIONS: tuple[Operation, ...] = (
         _("На 1 000 жителей"),
         _("Сумма делится на среднегодовую численность населения и умножается на 1 000."),
         recount=DatasetSeries.Derived.PER_1000.value,
-        sums_only=True,
     ),
     Operation(
         "per10000",
@@ -509,7 +535,6 @@ OPERATIONS: tuple[Operation, ...] = (
         _("На 10 000 жителей"),
         _("Сумма делится на среднегодовую численность населения и умножается на 10 000."),
         recount=DatasetSeries.Derived.PER_10000.value,
-        sums_only=True,
     ),
     Operation(
         "per100000",
@@ -520,7 +545,6 @@ OPERATIONS: tuple[Operation, ...] = (
             "Так считают преступность и заболеваемость."
         ),
         recount=DatasetSeries.Derived.PER_100000.value,
-        sums_only=True,
     ),
     Operation(
         "perkm2",
@@ -528,7 +552,6 @@ OPERATIONS: tuple[Operation, ...] = (
         _("На км²"),
         _("Сумма делится на площадь территории региона."),
         recount=DatasetSeries.Derived.PER_KM2.value,
-        sums_only=True,
     ),
     Operation(
         "pergroup",
@@ -540,7 +563,6 @@ OPERATIONS: tuple[Operation, ...] = (
             "численность группы."
         ),
         fields=(A, Field("group", CHOICE, _("Группа"), GROUP_CHOICES)),
-        sums_only=True,
         official=tuple(key for key, _name in GROUP_DENOMINATORS.values()),
         outputs=_per_group,
     ),
@@ -553,8 +575,6 @@ OPERATIONS: tuple[Operation, ...] = (
             "в процентах к средней по России. Получаются рубли в ценах России."
         ),
         fields=(A,),
-        currency_only=True,
-        relative_only=True,
         official=(PRICE_LEVEL,),
         outputs=_price_level,
     ),
@@ -567,8 +587,6 @@ OPERATIONS: tuple[Operation, ...] = (
             "на душу населения."
         ),
         fields=(A,),
-        currency_only=True,
-        relative_only=True,
         official=(SUBSISTENCE,),
         outputs=_subsistence,
     ),
@@ -579,7 +597,6 @@ OPERATIONS: tuple[Operation, ...] = (
         _("Доля в сумме по субъектам"),
         _("Значение региона делится на сумму значений субъектов за тот же год."),
         recount=DatasetSeries.Derived.SHARE.value,
-        sums_only=True,
     ),
     Operation(
         "russiashare",
@@ -590,7 +607,6 @@ OPERATIONS: tuple[Operation, ...] = (
             "в сумме субъектов, когда часть итога не распределена по регионам."
         ),
         fields=(A,),
-        sums_only=True,
         outputs=_russia_share,
     ),
     Operation(
@@ -599,7 +615,6 @@ OPERATIONS: tuple[Operation, ...] = (
         _("Доля составляющей в итоге"),
         _("Составляющая делится на итог того же региона и года, в процентах."),
         fields=(Field("a", SERIES, _("Составляющая")), TOTAL),
-        sums_only=True,
         outputs=_structure,
     ),
     Operation(
@@ -611,7 +626,6 @@ OPERATIONS: tuple[Operation, ...] = (
             "к 10 000, тем сильнее итог сосредоточен в одной составляющей."
         ),
         fields=(PARTS, TOTAL),
-        sums_only=True,
         outputs=_concentration,
     ),
     # Изменение.
@@ -621,7 +635,6 @@ OPERATIONS: tuple[Operation, ...] = (
         _("% к предыдущему году"),
         _("Значение делится на значение того же периода прошлого года, только у положительных."),
         recount=DatasetSeries.Derived.GROWTH.value,
-        min_years=2,
     ),
     Operation(
         "baseyear",
@@ -629,7 +642,6 @@ OPERATIONS: tuple[Operation, ...] = (
         _("Базовый год = 100"),
         _("Значение каждого года делится на значение базового года того же региона."),
         fields=(A, Field("year", YEAR, _("Базовый год"))),
-        min_years=2,
         outputs=_base_year,
     ),
     Operation(
@@ -641,7 +653,6 @@ OPERATIONS: tuple[Operation, ...] = (
             "у региона за последний год периода."
         ),
         fields=(A, *YEARS, Field("mode", CHOICE, _("Как"), CHANGE_CHOICES)),
-        min_years=2,
         outputs=_between,
     ),
     Operation(
@@ -653,7 +664,6 @@ OPERATIONS: tuple[Operation, ...] = (
             "Только у положительных значений."
         ),
         fields=(A, *YEARS),
-        min_years=3,
         outputs=_annual_rate,
     ),
     Operation(
@@ -662,7 +672,6 @@ OPERATIONS: tuple[Operation, ...] = (
         _("Скользящее среднее"),
         _("Среднее за окно лет, считая текущий. Неполное окно или пропуск в нём — без значения."),
         fields=(A, Field("window", WINDOW, _("Окно, лет"))),
-        min_years=3,
         outputs=_moving,
     ),
     Operation(
@@ -671,8 +680,6 @@ OPERATIONS: tuple[Operation, ...] = (
         _("Накопленный итог"),
         _("Сумма с первого года со значением. После пропуска года итог не продолжается."),
         fields=(A,),
-        sums_only=True,
-        min_years=2,
         outputs=_cumulative,
     ),
     Operation(
@@ -684,8 +691,6 @@ OPERATIONS: tuple[Operation, ...] = (
             "При пропуске индекса не считается."
         ),
         recount=DatasetSeries.Derived.REAL.value,
-        rubles_only=True,
-        min_years=1,
     ),
     # Сравнение.
     Operation(
@@ -701,7 +706,6 @@ OPERATIONS: tuple[Operation, ...] = (
         _("Отклонение от России"),
         _("Из значения региона вычитается значение России за тот же год."),
         fields=(A,),
-        relative_only=True,
         outputs=_russia_deviation,
     ),
     Operation(
@@ -713,7 +717,6 @@ OPERATIONS: tuple[Operation, ...] = (
             "округа за тот же год."
         ),
         fields=(A,),
-        relative_only=True,
         outputs=_district_deviation,
     ),
     Operation(
@@ -725,7 +728,6 @@ OPERATIONS: tuple[Operation, ...] = (
             "Показывает, насколько регион необычен в своём году."
         ),
         fields=(A,),
-        min_regions=20,
         outputs=_z_score,
     ),
     Operation(
@@ -758,7 +760,6 @@ OPERATIONS: tuple[Operation, ...] = (
             "например, средняя зарплата по численности работников."
         ),
         fields=(A, Field("b", SERIES, _("Вес"))),
-        relative_only=True,
         outputs=_weighted_district,
     ),
     # Региональные методы.
@@ -771,7 +772,6 @@ OPERATIONS: tuple[Operation, ...] = (
             "отрасль в регионе представлена сильнее, чем в стране."
         ),
         fields=(Field("a", SERIES, _("Отрасль")), TOTAL),
-        sums_only=True,
         outputs=_location_quotient,
     ),
     Operation(
@@ -783,8 +783,6 @@ OPERATIONS: tuple[Operation, ...] = (
             "в процентных пунктах."
         ),
         fields=(PARTS, TOTAL, *YEARS),
-        sums_only=True,
-        min_years=2,
         outputs=_structural_shift,
     ),
     Operation(
@@ -797,8 +795,6 @@ OPERATIONS: tuple[Operation, ...] = (
             "из таблицы, нет его — сумма субъектов."
         ),
         fields=(PARTS, *YEARS),
-        sums_only=True,
-        min_years=2,
         outputs=_shift_share,
     ),
 )
@@ -811,28 +807,19 @@ def recount_codes() -> list[str]:
 
 
 def reason(operation: Operation, info: Info, available: Mapping[str, bool] | None = None) -> str:
-    """Почему операция не подходит ряду; пусто — подходит."""
+    """
+    Почему операция не подходит ряду; пусто — подходит. Тип, основа, деньги и данные —
+    по таблице правил; нужных рядов сайта нет — отдельно.
+    """
+    found = semantics.verdict(f"calc:{operation.code}", info.value).reason
+    if found:
+        return found
     missing = (
         operation.official
         and available is not None
         and not any(available.get(key) for key in operation.official)
     )
-    checks = (
-        (operation.sums_only and not info.is_sum, _("только для сумм по регионам")),
-        (operation.relative_only and info.is_sum, _("только для относительных величин")),
-        (operation.currency_only and not info.is_currency, _("только для денежных показателей")),
-        (operation.rubles_only and not info.is_rubles, _("только для показателей в рублях")),
-        (
-            operation.min_years > 1 and info.years < operation.min_years,
-            _("нужно лет не меньше: %(count)s") % {"count": operation.min_years},
-        ),
-        (
-            bool(operation.min_regions) and info.regions < operation.min_regions,
-            _("нужны значения хотя бы по %(count)s регионам") % {"count": operation.min_regions},
-        ),
-        (missing, _("нужных показателей нет на сайте")),
-    )
-    return next((str(message) for failed, message in checks if failed), "")
+    return str(_("нужных показателей нет на сайте")) if missing else ""
 
 
 def grouped(
@@ -873,7 +860,6 @@ def _official_sum(kind: str, unit: str) -> bool:
 
 def info_of(key: str) -> Info | None:
     """Сведения о ряде для каталога: свой — из описания таблицы, официальный — из справочника."""
-    from . import indicators
     from .series import user_series_many
 
     if routing.is_user_key(key):
@@ -881,17 +867,21 @@ def info_of(key: str) -> Info | None:
         if found is None:
             return None
         record = found.record
+        value = found.value()
         return Info(
             key=key,
             title=found.full_title_ru,
             unit=record.unit,
             is_sum=found.is_sum,
-            is_currency=indicators.is_currency(record.title, record.unit),
-            is_rubles=indicators.is_rubles(record.title, record.unit),
+            is_currency=value.is_currency,
+            is_rubles=value.is_rubles,
             first_year=record.first_year,
             last_year=record.last_year,
             regions=record.regions_count,
             derived=record.derived,
+            kind=value.type,
+            base=value.base,
+            monthly=value.monthly,
         )
     from apps.catalog.models import Series
 
@@ -902,16 +892,22 @@ def info_of(key: str) -> Info | None:
     if series.has_subsection and series.name_ru:
         title = f"{title} — {series.name_ru}"
     unit = series.unit.name_ru if series.unit else ""
+    unit_kind = series.unit.kind if series.unit else ""
+    is_sum = _official_sum(unit_kind, unit)
     return Info(
         key=key,
         title=title,
         unit=unit,
-        is_sum=_official_sum(series.unit.kind if series.unit else "", unit),
-        is_currency=indicators.is_currency(title, unit),
-        is_rubles=indicators.is_rubles(title, unit),
+        is_sum=is_sum,
+        is_currency=semantics.is_currency(title, unit),
+        is_rubles=semantics.is_rubles(title, unit),
         first_year=series.first_year,
         last_year=series.last_year,
         regions=series.region_count,
+        kind=semantics.official_type(is_sum=is_sum, unit_kind=unit_kind),
+        base=semantics.guess_base(title),
+        monthly=semantics.is_monthly(title, unit),
+        is_user=False,
     )
 
 
@@ -1032,7 +1028,19 @@ def _sum_warnings(items: list[Info]) -> list[str]:
             str(_("Складываются показатели в разных единицах: %(units)s. Приведите их к одной."))
             % {"units": ", ".join(item for item in units if item) or "—"}
         )
-    if any(not item.is_sum for item in items):
+    kinds = {item.type for item in items}
+    if {FLOW, STOCK} <= kinds:
+        found.append(
+            str(
+                _(
+                    "Складываются значения за период и на дату: выдано за год и остаток "
+                    "на 1 января не складываются."
+                )
+            )
+        )
+    if INDEX in kinds:
+        found.append(str(_("Среди слагаемых — индексы: темпы роста не складываются.")))
+    if any(not item.is_sum and item.type != INDEX for item in items):
         found.append(
             str(
                 _(

@@ -155,8 +155,13 @@ class DatasetSeries(models.Model):
     """Ряд набора: показатель, значения разрезов и период года; ключ — «u:<набор>:<ряд>»."""
 
     class Kind(models.TextChoices):
+        """Тип величины: смысл и правила — ``semantics``."""
+
+        FLOW = "flow", _("сумма за период")
+        STOCK = "stock", _("сумма на дату")
         SUM = "sum", _("сумма")
-        RELATIVE = "relative", _("относительная величина")
+        RELATIVE = "relative", _("доля, среднее или на жителя")
+        INDEX = "index", _("изменение к другому периоду")
 
     class Polarity(models.TextChoices):
         POSITIVE = "positive", _("рост — к лучшему")

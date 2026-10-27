@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import statistics
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
@@ -98,10 +99,11 @@ class Year:
     members: int
 
 
-def totals(key: str, codes: list[str], *, is_sum: bool) -> list[Year]:
+def totals(key: str, codes: list[str], *, is_sum: bool, median: bool = False) -> list[Year]:
     """
     Итог группы и остальных регионов по годам ряда: сумма у сумм, среднее, взвешенное
-    по численности, у относительных. Регион без значения в году — вне итога этого года.
+    по численности, у относительных, медиана у индексов (``median``). Регион без значения
+    в году — вне итога этого года.
     """
     from apps.warehouse.queries import region_panel
     from apps.warehouse.queries.sources import population_table
@@ -117,8 +119,8 @@ def totals(key: str, codes: list[str], *, is_sum: bool) -> list[Year]:
         found.append(
             Year(
                 year=year,
-                group=_total(group, people, year, is_sum=is_sum),
-                rest=_total(rest, people, year, is_sum=is_sum),
+                group=_total(group, people, year, is_sum=is_sum, median=median),
+                rest=_total(rest, people, year, is_sum=is_sum, median=median),
                 members=len(group),
             )
         )
@@ -131,12 +133,18 @@ def _total(
     year: int,
     *,
     is_sum: bool,
+    median: bool = False,
 ) -> float | None:
-    """Сумма значений или среднее, взвешенное численностью года (после последнего — последней)."""
+    """
+    Сумма значений, медиана или среднее, взвешенное численностью года (после последнего —
+    последней).
+    """
     if not values:
         return None
     if is_sum:
         return sum(values.values())
+    if median:
+        return float(statistics.median(values.values()))
     weighted = weight = 0.0
     for code, value in values.items():
         years = people.get(code) or {}

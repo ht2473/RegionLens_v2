@@ -24,7 +24,7 @@ from django.views.generic import TemplateView
 from apps.core.templatetags.formatting import ru_number
 from apps.warehouse import routing
 
-from . import access, formula_store, formulas, jobs, lab, operations, studies
+from . import access, formula_store, formulas, jobs, lab, operations, semantics, studies
 from .formula_views import preview, preview_allowed
 from .formulas import FormulaError
 from .models import Dataset, DatasetSeries, DatasetVersion, Study
@@ -53,6 +53,9 @@ TEXT_FIELDS = (
 # Крайних регионов в предпросмотре — сверху и снизу.
 EXTREMES = 3
 RELATIVE = DatasetSeries.Kind.RELATIVE.value
+# Расчёты по частям одного целого: части — суммы одного типа; у суммы показателей — ещё
+# и одной единицы.
+PARTS_OPERATIONS = frozenset({"sum", "hhi", "structure", "lq", "structuralshift", "shiftshare"})
 
 
 class CalcError(ValueError):
@@ -365,7 +368,20 @@ def _values(form: dict[str, Any], operation: operations.Operation) -> operations
         raise CalcError(gettext("Первый год периода должен быть раньше последнего."))
     keys = [*values.series.values(), *(key for items in values.lists.values() for key in items)]
     values.info = {key: info for key in keys if (info := operations.info_of(key)) is not None}
+    _check_parts(operation, list(values.info.values()))
     return values
+
+
+def _check_parts(operation: operations.Operation, found: list[operations.Info]) -> None:
+    """Части одного целого — суммы одного типа, у суммы показателей — и одной единицы."""
+    if operation.code not in PARTS_OPERATIONS:
+        return
+    problem = semantics.parts_reason(
+        [item.type for item in found],
+        [item.unit for item in found] if operation.code == "sum" else [],
+    )
+    if problem:
+        raise CalcError(problem)
 
 
 def _parameters(form: dict[str, Any], operation: operations.Operation) -> dict[str, Any]:

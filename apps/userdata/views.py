@@ -32,6 +32,7 @@ from . import (
     matching,
     recognize,
     renew,
+    semantics,
     services,
     tables,
 )
@@ -428,7 +429,11 @@ class SeriesStepView(DatasetStepMixin, TemplateView):
                 instance=self.dataset,
                 initial=services.suggested_title(self.dataset, self.version, items),
             ),
-            kinds=DatasetSeries.Kind.choices,
+            kinds=[
+                (value, label, semantics.TYPE_HINTS[value])
+                for value, label in DatasetSeries.Kind.choices
+            ],
+            bases=semantics.BASE_CHOICES,
             polarities=DatasetSeries.Polarity.choices,
             build_error=jobs.stage_error(self.version, jobs.BUILD)
             if jobs.stage_state(self.version, jobs.BUILD) == jobs.FAILED
@@ -559,6 +564,7 @@ def _indicator_answers(request: HttpRequest) -> dict[str, dict[str, Any]]:
             "title": data.get(f"title-{number}", ""),
             "unit": data.get(f"unit-{number}", ""),
             "kind": data.get(f"kind-{number}", ""),
+            "base": data.get(f"base-{number}", ""),
             "polarity": data.get(f"polarity-{number}", ""),
             "breaks": data.get(f"breaks-{number}", ""),
             "break_note": data.get(f"break-note-{number}", ""),

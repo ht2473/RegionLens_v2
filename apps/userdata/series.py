@@ -20,13 +20,13 @@ from django.utils.translation import gettext
 from apps.warehouse import routing
 from apps.warehouse.queries import FeaturedSeries
 
-from . import indicators, naming
+from . import indicators, naming, semantics
 from .models import Dataset, DatasetSeries, DatasetVersion
 
 ABSOLUTE_KIND = "absolute"
 RELATIVE_KIND = "rate"
 # Субъектов меньше этого: неравенство и пространственный анализ по набору не считаются.
-FEW_REGIONS = 20
+FEW_REGIONS = semantics.FEW_REGIONS
 # Пересчёты на жителей — в порядке предпочтения для замены суммы.
 PER_CAPITA = (
     DatasetSeries.Derived.PER_1.value,
@@ -92,7 +92,53 @@ class UserSeries:
 
     @property
     def is_sum(self) -> bool:
-        return self.record.kind == DatasetSeries.Kind.SUM
+        """Складывается по регионам: поток, запас или сумма."""
+        return semantics.is_additive(self.record.kind)
+
+    @property
+    def described(self) -> dict[str, Any]:
+        """Описание показателя ряда в рецепте версии; у формулы и без описания — пусто."""
+        answers = self.record.version.recipe.get("indicators") or {}
+        found = answers.get(self.record.indicator)
+        return found if isinstance(found, dict) else {}
+
+    @property
+    def value_type(self) -> str:
+        """Тип величины: выбранный человеком, у пересчёта — по пересчёту, иначе уточнённый вид."""
+        record = self.record
+        return semantics.series_type(
+            record.kind,
+            derived=record.derived,
+            name=record.indicator,
+            unit=record.unit,
+            chosen=str(self.described.get("type") or ""),
+        )
+
+    @property
+    def base(self) -> str:
+        """Основа сравнения регионов: из описания, иначе по названию."""
+        base = self.described.get("base")
+        return str(base) if base in semantics.BASES else semantics.guess_base(self.record.indicator)
+
+    def value(self, parts: int = 0) -> semantics.Value:
+        """Что о ряде нужно таблице правил."""
+        record = self.record
+        years = (
+            record.last_year - record.first_year + 1
+            if record.first_year is not None and record.last_year is not None
+            else 0
+        )
+        return semantics.Value(
+            type=self.value_type,
+            base=self.base,
+            is_rubles=semantics.is_rubles(record.title, record.unit),
+            is_currency=semantics.is_currency(record.title, record.unit),
+            monthly=semantics.is_monthly(f"{record.indicator} {record.title}", record.unit),
+            years=years,
+            regions=record.regions_count,
+            parts=parts,
+            is_user=True,
+        )
 
     @property
     def name(self) -> str:

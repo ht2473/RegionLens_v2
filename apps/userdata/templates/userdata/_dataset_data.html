@@ -79,7 +79,7 @@
     {% elif chosen_group %}
       <header class="dataset-detail__head">
         <p class="kicker">
-          {% if chosen_group.unit %}<span{% with lang=chosen_group.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ chosen_group.unit }}</span> · {% endif %}{% if chosen_group.kind == "sum" %}{% translate "сумма" %}{% else %}{% translate "относительная величина" %}{% endif %}
+          {% if chosen_group.unit %}<span{% with lang=chosen_group.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ chosen_group.unit }}</span> · {% endif %}{{ chosen_group.kind_label }}
         </p>
         <h2 class="dataset-detail__title" id="dataset-detail-title"{% with lang=chosen_group.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ chosen_group.title }}</h2>
         {% if chosen_group.breaks %}

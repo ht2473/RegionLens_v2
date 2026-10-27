@@ -501,6 +501,7 @@ def _groups(
                 "title": record.title,
                 "unit": record.unit,
                 "kind": record.kind,
+                "kind_label": str(DatasetSeries.Kind(item.value_type).label),
                 "breaks": item.breaks,
                 "months_url": month_urls.get(record.indicator, ""),
                 "items": [],

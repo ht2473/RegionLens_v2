@@ -620,9 +620,22 @@ legend.question-card__title ~ * {
   margin-top: var(--space-2);
 }
 
-/* Поля только для сумм скрываются, когда отмечена относительная величина. */
-.indicator-card:has(input[name^="kind-"][value="relative"]:checked) [data-sum-only] {
+/* Поля только для сумм скрываются, когда отмечены относительная величина или индекс. */
+.indicator-card:has(input[name^="kind-"][value="relative"]:checked) [data-sum-only],
+.indicator-card:has(input[name^="kind-"][value="index"]:checked) [data-sum-only] {
   display: none;
+}
+
+/* Способы свёртки месяцев — только подходящие отмеченному типу. */
+.indicator-card:has(input[name^="kind-"][value="flow"]:checked) [data-types]:not([data-types~="flow"]),
+.indicator-card:has(input[name^="kind-"][value="stock"]:checked) [data-types]:not([data-types~="stock"]),
+.indicator-card:has(input[name^="kind-"][value="relative"]:checked) [data-types]:not([data-types~="relative"]),
+.indicator-card:has(input[name^="kind-"][value="index"]:checked) [data-types]:not([data-types~="index"]) {
+  display: none;
+}
+
+.indicator-card .radio .field__hint {
+  margin-top: 0;
 }
 
 .indicator-card__sublabel {
