@@ -16,7 +16,7 @@
           {% if item.scaled_unit %}<span{% with lang=item.scaled_unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.scaled_unit }}</span> · {% endif %}
           {{ item.kind_label }}
           {% if item.series > 1 %}· {% blocktranslate trimmed with count=item.series %}частей в разбивке: {{ count }}{% endblocktranslate %}{% endif %}
-          · {% blocktranslate trimmed with count=item.regions %}регионов: {{ count }}{% endblocktranslate %}
+          · {% if item.regions or not item.first_year %}{% blocktranslate trimmed with count=item.regions %}регионов: {{ count }}{% endblocktranslate %}{% else %}<span class="indicator-card__flag">{% translate "только значение по России: на карту и в рейтинг не попадёт" %}</span>{% endif %}
           {% if item.first_year %}· <span class="numeric">{{ item.first_year|year }}{% if item.last_year != item.first_year %}–{{ item.last_year|year }}{% endif %}</span>{% endif %}
           {% for code in item.recounts %}· {{ code|derived_label }} {% endfor %}
         </span>

@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import copy
+import dataclasses
 from typing import Any
 
 from django.http import Http404, HttpRequest, QueryDict
@@ -272,6 +273,15 @@ def _refuse(question: str, keys: list[str]) -> None:
             raise answers.NoAnswerError(semantics.sentence(verdict.reason))
 
 
+def _country_year(state: SurfaceState) -> SurfaceState:
+    """Год ответа у показателя только по России — последний год ряда; иначе — нет ряда."""
+    assert state.series is not None
+    info = operations.info_of(state.series.key)
+    if info is None or info.last_year is None or info.regions:
+        raise Http404
+    return dataclasses.replace(state, year=info.last_year)
+
+
 def _answer(
     request: HttpRequest,
     block: dict[str, Any],
@@ -293,11 +303,14 @@ def _answer(
             request, card_query({"series": block["series"]}, year=year, territories=territories)
         )
         subject = describe_subject(state)
-        if subject is None or state.year is None or state.series is None:
+        if subject is None or state.series is None:
             raise Http404
         _refuse(
             question, [state.series.key, *([block["other"]] if question in PAIR_QUESTIONS else [])]
         )
+        if state.year is None:
+            # Лет со значениями регионов нет: ответ «по России» — за последний год ряда.
+            state = _country_year(state)
         if question in PAIR_QUESTIONS:
             _other_clone, other = _state(
                 request, card_query({"series": block["other"]}, year=year, territories=[])
@@ -322,7 +335,7 @@ def _answer(
             reason=str(reason),
         )
         return card
-    assert state.series is not None
+    assert state.series is not None and state.year is not None
     card.update(
         built,
         template=f"userdata/cards/_{question}.html",

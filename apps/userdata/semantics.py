@@ -350,6 +350,11 @@ class Value:
     def is_sum(self) -> bool:
         return self.type in ADDITIVE
 
+    @property
+    def country_only(self) -> bool:
+        """Своя таблица, где у показателя есть годы, но нет ни одного региона."""
+        return self.is_user and self.years > 0 and self.regions == 0
+
 
 @dataclass(frozen=True, slots=True)
 class Verdict:
@@ -380,6 +385,8 @@ class Rule:
     region: bool = False
     parts: int = 0
     user: bool = False
+    # Работает и со значением по России, без регионов.
+    country: bool = False
 
 
 # Регионов меньше этого: неравенство и пространственный анализ не считаются.
@@ -417,7 +424,7 @@ RULES: dict[str, Rule] = {
     "answer:notable": Rule(EVERY),
     "answer:leaders": Rule(EVERY),
     "answer:mine": Rule(EVERY, region=True),
-    "answer:change": Rule(EVERY, years=2),
+    "answer:change": Rule(EVERY, years=2, country=True),
     "answer:growth": Rule(EVERY, years=2),
     "answer:contributions": Rule(
         ADDITIVE, reasons=dict.fromkeys((RELATIVE, INDEX), _CONTRIBUTIONS), years=2
@@ -494,6 +501,8 @@ def verdict(  # noqa: PLR0911 — проверки по порядку
     условия данных (годы, регионы, мой регион, части) не проверяются.
     """
     rule = RULES[action]
+    if value.country_only and not rule.country:
+        return Verdict(gettext("в таблице только значение по России, регионов нет"))
     if rule.user and not value.is_user:
         return Verdict(gettext("структура — для своих таблиц"))
     if value.type not in rule.types:
