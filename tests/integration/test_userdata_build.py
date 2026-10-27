@@ -25,10 +25,10 @@ from django.urls import reverse
 from django.utils import timezone
 from openpyxl import load_workbook
 
-from apps.userdata import extract, indicators, jobs, scope
+from apps.userdata import extract, indicators, jobs, scope, semantics
 from apps.userdata.models import Dataset, DatasetVersion
 from apps.warehouse import queries
-from apps.warehouse.queries.sources import population_table
+from apps.warehouse.queries.sources import population_start_table, population_table
 from tests.support.userdata import FIXTURES, userdata_dir  # noqa: F401 — приспособление модуля
 from tests.support.userdata import build as _build
 from tests.support.userdata import built as _built
@@ -275,12 +275,12 @@ class TestSeriesStep:
         assert "В таблице федеральные округа, а не субъекты" in page.text
 
     def test_unit_hints(self) -> None:
-        assert indicators.guess_kind("Число умерших", "человек") == indicators.SUM
+        assert indicators.guess_kind("Число умерших", "человек") == semantics.FLOW
         assert indicators.guess_kind("Доля", "процент") == indicators.RELATIVE
         assert (
             indicators.guess_kind("Ожидаемая продолжительность жизни", "лет") == indicators.RELATIVE
         )
-        assert indicators.guess_kind("Валовой продукт", "млн руб.") == indicators.SUM
+        assert indicators.guess_kind("Валовой продукт", "млн руб.") in semantics.ADDITIVE
         assert indicators.guess_kind("Средняя заработная плата", "рублей") == indicators.RELATIVE
         assert indicators.guess_kind("Заболеваемость", "на 100 000 человек") == indicators.RELATIVE
         # Слова, похожие на признаки средней и доли, — у сумм (найдено первым взглядом).
@@ -290,36 +290,36 @@ class TestSeriesStep:
             ("Преступления в отношении иностранных граждан", "единиц"),
             ("Закуплено годовых курсов лечения", "годовых курсов"),
         ):
-            assert indicators.guess_kind(name, unit) == indicators.SUM, name
+            assert indicators.guess_kind(name, unit) in semantics.ADDITIVE, name
         assert indicators.guess_kind("Отношение доходов к прожиточному минимуму", "") == (
             indicators.RELATIVE
         )
         assert indicators.guess_kind("Ожидаемая продолжительность", "года") == indicators.RELATIVE
 
     def test_date_in_title_is_not_per_capita(self) -> None:
-        # «на 1 января» — дата, а не «на 1 жителя»: численность остаётся суммой.
+        # «на 1 января» — дата, а не «на 1 жителя»: значение на дату — запас.
         for name, unit in (
             ("Численность населения на 1 января", ""),
             ("Численность населения на 1 января 2024 года", "тыс. человек"),
             ("Задолженность по ипотечным кредитам на 01.01.2007", "млн руб."),
             ("Число организаций на 10-е марта", ""),
         ):
-            assert indicators.guess_kind(name, unit) == indicators.SUM, name
+            assert indicators.guess_kind(name, unit) == semantics.STOCK, name
             assert indicators.kind_is_clear(name, unit), name
         # Признак «на 100 жителей» рядом с датой по-прежнему узнаётся.
         assert (
             indicators.guess_kind("Врачи на 1 января", "на 10 000 человек населения")
             == indicators.RELATIVE
         )
-        # Дата без других признаков вид не подсказывает — его спросят.
-        assert not indicators.kind_is_clear("Ипотека на 1 января 2007 года", "")
+        # Дата сама подсказывает запас: значение на дату.
+        assert indicators.guess_kind("Ипотека на 1 января 2007 года", "") == semantics.STOCK
 
     def test_plain_rubles_are_per_person(self) -> None:
         # Рубли без разряда — сумма на человека (прожиточный минимум, размер доплаты).
         name = "Величина прожиточного минимума пенсионера"
         assert indicators.guess_kind(name, "руб.") == indicators.RELATIVE
         assert indicators.kind_is_clear(name, "руб.")
-        assert indicators.guess_kind("Объём кредитов", "млн руб.") == indicators.SUM
+        assert indicators.guess_kind("Объём кредитов", "млн руб.") in semantics.ADDITIVE
 
     def test_column_header_gives_name_and_unit(self) -> None:
         cases = (
@@ -461,6 +461,56 @@ class TestBuild:
             # Рассчитано; после последнего года численности — знаменатель заморожен.
             assert flags & 2
             assert bool(flags & 4) == (year > last)
+
+    def test_stock_at_year_start_uses_start_population(
+        self, client: Client, warehouse: Any, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Запас на 1 января делится на численность на 1 января — оценку на конец прошлого года."""
+        monkeypatch.setattr(semantics, "starts_year", lambda name: True)
+        dataset = _built(client, kind=semantics.STOCK, per=("per100000",))
+        version = _version(dataset)
+        records = {record.derived: record for record in version.series.all()}
+        assert records[""].kind == semantics.STOCK
+        start = population_start_table()
+        assert start, "в синтетическом складе есть численность на конец года"
+        connection = duckdb.connect(str(version.data_path), read_only=True)
+        try:
+            base = dict(
+                connection.execute(
+                    "SELECT territory_code || ':' || year, value FROM fact_observation "
+                    "WHERE series_key = ? AND value IS NOT NULL",
+                    [_key(dataset, records[""])],
+                ).fetchall()
+            )
+            derived = connection.execute(
+                "SELECT territory_code, year, value, flags FROM fact_observation "
+                "WHERE series_key = ? AND territory_code = 'RU-TA'",
+                [_key(dataset, records["per100000"])],
+            ).fetchall()
+        finally:
+            connection.close()
+        assert derived
+        last = max(start["RU-TA"])
+        for code, year, value, flags in derived:
+            denominator = start[code][min(year, last)]
+            assert value == pytest.approx(base[f"{code}:{year}"] / denominator * 100_000)
+            assert bool(flags & 4) == (year > last)
+
+    def test_months_follow_type(self) -> None:
+        """Потоку месяцы складываются, запасу — берётся декабрь или среднее."""
+        item = indicators.Indicator(
+            name="Задолженность",
+            title="Задолженность",
+            unit="млн руб.",
+            kind="sum",
+            polarity="",
+            per=(),
+        )
+        item.periods = {f"month:{number}" for number in range(1, 13)}
+        item.kind = semantics.STOCK
+        assert "sum" not in item.month_methods
+        item.kind = semantics.FLOW
+        assert item.month_methods == ["sum"]
 
     def test_nested_alone_for_sums(self, client: Client, warehouse: Any) -> None:
         dataset = _upload(client, "crime_wide.csv")

@@ -454,7 +454,15 @@ class TestLab:
         from apps.catalog.models import Series
         from tests.support import synthetic
 
-        key = Series.objects.get(indicator__code=synthetic.POPULATION_CODE).key
+        # Сближение — по уровню на жителя: численность населения (сумма) вывода не даёт.
+        population = Series.objects.get(indicator__code=synthetic.POPULATION_CODE).key
+        study = _study(member_client)
+        _edit(member_client, study, action="add", do="answer:convergence", series=population)
+        study.refresh_from_db()
+        refused = _card(member_client, study, studies.blocks_of(study)[0])
+        # Основа численности — площадь: причина ведёт к пересчёту на км².
+        assert "на км²" in refused.text
+        key = Series.objects.get(indicator__code=synthetic.GRP_PER_CAPITA_CODE).key
         study = _study(member_client)
         _edit(member_client, study, action="add", do="answer:convergence", series=key)
         study.refresh_from_db()
@@ -509,7 +517,8 @@ class TestLab:
         assert studies.blocks_of(study)[0]["scale"] == "own"
 
     def test_partners_offered_for_comparison(self, member_client: Client, warehouse: Any) -> None:
-        dataset = _built(member_client, "crime_wide.csv")
+        # Связь — у относительных величин: суммы сравниваются через показатель на жителя.
+        dataset = _built(member_client, "crime_wide.csv", kind="relative")
         records = list(dataset.current_version.series.filter(derived="").order_by("order"))
         # Два разных показателя: пересчёт того же ряда к сравнению не предлагается.
         first = next(record for record in records if record.indicator == records[0].indicator)

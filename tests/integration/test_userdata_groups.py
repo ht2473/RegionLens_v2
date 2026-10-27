@@ -210,6 +210,7 @@ class TestSets:
         assert response["HX-Redirect"].startswith(reverse("userdata:study", args=[study.public_id]))
 
     def test_inequality(self, member_client: Client, warehouse: Any) -> None:
+        # Сумме неравенство — только через показатель на жителя: набор не ставится.
         dataset = _built(member_client, "crime_wide.csv")
         study = _study(member_client)
         _edit(
@@ -218,6 +219,15 @@ class TestSets:
             action="add",
             do="set:inequality",
             series=_key(dataset, _first(dataset)),
+        )
+        assert _blocks(study) == []
+        rates = _built(member_client, "crime_wide.csv", kind="relative")
+        _edit(
+            member_client,
+            study,
+            action="add",
+            do="set:inequality",
+            series=_key(rates, _first(rates)),
         )
         kinds = [block.get("target") or block.get("question") for block in _blocks(study)]
         assert kinds == ["spread", "convergence", "distribution", "multiples"]
@@ -248,5 +258,25 @@ class TestSets:
         assert site is not None
         study = _study(member_client)
         _edit(member_client, study, action="add", do="set:pair", series=key, other=site.key)
+        kinds = [block.get("target") or block.get("question") for block in _blocks(study)]
+        # Связь суммы — только через показатель на жителя: в наборе её нет.
+        assert kinds == ["comparison", "map", "map"]
+        rates = _built(member_client, "crime_wide.csv", kind="relative")
+        share = (
+            Series.objects.exclude(key__startswith="u:")
+            .filter(unit__kind__in=["share", "rate"])
+            .order_by("key")
+            .first()
+        )
+        assert share is not None
+        study = _study(member_client)
+        _edit(
+            member_client,
+            study,
+            action="add",
+            do="set:pair",
+            series=_key(rates, _first(rates)),
+            other=share.key,
+        )
         kinds = [block.get("target") or block.get("question") for block in _blocks(study)]
         assert kinds == ["comparison", "relation", "map", "map"]

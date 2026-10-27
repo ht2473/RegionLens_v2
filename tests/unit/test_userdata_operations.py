@@ -137,10 +137,28 @@ def test_shift_share_adds_up_to_the_change() -> None:
 def test_reason_explains_mismatch() -> None:
     relative = Info("k", "Доля", "%", is_sum=False, first_year=2020, last_year=2020, regions=85)
     assert "сумм" in operations.reason(operations.BY_CODE["per1000"], relative)
-    assert "лет" in operations.reason(operations.BY_CODE["baseyear"], relative)
-    assert "денежн" in operations.reason(operations.BY_CODE["subsistence"], relative)
-    money = Info("k", "Доход", "руб.", is_currency=True, is_rubles=True, regions=85)
+    assert "один год" in operations.reason(operations.BY_CODE["baseyear"], relative)
+    assert "рубл" in operations.reason(operations.BY_CODE["subsistence"], relative)
+    yearly = Info("k", "Доход за год", "руб.", is_currency=True, is_rubles=True, regions=85)
+    assert "в месяц" in operations.reason(operations.BY_CODE["subsistence"], yearly)
+    money = Info(
+        "k",
+        "Среднемесячный доход",
+        "руб.",
+        is_currency=True,
+        is_rubles=True,
+        regions=85,
+        monthly=True,
+    )
     assert operations.reason(operations.BY_CODE["subsistence"], money) == ""
+    index = Info(
+        "k", "Индекс", "% к предыдущему году", kind="index", first_year=2020, last_year=2024
+    )
+    assert "темп" in operations.reason(operations.BY_CODE["growth"], index)
+    stock = Info(
+        "k", "Вклады", "млн руб.", is_sum=True, kind="stock", first_year=2020, last_year=2024
+    )
+    assert "остатки" in operations.reason(operations.BY_CODE["cumulative"], stock)
     missing = dict.fromkeys(operations.OFFICIAL_INPUTS, False)
     assert "нет на сайте" in operations.reason(operations.BY_CODE["subsistence"], money, missing)
 

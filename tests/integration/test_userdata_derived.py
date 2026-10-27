@@ -20,7 +20,7 @@ from django.urls import reverse
 from apps.catalog.models import Territory
 from apps.userdata import build as building
 from apps.userdata import indicators, jobs
-from apps.userdata.models import Dataset, DatasetSeries
+from apps.userdata.models import Dataset, DatasetSeries, DatasetVersion
 from apps.warehouse.queries import series_values
 from tests.support.synthetic import CPI_CODE
 from tests.support.userdata import (
@@ -109,7 +109,7 @@ class TestRecalculations:
         assert records[(base.code, "russia")].unit == "Россия = 100"
         assert records[(base.code, "growth")].title.endswith("% к предыдущему году")
 
-    def test_share_and_russia_for_sums(self, client: Client, warehouse: Any) -> None:
+    def test_share_for_sums_russia_refused(self, client: Client, warehouse: Any) -> None:
         dataset = upload(client, "crime_wide.csv")
         describe(client, dataset)
         build(
@@ -129,8 +129,8 @@ class TestRecalculations:
                 by_year[year] = by_year.get(year, 0) + value
         assert by_year
         assert all(total == pytest.approx(100) for total in by_year.values())
-        russia = _rows(dataset, key_of(dataset, records[(base.code, "russia")]))
-        assert russia[("RU", 2020)][0] == pytest.approx(100)
+        # У суммы «Россия = 100» — та же доля в значении по России: пересчёт не строится.
+        assert (base.code, "russia") not in records
 
     def test_russia_without_country_row(self, client: Client, warehouse: Any) -> None:
         lines = [
@@ -142,7 +142,16 @@ class TestRecalculations:
         ]
         dataset = _upload_text(client, "crime.csv", lines)
         describe(client, dataset)
-        build(client, dataset, kind=indicators.SUM, per=(), extra={"recalc-1": ["russia"]})
+        build(client, dataset, kind=indicators.SUM, per=())
+        # Таблица, описанная до правил типов: «Россия = 100» у суммы осталась в рецепте —
+        # сборка считает её от суммы субъектов, как раньше.
+        version = DatasetVersion.objects.get(pk=dataset.current_version_id)
+        described = version.recipe["indicators"]
+        for item in described.values():
+            item["recalc"] = ["russia"]
+        version.recipe = {**version.recipe, "indicators": described}
+        version.save(update_fields=["recipe"])
+        jobs.start(version, jobs.BUILD)
         records = _records(dataset)
         base = next(record for record in records.values() if not record.derived)
         values = _rows(dataset, key_of(dataset, base))

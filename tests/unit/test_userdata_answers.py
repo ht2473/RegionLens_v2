@@ -90,7 +90,7 @@ def test_questions_only_until_answered() -> None:
 @pytest.mark.parametrize(
     ("name", "kind", "expected"),
     [
-        ("Всего зарегистрировано преступлений", "sum", indicators.DEFAULT_PER),
+        ("Всего зарегистрировано преступлений", "sum", ("per100000",)),
         ("Численность населения на 1 января", "sum", ()),
         ("Численность постоянного населения", "sum", ()),
         ("regions population", "sum", ()),
@@ -104,14 +104,15 @@ def test_suggested_per_skips_population(name: str, kind: str, expected: tuple[st
 @pytest.mark.parametrize(
     ("name", "unit", "expected"),
     [
-        ("Валовой региональный продукт", "млрд руб.", indicators.MONEY_PER),
-        ("Экспорт", "млн долл. США", indicators.MONEY_PER),
-        ("Расходы бюджета, млн рублей", "", indicators.MONEY_PER),
-        ("Выбросы загрязняющих веществ", "тыс. тонн", indicators.DEFAULT_PER),
+        ("Валовой региональный продукт", "млрд руб.", ("per1",)),
+        ("Экспорт", "млн долл. США", ("per1",)),
+        ("Расходы бюджета, млн рублей", "", ("per1",)),
+        ("Выбросы загрязняющих веществ", "тыс. тонн", ("per1",)),
+        ("Зарегистрировано преступлений", "единиц", ("per100000",)),
     ],
 )
 def test_money_sum_is_divided_per_person(name: str, unit: str, expected: tuple[str, ...]) -> None:
-    """Денежную сумму естественно делить на жителя, остальные — на 100 000 жителей."""
+    """Деньги и объёмы естественно делить на жителя, людей и события — на 100 000 жителей."""
     assert indicators.suggested_per(name, indicators.SUM, unit) == expected
 
 

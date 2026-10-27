@@ -168,14 +168,14 @@ class TestWizard:
         describe(client, dataset, {"year": "2023"})
         page = client.get(reverse("userdata:series", args=[dataset.public_id]))
         assert "Показателей с вопросами: 1" in page.text
-        assert "Складывается ли по регионам?" in page.text
+        assert "Что это за величина?" in page.text
         # Новые пересчёты в мастере не предлагаются.
         assert 'name="recalc-1" value="russia"' not in page.text
 
     def test_recounts_kept_unless_unchecked(self, client: Client, warehouse: Any) -> None:
-        dataset = _built(client, "crime_wide.csv", kind=indicators.SUM, per=indicators.DEFAULT_PER)
+        dataset = _built(client, "crime_wide.csv", kind=indicators.SUM, per=("per100000",))
         version = version_of(dataset)
-        assert indicators.indicators_of(version)[0].per == indicators.DEFAULT_PER
+        assert indicators.indicators_of(version)[0].per == ("per100000",)
         # Форма без перечня пересчётов (старая или без поля) их не трогает.
         answers = {
             item.name: {"title": item.title, "unit": item.unit, "kind": item.kind}
@@ -183,7 +183,7 @@ class TestWizard:
         }
         indicators.save(version, answers)
         version.refresh_from_db()
-        assert indicators.indicators_of(version)[0].per == indicators.DEFAULT_PER
+        assert indicators.indicators_of(version)[0].per == ("per100000",)
         # Снятая отметка убирает пересчёт.
         answers = {name: {**answer, "per": [], "recalc": []} for name, answer in answers.items()}
         indicators.save(version, answers)
