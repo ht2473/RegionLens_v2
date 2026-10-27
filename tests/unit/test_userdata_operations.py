@@ -152,15 +152,34 @@ def test_reason_explains_mismatch() -> None:
     )
     assert operations.reason(operations.BY_CODE["subsistence"], money) == ""
     index = Info(
-        "k", "Индекс", "% к предыдущему году", kind="index", first_year=2020, last_year=2024
+        "k",
+        "Индекс",
+        "% к предыдущему году",
+        kind="index",
+        first_year=2020,
+        last_year=2024,
+        regions=85,
     )
     assert "темп" in operations.reason(operations.BY_CODE["growth"], index)
     stock = Info(
-        "k", "Вклады", "млн руб.", is_sum=True, kind="stock", first_year=2020, last_year=2024
+        "k",
+        "Вклады",
+        "млн руб.",
+        is_sum=True,
+        kind="stock",
+        first_year=2020,
+        last_year=2024,
+        regions=85,
     )
     assert "остатки" in operations.reason(operations.BY_CODE["cumulative"], stock)
     missing = dict.fromkeys(operations.OFFICIAL_INPUTS, False)
     assert "нет на сайте" in operations.reason(operations.BY_CODE["subsistence"], money, missing)
+
+
+def test_country_only_indicator_refuses_with_its_reason() -> None:
+    """Показатель только по России: у расчёта причина — регионов нет."""
+    country = Info("k", "Створы", "шт.", is_sum=True, kind="stock", first_year=2014, last_year=2022)
+    assert "только значение по России" in operations.reason(operations.BY_CODE["share"], country)
 
 
 def _warn(expression: str, **items: Info) -> list[str]:

@@ -266,3 +266,17 @@ def test_parts_reason() -> None:
     assert "индексы" in semantics.parts_reason([FLOW, RELATIVE], ["т", "%"])
     assert "на дату" in semantics.parts_reason([FLOW, STOCK], ["т", "т"])
     assert "единице" in semantics.parts_reason([STOCK, STOCK], ["т", "кг"])
+
+
+def test_country_only_indicator() -> None:
+    """Показатель только по России: всё недоступно с одной причиной, кроме изменения по России."""
+    country = Value(type=STOCK, base=NONE, years=9, regions=0)
+    assert country.country_only
+    for action in semantics.RULES:
+        found = semantics.verdict(action, country)
+        if action == "answer:change":
+            assert found
+        else:
+            assert "только значение по России" in found.reason, action
+    assert not Value(type=STOCK, years=9, regions=0, is_user=False).country_only
+    assert not Value(type=STOCK, years=0, regions=0).country_only

@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from apps.userdata import cells
-from apps.userdata.cells import EMPTY, HIDDEN, MISSING, TEXT, VALUE, NumberStyle
+from apps.userdata.cells import ABSENT, EMPTY, HIDDEN, MISSING, TEXT, VALUE, NumberStyle
 
 pytestmark = pytest.mark.unit
 
@@ -63,10 +63,6 @@ def test_footnote_after_number(raw: str, value: float, notes: tuple[int, ...]) -
     [
         ("…", ()),
         ("...", ()),
-        ("-", ()),
-        ("–", ()),
-        ("—", ()),
-        (MINUS, ()),
         ("x", ()),
         ("х", ()),
         ("н/д", ()),
@@ -74,12 +70,43 @@ def test_footnote_after_number(raw: str, value: float, notes: tuple[int, ...]) -
         ("…1)", (1,)),
         ("...2)", (2,)),
         ("… 4)", (4,)),
-        ("-1)", (1,)),
     ],
 )
 def test_missing_marks(raw: str, notes: tuple[int, ...]) -> None:
     cell = cells.parse(raw, COMMA)
     assert (cell.status, cell.value, cell.notes) == (MISSING, None, notes)
+
+
+@pytest.mark.parametrize(
+    ("raw", "notes"),
+    [("-", ()), ("–", ()), ("—", ()), (MINUS, ()), ("--", ()), ("-1)", (1,)), ("– 2", (2,))],
+)
+def test_dash_is_absent_phenomenon(raw: str, notes: tuple[int, ...]) -> None:
+    """Прочерк Росстата — «явление отсутствует», а не пропуск."""
+    cell = cells.parse(raw, COMMA)
+    assert (cell.status, cell.value, cell.notes) == (ABSENT, None, notes)
+
+
+@pytest.mark.parametrize(("raw", "notes"), [("К", ()), ("к", ()), ("конф.", ()), ("К1)", (1,))])
+def test_confidential_mark_is_hidden(raw: str, notes: tuple[int, ...]) -> None:
+    cell = cells.parse(raw, COMMA)
+    assert (cell.status, cell.value, cell.notes) == (HIDDEN, None, notes)
+
+
+@pytest.mark.parametrize(
+    ("raw", "below"),
+    [("0,0", True), ("0,00", True), ("0", False), ("0.0", False), (0.0, False), ("0,1", False)],
+)
+def test_zero_with_decimal_comma_is_below_unit(raw: object, below: bool) -> None:
+    """«0,0» у Росстата — меньше единицы измерения; ноль числом Excel так не отличить."""
+    cell = cells.parse(raw, COMMA)
+    assert cell.status == VALUE
+    assert cell.below_unit is below
+
+
+def test_marks_count_as_numbers_of_a_column() -> None:
+    parsed = [cells.parse(raw, COMMA) for raw in ("12,5", "–", "К", "…")]
+    assert cells.numeric_share(parsed) == 1.0
 
 
 def test_empty_and_text() -> None:
