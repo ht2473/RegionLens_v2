@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 AUTO = "auto"
 ASKED = "asked"
 # Части рецепта, которые новая версия получает как есть.
-CARRIED = ("territories", "nested", "indicators", "formulas", "seen", "masks")
+CARRIED = ("territories", "nested", "indicators", "formulas", "seen", "masks", "dashes", "zeros")
 _DIGITS = re.compile(r"[\d_\-\s.]+")
 _SPACES = re.compile(r"\s+")
 

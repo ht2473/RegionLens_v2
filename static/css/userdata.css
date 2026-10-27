@@ -1769,6 +1769,37 @@ a.dataset-series__item:hover {
 
 }
 
+/* --- Проверка таблицы: знаки источника, нули и замечания о данных ---------------------- */
+
+.data-review__marks,
+.data-review__list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.data-review__list {
+  margin: var(--space-3) 0;
+}
+
+.data-review__choice {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.data-review__zeros {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
 /* --- Проверка таблицы: сводка прочитанного плитками и роли столбцов --------------------- */
 
 .review-summary {

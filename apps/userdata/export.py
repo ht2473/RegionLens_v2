@@ -250,7 +250,13 @@ def _mark(quality: int, flags: int) -> str:
         parts.append(gettext("нет данных"))
     elif quality == ValueQuality.HIDDEN:
         parts.append(gettext("скрыто источником"))
+    elif quality == ValueQuality.ABSENT:
+        parts.append(gettext("явление отсутствует"))
     flag = ValueFlag(int(flags or 0))
+    if ValueFlag.ABSENT in flag:
+        parts.append(gettext("явление отсутствует"))
+    if ValueFlag.BELOW_UNIT in flag:
+        parts.append(gettext("меньше единицы измерения"))
     if ValueFlag.COMPUTED in flag:
         parts.append(gettext("вычислено"))
     if ValueFlag.FROZEN_DENOMINATOR in flag:

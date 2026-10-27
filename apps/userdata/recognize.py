@@ -561,7 +561,7 @@ def _shares(column: ColumnInfo, values: dict[str, int]) -> None:
         status = cells.parse(value, style).status
         if status != cells.EMPTY:
             present += count
-            numeric += count if status in {cells.VALUE, cells.MISSING, cells.HIDDEN} else 0
+            numeric += count if status in cells.NUMERIC_STATUSES else 0
         periods_found += count if _is_period(value) else 0
         codes += count if _CODE_VALUE.match(value) else 0
     column.numeric = numeric / present if present else 0.0

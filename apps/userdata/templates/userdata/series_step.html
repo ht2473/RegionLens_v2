@@ -126,6 +126,34 @@
     </div>
   {% endif %}
 
+  {% with review=data_review %}
+    {% if review.hidden or review.below_unit or review.absent and not review.ask_dashes %}
+      <div class="callout callout--info">
+        <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+        <ul class="data-review__marks">
+          {% if review.absent and not review.ask_dashes %}
+            <li>{% blocktranslate trimmed with count=review.absent|ru_number:0 %}Прочерков «–»: {{ count }}. У Росстата прочерк значит «явление отсутствует»: у сумм это ноль, у долей, средних и индексов значения нет.{% endblocktranslate %}</li>
+          {% endif %}
+          {% if review.hidden %}
+            <li>{% blocktranslate trimmed with count=review.hidden|ru_number:0 %}Скрыто источником: {{ count }}. Такие значения не публикуются, чтобы сохранить тайну данных организаций.{% endblocktranslate %}</li>
+          {% endif %}
+          {% if review.below_unit %}
+            <li>{% blocktranslate trimmed with count=review.below_unit|ru_number:0 %}Значений «0,0»: {{ count }}. Это меньше единицы измерения: ноль с пометкой, в темпы роста он не идёт.{% endblocktranslate %}</li>
+          {% endif %}
+        </ul>
+      </div>
+    {% endif %}
+    {% if review.checks %}
+      <details class="callout callout--warning data-review" open>
+        <summary>{% blocktranslate trimmed with count=review.checks|length %}Проверьте данные: {{ count }}{% endblocktranslate %}</summary>
+        <ul class="data-review__list">
+          {% for text in review.checks %}<li>{{ text }}</li>{% endfor %}
+        </ul>
+        <p>{% translate "Сборке это не мешает. Если в таблице ошибка, исправьте файл и загрузите его новой версией." %}</p>
+      </details>
+    {% endif %}
+  {% endwith %}
+
   {% if report.outside %}
     <details class="callout callout--info review-outside">
       <summary>{% blocktranslate trimmed with count=report.outside|length %}Строк вне справочника: {{ count }} — на карту и в рейтинг они не попадут{% endblocktranslate %}</summary>
@@ -159,6 +187,39 @@
           </ul>
         </div>
       </div>
+    {% endif %}
+
+    {% if data_review.ask_dashes %}
+      <section class="question-card question-card--ask" aria-labelledby="dashes-title">
+        <h2 class="question-card__title" id="dashes-title">{% translate "Что значит прочерк «–» в этой таблице?" %}</h2>
+        <p class="series-form__hint">{% blocktranslate trimmed with count=data_review.absent|ru_number:0 %}Прочерков: {{ count }}. Ответ подсказан: так прочерк пишут Росстат и большинство ведомств.{% endblocktranslate %}</p>
+        <fieldset class="data-review__choice">
+          <legend class="visually-hidden">{% translate "Что значит прочерк «–» в этой таблице?" %}</legend>
+          <label class="radio"><input type="radio" name="dashes" value="absent"{% if data_review.dashes != "missing" %} checked{% endif %}> <span>{% translate "Явления нет" %}<span class="field__hint">{% translate "У сумм это ноль. У долей, средних и индексов значения нет." %}</span></span></label>
+          <label class="radio"><input type="radio" name="dashes" value="missing"{% if data_review.dashes == "missing" %} checked{% endif %}> <span>{% translate "Данных нет" %}<span class="field__hint">{% translate "Прочерк — пропуск, как «…»." %}</span></span></label>
+        </fieldset>
+      </section>
+    {% endif %}
+
+    {% if data_review.zeros %}
+      <section class="question-card question-card--ask" aria-labelledby="zeros-title">
+        <h2 class="question-card__title" id="zeros-title">{% translate "Нули, похожие на пропуски" %}</h2>
+        <input type="hidden" name="zeros-asked" value="1">
+        <p class="series-form__hint">{% translate "Так иногда пишут «нет данных». Отметьте показатели, у которых ноль значит пропуск: такие нули не попадут на карту, в рейтинг и в расчёты." %}</p>
+        <fieldset class="data-review__choice">
+          <legend class="visually-hidden">{% translate "Нули, похожие на пропуски" %}</legend>
+          <ul class="data-review__zeros">
+            {% for item in data_review.zeros %}
+              <li>
+                <label class="checkbox">
+                  <input type="checkbox" name="zero" value="{{ item.name }}"{% if item.checked %} checked{% endif %}>
+                  <span><b{% with lang=item.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.title }}</b><span class="field__hint">{{ item.text }}</span></span>
+                </label>
+              </li>
+            {% endfor %}
+          </ul>
+        </fieldset>
+      </section>
     {% endif %}
 
     {% if asking %}

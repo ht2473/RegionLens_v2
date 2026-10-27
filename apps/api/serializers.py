@@ -23,12 +23,15 @@ QUALITY_NAMES: dict[int, str] = {
     ValueQuality.NO_DATA: "no_data",
     ValueQuality.HIDDEN: "hidden",
     ValueQuality.NOT_APPLICABLE: "not_applicable",
+    ValueQuality.ABSENT: "absent",
 }
 # Признаки значения словами.
 FLAG_NAMES: dict[ValueFlag, str] = {
     ValueFlag.PRELIMINARY: "preliminary",
     ValueFlag.COMPUTED: "computed",
     ValueFlag.FROZEN_DENOMINATOR: "frozen_denominator",
+    ValueFlag.ABSENT: "absent",
+    ValueFlag.BELOW_UNIT: "below_unit",
 }
 # Источник значений набора «Если быть точным».
 DATASET_SOURCE = "dataset"

@@ -24,6 +24,7 @@ from apps.sources import periods
 
 from . import (
     access,
+    build,
     describe,
     extract,
     indicators,
@@ -32,6 +33,7 @@ from . import (
     matching,
     recognize,
     renew,
+    review,
     semantics,
     services,
     tables,
@@ -416,6 +418,7 @@ class SeriesStepView(DatasetStepMixin, TemplateView):
         context.update(
             page_title=_("Проверка таблицы"),
             summary=_review_summary(self.version, report, items),
+            data_review=review.review(self.dataset, self.version, report, items),
             roles=_roles_read(self.version.recipe),
             indicators=items,
             asking=[item for item in items if item.questions],
@@ -457,6 +460,7 @@ class SeriesStepView(DatasetStepMixin, TemplateView):
         if not meta_form.is_valid():
             return self.render_to_response(self.get_context_data(meta_form=meta_form))
         meta_form.save()
+        _save_data_answers(self.version, request)
         indicators.save(self.version, _indicator_answers(request))
         state = jobs.start(self.version, jobs.BUILD)
         if state == jobs.READY:
@@ -547,6 +551,18 @@ def first_key(version: DatasetVersion) -> str | None:
         next((record for record in records if not record.derived), first),
     )
     return f"u:{version.dataset.code}:{preferred.code}"
+
+
+def _save_data_answers(version: DatasetVersion, request: HttpRequest) -> None:
+    """Ответы о данных: что значит прочерк и у каких показателей нули — пропуски."""
+    recipe = dict(version.recipe)
+    if request.POST.get("dashes") in {build.DASHES_ABSENT, build.DASHES_MISSING}:
+        recipe["dashes"] = request.POST["dashes"]
+    if request.POST.get("zeros-asked"):
+        recipe["zeros"] = request.POST.getlist("zero")
+    if recipe != version.recipe:
+        version.recipe = recipe
+        version.save(update_fields=["recipe", "updated_at"])
 
 
 def _indicator_answers(request: HttpRequest) -> dict[str, dict[str, Any]]:

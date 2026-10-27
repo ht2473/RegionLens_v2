@@ -99,6 +99,9 @@ MONTHS_TITLES = {
     indicators.MONTHS_YTD: "{title} за год (январь–декабрь)",
 }
 SLICE_SUM_VALUE = "сумма по разрезу «{header}»"
+# Ответ «прочерк значит нет данных» в рецепте (``dashes``); по умолчанию — явление отсутствует.
+DASHES_ABSENT = "absent"
+DASHES_MISSING = "missing"
 # Ряд индекса потребительских цен (% к предыдущему году) — у рядов склада в ценах года.
 CPI_METHOD = "prices"
 # Больше производных рядов не собирается: пересчёты умножают ряды таблицы.
@@ -107,31 +110,54 @@ MAX_DERIVED = 1500
 MIN_FOLD_MEMBERS = 2
 REAL_YEARS_SQL = "SELECT derived_key, base_year FROM real_target ORDER BY 1"
 # Признаки значения в запросах сборки — как ValueFlag и fact_observation.flags склада:
-# 2 — рассчитано (область без округов, пересчёт), 4 — знаменатель заморожен.
+# 2 — рассчитано (область без округов, пересчёт), 4 — знаменатель заморожен, 8 — ноль
+# из прочерка «явление отсутствует», 16 — «0,0», меньше единицы измерения.
+# Качество 4 (ValueQuality.ABSENT) — прочерк у доли, средней или индекса: значения нет.
 
 # Наблюдения таблицы: значения рядов таблицы с масштабом показателя; у ряда, в который влиты
 # ряды другого показателя, на регион и год — первое непустое значение по порядку источников.
-# Исключённые человеком регионы и годы в расчёты не идут — они в user_excluded.
+# Прочерк «явление отсутствует» у суммы — ноль с признаком 8, у доли и индекса — без
+# значения; если человек ответил, что прочерк значит «нет данных», — пропуск у всех.
+# У показателей, чьи нули человек счёл пропусками (zero_sources), нули, записанные числом, —
+# пропуски. Исключённые человеком регионы и годы в расчёты не идут — они в user_excluded.
 # Область без округов у сумм — итог за вычетом всех округов того же года, если самой
 # области в ряду нет.
 FACTS_SQL = """
     CREATE TEMP TABLE sourced AS
-    SELECT s.series_key, r.territory_code, CAST(r.year AS INTEGER) AS year,
-           r.value * s.factor AS value, CAST(r.quality AS INTEGER) AS quality, s.priority,
+    WITH read AS (
+        SELECT s.series_key, r.territory_code, CAST(r.year AS INTEGER) AS year, s.priority,
+               r.value * s.factor AS value, CAST(r.quality AS INTEGER) AS quality,
+               CAST(r.flags AS INTEGER) AS flags,
+               r.quality = 4 AND p.kind IN ('flow', 'stock', 'sum')
+                   AND (SELECT absent_zero FROM choices) AS absent_zero,
+               r.quality = 4 AND NOT (SELECT absent_zero FROM choices) AS absent_missing,
+               r.value = 0 AND r.quality = 0 AND r.flags = 0
+                   AND r.series IN (SELECT source FROM zero_sources) AS placeholder
+        FROM raw AS r
+        JOIN sources AS s ON s.source = r.series
+        JOIN plan AS p ON p.series_key = s.series_key
+        WHERE r.territory_code IS NOT NULL
+    ),
+    marked AS (
+        SELECT series_key, territory_code, year, priority,
+               CASE WHEN absent_zero THEN 0.0 WHEN placeholder THEN NULL ELSE value END AS value,
+               CASE WHEN absent_zero THEN 0 WHEN absent_missing OR placeholder THEN 1
+                    ELSE quality END AS quality,
+               flags | CASE WHEN absent_zero THEN 8 ELSE 0 END AS flags
+        FROM read
+    )
+    SELECT m.series_key, m.territory_code, m.year, m.value, m.quality, m.flags, m.priority,
            EXISTS (SELECT 1 FROM excluded_territories AS e
-                   WHERE e.territory_code = r.territory_code)
-           OR EXISTS (SELECT 1 FROM excluded_years AS e
-                      WHERE e.year = CAST(r.year AS INTEGER)) AS excluded
-    FROM raw AS r
-    JOIN sources AS s ON s.source = r.series
-    WHERE r.territory_code IS NOT NULL
+                   WHERE e.territory_code = m.territory_code)
+           OR EXISTS (SELECT 1 FROM excluded_years AS e WHERE e.year = m.year) AS excluded
+    FROM marked AS m
     QUALIFY row_number() OVER (
-        PARTITION BY s.series_key, r.territory_code, r.year
-        ORDER BY r.value IS NULL, s.priority
+        PARTITION BY m.series_key, m.territory_code, m.year
+        ORDER BY m.value IS NULL, m.priority
     ) = 1;
 
     CREATE TEMP TABLE facts AS
-    SELECT series_key, territory_code, year, value, quality, 0 AS flags
+    SELECT series_key, territory_code, year, value, quality, flags
     FROM sourced
     WHERE NOT excluded;
 
@@ -342,6 +368,7 @@ GROWTH_SQL = """
       ON p.series_key = d.base_key AND p.territory_code = f.territory_code
      AND p.year = f.year - 1
     WHERE d.derived = 'growth' AND f.value >= 0 AND p.value > 0
+      AND f.flags & 16 = 0 AND p.flags & 16 = 0
 """
 
 # Доля в сумме по субъектам за тот же год.
@@ -782,6 +809,8 @@ def _write_file(
             "excluded_years", pd.DataFrame({"year": pd.Series(years, dtype="int64")})
         )
         connection.register("nested", _nested_frame())
+        connection.register("choices", pd.DataFrame({"absent_zero": [absent_is_zero(version)]}))
+        connection.register("zero_sources", _zero_sources_frame(version))
         connection.execute(FACTS_SQL)
         alone_missing = [row[0] for row in connection.execute(ALONE_MISSING_SQL).fetchall()]
         alone_conflict = [row[0] for row in connection.execute(ALONE_CONFLICT_SQL).fetchall()]
@@ -1117,6 +1146,19 @@ def _sources_frame(plan: list[dict[str, Any]]) -> pd.DataFrame:
             "factor": pd.Series([row[3] for row in rows], dtype="float64"),
         }
     )
+
+
+def absent_is_zero(version: DatasetVersion) -> bool:
+    """Прочерк — «явление отсутствует» (у сумм ноль), если человек не ответил «нет данных»."""
+    return version.recipe.get("dashes") != DASHES_MISSING
+
+
+def _zero_sources_frame(version: DatasetVersion) -> pd.DataFrame:
+    """Ряды таблицы показателей, у которых нули человек счёл пропусками."""
+    chosen = set(version.recipe.get("zeros") or [])
+    series = (version.report.get("extract") or {}).get("series", [])
+    sources = [index for index, item in enumerate(series) if item["indicator"] in chosen]
+    return pd.DataFrame({"source": pd.Series(sources, dtype="int64")})
 
 
 def exclusions(recipe: dict[str, Any]) -> tuple[list[str], list[int]]:

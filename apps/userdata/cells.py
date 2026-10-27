@@ -5,6 +5,10 @@
 неразрывным и узким неразрывным пробелом, «%», минус Юникода, номер сноски в конце
 («12,5¹», «12,5 1)», «…1)»). Коды ЕБТ −99999999 и −77777777 — пропуски, только если они
 встречаются в столбце.
+
+Условные обозначения Росстата: прочерк «–» — явление отсутствует (что это значит для
+величины, решает сборка по её типу), «…» — данных не имеется, «К» — скрыто ради
+конфиденциальности, «0,0» — значение меньше единицы измерения (ноль с пометкой).
 """
 
 from __future__ import annotations
@@ -22,24 +26,24 @@ THIN_SPACE = chr(0x2009)
 MINUS = chr(0x2212)
 
 VALUE = "value"
-# Значения нет: «…», «-», «н/д» и т. п.
+# Значения нет: «…», «х», «н/д» и т. п.
 MISSING = "missing"
 # Значение есть у источника, но не публикуется (конфиденциальность, код ЕБТ −77777777).
 HIDDEN = "hidden"
+# Прочерк: явление отсутствует. У суммы это ноль, у доли или индекса значения нет.
+ABSENT = "absent"
 # В ячейке текст, а не число: «в 2,0 р.».
 TEXT = "text"
 EMPTY = "empty"
+# Ячейки, которые занимают место числа: само число или знак вместо него.
+NUMERIC_STATUSES = frozenset({VALUE, MISSING, HIDDEN, ABSENT})
 
-# Знаки пропуска: многоточие, прочерки, крест, «нет данных».
+# Знаки пропуска: многоточие, крест, «нет данных».
 MISSING_MARKS = frozenset(
     {
         "…",
         "...",
         "..",
-        "-",
-        "–",
-        "—",
-        MINUS,
         "x",
         "х",
         "X",
@@ -64,6 +68,10 @@ MISSING_MARKS = frozenset(
         "#знач!",
     }
 )
+# Прочерки «явление отсутствует».
+ABSENT_MARKS = frozenset({"-", "–", "—", MINUS})
+# Знаки конфиденциальности: «К» Росстата.
+HIDDEN_MARKS = frozenset({"к", "конф.", "конф", "конфиденциально"})
 EBT_MISSING = -99999999.0
 EBT_HIDDEN = -77777777.0
 
@@ -79,8 +87,11 @@ _GROUPED_DOT = re.compile(r"^[+-]?\d{1,3}(?:\.\d{3})+(?:,\d+)?$")
 _SIMPLE = re.compile(r"-?\d+(?:\.\d+)?\Z")
 _EBT_TEXTS = frozenset({"-99999999", "-77777777"})
 # «….», «…..»: многоточие с лишними точками и сдвоенные прочерки.
-_MARK_WITH_NOTE = re.compile(r"(…|\.{2,3}|[-–—хx])\s*(\d{1,2})\Z")
-_ONLY_DOTS = re.compile(r"[.…\-–—]{2,}\Z")
+_MARK_WITH_NOTE = re.compile(r"(…|\.{2,3}|[-–—хxкК])\s*(\d{1,2})\Z")
+_ONLY_DOTS = re.compile(r"[.…]{2,}\Z")
+_ONLY_DASHES = re.compile(r"[\-–—]{2,}\Z")
+# «0,0»: ноль с десятичной запятой — у Росстата «меньше единицы измерения».
+_BELOW_UNIT = re.compile(r"[+-]?0,0+\Z")
 _SCIENTIFIC = re.compile(r"^[+-]?\d+(?:[.,]\d+)?[eE][+-]?\d+$")
 
 
@@ -92,6 +103,8 @@ class Cell:
     value: float | None = None
     notes: tuple[int, ...] = ()
     percent: bool = False
+    # «0,0»: значение меньше единицы измерения.
+    below_unit: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -162,7 +175,7 @@ def guess_style(  # noqa: PLR0912 — по ветви на вид записи �
     )
 
 
-def parse(raw: Any, style: NumberStyle | None = None) -> Cell:  # noqa: PLR0911
+def parse(raw: Any, style: NumberStyle | None = None) -> Cell:  # noqa: PLR0911, PLR0912
     """Разобрать ячейку по виду чисел столбца."""
     style = style or NumberStyle()
     if raw is None or (isinstance(raw, str) and not raw.strip()):
@@ -185,6 +198,10 @@ def parse(raw: Any, style: NumberStyle | None = None) -> Cell:  # noqa: PLR0911
     body, notes = _strip_note(text)
     compact = _SPACES.sub("", body)
     marker = " ".join(body.lower().split())
+    if marker in ABSENT_MARKS or _ONLY_DASHES.match(compact):
+        return Cell(ABSENT, notes=notes)
+    if marker in HIDDEN_MARKS:
+        return Cell(HIDDEN, notes=notes)
     if (
         marker in MISSING_MARKS
         or compact.lower() in MISSING_MARKS
@@ -203,7 +220,7 @@ def parse(raw: Any, style: NumberStyle | None = None) -> Cell:  # noqa: PLR0911
         return Cell(TEXT, notes=notes)
     if style.ebt_codes and value in (EBT_MISSING, EBT_HIDDEN):
         return Cell(MISSING if value == EBT_MISSING else HIDDEN)
-    return Cell(VALUE, value, notes, percent)
+    return Cell(VALUE, value, notes, percent, below_unit=bool(_BELOW_UNIT.match(compact)))
 
 
 def parse_column(cells: Sequence[Any], *, delimiter: str = ";") -> tuple[NumberStyle, list[Cell]]:
@@ -217,7 +234,7 @@ def numeric_share(cells: Sequence[Cell]) -> float:
     filled = [cell for cell in cells if cell.status != EMPTY]
     if not filled:
         return 0.0
-    return sum(cell.status in {VALUE, MISSING, HIDDEN} for cell in filled) / len(filled)
+    return sum(cell.status in NUMERIC_STATUSES for cell in filled) / len(filled)
 
 
 def _strip_note(text: str) -> tuple[str, tuple[int, ...]]:
