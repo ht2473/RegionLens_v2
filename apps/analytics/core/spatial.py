@@ -6,11 +6,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 import numpy as np
 from django.utils.translation import gettext_lazy as _
+from scipy import stats
 
 # Способы определения соседства.
 SCHEMES: dict[str, Any] = {
@@ -25,6 +26,10 @@ NEAREST_COUNT = 5
 
 # Число перестановок: наименьший достижимый уровень значимости — ровно 0,001.
 PERMUTATIONS = 999
+
+# У локальных индексов — больше: с поправкой на число сравнений (85 регионов) первому месту
+# нужен уровень не выше 0,05 / 85 ≈ 0,0006, а при 999 перестановках меньше 0,001 не бывает.
+LOCAL_PERMUTATIONS = 9999
 
 # Постоянное зерно перестановок: уровень значимости не меняется от открытия к открытию.
 RANDOM_SEED = 20260321
@@ -87,11 +92,14 @@ class LocalMoran:
     p_value: float
     quadrant: str
     neighbours: int
+    # Уровень с поправкой Бенджамини — Хохберга на число территорий; нет — без поправки.
+    p_adjusted: float | None = None
 
     @property
     def is_significant(self) -> bool:
         """Признак того, что положение территории отличается от случайного."""
-        return self.p_value < SIGNIFICANCE_LEVEL
+        level = self.p_adjusted if self.p_adjusted is not None else self.p_value
+        return level < SIGNIFICANCE_LEVEL
 
     @property
     def label(self) -> Any:
@@ -203,10 +211,12 @@ def local_moran(
     codes: list[str],
     names: dict[str, str],
     *,
-    permutations: int = PERMUTATIONS,
+    permutations: int = LOCAL_PERMUTATIONS,
 ) -> list[LocalMoran]:
     """
-    Рассчитать локальные индексы условной перестановкой: значение территории на месте.
+    Рассчитать локальные индексы условной перестановкой: значение территории на месте,
+    соседи — случайные из остальных. Одна таблица случайных выборок на все территории (как
+    в PySAL): так 9 999 перестановок считаются за доли секунды.
 
     Территории без соседей исключаются: локальный индекс для них не определён.
     """
@@ -224,6 +234,9 @@ def local_moran(
 
     neighbour_counts = np.count_nonzero(weights, axis=1)
     rng = np.random.default_rng(RANDOM_SEED)
+    most = int(neighbour_counts.max(initial=0))
+    # Номера случайных «соседей» из остальных n − 1 территорий: строка — одна перестановка.
+    draws = np.argsort(rng.random((permutations, values.size - 1)), axis=1)[:, :most]
     results: list[LocalMoran] = []
 
     for position, code in enumerate(codes):
@@ -235,10 +248,7 @@ def local_moran(
         row_weights = np.delete(weights[position], position)
         active = row_weights[row_weights > 0]
 
-        sample = np.empty(permutations, dtype=float)
-        for index in range(permutations):
-            drawn = rng.choice(others, size=active.size, replace=False)
-            sample[index] = standardized[position] * float(active @ drawn)
+        sample = standardized[position] * (others[draws[:, : active.size]] @ active)
 
         extreme = int(np.count_nonzero(np.abs(sample) >= abs(local[position])))
         p_value = (extreme + 1) / (permutations + 1)
@@ -258,6 +268,17 @@ def local_moran(
         )
 
     return results
+
+
+def adjusted(entries: list[LocalMoran]) -> list[LocalMoran]:
+    """Локальные индексы с поправкой Бенджамини — Хохберга на число территорий."""
+    if not entries:
+        return entries
+    levels = stats.false_discovery_control([entry.p_value for entry in entries], method="bh")
+    return [
+        replace(entry, p_adjusted=float(level))
+        for entry, level in zip(entries, levels, strict=True)
+    ]
 
 
 def summarize_quadrants(entries: list[LocalMoran]) -> list[dict[str, Any]]:
