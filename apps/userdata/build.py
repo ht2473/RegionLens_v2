@@ -49,6 +49,7 @@ from . import (
     monthly,
     naming,
     recognize,
+    semantics,
 )
 from .models import Dataset, DatasetSeries, DatasetVersion
 
@@ -148,7 +149,7 @@ FACTS_SQL = """
         JOIN plan AS p USING (series_key)
         JOIN (SELECT DISTINCT total, alone, members FROM nested) AS n
           ON f.territory_code = n.total
-        WHERE p.kind = 'sum' AND p.derived = '' AND f.value IS NOT NULL
+        WHERE p.kind IN ('flow', 'stock', 'sum') AND p.derived = '' AND f.value IS NOT NULL
     ),
     parts AS (
         SELECT f.series_key, n.total, f.year, sum(f.value) AS value,
@@ -184,7 +185,7 @@ ALONE_MISSING_SQL = """
     FROM facts AS f
     JOIN plan AS p USING (series_key)
     JOIN (SELECT DISTINCT total, alone FROM nested) AS n ON f.territory_code = n.total
-    WHERE p.kind <> 'sum' AND p.derived = ''
+    WHERE p.kind NOT IN ('flow', 'stock', 'sum') AND p.derived = ''
       AND NOT EXISTS (
           SELECT 1 FROM facts AS x
           WHERE x.series_key = f.series_key AND x.territory_code = n.alone
@@ -192,32 +193,35 @@ ALONE_MISSING_SQL = """
     ORDER BY 1
 """
 
-# Пересчёт суммы на жителей: численность года значения, после последнего известного
-# года — последняя (знаменатель заморожен, как у рядов склада), до первого — значения нет.
+# Пересчёт суммы на жителей: численность года значения — среднегодовая, у запаса на начало
+# года — на 1 января (``per_basis``); после последнего известного года — последняя
+# (знаменатель заморожен, как у рядов склада), до первого — значения нет.
 PER_CAPITA_SQL = """
     INSERT INTO facts
     WITH last AS (
-        SELECT territory_code, max(year) AS last_year FROM population GROUP BY 1
+        SELECT basis, territory_code, max(year) AS last_year FROM population GROUP BY 1, 2
     ),
     based AS (
-        SELECT d.series_key AS derived_key, d.factor, f.territory_code, f.year, f.value,
-               f.flags, least(f.year, l.last_year) AS base_year
+        SELECT d.series_key AS derived_key, d.factor, d.per_basis, f.territory_code, f.year,
+               f.value, f.flags, least(f.year, l.last_year) AS base_year
         FROM plan AS d
         JOIN facts AS f ON f.series_key = d.base_key
-        JOIN last  AS l USING (territory_code)
+        JOIN last  AS l ON l.territory_code = f.territory_code AND l.basis = d.per_basis
         WHERE d.factor > 0 AND f.value IS NOT NULL
     )
     SELECT b.derived_key, b.territory_code, b.year, b.value / p.population * b.factor, 0,
            b.flags | 2 | CASE WHEN b.base_year < b.year THEN 4 ELSE 0 END
     FROM based AS b
-    JOIN population AS p ON p.territory_code = b.territory_code AND p.year = b.base_year
+    JOIN population AS p
+      ON p.territory_code = b.territory_code AND p.year = b.base_year AND p.basis = b.per_basis
     WHERE p.population > 0
 """
 
 # Середина значений на одного жителя в единицах таблицы — для выбора разряда единицы.
 PER_PERSON_MIDDLE_SQL = """
     WITH last AS (
-        SELECT territory_code, max(year) AS last_year FROM population GROUP BY 1
+        SELECT territory_code, max(year) AS last_year FROM population
+        WHERE basis = 'mean' GROUP BY 1
     )
     SELECT d.series_key, median(abs(f.value) / p.population)
     FROM plan AS d
@@ -225,6 +229,7 @@ PER_PERSON_MIDDLE_SQL = """
     JOIN last  AS l USING (territory_code)
     JOIN population AS p
       ON p.territory_code = f.territory_code AND p.year = least(f.year, l.last_year)
+     AND p.basis = 'mean'
     WHERE d.derived = 'per1' AND f.value IS NOT NULL AND f.value <> 0 AND p.population > 0
     GROUP BY 1
 """
@@ -309,7 +314,8 @@ RUSSIA_SQL = """
         SELECT d.series_key AS derived_key, d.base_key, s.year,
                coalesce(
                    c.value,
-                   CASE WHEN d.base_kind = 'sum' AND s.filled = u.most THEN s.value END
+                   CASE WHEN d.base_kind IN ('flow', 'stock', 'sum') AND s.filled = u.most
+                        THEN s.value END
                ) AS total
         FROM plan AS d
         JOIN subjects AS s ON s.series_key = d.base_key
@@ -665,7 +671,13 @@ def _recalculations(
         "base_kind": primary["kind"],
     }
     found = []
-    if indicator.kind == indicators.SUM:
+    # Запас на начало года делится на численность на 1 января, остальное — на среднегодовую.
+    basis = (
+        "start"
+        if primary["kind"] == semantics.STOCK and semantics.starts_year(indicator.name)
+        else "mean"
+    )
+    if indicator.is_sum:
         for per in indicator.per:
             found.append(
                 {
@@ -677,6 +689,7 @@ def _recalculations(
                     "unit": " ".join(part for part in (primary["unit"], _per_title(per)) if part),
                     "kind": indicators.RELATIVE,
                     "derived": per,
+                    "per_basis": basis,
                 }
             )
     for recalc in indicator.recalc:
@@ -692,7 +705,7 @@ def _recalculations(
                 "unit": RECALC_UNITS.get(recalc, primary["unit"]),
                 "kind": primary["kind"]
                 if recalc == indicators.RECALC_REAL
-                else indicators.RELATIVE,
+                else semantics.DERIVED_TYPES.get(recalc, indicators.RELATIVE),
                 "derived": recalc,
             }
         )
@@ -1084,6 +1097,7 @@ def _plan_frame(plan: list[dict[str, Any]]) -> pd.DataFrame:
             "month_key": [item.get("month_key", "") for item in plan],
             "month": [int(item.get("month", 0)) for item in plan],
             "month_kind": [item.get("month_kind", "") for item in plan],
+            "per_basis": [item.get("per_basis", "mean") for item in plan],
         }
     )
 
@@ -1165,15 +1179,21 @@ def _nested_frame() -> pd.DataFrame:
 
 
 def _population_frame() -> pd.DataFrame:
-    """Численность по складу: территория, год, численность."""
-    from apps.warehouse.queries.sources import population_table
+    """
+    Численность по складу: основа («mean» — среднегодовая, «start» — на 1 января),
+    территория, год, численность. Территории без численности на 1 января берут среднегодовую.
+    """
+    from apps.warehouse.queries.sources import population_start_table, population_table
 
+    mean = population_table()
+    start = population_start_table()
     rows = [
-        (code, int(year), float(value))
-        for code, years in population_table().items()
+        (basis, code, int(year), float(value))
+        for basis, table in (("mean", mean), ("start", {**mean, **start}))
+        for code, years in table.items()
         for year, value in years.items()
     ]
-    return pd.DataFrame(rows, columns=["territory_code", "year", "population"])
+    return pd.DataFrame(rows, columns=["basis", "territory_code", "year", "population"])
 
 
 def _areas_frame() -> pd.DataFrame:
@@ -1231,7 +1251,7 @@ def _dimensions(
     )
     units_frame = pd.DataFrame(
         [
-            (code, unit, "absolute" if kind == indicators.SUM else "rate")
+            (code, unit, "absolute" if semantics.is_additive(kind) else "rate")
             for (unit, kind), code in units.items()
         ],
         columns=["unit_code", "name", "kind"],

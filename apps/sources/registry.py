@@ -115,6 +115,9 @@ class Registry:
     dataset_monthly: tuple[DatasetMonthly, ...]
     now: tuple[str, ...]
     by_key: dict[str, SourceSeries] = field(default_factory=dict)
+    # Численность на конец года — знаменатель запасов на 1 января следующего года.
+    population_end: str = ""
+    population_end_scale: float = 1.0
 
     def monthly_keys(self) -> set[str]:
         """Ряды, у которых есть помесячный слой."""
@@ -165,6 +168,8 @@ def registry() -> Registry:
         dataset_monthly=dataset_monthly,
         now=tuple(payload.get("now", [])),
         by_key={item.key: item for item in series},
+        population_end=str(population.get("end_of_year") or ""),
+        population_end_scale=float(population.get("end_of_year_scale") or 1),
     )
 
 
