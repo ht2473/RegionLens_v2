@@ -152,6 +152,9 @@ _ORGANIZATION = re.compile(
     r"ministry|agency|department)"
 )
 _NOT_A_LABEL = re.compile(r"\s*-?(?!\d{8}(?:\d{3})?(?:\.0)?\s*\Z)\d+(?:[.,]\d+)?\s*\Z")
+# Код перед названием, как в выгрузке ЕМИСС: «14000000000 Белгородская область»,
+# «030 Центральный федеральный округ», «643004.АГ Российская Федерация без учета…».
+_CODED_LABEL = re.compile(r"^\s*(?P<code>\d{2,12}(?:\.[^\W\d_]+)?)\s+(?P<name>[^\W\d_].*)$")
 _COUNTRY_PHRASE = re.compile(r"российск\w* федераци|\bпо росси[ия]\b|\bпо рф\b|russian federation")
 _DISTRICT_WORDS = re.compile(r"\b(федеральный округ|federal district)\b")
 _SOFT_HYPHEN = chr(0xAD)
@@ -277,6 +280,9 @@ class Matcher:
         by_code = self._by_code(label)
         if by_code is not None:
             return by_code
+        coded = _CODED_LABEL.match(label) if self.on("codes") else None
+        if coded is not None:
+            return self._coded(coded.group("code"), coded.group("name"), remembered)
         text = self.prepare(label)
         quiet = _quiet_rule(label, text)
         if quiet is not None or not text or not _GENERIC.sub(" ", text).strip():
@@ -437,6 +443,14 @@ class Matcher:
         if raw in _NESTED_CODES and self.on("nested"):
             return self._nested(_NESTED_CODES[raw], rule="codes")
         return None
+
+    def _coded(self, code: str, name: str, remembered: Mapping[str, str] | None) -> Match:
+        """Код и название: решает название; известный код ОКАТО выручает неузнанное."""
+        named = self.match(name, remembered)
+        if named.is_resolved or named.kind in {NESTED, OUTSIDE}:
+            return named
+        by_code = self._by_code(code)
+        return by_code if by_code is not None and by_code.is_resolved else named
 
     def _fuzzy(self, text: str) -> Match:
         """Нечёткое сравнение: принять с пометкой, предложить кандидатов или ничего."""

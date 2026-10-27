@@ -143,6 +143,13 @@ _PART_OF_YEAR = re.compile(
     r"сентябр|октябр|ноябр|декабр|\bна\s+1\s",
     re.IGNORECASE,
 )
+# Имя файла открытых данных (методические рекомендации, версии 3.0 и 4.0):
+# «7708234640-healthregions-2021_data-20220624T1406-structure-20220624T1406.csv» — ИНН
+# издателя, код набора и даты версий набора и структуры. Год данных в нём не записан: даты —
+# версии, а цифры кода — что угодно («totalnotmarried16th2024th» — возраст 20–24 года).
+_OPEN_DATA_NAME = re.compile(r"(?:^|[-_])data-\d{8}", re.IGNORECASE)
+# Год числом, в том числе с пробелом между разрядами: «2025», «2 025», «2025,0».
+_YEAR_NUMBER = re.compile(r"(?:1\s?9|2\s?0)\d{2}(?:[.,]0+)?")
 # Откуда взят год таблицы без столбца с годом — подпись для человека.
 YEAR_FROM_COLUMNS = "columns"
 YEAR_FROM_TITLE = "title"
@@ -765,9 +772,16 @@ def _role(column: ColumnInfo, form: str) -> str:  # noqa: PLR0911 — табли
     if column.numeric >= NUMERIC_SHARE:
         # Числа — значения, кроме кодов и номеров: «Валовой региональный продукт» — значение,
         # хотя в названии есть «регион».
-        if hint in {TERRITORY_CODE, INDICATOR_CODE, PERIOD, LEVEL} or _CODE_SUFFIX.search(
-            column.header.lower()
+        if hint in {TERRITORY_CODE, INDICATOR_CODE} or _CODE_SUFFIX.search(column.header.lower()):
+            return SKIP
+        # Слово в названии отнимает у чисел роль значения, только если числа к нему подходят:
+        # «Год» с 2023, «Месяц» с 1–12, «Уровень» с 1–3. «Количество карт на конец периода»
+        # и «Уровень безработицы, %» — значения.
+        if hint == PERIOD and (
+            column.periods >= PERIOD_SHARE / 2 or _small_integers(column) or _years(column)
         ):
+            return SKIP
+        if hint == LEVEL and _small_integers(column):
             return SKIP
         return VALUE if form != WIDE else SKIP
     if hint in {MISSING_REASON, LEVEL, UNIT, INDICATOR, INDICATOR_CODE, NOTE}:
@@ -779,6 +793,13 @@ def _role(column: ColumnInfo, form: str) -> str:  # noqa: PLR0911 — табли
     if 0 < column.distinct <= SLICE_DISTINCT:
         return SLICE if column.distinct > 1 else SKIP
     return SKIP
+
+
+def _years(column: ColumnInfo) -> bool:
+    """«2 025» с пробелом между разрядами — тоже год: так его пишет выгрузка СФР."""
+    total = sum(count for _value, count in column.values)
+    found = sum(count for value, count in column.values if _YEAR_NUMBER.fullmatch(value))
+    return total > 0 and found >= total * PERIOD_SHARE / 2
 
 
 def _small_integers(column: ColumnInfo) -> bool:
@@ -1152,12 +1173,13 @@ def _context_year(
     else:
         # Подпись — только у таблиц документа: у листа и файла имя — это лист или файл.
         caption = table.name if table.kind in DOCUMENT_KINDS else ""
+        stem = PurePosixPath(table.member or file_name).stem
         sources = (
             (YEAR_FROM_TITLE, result.title),
             (YEAR_FROM_HEADER, header),
             (YEAR_FROM_CAPTION, caption),
             (YEAR_FROM_SHEET, table.sheet),
-            (YEAR_FROM_FILE, PurePosixPath(table.member or file_name).stem),
+            (YEAR_FROM_FILE, "" if _OPEN_DATA_NAME.search(stem) else stem),
         )
         for source, text in sources:
             stamp = context_stamp(text or "", whole_year=source != YEAR_FROM_HEADER)
