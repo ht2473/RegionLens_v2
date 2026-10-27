@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import datetime
 import itertools
 import re
 from collections import Counter, defaultdict
@@ -22,7 +23,7 @@ from apps.sources import periods
 from apps.sources.periods import Period, Stamp
 
 from . import cells, matching
-from .ingest import TableInfo, cell_text
+from .ingest import DOCUMENT_KINDS, TableInfo, cell_text
 from .tables import Loaded
 
 # Формы таблиц.
@@ -118,6 +119,37 @@ _NAMED_POINT = re.compile(r"на\s+1\s+([а-я]+)\s+((?:19|20)\d{2})")
 # от него в названии показателя остаётся «оду».
 _NAMED_YEAR = re.compile(r"(?:в|за)\s+((?:19|20)\d{2})\s*г(?:од[уа]?|г\.?|\.)?")
 _CODE_VALUE = re.compile(r"^\d{8}(\d{3})?(\.0)?$")
+# Период в заголовке, подписи, имени листа или файла: «за I квартал 2023 года», «на 1 января
+# 2024 г.», «январь–сентябрь 2025 года», «2023г - 1 квартал», «на 01.07.2026».
+# «1 кв.» — квартал, «1 кв. м» — площадь.
+_QUARTER_WORD = r"([IV]{1,3}|[1-4])\s*(?:-?(?:й|ый))?\s*кв(?:артал[а-я]*|\.(?!\s*м))"
+_CONTEXT_QUARTER = re.compile(rf"{_QUARTER_WORD}\s+((?:19|20)\d{{2}})", re.IGNORECASE)
+_CONTEXT_YEAR_QUARTER = re.compile(
+    rf"((?:19|20)\d{{2}})\s*(?:г\.?|года?)?\s*[-–—,]?\s*{_QUARTER_WORD}", re.IGNORECASE
+)
+_CONTEXT_PHRASES = (
+    re.compile(r"на\s+1\s+[а-я]+\s+(?:19|20)\d{2}(?:\s*г(?:ода?|\.)?)?", re.IGNORECASE),
+    re.compile(r"[а-я]+\s*[-–—]\s*[а-я]+\s+(?:19|20)\d{2}(?:\s*г(?:ода?|\.)?)?", re.IGNORECASE),
+)
+_CONTEXT_DATE = re.compile(r"(?<!\d)(\d{1,2})\.(\d{2})\.((?:19|20)\d{2})(?!\d)")
+_CONTEXT_HALF = re.compile(
+    r"(I{1,2}|[12])\s*(?:-?е)?\s*полугоди[а-я]*\s+((?:19|20)\d{2})", re.IGNORECASE
+)
+# Перед периодом — база сравнения: «в % к январю–сентябрю 2023 г.», «против 2022 г.».
+_COMPARED = re.compile(r"(?:\bк|\bпротив|\bот)[\s|]*$", re.IGNORECASE)
+# В шапке — часть года: такой период по одному году из имени файла не угадать.
+_PART_OF_YEAR = re.compile(
+    r"полугоди|квартал|\bкв\.(?!\s*м)|январ|феврал|март|апрел|\bма[йяе]\b|июн|июл|август|"
+    r"сентябр|октябр|ноябр|декабр|\bна\s+1\s",
+    re.IGNORECASE,
+)
+# Откуда взят год таблицы без столбца с годом — подпись для человека.
+YEAR_FROM_COLUMNS = "columns"
+YEAR_FROM_TITLE = "title"
+YEAR_FROM_HEADER = "header"
+YEAR_FROM_CAPTION = "caption"
+YEAR_FROM_SHEET = "sheet"
+YEAR_FROM_FILE = "file"
 # Шапка из Word: перенос слова («обрабаты- вающие») и знак сноски у слова («организаций4)»).
 # Союз после дефиса — не перенос: «сельско- и лесохозяйственная»; месяц по любую сторону —
 # тоже: «январь- май» — промежуток, а не слово.
@@ -181,6 +213,12 @@ class Recognition:
     footnotes: dict[int, str] = field(default_factory=dict)
     year: int | None = None
     year_hint: int | None = None
+    # Период года таблицы «показатели в столбцах» (ключ ``periods``), откуда взят год
+    # (``YEAR_FROM_*``) и сам текст; ``year_auto`` — год подставлен без ответа человека.
+    period: str = ""
+    year_from: str = ""
+    year_text: str = ""
+    year_auto: bool = False
     periods: dict[str, Any] = field(default_factory=dict)
     slices: dict[int, dict[str, Any]] = field(default_factory=dict)
     series: int = 0
@@ -256,7 +294,7 @@ def recognize(
     _apply_overrides(result, recipe)
     if result.form == INDICATORS:
         result.year = recipe.get("year") or None
-        result.year_hint = _year_hint(result, table, file_name)
+        _context_year(result, table, file_name, rows)
     if result.form in {WIDE, INDICATORS} and loaded.complete:
         if not _subtitle_rows(result, rows):
             _sheet_rows(result, rows)
@@ -1089,16 +1127,102 @@ def _check_values(result: Recognition, loaded: Loaded) -> None:
     result.text_cells = texts.most_common(10)
 
 
-def _year_hint(result: Recognition, table: TableInfo, file_name: str) -> int | None:
-    """Год для таблицы «показатели в столбцах»: из столбцов с годом, заголовка, листа, файла."""
+def _context_year(
+    result: Recognition, table: TableInfo, file_name: str, rows: list[list[Any]]
+) -> None:
+    """
+    Год и период таблицы «показатели в столбцах» без столбца с годом: из столбцов с годом,
+    заголовка, шапки, подписи таблицы в документе, имени листа, имени файла — по порядку.
+    Ответа человека нет — год подставляется сам (``year_auto``) и виден с источником на
+    шагах. Год только из столбцов или имени файла при части года в шапке («I полугодие»,
+    «январь–сентябрь») не подставляется: период не угадать — спрашивается, как раньше.
+    """
+    header = " | ".join(
+        text
+        for index in result.header_rows
+        if index < len(rows)
+        for text in (cell_text(cell).strip() for cell in rows[index])
+        if text
+    )
     named = Counter(column.stamp["year"] for column in result.value_columns if column.stamp)
+    found: tuple[Stamp, str, str] | None = None
     if named:
-        return named.most_common(1)[0][0]
-    for text in (result.title, table.sheet, PurePosixPath(table.member or file_name).stem):
-        years = _YEAR_IN_TEXT.findall(text or "") or _DATE_DIGITS.findall(text or "")
-        if years:
-            return int(years[-1])
-    return None
+        year = named.most_common(1)[0][0]
+        found = (Stamp(year, periods.ANNUAL), YEAR_FROM_COLUMNS, "")
+    else:
+        # Подпись — только у таблиц документа: у листа и файла имя — это лист или файл.
+        caption = table.name if table.kind in DOCUMENT_KINDS else ""
+        sources = (
+            (YEAR_FROM_TITLE, result.title),
+            (YEAR_FROM_HEADER, header),
+            (YEAR_FROM_CAPTION, caption),
+            (YEAR_FROM_SHEET, table.sheet),
+            (YEAR_FROM_FILE, PurePosixPath(table.member or file_name).stem),
+        )
+        for source, text in sources:
+            stamp = context_stamp(text or "", whole_year=source != YEAR_FROM_HEADER)
+            if stamp is not None:
+                found = (stamp, source, " ".join((text or "").split())[:120])
+                break
+    if found is None:
+        return
+    stamp, result.year_from, result.year_text = found
+    result.year_hint = stamp.year
+    result.period = stamp.period.key
+    unsure = (
+        result.year_from in {YEAR_FROM_COLUMNS, YEAR_FROM_FILE}
+        and stamp.period == periods.ANNUAL
+        and _PART_OF_YEAR.search(header)
+    )
+    if result.year is None and result.needs_year and not unsure:
+        result.year = stamp.year
+        result.year_auto = True
+
+
+def context_stamp(text: str, *, whole_year: bool = True) -> Stamp | None:  # noqa: PLR0911, PLR0912 — по ветви на запись периода
+    """
+    Период с годом в свободном тексте; база сравнения («в % к январю 2023») не период.
+    Нет периода — год как годовой (``whole_year``; в шапке таблицы год без периода — часто
+    год другого столбца, его не берут); нет года — ``None``.
+    """
+    found = periods.stamp(text)
+    if found is not None and found.year is not None:
+        return found
+    for match in _CONTEXT_QUARTER.finditer(text):
+        if not _compared(text, match):
+            return Stamp(int(match.group(2)), Period(periods.QUARTER, _quarter(match.group(1))))
+    for match in _CONTEXT_YEAR_QUARTER.finditer(text):
+        if not _compared(text, match):
+            return Stamp(int(match.group(1)), Period(periods.QUARTER, _quarter(match.group(2))))
+    for match in _CONTEXT_HALF.finditer(text):
+        if not _compared(text, match):
+            return Stamp(int(match.group(2)), Period(periods.HALF, _quarter(match.group(1))))
+    for pattern in _CONTEXT_PHRASES:
+        for match in pattern.finditer(text):
+            found = periods.stamp(match.group(0))
+            if found is not None and found.year is not None and not _compared(text, match):
+                return found
+    for match in _CONTEXT_DATE.finditer(text):
+        if _compared(text, match):
+            continue
+        found = periods.stamp(
+            datetime.date(int(match.group(3)), int(match.group(2)), int(match.group(1)))
+        )
+        if found is not None:
+            return found
+    if not whole_year:
+        return None
+    years = _YEAR_IN_TEXT.findall(text) or _DATE_DIGITS.findall(text)
+    return Stamp(int(years[-1]), periods.ANNUAL) if years else None
+
+
+def _compared(text: str, match: re.Match[str]) -> bool:
+    """Найденный период — база сравнения: перед ним «к», «против», «от»."""
+    return bool(_COMPARED.search(text[max(0, match.start() - 16) : match.start()]))
+
+
+def _quarter(raw: str) -> int:
+    return periods.ROMAN.get(raw.lower()) or int(raw)
 
 
 def _find_duplicates(result: Recognition, rows: list[list[Any]]) -> None:

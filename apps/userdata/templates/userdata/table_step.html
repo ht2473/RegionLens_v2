@@ -100,6 +100,12 @@
         <label class="question-card__title" for="year-input">{% translate "Годы в таблице не найдены. Укажите год значений:" %}</label>
         <input class="input input--year" id="year-input" type="number" name="year" min="1900" max="2100" inputmode="numeric" value="{{ result.year_hint|default_if_none:'' }}">
       </div>
+    {% elif result.year_auto %}
+      <div class="question-card">
+        <label class="question-card__title" for="year-input">{{ year_note }} {% translate "Если неверно — исправьте год:" %}</label>
+        <input class="input input--year" id="year-input" type="number" name="year" min="1900" max="2100" inputmode="numeric" value="{{ result.year }}">
+        <input type="hidden" name="year-auto" value="{{ result.year }}">
+      </div>
     {% elif result.form == "indicators" %}
       <input type="hidden" name="year" value="{{ result.year }}">
     {% endif %}

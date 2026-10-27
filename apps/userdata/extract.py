@@ -645,7 +645,8 @@ class _Reader:
         if stamp:
             return int(stamp["year"]), str(stamp["period"]), str(stamp.get("group") or "")
         if self.result.form == recognize.INDICATORS and self.result.year:
-            return int(self.result.year), periods.ANNUAL.key, ""
+            # Период — из заголовка, подписи, листа или файла («I квартал»), иначе год.
+            return int(self.result.year), self.result.period or periods.ANNUAL.key, ""
         return None
 
     def _sheet_rows(
@@ -821,6 +822,10 @@ def _report(
         "outside": [[label, places.outside.get(label, "")] for label in outside_labels],
         "nested": nested_present,
         "title": result.title,
+        # Год взят из заголовка, подписи, листа или файла, а не из таблицы и не от человека.
+        "year_from": [result.year, result.period, result.year_from, result.year_text]
+        if result.year_auto
+        else [],
     }
 
 

@@ -44,6 +44,7 @@
       <p class="review-summary__label">{% translate "Годы" %}</p>
       <p class="review-summary__value numeric">{% if summary.first_year %}{{ summary.first_year|year }}{% if summary.last_year != summary.first_year %}–{{ summary.last_year|year }}{% endif %}{% else %}—{% endif %}</p>
       <p class="review-summary__note">{% blocktranslate trimmed with count=report.values|ru_number:0 %}чисел: {{ count }}{% endblocktranslate %}</p>
+      {% if summary.year_note %}<p class="review-summary__note">{{ summary.year_note }}</p>{% endif %}
     </li>
     <li class="review-summary__tile">
       <p class="review-summary__label">{% translate "Показатели" %}</p>

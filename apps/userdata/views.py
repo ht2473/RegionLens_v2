@@ -321,6 +321,11 @@ class TableStepView(DatasetStepMixin, TemplateView):
         context.update(
             page_title=_("Что в таблице"),
             result=result,
+            year_note=describe.year_note(
+                result.year, result.period, result.year_from, result.year_text
+            )
+            if result.year_auto
+            else "",
             columns=shown,
             preview=_preview(loaded, result, shown),
             period_columns=hidden,
@@ -687,6 +692,7 @@ def _review_summary(
         "series": len(series),
         "with_unit": sum(1 for item in items if item.unit),
         "form": FORM_TEXTS.get(report.get("form") or version.recipe.get("form", ""), ""),
+        "year_note": describe.year_note(*report["year_from"]) if report.get("year_from") else "",
     }
 
 
@@ -762,7 +768,11 @@ def _answers(request: HttpRequest, result: recognize.Recognition) -> dict[str, A
             for key, value in data.items()
             if key.startswith("role-") and key.removeprefix("role-").isdigit()
         },
-        "year": data.get("year", "").strip() if data.get("year", "").strip().isdigit() else "",
+        # Год, подставленный из заголовка, листа или файла, и не исправленный — не ответ человека.
+        "year": data.get("year", "").strip()
+        if data.get("year", "").strip().isdigit()
+        and data.get("year", "").strip() != data.get("year-auto", "")
+        else "",
         "remember": data.get("remember") == "on",
         "territories": {},
         "nested": {},
