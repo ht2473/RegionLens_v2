@@ -178,14 +178,35 @@ class TestAnswers:
             "Регион;Население;ВРП\nМосква;13;25\n"
             "Тверская область;1,2;0,5\nКурская область;1,1;0,6\n"
         )
-        dataset = _chosen(client, "показатели_2023.csv", rows.encode("utf-8"))
+        dataset = _chosen(client, "показатели.csv", rows.encode("utf-8"))
         url = reverse("userdata:table", args=[dataset.public_id])
         text = client.get(url).text
         assert "Годы в таблице не найдены" in text
-        assert 'value="2023"' in text
         client.post(url, {"year": "2023"})
         assert _version(dataset).recipe["year"] == 2023
         assert "Годы в таблице не найдены" not in client.get(url).text
+
+    def test_year_from_file_name_is_shown_not_asked(self, client: Client) -> None:
+        rows = (
+            "Регион;Население;ВРП\nМосква;13;25\n"
+            "Тверская область;1,2;0,5\nКурская область;1,1;0,6\n"
+        )
+        dataset = _chosen(client, "показатели_2023.csv", rows.encode("utf-8"))
+        url = reverse("userdata:table", args=[dataset.public_id])
+        # Спросить не о чем: шаг сам переходит к проверке, год там — с источником.
+        response = client.get(url)
+        assert response.status_code == 302
+        note = "Год 2023 взят из имени файла «показатели_2023»."
+        series_page = client.get(reverse("userdata:series", args=[dataset.public_id])).text
+        assert note in series_page
+        text = client.get(url).text
+        assert "Годы в таблице не найдены" not in text
+        assert note in text
+        # Подставленный год не становится ответом человека; исправленный — становится.
+        client.post(url, {"year": "2023", "year-auto": "2023"})
+        assert _version(dataset).recipe["year"] is None
+        client.post(url, {"year": "2022", "year-auto": "2023"})
+        assert _version(dataset).recipe["year"] == 2022
 
     def test_foreign_labels_and_choices_are_ignored(self, client: Client) -> None:
         dataset = _chosen(client, "environment.csv", (FIXTURES / "environment.csv").read_bytes())

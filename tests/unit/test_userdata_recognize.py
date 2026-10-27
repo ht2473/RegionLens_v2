@@ -438,8 +438,80 @@ class TestOtherAgencies:
         table = ingest.TableInfo(key="", name="t", kind=ingest.PASTE, size=0)
         loaded = Loaded(rows=rows, complete=True, total=len(rows))
         result = recognize.recognize(loaded, table, file_name="01_03_Loans_corp_20260901.xlsx")
+        # Год из даты в имени файла подставлен без вопроса, с источником.
+        assert not result.needs_year
+        assert (result.year, result.year_auto) == (2026, True)
+        assert result.year_from == recognize.YEAR_FROM_FILE
+
+    @pytest.mark.parametrize(
+        ("text", "year", "period"),
+        [
+            ("за I квартал 2023 года", 2023, "quarter:1"),
+            ("2023г - 1 квартал", 2023, "quarter:1"),
+            ("Число устройств на 1 января 2024 г.", 2024, "point:1"),
+            ("январь–сентябрь 2025 года", 2025, "ytd:9"),
+            ("по состоянию на 01.07.2026", 2026, "point:7"),
+            ("Ввод жилья 2023, тыс. кв. м", 2023, "year:12"),
+            ("t3_1_2025", 2025, "year:12"),
+        ],
+    )
+    def test_period_in_free_text(self, text: str, year: int, period: str) -> None:
+        found = recognize.context_stamp(text)
+        assert found is not None
+        assert (found.year, found.period.key) == (year, period)
+
+    @pytest.mark.parametrize(
+        ("text", "expected"),
+        [
+            ("Млн рублей | В % к январю-сентябрю 2023 г.", None),
+            ("Млрд рублей | В % к | I полугодию 2025 г. | итогу", None),
+            ("млн рублей | I полугодие 2026 г. в % к I полугодию 2025 г.", (2026, "half:1")),
+            ("Тыс. голов | на 1 июля 2026 г.", (2026, "point:7")),
+        ],
+    )
+    def test_period_in_header_skips_comparison_base(
+        self, text: str, expected: tuple[int, str] | None
+    ) -> None:
+        found = recognize.context_stamp(text, whole_year=False)
+        assert (None if found is None else (found.year, found.period.key)) == expected
+
+    def test_every_year_source_has_a_note(self) -> None:
+        from apps.userdata import describe
+
+        sources = [
+            value for name, value in vars(recognize).items() if name.startswith("YEAR_FROM_")
+        ]
+        for source in sources:
+            assert describe.year_note(2024, "half:1", source, "текст").startswith("Год 2024")
+
+    def test_file_year_is_asked_when_header_has_part_of_year(self) -> None:
+        rows = [
+            ["", "Добыча", "в % к январю–сентябрю прошлого года"],
+            ["Москва", "13", "101,2"],
+            ["Тверская область", "12", "99,5"],
+            ["Курская область", "11", "100,4"],
+        ]
+        table = ingest.TableInfo(key="", name="t", kind=ingest.PASTE, size=0)
+        loaded = Loaded(rows=rows, complete=True, total=len(rows))
+        result = recognize.recognize(loaded, table, file_name="bul_09_2024.xlsx")
+        # Год из имени файла есть, а период части года не разобрать — вопрос, с подсказкой.
         assert result.needs_year
-        assert result.year_hint == 2026
+        assert result.year_hint == 2024
+
+    def test_sheet_name_gives_year_and_quarter(self) -> None:
+        rows = [
+            ["Регион", "Банкоматы", "Терминалы"],
+            ["Москва", "13", "25"],
+            ["Тверская область", "12", "5"],
+            ["Курская область", "11", "6"],
+        ]
+        table = ingest.TableInfo(
+            key="#2023г - 1 квартал", name="2023г - 1 квартал", kind=ingest.XLSX, size=0
+        )
+        loaded = Loaded(rows=rows, complete=True, total=len(rows))
+        result = recognize.recognize(loaded, table, file_name="t.xlsx")
+        assert (result.year, result.period) == (2023, "quarter:1")
+        assert result.year_from == recognize.YEAR_FROM_SHEET
 
     def test_quiet_rows_are_not_asked(self) -> None:
         from apps.userdata import describe
