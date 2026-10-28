@@ -8,7 +8,7 @@
 {% endif %}
 <div class="answer__columns">
   <div>
-    <h3 class="answer__label">{% translate "Больше всего" %}</h3>
+    <h3 class="answer__label">{% translate "Наибольшие значения" %}</h3>
     <ol class="answer-list">
       {% for row in a.top %}
         <li><a href="{{ row.href }}">{{ row.name }}</a> <span class="numeric">{{ row.value }}</span></li>
@@ -16,7 +16,7 @@
     </ol>
   </div>
   <div>
-    <h3 class="answer__label">{% translate "Меньше всего" %}</h3>
+    <h3 class="answer__label">{% translate "Наименьшие значения" %}</h3>
     <ol class="answer-list">
       {% for row in a.bottom %}
         <li><a href="{{ row.href }}">{{ row.name }}</a> <span class="numeric">{{ row.value }}</span></li>

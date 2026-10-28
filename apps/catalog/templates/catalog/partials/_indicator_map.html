@@ -11,7 +11,7 @@
                data-label-missing="{% translate 'нет данных за этот год' %}">
     <div class="page-section__head indicator-map__head">
       <h2 class="page-section__title" id="indicator-map-title">
-        {% translate "Где больше, где меньше" %}, <span data-live="year">{{ live.year }}</span>
+        {% translate "Карта по регионам" %}, <span data-live="year">{{ live.year }}</span>
       </h2>
       {# Без моего региона значение по России стоит в карточке под картой. #}
       {% if live.home %}
@@ -37,13 +37,13 @@
 
         <div class="indicator-leaders">
           <div>
-            <h3 class="live-map__label">{% translate "Больше всего" %}</h3>
+            <h3 class="live-map__label">{% translate "Наибольшие значения" %}</h3>
             <ol class="leader-list" data-live="top">
               {% for row in live.top %}{% include "catalog/partials/_leader_row.html" %}{% endfor %}
             </ol>
           </div>
           <div>
-            <h3 class="live-map__label">{% translate "Меньше всего" %}</h3>
+            <h3 class="live-map__label">{% translate "Наименьшие значения" %}</h3>
             <ol class="leader-list" data-live="bottom">
               {% for row in live.bottom %}{% include "catalog/partials/_leader_row.html" %}{% endfor %}
             </ol>

@@ -84,10 +84,10 @@
   {# --- Оглавление паспорта: закреплено под шапкой, текущий раздел отмечает ui/toc.js --- #}
   <nav class="toc-pills passport__toc" data-toc aria-label="{% translate 'Разделы паспорта' %}">
     <ul>
-      {% if now %}<li><a href="#passport-now">{% translate "Что сейчас" %}</a></li>{% endif %}
+      {% if now %}<li><a href="#passport-now">{% translate "Текущее положение" %}</a></li>{% endif %}
       {% if metrics %}<li><a href="#passport-metrics">{% translate "Главные показатели" %}</a></li>{% endif %}
       {% if passport.positions %}
-        <li><a href="#passport-sides">{% translate "Сильные и слабые" %}</a></li>
+        <li><a href="#passport-sides">{% translate "Сильные и слабые стороны" %}</a></li>
         <li><a href="#passport-all">{% translate "Все показатели" %}</a></li>
       {% endif %}
       <li><a href="#passport-timeline">{% translate "Динамика" %}</a></li>
@@ -100,7 +100,7 @@
   {% if now %}
     <section class="page-section" aria-labelledby="passport-now">
       <div class="page-section__head">
-        <h2 class="page-section__title toc-target" id="passport-now">{% translate "Что сейчас" %}</h2>
+        <h2 class="page-section__title toc-target" id="passport-now">{% translate "Текущее положение" %}</h2>
         <p class="page-section__note">{% translate "Последние месяцы и изменение к тому же периоду прошлого года" %}</p>
       </div>
       {% include "catalog/partials/_now_grid.html" with rows=now %}
