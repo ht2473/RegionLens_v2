@@ -21,7 +21,7 @@
 
   <header class="page-head">
     <p class="kicker"><span{% with lang=dataset.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.title }}</span> · <span class="own-private">{% visibility dataset %}</span></p>
-    <h1 class="page-head__title">{% if existing %}{% translate "Показатель по формуле" %}{% else %}{% translate "Новый показатель по формуле" %}{% endif %}</h1>
+    <h1 class="page-head__title">{% translate "Показатель по формуле" %}</h1>
     <p class="page-head__lead">
       {% translate "Из показателей ваших таблиц и показателей сайта. Считается заново, когда таблица обновляется." %}
     </p>

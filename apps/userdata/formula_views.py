@@ -75,7 +75,7 @@ def template_of(expression: str) -> tuple[str, str, str]:
 class FormulaView(DatasetMixin, BreadcrumbMixin, TemplateView):
     """
     Правка показателя по формуле. Новый показатель заводится в окне «Расчёт показателя»:
-    страница без кода показателя туда и ведёт; её приём формы остаётся для прежних ссылок.
+    прежний адрес создания туда и ведёт.
     """
 
     template_name = "userdata/formula.html"
@@ -138,10 +138,7 @@ class FormulaView(DatasetMixin, BreadcrumbMixin, TemplateView):
         values.setdefault("kind", DatasetSeries.Kind.RELATIVE.value)
         values.setdefault("polarity", DatasetSeries.Polarity.NEUTRAL.value)
         if values.get("template") not in {code for code, _title in TEMPLATE_CHOICES}:
-            # Новая формула — шаблоном; присланная без шаблона — своей формулой.
-            values["template"] = (
-                "per1000" if existing is None and not values.get("expression") else FREE
-            )
+            values["template"] = FREE
         groups = _insert_groups(self.request, self.dataset.code)
         study = _study(self.request, self.request.GET.get("study") or values.get("study", ""))
         context.update(
@@ -166,6 +163,8 @@ class FormulaView(DatasetMixin, BreadcrumbMixin, TemplateView):
         return context
 
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:  # noqa: ARG002
+        if not self.code:
+            return redirect("userdata:dataset-calc", public_id=self.dataset.public_id)
         action = request.POST.get("action", "check")
         if action == "delete" and self.existing is not None:
             return self.delete(request)
