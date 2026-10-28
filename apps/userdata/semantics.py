@@ -405,8 +405,6 @@ _CONTRIBUTIONS = _(
 )
 _SHARES = _("доли считаются у сумм")
 _RATE_OF_RATE = _("темп от темпа не считается")
-_STOCK_CUMULATIVE = _("остатки на дату по годам не складываются")
-_SUM_CUMULATIVE = _("укажите, что значения за период: «Изменить» → «Что это за величина»")
 _RUSSIA_SHARE = _("у суммы это доля в значении по России: смотрите «Долю»")
 _PEOPLE = frozenset({PEOPLE})
 
@@ -450,10 +448,6 @@ RULES: dict[str, Rule] = {
     "answer:relation": Rule(frozenset({RELATIVE, INDEX}), via=True, regions=FEW_REGIONS),
     # Сразу несколько карточек.
     "set:profile": Rule(EVERY),
-    "set:inequality": Rule(
-        frozenset({RELATIVE}), via=True, reasons={INDEX: _LEVELS_ONLY}, regions=FEW_REGIONS
-    ),
-    "set:neighbours": Rule(EVERY, region=True),
     "set:pair": Rule(EVERY),
     # Новый показатель: каталог расчётов и пересчёты сборки.
     "calc:per1": Rule(ADDITIVE, bases=_PEOPLE),
@@ -465,27 +459,17 @@ RULES: dict[str, Rule] = {
     "calc:pricelevel": Rule(frozenset({RELATIVE}), rubles=True),
     "calc:subsistence": Rule(frozenset({RELATIVE}), rubles=True, monthly=True),
     "calc:share": Rule(ADDITIVE),
-    "calc:russiashare": Rule(ADDITIVE),
     "calc:structure": Rule(ADDITIVE),
     "calc:hhi": Rule(ADDITIVE),
     "calc:growth": Rule(LEVELS, reasons={INDEX: _RATE_OF_RATE}, years=2),
     "calc:baseyear": Rule(LEVELS, years=2),
     "calc:between": Rule(LEVELS, years=2),
     "calc:annualrate": Rule(LEVELS, years=3),
-    "calc:moving": Rule(EVERY, years=3),
-    "calc:cumulative": Rule(
-        frozenset({FLOW}),
-        reasons={STOCK: _STOCK_CUMULATIVE, SUM: _SUM_CUMULATIVE},
-        years=2,
-    ),
     "calc:real": Rule(LEVELS, rubles=True),
     "calc:russia": Rule(frozenset({RELATIVE}), reasons=dict.fromkeys(ADDITIVE, _RUSSIA_SHARE)),
     "calc:russiadeviation": Rule(frozenset({RELATIVE, INDEX})),
     "calc:districtdeviation": Rule(frozenset({RELATIVE, INDEX})),
-    "calc:zscore": Rule(frozenset({RELATIVE, INDEX}), regions=FEW_REGIONS),
-    "calc:target": Rule(EVERY),
     "calc:sum": Rule(ADDITIVE),
-    "calc:weighteddistrict": Rule(frozenset({RELATIVE})),
     "calc:lq": Rule(ADDITIVE),
     "calc:structuralshift": Rule(ADDITIVE, years=2),
     "calc:shiftshare": Rule(ADDITIVE, years=2),
@@ -580,16 +564,31 @@ def sentence(reason: str) -> str:
     return f"{reason[:1].upper()}{reason[1:]}."
 
 
+# Разряд в начале единицы: «млн руб.» — миллион рублей, «тыс. человек» — тысяча человек.
+_UNIT_ORDER = re.compile(r"^(тыс|млн|млрд|трлн)(?:\.\s*|\s+)", re.IGNORECASE)
+_ORDERS = {"тыс": 1e3, "млн": 1e6, "млрд": 1e9, "трлн": 1e12}
+
+
+def unit_scale(unit: str) -> tuple[str, float]:
+    """Единица без разряда и множитель разряда: «млн руб.» — («руб.», 1 000 000)."""
+    text = " ".join(unit.casefold().split())
+    found = _UNIT_ORDER.match(text)
+    if found is None:
+        return text, 1.0
+    return text[found.end() :], _ORDERS[found.group(1)]
+
+
 def parts_reason(kinds: list[str], units: list[str]) -> str:
     """
     Почему ряды нельзя считать частями одного целого: не суммы, суммы разных типов
-    (поток с запасом) или разных единиц; пусто — можно.
+    (поток с запасом) или разных единиц; пусто — можно. Разряд единицы («тыс.», «млн»)
+    не мешает: сумма приводит слагаемые к единице первого.
     """
     if any(kind not in ADDITIVE for kind in kinds):
         return gettext("Части и слагаемые — только суммы: доли, средние и индексы не складываются.")
     exact = {kind for kind in kinds if kind != SUM}
     if len(exact) > 1:
         return gettext("Среди частей — значения за период и на дату: их нельзя складывать.")
-    if len({" ".join(unit.casefold().split()) for unit in units}) > 1:
+    if len({unit_scale(unit)[0] for unit in units}) > 1:
         return gettext("Части и слагаемые — в одной единице: приведите их к одной.")
     return ""

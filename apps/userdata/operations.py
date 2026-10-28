@@ -39,16 +39,12 @@ GROUPS: tuple[tuple[str, Promise], ...] = (
 SERIES = "series"
 SERIES_LIST = "series_list"
 YEAR = "year"
-WINDOW = "window"
-NUMBER = "number"
 CHOICE = "choice"
 
 # Составляющих в сумме, структуре и сдвигах — не больше: формула ссылается не больше чем
 # на двенадцать рядов, у сдвига-доли каждая составляющая ещё и с итогом России.
 MAX_PARTS = 8
 SHIFT_SHARE_PARTS = 6
-# Окно скользящего среднего, лет.
-WINDOWS = (2, 3, 4, 5, 7, 10)
 
 # Знаменатели профильных расчётов — официальные ряды склада. Ряда нет на складе — операция
 # не предлагается. Численность — в тысячах человек.
@@ -76,15 +72,11 @@ CHANGE_CHOICES: tuple[tuple[str, Promise], ...] = (
     ("percent", _("в процентах")),
     ("absolute", _("в единицах показателя")),
 )
-TARGET_CHOICES: tuple[tuple[str, Promise], ...] = (
-    ("percent", _("процент цели")),
-    ("deviation", _("отклонение от цели")),
-)
 
 
 @dataclass(frozen=True, slots=True)
 class Field:
-    """Поле операции: ряд, перечень рядов, год, окно, число или выбор."""
+    """Поле операции: ряд, перечень рядов, год или выбор."""
 
     name: str
     kind: str
@@ -251,16 +243,6 @@ def _subsistence(values: Values) -> list[Output]:
     ]
 
 
-def _russia_share(values: Values) -> list[Output]:
-    return [
-        Output(
-            f"{values.title('a')}: доля в значении по России",
-            f"{values.ref('a')} / РОССИЯ({values.ref('a')}) * 100",
-            "% от значения по России",
-        )
-    ]
-
-
 def _structure(values: Values) -> list[Output]:
     return [
         Output(
@@ -332,42 +314,31 @@ def _annual_rate(values: Values) -> list[Output]:
     ]
 
 
-def _moving(values: Values) -> list[Output]:
-    window = int(values.numbers["window"])
-    return [
-        Output(
-            f"{values.title('a')}: скользящее среднее за {window} года"
-            if window < 5  # noqa: PLR2004 — «года» до пяти, дальше «лет»
-            else f"{values.title('a')}: скользящее среднее за {window} лет",
-            f"СКОЛЬЗЯЩЕЕ({values.ref('a')}; {window})",
-            values.unit("a"),
-            values.kind("a"),
-        )
-    ]
-
-
-def _cumulative(values: Values) -> list[Output]:
-    return [
-        Output(
-            f"{values.title('a')}: накопленный итог",
-            f"НАКОПЛЕННОЕ({values.ref('a')})",
-            values.unit("a"),
-            STOCK,
-        )
-    ]
+def _scaled(key: str, factor: float) -> str:
+    """Слагаемое в единице первого: «тыс. руб.» к «млн руб.» — делится на 1 000."""
+    if factor > 1:
+        return f"{_ref(key)} * {round(factor)}"
+    if factor < 1:
+        return f"{_ref(key)} / {round(1 / factor)}"
+    return _ref(key)
 
 
 def _sum(values: Values) -> list[Output]:
     keys = values.lists["parts"]
     titles = [values.info[key].title if key in values.info else key for key in keys]
     units = [values.info[key].unit for key in keys if key in values.info]
+    first = semantics.unit_scale(units[0])[1] if units else 1.0
+    factors = {
+        key: semantics.unit_scale(values.info[key].unit)[1] / first if key in values.info else 1.0
+        for key in keys
+    }
     kinds = {values.info[key].type for key in keys if key in values.info}
     exact = kinds - {semantics.SUM}
     kind = exact.pop() if len(exact) == 1 else semantics.SUM
     return [
         Output(
             "Сумма: " + " + ".join(titles),
-            _joined([_ref(key) for key in keys], "+"),
+            _joined([_scaled(key, factors[key]) for key in keys], "+"),
             units[0] if units else "",
             kind,
         )
@@ -392,47 +363,6 @@ def _district_deviation(values: Values) -> list[Output]:
             f"{values.title('a')}: отклонение от среднего по округу",
             f"{reference} - ОКРУГ({reference})",
             values.unit("a"),
-        )
-    ]
-
-
-def _z_score(values: Values) -> list[Output]:
-    reference = values.ref("a")
-    return [
-        Output(
-            f"{values.title('a')}: z-оценка",
-            f"({reference} - СРЕДНЕЕ({reference})) / СТАНДОТКЛОН({reference})",
-            "стандартных отклонений",
-        )
-    ]
-
-
-def _weighted_district(values: Values) -> list[Output]:
-    return [
-        Output(
-            f"{values.title('a')}: среднее по округу, взвешенное по «{values.title('b')}»",
-            f"ВЗВОКРУГ({values.ref('a')}; {values.ref('b')})",
-            values.unit("a"),
-        )
-    ]
-
-
-def _target(values: Values) -> list[Output]:
-    target = values.numbers["target"]
-    text = f"{target:g}"
-    if values.choices.get("mode") == "deviation":
-        return [
-            Output(
-                f"{values.title('a')}: отклонение от цели {text}",
-                f"{values.ref('a')} - {text}",
-                values.unit("a"),
-            )
-        ]
-    return [
-        Output(
-            f"{values.title('a')}: % цели {text}",
-            f"{values.ref('a')} / {text} * 100",
-            "% цели",
         )
     ]
 
@@ -599,17 +529,6 @@ OPERATIONS: tuple[Operation, ...] = (
         recount=DatasetSeries.Derived.SHARE.value,
     ),
     Operation(
-        "russiashare",
-        "share",
-        _("Доля в значении по России"),
-        _(
-            "Значение региона делится на значение России из таблицы. Отличается от доли "
-            "в сумме субъектов, когда часть итога не распределена по регионам."
-        ),
-        fields=(A,),
-        outputs=_russia_share,
-    ),
-    Operation(
         "structure",
         "share",
         _("Доля составляющей в итоге"),
@@ -667,22 +586,6 @@ OPERATIONS: tuple[Operation, ...] = (
         outputs=_annual_rate,
     ),
     Operation(
-        "moving",
-        "change",
-        _("Скользящее среднее"),
-        _("Среднее за окно лет, считая текущий. Неполное окно или пропуск в нём — без значения."),
-        fields=(A, Field("window", WINDOW, _("Окно, лет"))),
-        outputs=_moving,
-    ),
-    Operation(
-        "cumulative",
-        "change",
-        _("Накопленный итог"),
-        _("Сумма с первого года со значением. После пропуска года итог не продолжается."),
-        fields=(A,),
-        outputs=_cumulative,
-    ),
-    Operation(
         "real",
         "change",
         _("В ценах последнего года"),
@@ -719,29 +622,6 @@ OPERATIONS: tuple[Operation, ...] = (
         fields=(A,),
         outputs=_district_deviation,
     ),
-    Operation(
-        "zscore",
-        "compare",
-        _("z-оценка"),
-        _(
-            "Отклонение от среднего по субъектам за год, деленное на стандартное отклонение. "
-            "Показывает, насколько регион необычен в своём году."
-        ),
-        fields=(A,),
-        outputs=_z_score,
-    ),
-    Operation(
-        "target",
-        "compare",
-        _("Достижение цели"),
-        _("Значение делится на целевое значение, в процентах, или из него вычитается цель."),
-        fields=(
-            A,
-            Field("target", NUMBER, _("Целевое значение")),
-            Field("mode", CHOICE, _("Как"), TARGET_CHOICES),
-        ),
-        outputs=_target,
-    ),
     # Сложение.
     Operation(
         "sum",
@@ -750,17 +630,6 @@ OPERATIONS: tuple[Operation, ...] = (
         _("Значения складываются по региону и году. Пропуск у любого слагаемого — пропуск суммы."),
         fields=(PARTS,),
         outputs=_sum,
-    ),
-    Operation(
-        "weighteddistrict",
-        "sum",
-        _("Взвешенное среднее по округу"),
-        _(
-            "Среднее субъектов федерального округа, взвешенное по второму показателю, — "
-            "например, средняя зарплата по численности работников."
-        ),
-        fields=(A, Field("b", SERIES, _("Вес"))),
-        outputs=_weighted_district,
     ),
     # Региональные методы.
     Operation(
@@ -799,6 +668,13 @@ OPERATIONS: tuple[Operation, ...] = (
     ),
 )
 BY_CODE: dict[str, Operation] = {item.code: item for item in OPERATIONS}
+# Доли частей считаются от итога: части должны его покрывать, иначе индекс неточен.
+COVERAGE_OPERATIONS = frozenset({"hhi", "structuralshift"})
+
+
+def coverage_expression(values: Values) -> str:
+    """Сумма частей, деленная на итог: у частей, покрывающих итог, — около 1."""
+    return f"({_joined([_ref(key) for key in values.lists['parts']], '+')}) / {values.ref('b')}"
 
 
 def recount_codes() -> list[str]:

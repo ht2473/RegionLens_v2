@@ -68,18 +68,6 @@
                   {% for year in years %}<option value="{{ year }}"{% if value == year|stringformat:"d" %} selected{% endif %}>{{ year|year }}</option>{% endfor %}
                 </select>
               </div>
-            {% elif field.kind == "window" %}
-              <div class="field">
-                <label class="field__label" for="{{ field_id }}">{{ field.label }}</label>
-                <select class="select" id="{{ field_id }}" name="{{ field.name }}">
-                  {% for size in windows %}<option value="{{ size }}"{% if value == size|stringformat:"d" %} selected{% endif %}>{{ size }}</option>{% endfor %}
-                </select>
-              </div>
-            {% elif field.kind == "number" %}
-              <div class="field">
-                <label class="field__label" for="{{ field_id }}">{{ field.label }}</label>
-                <input class="input numeric" id="{{ field_id }}" name="{{ field.name }}" value="{{ value }}" inputmode="decimal">
-              </div>
             {% else %}
               <fieldset class="field">
                 <legend class="field__label">{{ field.label }}</legend>

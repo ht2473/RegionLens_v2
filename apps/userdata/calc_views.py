@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+from statistics import median
 from typing import Any
 from urllib.parse import urlencode
 
@@ -32,7 +33,7 @@ from .series import own_option_groups
 from .study_views import edit_allowed
 
 FREE = "free"
-# Поля формы панели: операция, ряды, годы, окно, цель, выбор, таблица, название и единица.
+# Поля формы панели: операция, ряды, годы, выбор, таблица, название и единица.
 TEXT_FIELDS = (
     "op",
     "a",
@@ -40,8 +41,6 @@ TEXT_FIELDS = (
     "year",
     "first",
     "last",
-    "window",
-    "target",
     "mode",
     "group",
     "table",
@@ -52,6 +51,8 @@ TEXT_FIELDS = (
 )
 # Крайних регионов в предпросмотре — сверху и снизу.
 EXTREMES = 3
+# Части расходятся с итогом больше чем на столько (медиана по регионам) — предупреждение.
+COVERAGE_TOLERANCE = 0.05
 RELATIVE = DatasetSeries.Kind.RELATIVE.value
 # Расчёты по частям одного целого: части — суммы одного типа; у суммы показателей — ещё
 # и одной единицы.
@@ -146,7 +147,6 @@ class CalcView(TemplateView):
             "free": code == FREE,
             "options": options,
             "years": years,
-            "windows": operations.WINDOWS,
             "groups": [
                 (value, label)
                 for value, label in operations.GROUP_CHOICES
@@ -176,6 +176,10 @@ class CalcView(TemplateView):
             context["error"] = str(error)
             return context
         first = checks[0]
+        if operation is not None and operation.code in operations.COVERAGE_OPERATIONS:
+            note = self.coverage_note(form, operation)
+            if note:
+                first.notes.append(note)
         context.update(
             checked=first,
             preview=preview(first, prefix="calc"),
@@ -186,6 +190,39 @@ class CalcView(TemplateView):
         if not form["title"]:
             form["title_placeholder"] = first.definition.title
         return context
+
+    def coverage_note(self, form: dict[str, Any], operation: operations.Operation) -> str:
+        """Части не покрывают итог или больше него: доли и индекс выйдут неточными."""
+        from apps.analytics.selectors import region_rows
+
+        checked = formula_store.check(
+            self.table(form["table"]),
+            {
+                "title": gettext("Покрытие итога"),
+                "expression": operations.coverage_expression(_values(form, operation)),
+                "kind": RELATIVE,
+            },
+        )
+        subjects = {row["code"] for row in region_rows()}
+        ratios = [
+            value
+            for code, _year, value in checked.outcome.rows
+            if code in subjects and value is not None
+        ]
+        if not ratios:
+            return ""
+        share = median(ratios)
+        if share < 1 - COVERAGE_TOLERANCE:
+            return gettext(
+                "Отмеченные части покрывают около %(share)s %% итога. Доли считаются от итога, "
+                "поэтому индекс выйдет неточным. Отметьте все части итога."
+            ) % {"share": ru_number(share * 100, 0)}
+        if share > 1 + COVERAGE_TOLERANCE:
+            return gettext(
+                "Отмеченные части в сумме больше итога: около %(share)s %%. Похоже, среди них "
+                "есть части частей, строки «в том числе»."
+            ) % {"share": ru_number(share * 100, 0)}
+        return ""
 
     def series_options(self) -> list[dict[str, Any]]:
         """Ряды для полей: свои таблицы, затем официальные ряды поля исследования."""
@@ -306,7 +343,7 @@ def _defaults(
     years: list[int],
     available: dict[str, bool],
 ) -> None:
-    """Пустые поля операции — значениями по умолчанию: годы ряда, первый выбор, окно 3."""
+    """Пустые поля операции — значениями по умолчанию: годы ряда, первый выбор."""
     if operation is None:
         form["kind"] = (
             form["kind"] if form["kind"] in dict(DatasetSeries.Kind.choices) else RELATIVE
@@ -318,9 +355,6 @@ def _defaults(
             if not value.isdigit() or int(value) not in years:
                 default = years[-1] if item.name == "last" else (years[0] if years else "")
                 form[item.name] = str(default)
-        elif item.kind == operations.WINDOW:
-            if not value.isdigit() or int(value) not in operations.WINDOWS:
-                form[item.name] = "3"
         elif item.kind == operations.CHOICE:
             choices = [
                 code
@@ -350,18 +384,10 @@ def _values(form: dict[str, Any], operation: operations.Operation) -> operations
             if len(parts) < 2:  # noqa: PLR2004 — составляющих хотя бы две
                 raise CalcError(gettext("Отметьте хотя бы две составляющие."))
             values.lists[item.name] = parts
-        elif item.kind in {operations.YEAR, operations.WINDOW}:
+        elif item.kind == operations.YEAR:
             if not raw.isdigit():
                 raise CalcError(gettext("Выберите «%(label)s».") % {"label": item.label})
             values.numbers[item.name] = int(raw)
-        elif item.kind == operations.NUMBER:
-            try:
-                number = float(raw.replace(",", ".").replace(" ", ""))
-            except ValueError as error:
-                raise CalcError(gettext("«%(label)s» — число.") % {"label": item.label}) from error
-            if number == 0:
-                raise CalcError(gettext("Целевое значение не может быть нулём."))
-            values.numbers[item.name] = number
         else:
             values.choices[item.name] = raw
     if "first" in values.numbers and values.numbers["first"] >= values.numbers.get("last", 0):

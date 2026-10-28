@@ -38,8 +38,7 @@ VIEW_PREFIX, ANSWER_PREFIX, COMPUTE_PREFIX = "view:", "answer:", "compute:"
 COMPARE_PREFIX = "compare:"
 SET_PREFIX = "set:"
 # Готовые наборы карточек исследования.
-SET_PROFILE, SET_INEQUALITY = "profile", "inequality"
-SET_NEIGHBOURS, SET_PAIR = "neighbours", "pair"
+SET_PROFILE, SET_PAIR = "profile", "pair"
 # Сколько рядов поля и похожих официальных показателей предлагать для сравнения.
 FIELD_PARTNERS = 3
 OFFICIAL_PARTNERS = 2
@@ -749,20 +748,6 @@ def _sets(why: Any) -> list[Action]:
             reason=why("set:profile"),
             description=_("Карта, главное, рейтинг, линии, распределение, округа, изменение"),
         ),
-        Action(
-            _("Неравенство и сближение"),
-            icon="balance",
-            value=f"{SET_PREFIX}{SET_INEQUALITY}",
-            reason=why("set:inequality"),
-            description=_("Разрыв, сближение, распределение и малые графики"),
-        ),
-        Action(
-            _("Мой регион среди соседей"),
-            icon="nearby",
-            value=f"{SET_PREFIX}{SET_NEIGHBOURS}",
-            reason=why("set:neighbours"),
-            description=_("Ваш регион и соседи на карте, в рейтинге и на линиях"),
-        ),
     ]
 
 
@@ -886,11 +871,8 @@ def add(
         partner = value.removeprefix(COMPARE_PREFIX)
         return studies.add_answer(study, "comparison", series_key, partner)
     if value.startswith(SET_PREFIX):
-        blocks, territories = set_blocks(request, value.removeprefix(SET_PREFIX), series_key, other)
-        first = studies.append_all(study, blocks)[0]
-        if territories:
-            studies.set_common(study, study.year, territories)
-        return first
+        blocks = set_blocks(value.removeprefix(SET_PREFIX), series_key, other)
+        return studies.append_all(study, blocks)[0]
     if value.startswith(COMPUTE_PREFIX):
         key = compute(request, series_key, value.removeprefix(COMPUTE_PREFIX))
         return studies.add_view(study, "map", urlencode({"series": key}))
@@ -928,26 +910,19 @@ def _add_answer(
     return studies.add_answer(study, question, series_key, other)
 
 
-def set_blocks(
-    request: HttpRequest, code: str, key: str, other: str = ""
-) -> tuple[list[dict[str, Any]], list[str]]:
+def set_blocks(code: str, key: str, other: str = "") -> list[dict[str, Any]]:
     """
-    Готовый набор карточек по ряду: профиль показателя, неравенство и сближение, мой регион
-    среди соседей, два показателя. Вторым — общие регионы, которые набор отмечает (мой
-    регион и соседи). Карточки, которым ряд не подходит (один год, мало регионов), в набор
-    не входят.
+    Готовый набор карточек по ряду: профиль показателя или два показателя. Карточки, которым
+    ряд не подходит (один год, мало регионов), в набор не входят.
     """
     info = operations.info_of(key)
     if info is None:
         raise studies.StudyError(_("Такого показателя нет."))
-    if code == SET_NEIGHBOURS:
-        return _neighbour_blocks(request, key, info)
-    builders = {SET_PROFILE: _profile_blocks, SET_INEQUALITY: _inequality_blocks}
+    if code == SET_PROFILE:
+        return _profile_blocks(key, info)
     if code == SET_PAIR:
-        return _pair_blocks(key, other, info), []
-    if code not in builders:
-        raise studies.StudyError(_("Такого набора нет."))
-    return builders[code](key, info), []
+        return _pair_blocks(key, other, info)
+    raise studies.StudyError(_("Такого набора нет."))
 
 
 def _allowed(action: str, info: operations.Info) -> bool:
@@ -976,43 +951,6 @@ def _profile_blocks(key: str, info: operations.Info) -> list[dict[str, Any]]:
     if change:
         blocks.append(studies.answer_block(change, key))
     return blocks
-
-
-def _inequality_blocks(key: str, info: operations.Info) -> list[dict[str, Any]]:
-    """Неравенство и сближение: различие регионов, сближение, распределение, малые графики."""
-    verdict = semantics.verdict("set:inequality", info.value)
-    if not verdict:
-        raise studies.StudyError(semantics.sentence(verdict.reason))
-    blocks = [studies.answer_block("spread", key)]
-    if _allowed("answer:convergence", info):
-        blocks.append(studies.answer_block("convergence", key))
-    blocks.append(studies.view_block("distribution", urlencode({"series": key})))
-    if _allowed("answer:multiples", info):
-        blocks.append(studies.answer_block("multiples", key))
-    return blocks
-
-
-def _neighbour_blocks(
-    request: HttpRequest, key: str, info: operations.Info
-) -> tuple[list[dict[str, Any]], list[str]]:
-    """Мой регион среди соседей: он и соседи — общими регионами; место, карта, рейтинг, линии."""
-    from apps.accounts.region import my_region
-    from apps.analytics.selectors import neighbour_map
-
-    region = my_region(request)
-    if region is None:
-        raise studies.StudyError(_("Мой регион не выбран — выберите его в шапке."))
-    query = urlencode({"series": key})
-    blocks = [
-        studies.answer_block("mine", key),
-        studies.view_block("map", query),
-        studies.view_block("rankings", query),
-    ]
-    if _allowed("view:compare", info):
-        blocks.append(studies.view_block("compare", query))
-    if _allowed("answer:neighbours", info):
-        blocks.append(studies.answer_block("neighbours", key))
-    return blocks, [region.code, *neighbour_map("all").get(region.code, [])]
 
 
 def _pair_blocks(key: str, other: str, info: operations.Info) -> list[dict[str, Any]]:
