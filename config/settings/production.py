@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from .base import *  # noqa: F403
-from .base import ALLOWED_HOSTS, CSP_POLICY, env
+from .base import ALLOWED_HOSTS, CSP_POLICY, PROJECT_VERSION, env
 
 DEBUG = False
 
@@ -60,7 +60,7 @@ if SENTRY_DSN:
         traces_sample_rate=env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.05),
         send_default_pii=False,
         environment="production",
-        release=f"regionlens@{env.str('PROJECT_VERSION', default='0.1.0')}",
+        release=f"regionlens@{env.str('PROJECT_VERSION', default=PROJECT_VERSION)}",
     )
 
 # --- Ресурсные ограничения VPS ------------------------------------------------------------------
