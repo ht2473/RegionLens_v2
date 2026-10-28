@@ -187,3 +187,23 @@ def test_series_pick_like_my_tables(member_client: Client, warehouse: Any) -> No
     # Та же пометка — в панели «Мои таблицы» исследования.
     page = member_client.get(reverse("userdata:study", args=[study.public_id])).text
     assert page.count("study-source__note") == 2
+
+
+def test_window_opens_on_series_from_field(member_client: Client, warehouse: Any) -> None:
+    """
+    «Рассчитать показатель» без выбранного в панели — на первом показателе поля, а не на
+    случайном ряду другой таблицы.
+    """
+    first = _built(member_client, "crime_wide.csv")
+    other = _built(member_client)
+    key = _key(other, _first(other))
+    study = _study(member_client)
+    member_client.post(
+        reverse("userdata:study-edit", args=[study.public_id]),
+        {"action": "add", "do": "view:map", "series": key},
+    )
+    page = member_client.get(reverse("userdata:study", args=[study.public_id])).text
+    assert f"{_url(study)}?series={key.replace(':', '%3A')}" in page
+    panel = member_client.get(_url(study), {"series": key}, headers={"HX-Request": "true"}).text
+    assert f'value="{key}" checked' in panel
+    del first
