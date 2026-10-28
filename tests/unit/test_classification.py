@@ -87,12 +87,17 @@ class TestJenks:
         assert jenks.class_count == equal.class_count
         assert spread(jenks) < spread(equal)
 
-    def test_lone_maximum_collapses_upper_class(self) -> None:
-        """Одиночный выброс наверху уменьшает число классов на единицу, и легенда называет это."""
+    def test_lone_maximum_keeps_its_own_class(self) -> None:
+        """Одиночный выброс наверху — свой, самый тёмный класс, а не часть соседнего."""
         result = classify([*range(1, 20), 5000.0], method="jenks", class_count=5)
         assert result is not None
-        assert result.class_count < 5
+        assert result.class_count == 5
+        assert result.counts[-1] == 1
         assert sum(result.counts) == 20
+        assert result.class_of(5000.0) == 4
+        assert result.class_of(19.0) == 3
+        top = result.intervals()[-1]
+        assert top["lower"] == top["upper"] == 5000.0
 
 
 class TestDegenerateInput:

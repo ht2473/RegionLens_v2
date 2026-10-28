@@ -102,15 +102,11 @@ def test_convergence() -> None:
 def test_map_classes() -> None:
     equal = classify(VALUES, method="equal", class_count=5)
     assert close(equal.breaks[1] - equal.breaks[0], EXPECTED["maps"]["equal_width"])
-    # Совпавшие границы сайт убирает: верхний класс из одного выброса сливается с соседним
-    # (поведение карты, решение по нему — за автором). Эталон сверяется так же.
-    reference: list[float] = []
-    for edge in EXPECTED["maps"]["jenks"]:
-        if not reference or edge > reference[-1]:
-            reference.append(edge)
+    # Верхний класс из одного выброса — свой: граница его начала совпадает с максимумом.
     jenks = classify(VALUES, method="jenks", class_count=5)
-    assert len(jenks.breaks) == len(reference)
-    assert all(close(a, b) for a, b in zip(jenks.breaks, reference, strict=True))
+    expected = EXPECTED["maps"]["jenks"]
+    assert len(jenks.breaks) == len(expected)
+    assert all(close(a, b) for a, b in zip(jenks.breaks, expected, strict=True))
 
 
 @pytest.mark.parametrize("method", ["minmax", "zscore"])
