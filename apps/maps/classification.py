@@ -135,7 +135,7 @@ def classify(
         method = "quantile"
         breaks = _quantile_breaks(clean, class_count)
 
-    breaks = _deduplicate(breaks, clean)
+    breaks = _deduplicate(breaks, clean, keep_top=method == "jenks")
     counts = _count_by_class(clean, breaks)
     return Classification(
         method=method, breaks=tuple(breaks), counts=tuple(counts), values_count=len(clean)
@@ -251,16 +251,22 @@ def _interpolate(values: list[float], position: float) -> float:
     return values[lower] * (1 - weight) + values[upper] * weight
 
 
-def _deduplicate(breaks: list[float], values: list[float]) -> list[float]:
+def _deduplicate(
+    breaks: list[float], values: list[float], *, keep_top: bool = False
+) -> list[float]:
     """
     Устранить совпадающие границы.
 
     Вырожденные классы убираются, поэтому классов может оказаться меньше запрошенного.
+    ``keep_top`` — у Дженкса верхний класс из одного наибольшего значения (выброс) остаётся
+    своим классом: граница его начала совпадает с максимумом, а не сливается с ним.
     """
     unique: list[float] = []
     for edge in breaks:
         if not unique or edge > unique[-1]:
             unique.append(edge)
+    if keep_top and len(breaks) > 2 and breaks[-2] == breaks[-1] > breaks[-3]:  # noqa: PLR2004
+        unique.append(breaks[-1])
 
     if len(unique) < MIN_DISTINCT_VALUES:
         return [values[0], values[-1]]

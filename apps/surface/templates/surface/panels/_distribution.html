@@ -40,7 +40,7 @@
           {% for interval in intervals %}
             <li class="class-legend__item">
               <span class="class-legend__swatch" style="background-color: var({{ interval.colour }})" aria-hidden="true"></span>
-              <span class="numeric">{{ interval.lower|ru_number }} — {{ interval.upper|ru_number }}</span>
+              <span class="numeric">{% if interval.lower == interval.upper %}{{ interval.lower|ru_number }}{% else %}{{ interval.lower|ru_number }} — {{ interval.upper|ru_number }}{% endif %}</span>
               <span class="class-legend__count numeric" title="{% translate 'регионов в классе' %}">{{ interval.count }}</span>
             </li>
           {% endfor %}

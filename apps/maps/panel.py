@@ -302,7 +302,8 @@ def _scale_options(values: list[float], class_count: int) -> list[dict[str, Any]
             edges = [min(max(edge, low), high) for edge in result.breaks]
             sample = [
                 {
-                    "grow": f"{(edges[index + 1] - edges[index]) / (high - low):.4f}",
+                    # Класс из одного значения (выброс у Дженкса) — узкой, но видимой полосой.
+                    "grow": f"{max((edges[index + 1] - edges[index]) / (high - low), 0.03):.4f}",
                     "colour": palette[index],
                 }
                 for index in range(result.class_count)
