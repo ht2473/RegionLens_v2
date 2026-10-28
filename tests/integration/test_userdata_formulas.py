@@ -106,10 +106,9 @@ class TestFormulas:
 
     def test_two_tables_on_map(self, client: Client, warehouse: Any) -> None:
         accidents, cars = _accidents_and_cars(client)
+        # Новый показатель заводится в окне «Расчёт показателя»: прежний адрес ведёт туда.
         page = client.get(_formula_url(accidents))
-        assert page.status_code == 200
-        # В перечне вставки — обе свои таблицы; у другой — с её названием.
-        assert 'data-label="Автомобили: Автомобили"' in page.text
+        assert page["Location"] == reverse("userdata:dataset-calc", args=[accidents.public_id])
         data = {
             "title": "ДТП на 1 000 автомобилей",
             "expression": "[ДТП] / [Автомобили: Автомобили] * 1000",
@@ -167,6 +166,8 @@ class TestFormulas:
         )
         edit = client.get(_formula_url(accidents, definition.code))
         assert "[Автомобили: Легковые автомобили]" in edit.text
+        # В перечне вставки — обе свои таблицы; у другой — с её названием.
+        assert 'data-label="Автомобили: Легковые автомобили"' in edit.text
         assert _values(accidents, key)
 
         # Таблица удалена — формула остаётся без значений, с причиной.

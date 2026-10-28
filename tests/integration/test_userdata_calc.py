@@ -143,3 +143,28 @@ def test_concentration_warns_when_parts_miss_the_total(
         _url(study), {**data, "parts": [industry, trade, other], "table": dataset.code}
     )
     assert "покрывают около" not in full.text
+
+
+def test_calc_from_table_page_saves_into_table(member_client: Client, warehouse: Any) -> None:
+    # Со страницы таблицы — то же окно без исследования: показатель встаёт в таблицу.
+    dataset = _built(member_client, "crime_wide.csv")
+    url = reverse("userdata:dataset-calc", args=[dataset.public_id])
+    page = member_client.get(url)
+    assert page.status_code == 200
+    assert "Расчёт показателя" in page.text and "Сохранить в таблицу" in page.text
+    assert "К таблице" in page.text
+    key = _key(dataset, _first(dataset))
+    data = {"op": "baseyear", "a": key, "table": dataset.code, "year": "2015", "action": "save"}
+    saved = member_client.post(url, data)
+    (definition,) = formula_store.definitions(_version(dataset))
+    assert saved["Location"] == (
+        f"{reverse('userdata:dataset', args=[dataset.public_id])}?show={definition.code}"
+    )
+    assert definition.operation == "baseyear"
+
+
+def test_calc_from_table_needs_own_built_table(member_client: Client, warehouse: Any) -> None:
+    dataset = _built(member_client, "crime_wide.csv")
+    url = reverse("userdata:dataset-calc", args=[dataset.public_id])
+    # Чужой человек — новый сеанс без входа.
+    assert Client().get(url).status_code == 404

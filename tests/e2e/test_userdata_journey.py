@@ -116,7 +116,7 @@ def test_journey_english(page: Page, own_data: Any) -> None:
 def _analysis(page: Page, base: str) -> list[str]:
     """
     После сборки: страница таблицы с выбранным рядом, своя формула с показателем нажатием,
-    предпросмотр и сохранение, «С чем связан показатель», неравенство по ряду таблицы.
+    предпросмотр и сохранение, «Связь с другими показателями», неравенство по ряду таблицы.
     """
     problems: list[str] = []
 
@@ -134,19 +134,24 @@ def _analysis(page: Page, base: str) -> list[str]:
     expect(page.locator(".dataset-detail__actions").first).to_be_visible()
     table_url = page.url.split("?")[0]
     page.locator("button[popovertarget=dataset-edit]").click()
-    page.locator("#dataset-edit a[href$='/formula/']").click()
-    page.wait_for_url("**/formula/")
+    # Новый показатель — в окне «Расчёт показателя», как и в исследовании.
+    page.locator("#dataset-edit a[href$='/calc/']").click()
+    page.wait_for_url("**/calc/")
     audit()
-    page.fill("#formula-title", "Вдвое")
-    page.locator(".segmented__option", has_text="Своя формула").click()
-    field = page.locator("#formula-expression")
+    page.locator(".calc-pill", has_text="Своя формула").click()
+    field = page.locator("#calc-expression")
+    expect(field).to_be_visible()
+    # Название показателя — из подсказки после «[».
     field.click()
-    page.locator("[data-formula-chip]", has_text=TITLE).first.click()
+    field.press_sequentially("[")
+    page.locator("[data-calc-suggest] button", has_text=TITLE).first.click()
     expect(field).to_have_value(re.compile(r"^\[.+\]$"))
     field.press("End")
-    field.type(" * 2")
-    # Предпросмотр приходит сам: карта и сколько субъектов посчитано.
-    expect(page.locator("#formula-preview .formula-preview__count")).to_be_visible()
+    field.press_sequentially(" * 2")
+    page.fill("#calc-title", "Вдвое")
+    page.locator("button[name=action][value=check]").click()
+    # Предпросмотр: карта и сколько субъектов посчитано.
+    expect(page.locator(".calc-preview__count")).to_be_visible()
     audit()
     page.locator("button[name=action][value=save]").click()
     page.wait_for_url(re.compile(r"/own-data/[^/]+/\?show="))

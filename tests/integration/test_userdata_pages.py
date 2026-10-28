@@ -201,8 +201,6 @@ class TestFormulaTemplates:
         key = _key(dataset, _first(dataset))
         site = Series.objects.get(key="Y477110461:00")
         url = reverse("userdata:formula-new", args=[dataset.public_id])
-        page = client.get(url)
-        assert 'value="per1000" checked' in page.text
         data = {"template": "per1000", "a": key, "b": site.key, "kind": "relative"}
         checked = client.post(url, {**data, "action": "check"})
         assert "Посчитано для" in checked.text
@@ -232,8 +230,6 @@ class TestFormulaTemplates:
         client.post(reverse("userdata:study-new"), {"title": "К курсовой"})
         study = Study.objects.latest("created_at")
         url = reverse("userdata:formula-new", args=[dataset.public_id])
-        page = client.get(url, {"study": str(study.public_id)})
-        assert f'name="study" value="{study.public_id}"' in page.text
         saved = client.post(
             url,
             {
