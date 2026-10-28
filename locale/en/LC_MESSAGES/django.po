@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-27 18:45+0000\n"
+"POT-Creation-Date: 2026-10-27 23:41+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -10542,7 +10542,7 @@ msgstr "not in the reference list"
 msgid "исключено из расчётов"
 msgstr "excluded from calculations"
 
-#: apps/userdata/extract.py:868
+#: apps/userdata/extract.py:882
 msgid "Разобрать таблицу не удалось. Мы получили сообщение об ошибке; сам файл не пересылался."
 msgstr "The table could not be parsed. We have received an error report; the file itself was not sent."
 
@@ -10558,25 +10558,33 @@ msgstr "No column with regions was found. Mark it at the “What is in the table
 msgid "Годы в таблице не найдены. Укажите год на шаге «Что в таблице»."
 msgstr "No years were found in the table. Enter the year at the “What is in the table” step."
 
-#: apps/userdata/extract.py:254
+#: apps/userdata/extract.py:249
+msgid "Регионы повторяются в нескольких строках. Ответьте на шаге «Что в таблице», что в этих строках."
+msgstr "Regions repeat in several rows. Say what these rows are at the “What is in the table” step."
+
+#: apps/userdata/extract.py:256
+msgid "На карте сайта только субъекты РФ. Нужна таблица, где у каждого региона одна строка."
+msgstr "The site map shows only constituent entities of Russia. You need a table with one row per region."
+
+#: apps/userdata/extract.py:268
 msgid "В таблице не нашлось ни одного значения по территориям."
 msgstr "The table contains no values by territory."
 
 #: apps/userdata/extract.py:242
-#: apps/userdata/extract.py:257
-#: apps/userdata/templates/userdata/table_step.html:206
+#: apps/userdata/extract.py:271
+#: apps/userdata/templates/userdata/table_step.html:227
 msgid "Получается показателей: %(count)s, больше %(limit)s. Выберите значения разрезов."
 msgstr "Indicators to be created: %(count)s, more than %(limit)s. Choose breakdown values."
 
-#: apps/userdata/extract.py:502
+#: apps/userdata/extract.py:516
 msgid "Столбец значений не найден. Отметьте его на шаге «Что в таблице»."
 msgstr "No value column was found. Mark it at the “What is in the table” step."
 
-#: apps/userdata/extract.py:506
+#: apps/userdata/extract.py:520
 msgid "Столбец с годами не найден. Отметьте его на шаге «Что в таблице»."
 msgstr "No column with years was found. Mark it at the “What is in the table” step."
 
-#: apps/userdata/extract.py:598
+#: apps/userdata/extract.py:612
 msgid "Столбцы значений не найдены. Отметьте их на шаге «Что в таблице»."
 msgstr "No value columns were found. Mark them at the “What is in the table” step."
 
@@ -11919,35 +11927,39 @@ msgstr "Exclusions saved; the table has been rebuilt."
 msgid "С чем связан показатель"
 msgstr "What the indicator is linked to"
 
-#: apps/userdata/renew.py:160
+#: apps/userdata/renew.py:170
 msgid "столбец с регионами не найден"
 msgstr "the column with regions was not found"
 
-#: apps/userdata/renew.py:163
+#: apps/userdata/renew.py:173
 msgid "столбцы со значениями не найдены"
 msgstr "the columns with values were not found"
 
-#: apps/userdata/renew.py:175
+#: apps/userdata/renew.py:185
 msgid "область с автономными округами, о которой ещё не спрашивали"
 msgstr "an oblast with autonomous okrugs not asked about before"
 
-#: apps/userdata/renew.py:177
+#: apps/userdata/renew.py:187
 msgid "год значений"
 msgstr "the year of the values"
 
-#: apps/userdata/renew.py:285
+#: apps/userdata/renew.py:189
+msgid "регионы повторяются в нескольких строках"
+msgstr "regions repeat in several rows"
+
+#: apps/userdata/renew.py:297
 msgid "Эта версия не собрана."
 msgstr "This version has not been built."
 
-#: apps/userdata/renew.py:287
+#: apps/userdata/renew.py:299
 msgid "Файл этой версии больше не хранится."
 msgstr "The file of this version is no longer kept."
 
-#: apps/userdata/renew.py:169
+#: apps/userdata/renew.py:179
 msgid "новые подписи территорий без сопоставления: %(count)s"
 msgstr "new territory labels without a match: %(count)s"
 
-#: apps/userdata/renew.py:180
+#: apps/userdata/renew.py:192
 msgid "показателей получается %(count)s — больше %(limit)s"
 msgstr "%(count)s indicators would be created, more than %(limit)s"
 
@@ -12382,8 +12394,8 @@ msgid "Посчитано для <b class=\"numeric\">%(count)s</b> из %(total
 msgstr "Calculated for <b class=\"numeric\">%(count)s</b> of %(total)s"
 
 #: apps/userdata/templates/userdata/_column_role.html:5
-#: apps/userdata/templates/userdata/table_step.html:258
-#: apps/userdata/views.py:711
+#: apps/userdata/templates/userdata/table_step.html:279
+#: apps/userdata/views.py:712
 msgid "столбец %(number)s"
 msgstr "column %(number)s"
 
@@ -12529,7 +12541,7 @@ msgid "Повторов территории и года с разными чи�
 msgstr "Repeated territory and year with different numbers: %(count)s; the first value was kept."
 
 #: apps/userdata/templates/userdata/_dataset_checks.html:154
-#: apps/userdata/templates/userdata/table_step.html:192
+#: apps/userdata/templates/userdata/table_step.html:213
 msgid "Строк вне справочника: %(count)s"
 msgstr "Rows outside the reference list: %(count)s"
 
@@ -14061,7 +14073,7 @@ msgid "регион"
 msgstr "region"
 
 #: apps/userdata/templates/userdata/index.html:221
-#: apps/userdata/templates/userdata/table_step.html:252
+#: apps/userdata/templates/userdata/table_step.html:273
 #: apps/userdata/views.py:620
 msgid "значение"
 msgstr "value"
@@ -14655,87 +14667,103 @@ msgstr "No years were found in the table. Enter the year of the values:"
 msgid "Если неверно — исправьте год:"
 msgstr "If it is wrong, correct the year:"
 
-#: apps/userdata/templates/userdata/table_step.html:117
+#: apps/userdata/templates/userdata/table_step.html:115
+msgid "Регионы повторяются в нескольких строках"
+msgstr "Regions repeat in several rows"
+
+#: apps/userdata/templates/userdata/table_step.html:128
+msgid "Что в этих строках?"
+msgstr "What is in these rows?"
+
+#: apps/userdata/templates/userdata/table_step.html:129
+msgid "Города, районы или другие части регионов"
+msgstr "Cities, districts or other parts of regions"
+
+#: apps/userdata/templates/userdata/table_step.html:130
+msgid "Разные части таблицы одна под другой — взять первую"
+msgstr "Separate parts of the table, one under another: take the first"
+
+#: apps/userdata/templates/userdata/table_step.html:138
 msgid "Подпись сравнивается со справочником сайта. Сокращения, латинские буквы в русских словах и слипшиеся слова исправляются. Узнаются разговорные и английские названия, коды ISO 3166-2 и ОКАТО. Подпись с опечаткой принимается, если почти совпадает с одним названием. Иначе сайт спрашивает, как здесь."
 msgstr "A label is compared with the site’s directory. Abbreviations, Latin letters inside Russian words and words run together are corrected. Colloquial and English names, ISO 3166-2 and OKATO codes are recognised. A label with a typo is accepted if it almost matches one name. Otherwise the site asks, as here."
 
-#: apps/userdata/templates/userdata/table_step.html:126
+#: apps/userdata/templates/userdata/table_step.html:147
 msgid "не территория — пропустить строку"
 msgstr "not a territory — skip the row"
 
-#: apps/userdata/templates/userdata/table_step.html:127
+#: apps/userdata/templates/userdata/table_step.html:148
 msgid "территории нет в справочнике"
 msgstr "the territory is not in the reference list"
 
-#: apps/userdata/templates/userdata/table_step.html:129
+#: apps/userdata/templates/userdata/table_step.html:150
 msgid "Похоже на"
 msgstr "Looks like"
 
-#: apps/userdata/templates/userdata/table_step.html:143
+#: apps/userdata/templates/userdata/table_step.html:164
 msgid "Запомнить выбор для следующих таблиц"
 msgstr "Remember the choice for the next tables"
 
-#: apps/userdata/templates/userdata/table_step.html:152
+#: apps/userdata/templates/userdata/table_step.html:173
 msgid "Одна территория дважды с разными числами"
 msgstr "One territory twice with different numbers"
 
-#: apps/userdata/templates/userdata/table_step.html:158
+#: apps/userdata/templates/userdata/table_step.html:179
 msgid "При сборке остаётся первое значение."
 msgstr "The first value is kept when building."
 
-#: apps/userdata/templates/userdata/table_step.html:167
+#: apps/userdata/templates/userdata/table_step.html:188
 msgid "Одинаковые подписи у разных столбцов"
 msgstr "Identical headings on different columns"
 
-#: apps/userdata/templates/userdata/table_step.html:173
+#: apps/userdata/templates/userdata/table_step.html:194
 msgid "Числа из них попадут в один период. Проверьте подписи в файле или выберите «пропустить» у лишнего столбца в списке ниже."
 msgstr "Their numbers will fall into one period. Check the headings in the file or choose “skip” for the extra column in the list below."
 
-#: apps/userdata/templates/userdata/table_step.html:193
+#: apps/userdata/templates/userdata/table_step.html:214
 msgid "Эти строки сохранены в наборе, но на карту и в рейтинг не попадут: таких территорий нет в справочнике сайта."
 msgstr "These rows are kept in the dataset but will not appear on the map or in the ranking: the site reference list has no such territories."
 
-#: apps/userdata/templates/userdata/table_step.html:203
+#: apps/userdata/templates/userdata/table_step.html:224
 msgid "Разрезы: показателей слишком много"
 msgstr "Breakdowns: too many indicators"
 
-#: apps/userdata/templates/userdata/table_step.html:203
+#: apps/userdata/templates/userdata/table_step.html:224
 msgid "Разрезы: отбор значений"
 msgstr "Breakdowns: choice of values"
 
-#: apps/userdata/templates/userdata/table_step.html:224
+#: apps/userdata/templates/userdata/table_step.html:245
 msgid "Разрез строками под регионом"
 msgstr "Breakdown in rows under each region"
 
-#: apps/userdata/templates/userdata/table_step.html:225
+#: apps/userdata/templates/userdata/table_step.html:246
 msgid "Под каждым регионом идут строки с числами. Каждая такая строка станет отдельным показателем."
 msgstr "Under each region there are rows with numbers. Each such row becomes a separate indicator."
 
-#: apps/userdata/templates/userdata/table_step.html:237
+#: apps/userdata/templates/userdata/table_step.html:258
 msgid "Таблица с ролями столбцов — прокрутка"
 msgstr "Table with column roles, scrollable"
 
-#: apps/userdata/templates/userdata/table_step.html:239
+#: apps/userdata/templates/userdata/table_step.html:260
 msgid "Первые строки таблицы и роли столбцов"
 msgstr "First rows of the table and column roles"
 
-#: apps/userdata/templates/userdata/table_step.html:299
+#: apps/userdata/templates/userdata/table_step.html:320
 msgid "Дальше: показатели"
 msgstr "Next: indicators"
 
-#: apps/userdata/templates/userdata/table_step.html:300
+#: apps/userdata/templates/userdata/table_step.html:321
 msgid "Сохранить описание"
 msgstr "Save the description"
 
-#: apps/userdata/templates/userdata/table_step.html:301
+#: apps/userdata/templates/userdata/table_step.html:322
 msgid "Назад к файлу"
 msgstr "Back to the file"
 
-#: apps/userdata/templates/userdata/table_step.html:118
+#: apps/userdata/templates/userdata/table_step.html:139
 msgid "Как узнаются регионы"
 msgstr "How regions are recognised"
 
-#: apps/userdata/templates/userdata/table_step.html:245
+#: apps/userdata/templates/userdata/table_step.html:266
 msgid "без названия"
 msgstr "untitled"
 
@@ -14767,31 +14795,39 @@ msgstr "Is “%(label)s” in the table with its autonomous okrugs (as Rosstat c
 msgid "«%(label)s» в таблице — вместе с автономным округом (так считает Росстат) или без него?"
 msgstr "Is “%(label)s” in the table with its autonomous okrug (as Rosstat counts it) or without it?"
 
-#: apps/userdata/templates/userdata/table_step.html:116
+#: apps/userdata/templates/userdata/table_step.html:117
+msgid "Регионов с повторами: %(regions)s из %(total)s. Числа в повторах разные. На карте у региона одно значение."
+msgstr "Regions with repeats: %(regions)s of %(total)s. The numbers in the repeats differ. A region has one value on the map."
+
+#: apps/userdata/templates/userdata/table_step.html:123
+msgid "Рядом есть столбец «%(header)s». Похоже, в строках города или районы."
+msgstr "There is a column “%(header)s” next to it. The rows look like cities or districts."
+
+#: apps/userdata/templates/userdata/table_step.html:137
 msgid "Подписи без территории: %(count)s. Выберите территорию для каждой."
 msgstr "Labels without a territory: %(count)s. Choose a territory for each."
 
-#: apps/userdata/templates/userdata/table_step.html:155
+#: apps/userdata/templates/userdata/table_step.html:176
 msgid "%(name)s, «%(column)s»: строки %(first)s и %(second)s."
 msgstr "%(name)s, “%(column)s”: rows %(first)s and %(second)s."
 
-#: apps/userdata/templates/userdata/table_step.html:170
+#: apps/userdata/templates/userdata/table_step.html:191
 msgid "«%(header)s»: столбцы %(columns)s."
 msgstr "“%(header)s”: columns %(columns)s."
 
-#: apps/userdata/templates/userdata/table_step.html:182
+#: apps/userdata/templates/userdata/table_step.html:203
 msgid "Ячеек не с числами: %(count)s. Они сохранятся как пропуски:"
 msgstr "Cells without numbers: %(count)s. They will be kept as missing values:"
 
-#: apps/userdata/templates/userdata/table_step.html:245
+#: apps/userdata/templates/userdata/table_step.html:266
 msgid "Роль столбца «%(header)s»"
 msgstr "Role of the column “%(header)s”"
 
-#: apps/userdata/templates/userdata/table_step.html:263
+#: apps/userdata/templates/userdata/table_step.html:284
 msgid "ещё столбцов с периодами: %(count)s"
 msgstr "more columns with periods: %(count)s"
 
-#: apps/userdata/templates/userdata/table_step.html:285
+#: apps/userdata/templates/userdata/table_step.html:306
 msgid "Ещё столбцы с периодами: %(count)s (от «%(first)s» до «%(last)s»)"
 msgstr "More columns with periods: %(count)s (from “%(first)s” to “%(last)s”)"
 
