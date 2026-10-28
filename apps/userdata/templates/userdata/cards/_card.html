@@ -22,7 +22,7 @@
   {% include card.template %}
 
   {% if owner and card.next %}
-    {# «Дальше» — короткие пути к пунктам «Что показать»; новая карточка — в конец поля, как из окна. #}
+    {# «Дальше» — короткие пути к пунктам «Добавить карточку»; новая карточка — в конец поля, как из окна. #}
     <div class="card-next no-print">
       <span class="card-next__label">{% translate "Дальше" %}</span>
       {% for step in card.next %}

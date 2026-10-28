@@ -35,7 +35,7 @@
       <div class="dataset-list__group">
         <div class="dataset-list__heading">
           {% translate "По формулам" %}
-          {% if owner %}<a class="dataset-list__add" href="{% url 'userdata:formula-new' dataset.public_id %}">{% translate "Добавить" %}</a>{% endif %}
+          {% if owner %}<a class="dataset-list__add" href="{% url 'userdata:dataset-calc' dataset.public_id %}">{% translate "Рассчитать" %}</a>{% endif %}
         </div>
         {% if formulas %}
           <ul class="dataset-list__items">
@@ -141,7 +141,7 @@
             <a class="menu-item" href="{{ view.url }}"><svg aria-hidden="true"><use href="#icon-{% if view.code == 'compare' %}dynamics{% elif view.code == 'rankings' %}ranking{% else %}{{ view.code }}{% endif %}"></use></svg>{{ view.title }}</a>
           {% endfor %}
           {% if chosen_related_url %}
-            <a class="menu-item" href="{{ chosen_related_url }}"><svg aria-hidden="true"><use href="#icon-related"></use></svg>{% translate "С чем связан" %}</a>
+            <a class="menu-item" href="{{ chosen_related_url }}"><svg aria-hidden="true"><use href="#icon-related"></use></svg>{% translate "Связь с другими показателями" %}</a>
           {% endif %}
           {% if chosen_group.months_url %}
             <a class="menu-item" href="{{ chosen_group.months_url }}"><svg aria-hidden="true"><use href="#icon-trend"></use></svg>{% translate "По месяцам" %}</a>

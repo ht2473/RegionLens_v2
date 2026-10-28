@@ -59,7 +59,7 @@
         <a class="button button--sm button--secondary" href="{{ calc_url }}{% if panel.chosen.is_user %}?series={{ panel.chosen.key|urlencode }}{% endif %}"
            data-dialog-open="calc-dialog" hx-get="{{ calc_url }}{% if panel.chosen.is_user %}?series={{ panel.chosen.key|urlencode }}{% endif %}"
            hx-target="#calc-dialog-body" hx-swap="innerHTML" hx-push-url="false">
-          {% translate "Новый показатель" %}
+          {% translate "Рассчитать показатель" %}
         </a>
         <button type="button" class="button button--sm button--secondary" popovertarget="study-share" aria-haspopup="dialog">
           <svg aria-hidden="true"><use href="#icon-link"></use></svg>
@@ -192,7 +192,7 @@
           <svg class="empty-state__icon" aria-hidden="true"><use href="#icon-empty"></use></svg>
           <p class="empty-state__title">{% translate "Поле пока пустое" %}</p>
           {% if owner %}
-            <p class="empty-state__hint">{% translate "Нажмите на показатель в панели «Данные» слева: откроется окно «Что показать» с картой, рейтингом и ответами на вопросы. Показатель можно и перетащить сюда." %}</p>
+            <p class="empty-state__hint">{% translate "Нажмите на показатель в панели «Данные» слева: откроется окно «Добавить карточку» с картой, рейтингом и ответами на вопросы. Показатель можно и перетащить сюда." %}</p>
           {% endif %}
         </div>
       {% endif %}
@@ -274,11 +274,11 @@
 
 </div>
 {% if owner %}
-  {# «Что показать»: окно выбора карточки; содержимое — фрагментом при открытии (StudyChooseView), по адресу с показателем — сразу. #}
+  {# «Добавить карточку»: окно выбора карточки; содержимое — фрагментом при открытии (StudyChooseView), по адресу с показателем — сразу. #}
   <dialog class="calc-dialog choose-dialog" id="choose-dialog" aria-labelledby="choose-dialog-title" data-dialog-light{% if choose_open %} open data-open-on-load{% endif %}>
     <div class="calc-dialog__head">
       <div>
-        <h2 class="calc-dialog__title" id="choose-dialog-title">{% translate "Что показать" %}</h2>
+        <h2 class="calc-dialog__title" id="choose-dialog-title">{% translate "Добавить карточку" %}</h2>
         <p class="calc-dialog__lead">{% translate "Выберите карточку — она встанет в конец поля." %}</p>
       </div>
       {# Закрывается и без сценария: форма method="dialog". #}
@@ -296,7 +296,7 @@
   <dialog class="calc-dialog" id="calc-dialog" aria-labelledby="calc-dialog-title">
     <div class="calc-dialog__head">
       <div>
-        <h2 class="calc-dialog__title" id="calc-dialog-title">{% translate "Новый показатель" %}</h2>
+        <h2 class="calc-dialog__title" id="calc-dialog-title">{% translate "Расчёт показателя" %}</h2>
         <p class="calc-dialog__lead">{% translate "Готовый расчёт или своя формула. Результат — новый показатель в своей таблице, его карта встанет на поле." %}</p>
       </div>
       <button type="button" class="icon-button" data-dialog-close aria-label="{% translate 'Закрыть' %}" title="{% translate 'Закрыть' %}">

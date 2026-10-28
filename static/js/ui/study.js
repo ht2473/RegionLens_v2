@@ -473,7 +473,7 @@ export function init() {
       form.reset();
       form.closest("details")?.removeAttribute("open");
     }
-    // Карточка из окна «Что показать» встала на поле — окно закрывается.
+    // Карточка из окна «Добавить карточку» встала на поле — окно закрывается.
     const choose = event.target.closest?.("[data-choose-form]");
     if (choose && event.detail.successful) {
       choose.closest("dialog")?.close();

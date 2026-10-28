@@ -1,9 +1,10 @@
 {% load i18n formatting userdata %}
 {% comment %}
-  Окно «Что показать» по выбранному показателю — одно место для всех карточек: «Советуем»
-  (подобрано по данным), посмотреть, ответить на вопрос, сравнить, новый показатель, сразу
-  несколько карточек. Недоступное — одной строкой с причинами. Новая карточка добавляется
-  в конец поля без перезагрузки (из ответа забираются карточка, панель и сведения над полем).
+  Окно «Добавить карточку» по выбранному показателю — одно место для всех карточек:
+  «Рекомендуемое» (подобрано по данным) и «Визуализация» открыты, «Анализ», «Сравнение»
+  и «Расчёты» свёрнуты с числом пунктов. Недоступное — одной строкой с причинами. Новая
+  карточка добавляется в конец поля без перезагрузки (из ответа забираются карточка, панель
+  и сведения над полем).
 {% endcomment %}
 {% with chosen=panel.chosen %}
 <div class="choose" id="study-actions">
@@ -21,7 +22,7 @@
   </header>
 
   <form method="post" action="{% url 'userdata:study-edit' study.public_id %}" class="choose__form" data-choose-form
-        aria-label="{% translate 'Что показать' %}"
+        aria-label="{% translate 'Добавить карточку' %}"
         hx-post="{% url 'userdata:study-edit' study.public_id %}" hx-target="#study-cards"
         hx-select=".study-cards > .is-new" hx-swap="beforeend" hx-push-url="false"
         hx-select-oob="#study-sources,#study-meta,#study-empty,#study-toolbar,#study-toast,#study-sources-list">
@@ -32,7 +33,7 @@
 
     {% if panel.advice %}
       <section class="choose__section choose__section--advice" aria-labelledby="choose-advice">
-        <h4 class="choose__label" id="choose-advice">{% translate "Советуем" %}</h4>
+        <h4 class="choose__label" id="choose-advice">{% translate "Рекомендуемое" %}</h4>
         <ul class="choose__tiles">
           {% for action in panel.advice %}{% include "userdata/_choose_item.html" with large=True %}{% endfor %}
         </ul>
@@ -40,17 +41,29 @@
     {% endif %}
 
     {% for group in panel.groups %}
-      {% if group.actions %}
-        <section class="choose__section" aria-labelledby="choose-{{ group.code }}">
-          <h4 class="choose__label" id="choose-{{ group.code }}">
-            {{ group.title }}
-            {% if group.hint %}{% include "partials/_hint.html" with hint_id="hint-choose-"|add:group.code hint_text=group.hint hint_label=_("Как это устроено") %}{% endif %}
-          </h4>
-          <ul class="choose__list">
-            {% for action in group.actions %}{% if not action.reason %}{% include "userdata/_choose_item.html" %}{% endif %}{% endfor %}
-          </ul>
-        </section>
-      {% endif %}
+      {% with count=group.actions|available_count %}
+        {% if count and group.code == "look" %}
+          <section class="choose__section" aria-labelledby="choose-{{ group.code }}">
+            <h4 class="choose__label" id="choose-{{ group.code }}">
+              {{ group.title }}
+              {% if group.hint %}{% include "partials/_hint.html" with hint_id="hint-choose-"|add:group.code hint_text=group.hint hint_label=_("Как это устроено") %}{% endif %}
+            </h4>
+            <ul class="choose__list">
+              {% for action in group.actions %}{% if not action.reason %}{% include "userdata/_choose_item.html" %}{% endif %}{% endfor %}
+            </ul>
+          </section>
+        {% elif count %}
+          <details class="choose__section choose__fold" id="choose-{{ group.code }}">
+            <summary class="choose__label">
+              {{ group.title }} <span class="choose__count numeric">{{ count }}</span>
+            </summary>
+            {% if group.hint %}<p class="choose__hint">{{ group.hint }}</p>{% endif %}
+            <ul class="choose__list">
+              {% for action in group.actions %}{% if not action.reason %}{% include "userdata/_choose_item.html" %}{% endif %}{% endfor %}
+            </ul>
+          </details>
+        {% endif %}
+      {% endwith %}
     {% endfor %}
 
     {% if panel.unavailable %}

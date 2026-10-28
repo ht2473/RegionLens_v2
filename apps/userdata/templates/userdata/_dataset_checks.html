@@ -51,7 +51,7 @@
         <div class="callout__title">{% translate "Абсолютные величины" %}</div>
         <p>
           {% translate "На карте сумм крупные регионы выделяются размером: больше людей — больше преступлений, рублей и случаев." %}
-          {% if owner %}{% translate "Пересчитать на жителей можно в исследовании: нажмите на показатель, раздел «Новый показатель»." %}{% endif %}
+          {% if owner %}{% translate "Пересчитать на жителей можно в исследовании: нажмите на показатель, раздел «Расчёты»." %}{% endif %}
         </p>
       </div>
     </div>
@@ -116,7 +116,7 @@
   {% if checks %}
     <section class="page-section" aria-labelledby="own-checks">
       <div class="page-section__head">
-        <h2 class="page-section__title" id="own-checks">{% translate "Что заметно по показателям" %}</h2>
+        <h2 class="page-section__title" id="own-checks">{% translate "Сводка по показателям" %}</h2>
       </div>
       <ul class="compact-list own-checks" id="own-checks-list" data-more-list>
         {% for look in checks %}

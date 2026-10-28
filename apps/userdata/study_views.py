@@ -183,7 +183,7 @@ class StudyView(BreadcrumbMixin, TemplateView):
             )
             context["panel"] = panel
             context["default_series"] = _default_series(panel, blocks)
-            # Окно «Что показать» открыто сразу, если показатель выбран адресом (без сценария
+            # Окно «Добавить карточку» открыто сразу, если показатель выбран адресом (без сценария
             # или по ссылке), но не после добавления карточки и не при выборе второго.
             context["choose_open"] = bool(
                 panel["chosen"] and not panel["picking"] and not request.GET.get("added")
@@ -644,7 +644,7 @@ class StructureView(TemplateView):
 
 class StudyChooseView(View):
     """
-    Окно «Что показать» по показателю своего исследования — фрагментом для окна на странице;
+    Окно «Добавить карточку» по показателю своего исследования — фрагментом для окна на странице;
     без сценария — та же страница исследования с открытым окном.
     """
 

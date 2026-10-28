@@ -57,7 +57,7 @@
           <div class="menu-popover dataset-menu" id="dataset-edit" popover role="dialog" aria-label="{% translate 'Изменить таблицу' %}">
             <a class="menu-item" href="{% url 'userdata:table' dataset.public_id %}">{% translate "Столбцы и отбор разрезов" %}</a>
             <a class="menu-item" href="{% url 'userdata:series' dataset.public_id %}">{% translate "Описание показателей" %}</a>
-            <a class="menu-item" href="{% url 'userdata:formula-new' dataset.public_id %}">{% translate "Показатель по формуле" %}</a>
+            <a class="menu-item" href="{% url 'userdata:dataset-calc' dataset.public_id %}">{% translate "Рассчитать показатель" %}</a>
             <a class="menu-item" href="?tab=file#own-version-new">{% translate "Новая версия файла" %}</a>
           </div>
         {% endif %}

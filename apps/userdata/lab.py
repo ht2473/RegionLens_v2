@@ -24,14 +24,13 @@ from django.utils.translation import gettext_lazy
 
 from apps.warehouse import routing
 
-from . import access, build, extract, indicators, jobs, operations, semantics, studies, via
+from . import access, answers, build, extract, indicators, jobs, operations, semantics, studies, via
 from .models import Dataset, DatasetSeries, DatasetVersion, Study
 from .series import PER_CAPITA, UserSeries
 
-# Разделы окна «Что показать»: посмотреть, ответить на вопрос, сравнить, новый показатель,
-# сразу несколько карточек.
-LOOK, ASK, PAIR, COMPUTE, SETS = "look", "ask", "pair", "compute", "sets"
-# Советов в окне «Что показать» — не больше.
+# Разделы окна «Добавить карточку»: визуализация, анализ, сравнение, расчёты.
+LOOK, ASK, PAIR, COMPUTE = "look", "ask", "pair", "compute"
+# Рекомендуемых пунктов в окне «Добавить карточку» — не больше.
 ADVICE_SHOWN = 4
 # Значение кнопки формы: что поставить на поле; у сравнения — с каким рядом; набор карточек.
 VIEW_PREFIX, ANSWER_PREFIX, COMPUTE_PREFIX = "view:", "answer:", "compute:"
@@ -47,13 +46,8 @@ NEXT_SHOWN = 4
 # Ряды, от которых считаются пересчёты: из таблицы и свёртки.
 PRIMARY = ("", DatasetSeries.Derived.SLICE_SUM.value, DatasetSeries.Derived.MONTHS.value)
 SUFFIXES = {**build.PER_SUFFIXES, **build.RECALC_SUFFIXES}
-# Что такое готовый набор: справка у группы действий.
-SETS_HINT = gettext_lazy(
-    "Набор ставит на поле сразу несколько карточек по выбранному показателю. Карточки, "
-    "которые показателю не подходят, в набор не входят. Лишние убираются из меню карточки."
-)
-# Новый показатель: из пересчётов каталога в окне «Что показать» — эти, остальное — в окне
-# «Новый показатель».
+# Расчёты: из пересчётов каталога в окне «Добавить карточку» — эти, остальное — в окне
+# «Расчёт показателя».
 QUICK_RECOUNTS = (
     DatasetSeries.Derived.PER_1.value,
     DatasetSeries.Derived.PER_100000.value,
@@ -167,7 +161,7 @@ class Action:
     series: str = ""
     # Окно на странице, куда фрагментом приходит ``href``: панель расчёта.
     dialog: str = ""
-    # Что получится — строка под названием в окне «Что показать».
+    # Что получится — строка под названием в окне «Добавить карточку».
     description: str = ""
     # Термин глоссария рядом с пунктом: определение по нажатию на «?».
     term: str = ""
@@ -246,14 +240,25 @@ def panel(
             group_url=f"{reverse('userdata:study-group', args=[study.public_id])}?"
             f"{urlencode({'series': chosen.key})}",
         )
+    advised = advice(chosen, groups, shown) if chosen and partner is None else []
+    # Рекомендованное не повторяется в разделах ниже: первым экраном — не больше десяти пунктов.
+    taken = {action.value or action.href for action in advised}
     return {
         "tables": tables,
         "site": site,
         "chosen": chosen,
         "partner": partner,
         "picking": bool(chosen) and picking and partner is None,
-        "groups": groups,
-        "advice": advice(chosen, groups, shown) if chosen and partner is None else [],
+        "groups": [
+            replace(
+                group,
+                actions=[
+                    action for action in group.actions if (action.value or action.href) not in taken
+                ],
+            )
+            for group in groups
+        ],
+        "advice": advised,
         "unavailable": [action for group in groups for action in group.actions if action.reason],
         "used": used,
     }
@@ -479,8 +484,8 @@ def actions(
     group_url: str = "",
 ) -> list[Group]:
     """
-    Что показать по ряду — разделы окна «Что показать»: посмотреть, ответить на вопрос,
-    сравнить, новый показатель, сразу несколько карточек. У каждого пункта — что получится;
+    Что добавить по ряду — разделы окна «Добавить карточку»: визуализация, анализ, сравнение,
+    расчёты. Названия — принятые термины, у каждого пункта — что получится;
     недоступное — с причиной из таблицы правил (окно собирает такие пункты в одну строку).
     ``partners`` — что предложить для сравнения без выбора; ``group_url`` — окно выбора своей
     группы регионов.
@@ -492,11 +497,10 @@ def actions(
         return "" if via.passable(found, is_user=entry.is_user) else found.reason
 
     groups = [
-        Group(LOOK, _("Посмотреть"), _look(entry, why)),
-        Group(ASK, _("Ответить на вопрос"), _ask(entry, why)),
-        Group(PAIR, _("Сравнить"), _pair(entry, partner, partners, why, group_url)),
+        Group(LOOK, _("Визуализация"), _look(entry, why)),
+        Group(ASK, _("Анализ"), _ask(entry, why)),
+        Group(PAIR, _("Сравнение"), _pair(entry, partner, partners, why, group_url)),
         _compute_group(entry),
-        Group(SETS, _("Сразу несколько карточек"), _sets(why), hint=str(SETS_HINT)),
     ]
     return [
         replace(group, actions=[_via_note(action, entry) for action in group.actions])
@@ -537,7 +541,7 @@ def _look(entry: Entry, why: Any) -> list[Action]:
             term="symbol-map" if entry.is_sum else "",
         ),
         Action(
-            _("Линии по годам"),
+            _("Динамика"),
             icon="dynamics",
             value=f"{VIEW_PREFIX}compare",
             reason=why("view:compare"),
@@ -565,14 +569,14 @@ def _look(entry: Entry, why: Any) -> list[Action]:
             description=_("Значения регионов по годам числами"),
         ),
         Action(
-            _("Малые графики"),
+            str(answers.TITLES["multiples"]),
             icon="multiples",
             value=f"{ANSWER_PREFIX}multiples",
             reason=why("answer:multiples"),
             description=_("Ход по годам у каждого региона, по федеральным округам"),
         ),
         Action(
-            _("Из чего складывается"),
+            str(answers.TITLES["structure"]),
             icon="structure",
             href=entry.structure_url,
             reason=why("view:structure"),
@@ -580,48 +584,55 @@ def _look(entry: Entry, why: Any) -> list[Action]:
             description=_("Доли частей в каждом регионе — столбцы по 100 %"),
             term="structure",
         ),
+        Action(
+            _("Профиль показателя"),
+            icon="layers",
+            value=f"{SET_PREFIX}{SET_PROFILE}",
+            reason=why("set:profile"),
+            description=_("Набор: карта, сводка, рейтинг, динамика, распределение, округа"),
+        ),
     ]
 
 
 def _ask(entry: Entry, why: Any) -> list[Action]:  # noqa: ARG001 — как у прочих разделов
     return [
         Action(
-            _("Главное в цифрах"),
+            str(answers.TITLES["notable"]),
             icon="list",
             value=f"{ANSWER_PREFIX}notable",
             reason=why("answer:notable"),
             description=_("Наибольшее и наименьшее значение и сколько регионов выросло"),
         ),
         Action(
-            _("Кто впереди и кто позади"),
+            str(answers.TITLES["leaders"]),
             icon="podium",
             value=f"{ANSWER_PREFIX}leaders",
             reason=why("answer:leaders"),
             description=_("Три первых и три последних региона"),
         ),
         Action(
-            _("Где мой регион"),
+            str(answers.TITLES["mine"]),
             icon="map-pin",
             value=f"{ANSWER_PREFIX}mine",
             reason=why("answer:mine"),
             description=_("Место вашего региона среди всех и в своём округе"),
         ),
         Action(
-            _("Как изменилось по России"),
+            str(answers.TITLES["change"]),
             icon="trend",
             value=f"{ANSWER_PREFIX}change",
             reason=why("answer:change"),
             description=_("Значение по России и изменение за последние годы"),
         ),
         Action(
-            _("У кого рост больше всего"),
+            str(answers.TITLES["growth"]),
             icon="growth",
             value=f"{ANSWER_PREFIX}growth",
             reason=why("answer:growth"),
             description=_("Регионы с наибольшим и наименьшим изменением"),
         ),
         Action(
-            _("За счёт каких регионов изменилась сумма"),
+            str(answers.TITLES["contributions"]),
             icon="waterfall",
             value=f"{ANSWER_PREFIX}contributions",
             reason=why("answer:contributions"),
@@ -629,14 +640,14 @@ def _ask(entry: Entry, why: Any) -> list[Action]:  # noqa: ARG001 — как у 
             term="change-contribution",
         ),
         Action(
-            _("Сравнить федеральные округа"),
+            str(answers.TITLES["districts"]),
             icon="districts",
             value=f"{ANSWER_PREFIX}districts",
             reason=why("answer:districts"),
             description=_("Значение каждого федерального округа и его доля"),
         ),
         Action(
-            _("Велик ли разрыв между регионами"),
+            str(answers.TITLES["spread"]),
             icon="inequality",
             value=f"{ANSWER_PREFIX}spread",
             reason=why("answer:spread"),
@@ -644,7 +655,7 @@ def _ask(entry: Entry, why: Any) -> list[Action]:  # noqa: ARG001 — как у 
             term="decile-ratio",
         ),
         Action(
-            _("Догоняют ли отстающие"),
+            str(answers.TITLES["convergence"]),
             icon="convergence",
             value=f"{ANSWER_PREFIX}convergence",
             reason=why("answer:convergence"),
@@ -652,7 +663,7 @@ def _ask(entry: Entry, why: Any) -> list[Action]:  # noqa: ARG001 — как у 
             term="sigma-convergence",
         ),
         Action(
-            _("Похожи ли соседние регионы"),
+            str(answers.TITLES["neighbours"]),
             icon="spatial",
             value=f"{ANSWER_PREFIX}neighbours",
             reason=why("answer:neighbours"),
@@ -660,7 +671,7 @@ def _ask(entry: Entry, why: Any) -> list[Action]:  # noqa: ARG001 — как у 
             term="moran-index",
         ),
         Action(
-            _("С чем это связано"),
+            str(answers.TITLES["related"]),
             icon="related",
             value=f"{ANSWER_PREFIX}related",
             reason=why("answer:related"),
@@ -739,24 +750,12 @@ def _pair(
     ]
 
 
-def _sets(why: Any) -> list[Action]:
-    return [
-        Action(
-            _("Профиль показателя"),
-            icon="layers",
-            value=f"{SET_PREFIX}{SET_PROFILE}",
-            reason=why("set:profile"),
-            description=_("Карта, главное, рейтинг, линии, распределение, округа, изменение"),
-        ),
-    ]
-
-
 def advice(entry: Entry, groups: list[Group], shown: set[tuple[str, str]]) -> list[Action]:
     """
-    «Советуем» — первые пункты окна, выбранные по типу и данным: у суммы — карта, пересчёт
-    на жителей, рейтинг, вклады в изменение; у относительной — карта, рейтинг, кто вырос,
-    линии, связь; у индекса — карта, рейтинг, линии, главное в цифрах. Уже стоящее на поле
-    для этого ряда и недоступное не советуется.
+    «Рекомендуемое» — первые пункты окна, выбранные по типу и данным: у суммы — карта,
+    пересчёт на жителей, рейтинг, вклад в изменение; у относительной — карта, рейтинг, темпы
+    роста, динамика, связь; у индекса — карта, рейтинг, динамика, сводка. Уже стоящее на поле
+    для этого ряда и недоступное не рекомендуется.
     """
     by_value = {
         action.value or action.href: action
@@ -795,19 +794,19 @@ def _pick_url(key: str) -> str:
 
 def _compute_group(entry: Entry) -> Group:
     """
-    Новый показатель из ряда своей таблицы: самые частые пересчёты одним нажатием
-    (собранные — сразу на поле), остальные расчёты и формула — в окне «Новый показатель».
+    Расчёты из ряда своей таблицы: самые частые пересчёты одним нажатием (собранные — сразу
+    на поле), остальные расчёты и формула — в окне «Расчёт показателя».
     """
-    title = _("Новый показатель")
+    title = _("Расчёты")
     calc = Action(
-        _("Другие расчёты и формула"),
+        _("Все расчёты и формула"),
         icon="calculator",
         href=entry.calc_url,
         dialog="calc-dialog",
         description=_("Доля, темп роста, базовый год, Россия = 100 и своя формула"),
     )
     if not entry.is_user:
-        return Group(COMPUTE, title, [], reason=_("новый показатель считается из своих таблиц"))
+        return Group(COMPUTE, title, [], reason=_("расчёты делаются из своих таблиц"))
     if entry.derived:
         return Group(COMPUTE, title, [calc])
     info = operations.Info(
@@ -1080,7 +1079,7 @@ def next_steps(study: Study, block: dict[str, Any]) -> list[Action]:
         steps.append(Action(_("Рейтинг"), value=f"{VIEW_PREFIX}rankings"))
     steps.append(Action(_("Сравнить с официальным"), href=_pick_url(key)))
     if years > 1 and ("compare", key) not in shown:
-        steps.append(Action(_("Линии по годам"), value=f"{VIEW_PREFIX}compare"))
+        steps.append(Action(_("Динамика"), value=f"{VIEW_PREFIX}compare"))
     changed = _change_step(record, key, shown) if years > 1 else None
     if changed is not None:
         steps.append(changed)
@@ -1151,10 +1150,10 @@ def _change_step(record: DatasetSeries, key: str, shown: set[tuple[Any, str]]) -
     if semantics.is_additive(record.kind):
         if ("contributions", key) in shown:
             return None
-        return Action(_("Почему изменилось"), value=f"{ANSWER_PREFIX}contributions")
+        return Action(str(answers.TITLES["contributions"]), value=f"{ANSWER_PREFIX}contributions")
     if ("growth", key) in shown:
         return None
-    return Action(_("Кто вырос сильнее"), value=f"{ANSWER_PREFIX}growth")
+    return Action(str(answers.TITLES["growth"]), value=f"{ANSWER_PREFIX}growth")
 
 
 def chosen_study(request: HttpRequest, public_id: str) -> Study | None:

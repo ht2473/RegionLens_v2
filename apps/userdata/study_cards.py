@@ -259,7 +259,7 @@ def _colour_table(rows: list[dict[str, Any]], precision: int | None) -> list[dic
 
 def _refuse(question: str, keys: list[str]) -> None:
     """
-    Ответа нет по типу ряда — с той же причиной, что у пункта окна «Что показать». Условия
+    Ответа нет по типу ряда — с той же причиной, что у пункта окна «Добавить карточку». Условия
     данных проверяет сам ответ.
     """
     action = f"answer:{question}"

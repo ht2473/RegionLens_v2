@@ -25,6 +25,12 @@ def source_lang(text: Any) -> str:
 
 
 @register.filter
+def available_count(actions: Any) -> int:
+    """Пунктов раздела окна без причины отказа — их число стоит у свёрнутого раздела."""
+    return sum(1 for action in actions or () if not action.reason)
+
+
+@register.filter
 def in_source_lang(text: Any) -> SafeString:
     """Текст таблицы внутри переводимой фразы: с ``lang="ru"`` на странице не по-русски."""
     lang = source_lang(text)

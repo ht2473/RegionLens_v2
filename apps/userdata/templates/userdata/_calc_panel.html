@@ -1,13 +1,15 @@
 {% load i18n formatting userdata %}
 {% comment %}
-  Панель расчёта: показатель, расчёт из каталога группами (неподходящий — серым с причиной),
-  поля расчёта, название, единица и таблица нового ряда; предпросмотр — карта года, крайние
-  регионы, предупреждения о смысле, формула и метод. Изменение поля пересчитывает
-  предпросмотр (со сценарием); без сценария — кнопка «Проверить».
+  Панель «Расчёт показателя»: показатель; частые подходящие расчёты — плитками с тем, что
+  получится, остальные подходящие — под «Все расчёты» с поиском, неподходящие — одной строкой
+  с причинами; поля расчёта, название, единица и таблица нового ряда; предпросмотр — карта
+  года, крайние регионы, предупреждения о смысле, формула и метод. Изменение поля пересчитывает
+  предпросмотр (со сценарием); без сценария — кнопка «Проверить». Поиск по расчётам формы
+  не отправляет: у него нет имени.
 {% endcomment %}
-<form method="post" action="{% url 'userdata:calc' study.public_id %}" class="calc-panel" id="calc-form"
-      hx-post="{% url 'userdata:calc' study.public_id %}" hx-target="#calc-dialog-body" hx-swap="innerHTML"
-      hx-trigger="change delay:350ms, submit" data-calc-form>
+<form method="post" action="{{ calc_url }}" class="calc-panel" id="calc-form"
+      hx-post="{{ calc_url }}" hx-target="#calc-dialog-body" hx-swap="innerHTML"
+      hx-trigger="change[target.name] delay:350ms, submit" data-calc-form>
   {% csrf_token %}
 
   <div class="field">
@@ -17,25 +19,52 @@
 
   <fieldset class="calc-catalog">
     <legend class="field__label">{% translate "Расчёт" %}</legend>
-    {% for group in catalog %}
-      <div class="calc-catalog__group">
-        <p class="calc-catalog__title">{{ group.title }}</p>
-        <div class="calc-catalog__items">
-          {% for entry in group.items %}
-            <label class="calc-pill{% if entry.reason %} is-disabled{% endif %}"{% if entry.reason %} title="{{ entry.reason }}"{% endif %}>
-              <input type="radio" name="op" id="calc-op-{{ entry.operation.code }}" value="{{ entry.operation.code }}"{% if form.op == entry.operation.code %} checked{% endif %}{% if entry.reason %} disabled{% endif %}>
-              <span>{{ entry.operation.title }}</span>{% if entry.reason %}<span class="visually-hidden"> — {{ entry.reason }}</span>{% endif %}
-            </label>
+    {% if popular %}
+      <div class="calc-tiles">
+        {% for entry in popular %}
+          <label class="calc-tile">
+            <input type="radio" name="op" id="calc-op-{{ entry.operation.code }}" value="{{ entry.operation.code }}"{% if form.op == entry.operation.code %} checked{% endif %}>
+            <span class="calc-tile__body"><span class="calc-tile__title">{{ entry.operation.title }}</span>{% if entry.note %}<span class="calc-tile__note">{{ entry.note }}</span>{% endif %}</span>
+          </label>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if rest %}
+      <details class="calc-all" id="calc-all" data-keep-open{% if form.op in rest_codes %} open{% endif %}>
+        <summary>{% translate "Все расчёты" %} <span class="choose__count numeric">{{ rest_codes|length }}</span></summary>
+        <input class="input calc-all__search" type="search" aria-label="{% translate 'Найти расчёт' %}" placeholder="{% translate 'Найти расчёт' %}"
+               data-filter-input="#calc-all-groups" data-filter-empty="#calc-all-empty">
+        <div id="calc-all-groups">
+          {% for group in rest %}
+            <div class="calc-catalog__group" data-filter-group>
+              <p class="calc-catalog__title">{{ group.title }}</p>
+              <div class="calc-catalog__items">
+                {% for entry in group.items %}
+                  <label class="calc-pill" data-filter-item>
+                    <input type="radio" name="op" id="calc-op-{{ entry.operation.code }}" value="{{ entry.operation.code }}"{% if form.op == entry.operation.code %} checked{% endif %}>
+                    <span>{{ entry.operation.title }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+            </div>
           {% endfor %}
         </div>
-      </div>
-    {% endfor %}
-    <div class="calc-catalog__group">
-      <p class="calc-catalog__title">{% translate "Формула" %}</p>
-      <div class="calc-catalog__items">
-        <label class="calc-pill"><input type="radio" name="op" id="calc-op-free" value="free"{% if free %} checked{% endif %}><span>{% translate "Своя формула" %}</span></label>
-      </div>
+        <p class="calc-all__empty" id="calc-all-empty" hidden>{% translate "Такого расчёта нет. Попробуйте своей формулой." %}</p>
+      </details>
+    {% endif %}
+    <div class="calc-catalog__items">
+      <label class="calc-pill"><input type="radio" name="op" id="calc-op-free" value="free"{% if free %} checked{% endif %}><span>{% translate "Своя формула" %}</span></label>
     </div>
+    {% if unavailable %}
+      <details class="choose__unavailable">
+        <summary>{% blocktranslate trimmed with count=unavailable|length %}Недоступно: {{ count }}. Почему{% endblocktranslate %}</summary>
+        <ul class="choose__reasons">
+          {% for entry in unavailable %}
+            <li><span class="choose__reason-title">{{ entry.operation.title }}</span> — {{ entry.reason }}</li>
+          {% endfor %}
+        </ul>
+      </details>
+    {% endif %}
   </fieldset>
 
   {% if operation %}
@@ -129,7 +158,7 @@
         <div>{{ error }}</div>
       </div>
     {% elif recount_note %}
-      <p class="calc-preview__note">{% translate "Новый показатель встанет в таблице рядом с исходным, его карта — на поле." %}</p>
+      <p class="calc-preview__note">{% if study %}{% translate "Новый показатель встанет в таблице рядом с исходным, его карта — на поле." %}{% else %}{% translate "Новый показатель встанет в таблице рядом с исходным." %}{% endif %}</p>
     {% elif preview %}
       <p class="calc-preview__count">
         {% blocktranslate trimmed with count=preview.count total=preview.total %}Посчитано для <b class="numeric">{{ count }}</b> из {{ total }}{% endblocktranslate %}{% if preview.year %} · <span class="numeric">{{ preview.year|year }}</span>{% endif %}
@@ -141,12 +170,12 @@
       {% if extremes.top %}
         <div class="calc-preview__extremes">
           <div>
-            <p class="answer__label">{% translate "Больше всего" %}</p>
+            <p class="answer__label">{% translate "Наибольшие значения" %}</p>
             <ol class="answer-list answer-list--plain">{% for row in extremes.top %}<li><span>{{ row.name }}</span> <span class="numeric">{{ row.value }}</span></li>{% endfor %}</ol>
           </div>
           {% if extremes.bottom %}
             <div>
-              <p class="answer__label">{% translate "Меньше всего" %}</p>
+              <p class="answer__label">{% translate "Наименьшие значения" %}</p>
               <ol class="answer-list answer-list--plain">{% for row in extremes.bottom %}<li><span>{{ row.name }}</span> <span class="numeric">{{ row.value }}</span></li>{% endfor %}</ol>
             </div>
           {% endif %}
@@ -167,7 +196,7 @@
 
   <div class="calc-panel__actions">
     <button class="button button--primary" type="submit" name="action" value="save"{% if error and not checked %} disabled{% endif %}>
-      {% if operation.recount %}{% translate "Посчитать и поставить на поле" %}{% else %}{% translate "Сохранить и поставить на поле" %}{% endif %}
+      {% if not study %}{% translate "Сохранить в таблицу" %}{% elif operation.recount %}{% translate "Посчитать и поставить на поле" %}{% else %}{% translate "Сохранить и поставить на поле" %}{% endif %}
     </button>
     <button class="button button--secondary" type="submit" name="action" value="check" data-calc-check>{% translate "Проверить" %}</button>
   </div>

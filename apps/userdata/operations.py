@@ -31,9 +31,41 @@ GROUPS: tuple[tuple[str, Promise], ...] = (
     ("share", _("Доля и структура")),
     ("change", _("Изменение")),
     ("compare", _("Сравнение")),
-    ("sum", _("Сложение")),
-    ("regional", _("Региональные методы")),
+    ("sum", _("Агрегирование")),
+    ("regional", _("Методы регионального анализа")),
 )
+
+# Частые расчёты — плитками первым экраном окна, по порядку: первые шесть подходящих ряду.
+POPULAR = (
+    "per1",
+    "per100000",
+    "share",
+    "growth",
+    "baseyear",
+    "real",
+    "russia",
+    "russiadeviation",
+    "districtdeviation",
+    "between",
+    "annualrate",
+    "structure",
+)
+POPULAR_SHOWN = 6
+# Что получится — строкой на плитке частого расчёта.
+NOTES: dict[str, Promise] = {
+    "per1": _("Сумма на одного жителя"),
+    "per100000": _("Как считают преступность и заболеваемость"),
+    "share": _("Какая часть общей суммы у региона"),
+    "growth": _("Насколько значение выросло за год"),
+    "baseyear": _("Рост от выбранного года, он = 100"),
+    "real": _("Рубли без инфляции"),
+    "russia": _("Значение региона относительно России"),
+    "russiadeviation": _("На сколько выше или ниже России"),
+    "districtdeviation": _("На сколько выше или ниже своего округа"),
+    "between": _("Разница между двумя годами"),
+    "annualrate": _("Средний рост за год в периоде"),
+    "structure": _("Доля части в итоге региона"),
+}
 
 # Виды полей операции.
 SERIES = "series"
@@ -622,7 +654,7 @@ OPERATIONS: tuple[Operation, ...] = (
         fields=(A,),
         outputs=_district_deviation,
     ),
-    # Сложение.
+    # Агрегирование.
     Operation(
         "sum",
         "sum",
@@ -631,7 +663,7 @@ OPERATIONS: tuple[Operation, ...] = (
         fields=(PARTS,),
         outputs=_sum,
     ),
-    # Региональные методы.
+    # Методы регионального анализа.
     Operation(
         "lq",
         "regional",
@@ -711,6 +743,36 @@ def grouped(
         ]
         found.append({"code": code, "title": title, "items": items})
     return found
+
+
+def arranged(catalog: list[dict[str, Any]]) -> dict[str, Any]:
+    """
+    Каталог для окна: частые подходящие расчёты — плитками (не больше шести), остальные
+    подходящие — группами под «Все расчёты», неподходящие — одним перечнем с причинами.
+    """
+    flat = [entry for group in catalog for entry in group["items"]]
+    fitting = {entry["operation"].code: entry for entry in flat if not entry["reason"]}
+    popular = [
+        {**fitting[code], "note": NOTES.get(code, "")} for code in POPULAR if code in fitting
+    ][:POPULAR_SHOWN]
+    shown = {entry["operation"].code for entry in popular}
+    rest = [
+        {
+            **group,
+            "items": [
+                entry
+                for entry in group["items"]
+                if not entry["reason"] and entry["operation"].code not in shown
+            ],
+        }
+        for group in catalog
+    ]
+    return {
+        "popular": popular,
+        "rest": [group for group in rest if group["items"]],
+        "rest_codes": {entry["operation"].code for group in rest for entry in group["items"]},
+        "unavailable": [entry for entry in flat if entry["reason"]],
+    }
 
 
 def available_official() -> dict[str, bool]:

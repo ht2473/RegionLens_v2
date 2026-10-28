@@ -117,7 +117,7 @@
     {% for code in item.recalc %}
       <label class="checkbox"><input type="checkbox" name="recalc-{{ number }}" value="{{ code }}" checked> <span>{{ code|derived_label }}</span></label>
     {% endfor %}
-    <span class="field__hint">{% if item.recounts %}{% translate "Снимите отметку, чтобы убрать пересчёт. Новые пересчёты — в исследовании: нажмите на показатель, раздел «Новый показатель»." %}{% else %}{% translate "Пересчёты — в исследовании: нажмите на показатель, раздел «Новый показатель»." %}{% endif %}</span>
+    <span class="field__hint">{% if item.recounts %}{% translate "Снимите отметку, чтобы убрать пересчёт. Новые пересчёты — в исследовании: нажмите на показатель, раздел «Расчёты»." %}{% else %}{% translate "Пересчёты — в исследовании: нажмите на показатель, раздел «Расчёты»." %}{% endif %}</span>
   </fieldset>
 {% endif %}
 {% endwith %}

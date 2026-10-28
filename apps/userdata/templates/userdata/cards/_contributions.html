@@ -11,7 +11,7 @@
 <div class="answer__columns study-card__answer">
   {% if card.rising %}
     <div>
-      <h3 class="answer__label">{% translate "Больше всего добавили" %}</h3>
+      <h3 class="answer__label">{% translate "Наибольший положительный вклад" %}</h3>
       <ol class="answer-list">
         {% for row in card.rising %}<li><span>{{ row.name }}</span> <span class="numeric">{{ row.change }}</span></li>{% endfor %}
       </ol>
@@ -19,7 +19,7 @@
   {% endif %}
   {% if card.falling %}
     <div>
-      <h3 class="answer__label">{% translate "Больше всего убавили" %}</h3>
+      <h3 class="answer__label">{% translate "Наибольший отрицательный вклад" %}</h3>
       <ol class="answer-list">
         {% for row in card.falling %}<li><span>{{ row.name }}</span> <span class="numeric">{{ row.change }}</span></li>{% endfor %}
       </ol>

@@ -64,10 +64,15 @@ class CalcError(ValueError):
 
 
 class CalcView(TemplateView):
-    """Панель расчёта своего исследования; чужое — 404."""
+    """
+    Окно «Расчёт показателя» своего исследования: новые ряды встают в таблицу, их карты — на
+    поле. Чужое исследование — 404.
+    """
 
     template_name = "userdata/calc.html"
-    study: Study
+    study: Study | None = None
+    # Таблица, со страницы которой открыто окно без исследования.
+    dataset: Dataset | None = None
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
         study = studies.owned(request).filter(public_id=kwargs["public_id"]).first()
@@ -75,6 +80,13 @@ class CalcView(TemplateView):
             raise Http404
         self.study = study
         return super().dispatch(request, *args, **kwargs)
+
+    @property
+    def calc_url(self) -> str:
+        if self.study is not None:
+            return reverse("userdata:calc", args=[self.study.public_id])
+        assert self.dataset is not None
+        return reverse("userdata:dataset-calc", args=[self.dataset.public_id])
 
     def get_template_names(self) -> list[str]:
         if self.request.headers.get("HX-Request"):
@@ -84,8 +96,15 @@ class CalcView(TemplateView):
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:  # noqa: ARG002
         form = _form(request.GET)
         if not form["a"]:
-            form["a"] = request.GET.get("series", "")
+            form["a"] = request.GET.get("series", "") or self.first_series()
         return self.render_to_response(self.panel(form, check=False))
+
+    def first_series(self) -> str:
+        """Окно со страницы таблицы — первый ряд этой таблицы; из исследования — пусто."""
+        if self.dataset is None or self.dataset.current_version is None:
+            return ""
+        record = self.dataset.current_version.series.filter(derived="").order_by("order").first()
+        return f"{routing.USER_PREFIX}{self.dataset.code}:{record.code}" if record else ""
 
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:  # noqa: ARG002
         form = _form(request.POST)
@@ -128,11 +147,7 @@ class CalcView(TemplateView):
         form["op"] = code
         operation = operations.BY_CODE.get(code)
         tables = self.tables()
-        if form["table"] not in {item.code for item in tables}:
-            own = routing.dataset_code(form["a"]) if routing.is_user_key(form["a"]) else ""
-            form["table"] = own if own in {item.code for item in tables} else ""
-            if not form["table"] and tables:
-                form["table"] = tables[0].code
+        form["table"] = self.pick_table(form, tables)
         years = (
             list(range(info.first_year, info.last_year + 1))
             if info and info.first_year and info.last_year
@@ -141,6 +156,8 @@ class CalcView(TemplateView):
         _defaults(form, operation, years, available)
         context: dict[str, Any] = {
             "study": self.study,
+            "dataset": self.dataset,
+            "calc_url": self.calc_url,
             "form": form,
             "catalog": catalog,
             "operation": operation,
@@ -155,7 +172,8 @@ class CalcView(TemplateView):
             "tables": tables,
             "kinds": DatasetSeries.Kind.choices,
             "functions": formulas.FUNCTIONS,
-            "page_title": _("Новый показатель"),
+            "page_title": _("Расчёт показателя"),
+            **operations.arranged(catalog),
         }
         reason = operations.reason(operation, info, available) if operation and info else ""
         if reason:
@@ -224,12 +242,21 @@ class CalcView(TemplateView):
             ) % {"share": ru_number(share * 100, 0)}
         return ""
 
+    def pick_table(self, form: dict[str, Any], tables: list[Dataset]) -> str:
+        """Таблица нового ряда: выбранная, открывшая окно, таблица ряда A или первая."""
+        codes = [item.code for item in tables]
+        wanted = form["table"] or (self.dataset.code if self.dataset is not None else "")
+        if wanted in codes:
+            return wanted
+        own = routing.dataset_code(form["a"]) if routing.is_user_key(form["a"]) else ""
+        return own if own in codes else next(iter(codes), "")
+
     def series_options(self) -> list[dict[str, Any]]:
         """Ряды для полей: свои таблицы, затем официальные ряды поля исследования."""
         groups = own_option_groups(self.request)
         site = [
             key
-            for block in studies.blocks_of(self.study)
+            for block in (studies.blocks_of(self.study) if self.study is not None else [])
             for key in studies.series_keys(block)
             if not routing.is_user_key(key)
         ]
@@ -294,12 +321,18 @@ class CalcView(TemplateView):
         ]
 
     def save(self, form: dict[str, Any]) -> HttpResponse:
-        """Сохранить расчёт и поставить карты новых рядов на поле."""
+        """
+        Сохранить расчёт: в исследовании — карты новых рядов на поле, без него — к новому
+        показателю на странице таблицы.
+        """
         context = self.panel(form, check=False)
         if context.get("error"):
             raise CalcError(context["error"])
         operation = context["operation"]
         if operation is not None and operation.recount:
+            if self.study is None:
+                lab.compute(self.request, form["a"], operation.recount)
+                return self.to_table(self.table(routing.dataset_code(form["a"])), "")
             block = lab.add(
                 self.request, self.study, f"{lab.COMPUTE_PREFIX}{operation.recount}", form["a"]
             )
@@ -311,6 +344,8 @@ class CalcView(TemplateView):
         version = dataset.current_version
         assert version is not None
         jobs.start(version, jobs.BUILD)
+        if self.study is None:
+            return self.to_table(dataset, checks[0].definition.code)
         keys = [f"{routing.USER_PREFIX}{dataset.code}:{item.definition.code}" for item in checks]
         blocks = studies.append_all(
             self.study,
@@ -318,11 +353,20 @@ class CalcView(TemplateView):
         )
         return self.done(blocks)
 
+    def to_table(self, dataset: Dataset, code: str) -> HttpResponse:
+        """На страницу таблицы — к новому показателю."""
+        url = reverse("userdata:dataset", args=[dataset.public_id])
+        return self.go(f"{url}?{urlencode({'show': code})}" if code else url)
+
     def done(self, blocks: list[dict[str, Any]]) -> HttpResponse:
         """В исследование — к первой новой карточке."""
+        assert self.study is not None
         url = reverse("userdata:study", args=[self.study.public_id])
         first = blocks[0]["id"]
-        target = f"{url}?{urlencode({'added': first})}#block-{first}"
+        return self.go(f"{url}?{urlencode({'added': first})}#block-{first}")
+
+    def go(self, target: str) -> HttpResponse:
+        """Переход после сохранения: окном — заголовком HX-Redirect, страницей — 302."""
         if self.request.headers.get("HX-Request"):
             response = HttpResponse(status=204)
             response["HX-Redirect"] = target
@@ -442,3 +486,23 @@ def _extremes(checked: formula_store.Check) -> dict[str, Any]:
         "top": rows(ordered[:EXTREMES]),
         "bottom": rows(ordered[-EXTREMES:][::-1]) if len(ordered) > EXTREMES else [],
     }
+
+
+class DatasetCalcView(CalcView):
+    """
+    То же окно «Расчёт показателя» со страницы своей таблицы, без исследования: новый
+    показатель встаёт в таблицу. Чужая или несобранная таблица — 404.
+    """
+
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
+        dataset = (
+            access.owned(request)
+            .select_related("current_version")
+            .filter(public_id=kwargs["public_id"])
+            .first()
+        )
+        version = dataset.current_version if dataset is not None else None
+        if version is None or version.state != DatasetVersion.State.BUILT:
+            raise Http404
+        self.dataset = dataset
+        return TemplateView.dispatch(self, request, *args, **kwargs)

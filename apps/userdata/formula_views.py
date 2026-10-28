@@ -73,13 +73,21 @@ def template_of(expression: str) -> tuple[str, str, str]:
 
 
 class FormulaView(DatasetMixin, BreadcrumbMixin, TemplateView):
-    """Новый показатель по формуле (без кода) или правка существующего."""
+    """
+    Правка показателя по формуле. Новый показатель заводится в окне «Расчёт показателя»:
+    страница без кода показателя туда и ведёт; её приём формы остаётся для прежних ссылок.
+    """
 
     template_name = "userdata/formula.html"
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         self.code = str(kwargs.get("code") or "")
         return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        if not self.code:
+            return redirect("userdata:dataset-calc", public_id=self.dataset.public_id)
+        return super().get(request, *args, **kwargs)
 
     @property
     def version(self) -> DatasetVersion:
