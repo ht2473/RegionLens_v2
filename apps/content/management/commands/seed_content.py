@@ -357,9 +357,7 @@ METHODOLOGY: tuple[dict[str, Any], ...] = (
         "block": MethodologyBlock.DATA,
         "order": 52,
         "title": "Тип величины и пределы расчётов",
-        "summary": (
-            "Тип величины решает, какие расчёты и выводы по ней допустимы."
-        ),
+        "summary": ("Тип величины решает, какие расчёты и выводы по ней допустимы."),
         "formula": "",
         "tool_url_name": "userdata:index",
         "limitations": (

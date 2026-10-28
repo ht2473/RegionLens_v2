@@ -21,7 +21,7 @@
         <span>{% blocktranslate trimmed with count=table|rows_text %}строк: {{ count }}{% endblocktranslate %}</span>
         <span>{% blocktranslate trimmed with count=resolved_regions %}субъектов узнано: {{ count }} из 85{% endblocktranslate %}</span>
         {% if result.periods %}<span><span class="numeric">{{ result.periods.first }}{% if result.periods.last != result.periods.first %}–{{ result.periods.last }}{% endif %}</span>, {{ period_kinds|join:", " }}</span>{% endif %}
-        <span>{% blocktranslate trimmed with count=result.series|ru_number:0 %}показателей получится: {{ count }}{% endblocktranslate %}</span>
+        <span>{% blocktranslate trimmed with count=result.series|ru_number:0 %}временных рядов получится: {{ count }}{% endblocktranslate %}</span>
       </p>
     {% endif %}
   </header>
@@ -224,7 +224,7 @@
           {% if too_many %}{% translate "Разрезы: показателей слишком много" %}{% else %}{% translate "Разрезы: отбор значений" %}{% endif %}
         </summary>
         {% if too_many %}
-          <p class="field__error">{% blocktranslate trimmed with count=result.series|ru_number:0 limit=max_series %}Получается показателей: {{ count }}, больше {{ limit }}. Выберите значения разрезов.{% endblocktranslate %}</p>
+          <p class="field__error">{% blocktranslate trimmed with count=result.series|ru_number:0 limit=max_series %}Получается временных рядов: {{ count }}, больше {{ limit }}. Выберите значения разрезов.{% endblocktranslate %}</p>
         {% endif %}
         <input type="hidden" name="slices-present" value="1">
         {% for index, info in result.slices.items %}

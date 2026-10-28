@@ -152,7 +152,7 @@
       <form method="post" action="{% url 'userdata:study-edit' study.public_id %}" class="stack study-settings__delete">
         {% csrf_token %}
         <input type="hidden" name="action" value="delete">
-        <label class="checkbox"><input type="checkbox" name="confirm" value="1" required> <span>{% translate "Удалить исследование; таблицы останутся" %}</span></label>
+        <label class="checkbox"><input type="checkbox" name="confirm" value="1" required> <span>{% translate "Удалить исследование. Таблицы останутся." %}</span></label>
         <div><button class="button button--sm button--danger" type="submit">{% translate "Удалить" %}</button></div>
       </form>
     </div>
@@ -322,7 +322,7 @@
   <dialog class="calc-dialog" id="group-dialog" aria-labelledby="group-dialog-title">
     <div class="calc-dialog__head">
       <div>
-        <h2 class="calc-dialog__title" id="group-dialog-title">{% translate "Группа регионов против остальных" %}</h2>
+        <h2 class="calc-dialog__title" id="group-dialog-title">{% translate "Группа регионов" %}</h2>
         <p class="calc-dialog__lead">{% translate "Итог своей группы регионов по годам рядом с итогом остальных регионов." %}</p>
       </div>
       <button type="button" class="icon-button" data-dialog-close aria-label="{% translate 'Закрыть' %}" title="{% translate 'Закрыть' %}">

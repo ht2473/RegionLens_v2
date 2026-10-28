@@ -160,7 +160,7 @@
       <li class="desk-task">
         <svg class="desk-task__pic" viewBox="0 0 120 80" aria-hidden="true"><path d="M8 50 L30 20 L58 26 L80 10 L112 30 L104 64 L64 72 L22 68 Z" data-step="3"/><path d="M58 26 L80 10 L112 30 L84 44 Z" data-step="5"/><path d="M8 50 L30 20 L42 46 Z" data-step="1"/></svg>
         <h3 class="desk-task__title">{% translate "Карта и рейтинг" %}</h3>
-        <p class="desk-task__text">{% translate "Где больше, где меньше и кто вырос — сразу после загрузки." %}</p>
+        <p class="desk-task__text">{% translate "Где больше, где меньше и кто вырос — сразу после проверки таблицы." %}</p>
       </li>
       <li class="desk-task">
         <svg class="desk-task__pic" viewBox="0 0 120 80" aria-hidden="true"><polyline class="desk-task__line" points="6,60 30,52 54,56 78,34 112,22"/><polyline class="desk-task__line desk-task__line--other" points="6,40 30,44 54,38 78,42 112,36"/></svg>
@@ -207,11 +207,11 @@
     <details class="desk-help__item">
       <summary>{% translate "Какие таблицы подходят" %}</summary>
       <p>
-        {% blocktranslate trimmed %}
-          CSV, TXT, XLSX, XLS, ODS, Parquet, документы Word (DOCX) и PDF с текстом, архив ZIP
-          с таблицами. Таблицу можно и скопировать и вставить из буфера. Нужен столбец или строка
-          с названиями субъектов РФ. Значения по районам, городам и федеральным округам на карту
-          сайта не попадут. Скан PDF без текста не читается.
+        {% blocktranslate trimmed with pages=pdf_pages %}
+          CSV, TXT, XLSX, XLS, ODS, Parquet, документы Word (DOCX) и PDF с текстом до {{ pages }}
+          страниц, архив ZIP с таблицами. Таблицу можно и скопировать и вставить из буфера. Нужен
+          столбец или строка с названиями субъектов РФ. Значения по районам, городам и федеральным
+          округам на карту сайта не попадут. Скан PDF без текста не читается.
         {% endblocktranslate %}
       </p>
       <ul class="table-forms">
@@ -272,7 +272,7 @@
     <details class="desk-help__item">
       <summary>{% translate "Кто видит таблицу и сколько она хранится" %}</summary>
       <ul class="compact-list own-storage">
-        <li>{% translate "Таблицу и её виды видите только вы. Поисковики их не индексируют; в панели управления видно только число таблиц и занятое место." %}</li>
+        <li>{% translate "Таблицу и исследования с ней видите только вы, пока не дадите закрытую ссылку. Поисковики их не индексируют. В панели управления видно только число таблиц и занятое место." %}</li>
         <li>
           {% blocktranslate trimmed with hours=guest_hours %}
             Без входа таблица хранится {{ hours }} ч, затем удаляется. После входа таблицы

@@ -106,6 +106,7 @@ class SectionView(BreadcrumbMixin, TemplateView):
             if user.is_authenticated
             else settings.USERDATA_GUEST_MAX_DATASETS,
             guest_hours=settings.USERDATA_GUEST_HOURS,
+            pdf_pages=settings.USERDATA_PDF_MAX_PAGES,
             retention_days=backup_retention_days(),
             examples=examples.examples(),
         )
