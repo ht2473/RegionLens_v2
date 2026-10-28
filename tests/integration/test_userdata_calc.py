@@ -168,3 +168,22 @@ def test_calc_from_table_needs_own_built_table(member_client: Client, warehouse:
     url = reverse("userdata:dataset-calc", args=[dataset.public_id])
     # Чужой человек — новый сеанс без входа.
     assert Client().get(url).status_code == 404
+
+
+def test_series_pick_like_my_tables(member_client: Client, warehouse: Any) -> None:
+    """
+    Показатель в окне — перечнем, как «Мои таблицы»: таблица выбранного раскрыта, у таблиц
+    с одинаковым названием — когда загружена; не выпадающий список во весь экран.
+    """
+    first = _built(member_client, "crime_wide.csv")
+    _built(member_client, "crime_wide.csv")
+    key = _key(first, _first(first))
+    study = _study(member_client)
+    text = member_client.get(_url(study), {"series": key}, headers={"HX-Request": "true"}).text
+    assert 'id="calc-a-pick"' in text and '<select class="select" id="calc-a"' not in text
+    assert text.count('class="series-pick__group" data-filter-group open') == 1
+    assert text.count("series-pick__note") == 2
+    assert "загружена" in text
+    # Та же пометка — в панели «Мои таблицы» исследования.
+    page = member_client.get(reverse("userdata:study", args=[study.public_id])).text
+    assert page.count("study-source__note") == 2

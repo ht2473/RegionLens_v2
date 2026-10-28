@@ -144,6 +144,20 @@ class TestData:
         assert not semantics.verdict("calc:subsistence", rich(RELATIVE, monthly=False))
         assert semantics.verdict("calc:subsistence", rich(RELATIVE))
 
+    def test_money_by_unit_first(self) -> None:
+        """
+        Деньги — по единице: «Срок кредитов в рублях» в месяцах не деньги, хотя в названии
+        «рублях». Без единицы или при одном разряде («млн») решает название.
+        """
+        term = "Средневзвешенный срок по ипотечным кредитам в рублях"
+        assert not semantics.is_rubles(term, "месяцев")
+        assert not semantics.is_currency(term, "месяцев")
+        assert not semantics.is_rubles("Доля кредитов в рублях", "%")
+        assert semantics.is_rubles("Средняя зарплата", "тыс. руб.")
+        assert semantics.is_currency("Экспорт", "млн долл. США")
+        assert semantics.is_rubles("Доходы бюджета, руб.", "")
+        assert semantics.is_rubles("Доходы бюджета в рублях", "млн")
+
     def test_years_regions_region_parts(self) -> None:
         assert semantics.verdict("view:compare", rich(FLOW, years=1)).reason == (
             "у показателя один год"

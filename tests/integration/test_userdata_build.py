@@ -1013,6 +1013,41 @@ class TestAgencyExamples:
         assert dataset.title == f"Пример: {item.title}"
         assert dataset.source_url == item.source_url
 
+    def test_example_asks_what_its_note_says(self, client: Client, warehouse: Any) -> None:
+        """
+        Подпись «Мастер спросит» у каждого примера совпадает с вопросами мастера: области
+        с округами, год, единица, месяцы в год. Иначе подпись устаревает незаметно.
+        """
+        from apps.userdata.examples import examples
+
+        for item in examples():
+            Dataset.objects.all().delete()
+            client.post(reverse("userdata:example-file", args=[item.slug]))
+            dataset = Dataset.objects.get()
+            assert dataset.current_version is not None
+            best = next(
+                table
+                for table in dataset.current_version.report["inspection"]["tables"]
+                if table["best"]
+            )
+            client.post(
+                reverse("userdata:file", args=[dataset.public_id]),
+                {"action": "choose", "table": best["key"], "encoding": ""},
+            )
+            table = client.get(reverse("userdata:table", args=[dataset.public_id])).text
+            client.post(reverse("userdata:table", args=[dataset.public_id]), {"action": "next"})
+            series = client.get(reverse("userdata:series", args=[dataset.public_id])).text
+            asks = item.asks.casefold()
+            asked = {
+                "архангельск": "«архангельская область» в таблице — вместе" in table.casefold(),
+                "тюменск": "«тюменская область» в таблице — вместе" in table.casefold(),
+                "год значений": "Годы в таблице не найдены" in table,
+                "единица": "Единица не найдена — в чём значения?" in series,
+                "месяцы в год": "Только месяцы — свести в год?" in series,
+            }
+            for words, found in asked.items():
+                assert (words in asks) == found, (item.slug, words)
+
     def test_unfinished_example_is_continued(self, client: Client, warehouse: Any) -> None:
         url = reverse("userdata:example-file", args=["sfr-pension-supplement-2023"])
         first = client.post(url)

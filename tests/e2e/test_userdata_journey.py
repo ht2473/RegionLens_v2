@@ -60,7 +60,25 @@ def _walk(page: Page, base: str, language: str = "ru") -> list[str]:
     expect(page.locator(".study-card .geo-map, .study-card .tile-map")).to_have_count(1)
     expect(page.locator(".study-card")).to_have_count(5)
     audit()
+    _calc_dialog(page)
+    audit()
+    page.keyboard.press("Escape")
     return problems
+
+
+def _calc_dialog(page: Page) -> None:
+    """
+    Окно «Расчёт показателя» в исследовании перестраивается от выбора расчёта сразу, без
+    «Проверить»: своя формула — поле формулы, плитка — описание метода.
+    """
+    page.locator("[data-dialog-open=calc-dialog]").first.click()
+    dialog = page.locator("#calc-dialog")
+    dialog.locator("#calc-form").wait_for()
+    dialog.locator("label.calc-pill:has(#calc-op-free)").click()
+    expect(dialog.locator("#calc-expression")).to_be_visible()
+    dialog.locator(".calc-tile").first.click()
+    expect(dialog.locator(".calc-panel__method")).to_be_visible()
+    expect(dialog.locator("#calc-expression")).to_have_count(0)
 
 
 def _open_card(page: Page) -> None:
@@ -113,6 +131,23 @@ def test_journey_english(page: Page, own_data: Any) -> None:
     assert not problems, "\n".join(problems)
 
 
+def _series_pick(page: Page) -> None:
+    """
+    Показатель в окне расчёта — перечнем с поиском внутри окна, а не выпадающим списком во
+    весь экран; поиск отбирает на месте, Enter окно не пересчитывает и перечень не сворачивает.
+    """
+    pick = page.locator("#calc-a-pick")
+    expect(pick.locator(".series-pick__title")).to_contain_text(TITLE)
+    pick.locator("summary.series-pick__current").click()
+    search = pick.locator("input[type=search]")
+    search.fill("нет такого")
+    expect(pick.locator(".series-pick__empty")).to_be_visible()
+    search.fill("загрязн")
+    expect(pick.locator("[data-filter-item]:not([hidden])").first).to_contain_text(TITLE)
+    search.press("Enter")
+    expect(pick).to_have_attribute("open", "")
+
+
 def _analysis(page: Page, base: str) -> list[str]:
     """
     После сборки: страница таблицы с выбранным рядом, своя формула с показателем нажатием,
@@ -138,6 +173,9 @@ def _analysis(page: Page, base: str) -> list[str]:
     page.locator("#dataset-edit a[href$='/calc/']").click()
     page.wait_for_url("**/calc/")
     audit()
+    _series_pick(page)
+    audit()
+    page.locator("#calc-a-pick summary.series-pick__current").click()
     page.locator(".calc-pill", has_text="Своя формула").click()
     field = page.locator("#calc-expression")
     expect(field).to_be_visible()
