@@ -305,6 +305,65 @@ class TestSheets:
         assert len(_recognize(rows).duplicates) == 1
 
 
+REGIONS = [
+    "Белгородская область",
+    "Брянская область",
+    "Владимирская область",
+    "Воронежская область",
+    "Ивановская область",
+    "Калужская область",
+]
+
+
+def _towns() -> list[list[Any]]:
+    """Два моногорода на регион, как в выгрузке ЕМИСС: регион и город — в своих столбцах."""
+    rows: list[list[Any]] = [
+        ["Регион", "Классификатор территорий муниципальных образований (ОКТМО)", "2022", "2023"]
+    ]
+    for number, region in enumerate(REGIONS):
+        rows.append([region, f"{14 + number}616153000 Город {number}а", "100", f"{110 + number}"])
+        rows.append([region, f"{14 + number}616156000 Город {number}б", "200", f"{210 + number}"])
+    return rows
+
+
+class TestRepeatedRegions:
+    """Регион в нескольких строках с разными числами у половины регионов — вопрос."""
+
+    def test_towns_under_regions_are_asked(self) -> None:
+        result = _recognize(_towns())
+        assert (
+            _roles(result).get("Классификатор территорий муниципальных образований (ОКТМО)") is None
+        )
+        assert result.repeats == {
+            "regions": 6,
+            "total": 6,
+            "municipal": "Классификатор территорий муниципальных образований (ОКТМО)",
+        }
+        assert result.needs_repeats
+
+    @pytest.mark.parametrize("answer", [recognize.REPEATS_PLACES, recognize.REPEATS_FIRST])
+    def test_answer_is_taken_from_recipe(self, answer: str) -> None:
+        result = _recognize(_towns(), {"repeats": answer})
+        assert result.repeats_answer == answer
+        assert not result.needs_repeats
+
+    def test_real_slice_is_not_a_repeat(self) -> None:
+        rows: list[list[Any]] = [["Регион", "Пол", "2023"]]
+        for number, region in enumerate(REGIONS):
+            rows += [[region, "мужчины", f"{number}1"], [region, "женщины", f"{number}2"]]
+        result = _recognize(rows)
+        assert _roles(result)["Пол"] == SLICE
+        assert result.repeats is None
+
+    def test_few_repeated_regions_only_warn(self) -> None:
+        rows: list[list[Any]] = [["Регион", "2023"]]
+        rows += [[region, f"{number}0"] for number, region in enumerate(REGIONS)]
+        rows.append([REGIONS[0], "99"])
+        result = _recognize(rows)
+        assert len(result.duplicates) == 1
+        assert result.repeats is None
+
+
 class TestIndicatorsInColumns:
     """Показатели в столбцах: год спрашивается, если его нет в названиях столбцов."""
 

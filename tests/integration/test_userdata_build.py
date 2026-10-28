@@ -399,6 +399,46 @@ class TestSeriesStep:
             "Численность лиц, которым установлена федеральная социальная доплата"
         ].unit == ("чел.")
 
+    @pytest.mark.parametrize(
+        ("answer", "refusal"),
+        [
+            ("", "Регионы повторяются в нескольких строках"),
+            ("places", "На карте сайта только субъекты РФ"),
+            ("first", ""),
+        ],
+    )
+    def test_towns_under_regions_are_asked(
+        self, client: Client, warehouse: Any, answer: str, refusal: str
+    ) -> None:
+        regions = [
+            "Белгородская область",
+            "Брянская область",
+            "Владимирская область",
+            "Воронежская область",
+            "Ивановская область",
+            "Калужская область",
+        ]
+        lines = ["Регион;Классификатор территорий муниципальных образований (ОКТМО);2023"]
+        for number, region in enumerate(regions):
+            lines.append(f"{region};{14 + number}616153000 Город {number}а;{100 + number}")
+            lines.append(f"{region};{14 + number}616156000 Город {number}б;{200 + number}")
+        dataset = _upload(client, "моногорода.csv", "\n".join(lines).encode("utf-8"))
+        page = client.get(reverse("userdata:table", args=[dataset.public_id]))
+        assert "Регионов с повторами: 6 из 6" in page.text
+        assert "Похоже, в строках города или районы" in page.text
+        _describe(client, dataset, {"repeats": answer} if answer else {})
+        if refusal:
+            page = client.get(reverse("userdata:series", args=[dataset.public_id]))
+            assert "Разобрать таблицу не удалось" in page.text
+            assert refusal in page.text
+            return
+        assert _build(client, dataset).status_code == 302
+        key = _key(dataset, _version(dataset).series.get())
+        with scope.reading_as(fingerprint=dataset.guest_key):
+            values = queries.series_values([key], ["RU-BEL"])
+        # Части таблицы одна под другой: на карте — первая.
+        assert values[key]["RU-BEL"] == {2023: 100.0}
+
     def test_extraction_failure_is_explained(self, client: Client, warehouse: Any) -> None:
         dataset = _upload(client, "environment.csv")
         # Человек снял роль у столбца регионов: таблицу не разобрать, и об этом сказано.
