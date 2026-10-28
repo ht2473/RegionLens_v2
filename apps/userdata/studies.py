@@ -339,14 +339,28 @@ LABEL_CHOICES = ("", "off")
 REGION_CHOICES = ("common", "none", "own")
 # Год карточки — в пределах этих лет.
 YEARS = range(1900, 2101)
+# Карточки-ответы, которые показывают отмеченный регион; у прочих настройки регионов нет.
+MARKED_QUESTIONS = frozenset({"change", "multiples", "comparison"})
+# Карточки-ответы без года: сближение — за весь период, связь — за свой общий год.
+YEARLESS_QUESTIONS = frozenset({"convergence", "related"})
+
+
+def takes_regions(block: dict[str, Any]) -> bool:
+    """Меняют ли карточку отмеченные регионы."""
+    return block["kind"] == VIEW or block.get("question") in MARKED_QUESTIONS
+
+
+def takes_year(block: dict[str, Any]) -> bool:
+    """Меняет ли карточку год."""
+    return block.get("question") not in YEARLESS_QUESTIONS
 
 
 def configure(study: Study, block_id: str, data: Any) -> bool:
     """
-    Настройки карточки одной формой: вид (у вида холста), год, отмеченные регионы, знаки,
-    шкала и подписи карты, раскраска таблицы, шкала малых графиков. Неизвестное и неуместное
-    для вида карточки отбрасывается. ``data`` — поля формы (``QueryDict``); вернуть, нашёлся
-    ли блок.
+    Настройки карточки одной формой: вид (у вида холста), год, отмеченные регионы, способ
+    изображения, разбиение и подписи карты, цветовая шкала таблицы, ось малых графиков.
+    Неизвестное и неуместное для вида карточки отбрасывается. ``data`` — поля формы
+    (``QueryDict``); вернуть, нашёлся ли блок.
     """
     blocks = blocks_of(study)
     block = next((item for item in blocks if item["id"] == block_id), None)
@@ -357,13 +371,13 @@ def configure(study: Study, block_id: str, data: Any) -> bool:
         # Ширина остаётся выбранной: поле не перестраивается от смены вида карточки.
         if target in CANVAS_TARGETS:
             block["target"] = target
-    if "year" in data:
+    if "year" in data and takes_year(block):
         raw = str(data.get("year", ""))
         if raw.isdigit() and int(raw) in YEARS:
             block["year"] = int(raw)
         else:
             block.pop("year", None)
-    if data.get("regions") in REGION_CHOICES:
+    if data.get("regions") in REGION_CHOICES and takes_regions(block):
         _configure_regions(block, data.get("regions"), data.getlist("territory"))
     if block["kind"] == VIEW:
         block["parameters"] = _view_parameters(block, data)

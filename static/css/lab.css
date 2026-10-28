@@ -303,10 +303,14 @@
   border: 0;
 }
 
-.card-settings__picker summary {
-  cursor: pointer;
+/* Список своих регионов — только при выбранном «свои»: отметки без него не сохраняются. */
+.card-settings__picker {
+  display: none;
   margin-top: var(--space-2);
-  color: var(--text-accent);
+}
+
+.card-settings__regions:has(input[name="regions"][value="own"]:checked) .card-settings__picker {
+  display: block;
 }
 
 .card-settings__list {

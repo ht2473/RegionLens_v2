@@ -184,7 +184,7 @@ def settings_of(
     )
     from apps.warehouse.queries import year_counts
 
-    from .studies import series_keys
+    from .studies import series_keys, takes_regions, takes_year
 
     target = card["target"]
     if block["kind"] == VIEW and target not in CANVAS_TARGETS:
@@ -193,13 +193,18 @@ def settings_of(
     parameters = block.get("parameters") or {}
     keys = series_keys(block)
     years: list[int] = []
-    if keys and target != "compare":
+    if keys and target != "compare" and takes_year(block):
         try:
             years = sorted((int(year) for year in year_counts(keys[0])), reverse=True)
         except Http404, WarehouseNotBuiltError:
             years = []
     own = block.get("territories")
     regions = "common" if own is None else ("own" if own else "none")
+    if not takes_regions(block):
+        regions = ""
+    if not years and not regions and block["kind"] != VIEW and target != "multiples":
+        # Карточку не меняет ни одна настройка — кнопки «Настроить» у неё нет.
+        return {}
     classes = str(parameters.get("classes", DEFAULT_CLASSES))
     return {
         "views": (

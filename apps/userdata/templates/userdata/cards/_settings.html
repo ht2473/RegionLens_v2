@@ -1,9 +1,10 @@
 {% load i18n formatting %}
 {% comment %}
-  «Настроить» карточку — её настройки в одном месте: как показать, год, отмеченные регионы, знаки,
-  шкала и подписи карты, раскраска таблицы, шкала малых графиков; показано то, что уместно
-  виду карточки. Форма правки (data-card-change): сохраняется и перестраивает карточку,
-  без сценария — переход обратно на страницу.
+  «Настроить» карточку — её настройки в одном месте: как показать, год, отмеченные регионы,
+  способ изображения, разбиение и подписи карты, цветовая шкала таблицы, ось малых графиков;
+  показано только то, что меняет карточку этого вида. Список своих регионов виден, когда выбрано
+  «свои»: отметки без этого выбора не сохранились бы. Форма правки (data-card-change):
+  сохраняется и перестраивает карточку, без сценария — переход обратно на страницу.
 {% endcomment %}
 {% with settings=card.settings block_id=card.block.id %}
 <button type="button" class="button button--sm button--ghost card-settings__toggle no-print"
@@ -41,15 +42,15 @@
       </div>
     {% endif %}
 
-    <fieldset class="field">
+    {% if settings.regions %}
+    <fieldset class="field card-settings__regions">
       <legend class="field__label">{% translate "Отмеченные регионы" %}</legend>
       <div class="stack stack--tight">
         <label class="radio"><input type="radio" name="regions" value="common"{% if settings.regions == "common" %} checked{% endif %}><span>{% translate "как у исследования" %}</span></label>
         <label class="radio"><input type="radio" name="regions" value="none"{% if settings.regions == "none" %} checked{% endif %}><span>{% translate "без отметок" %}</span></label>
-        <label class="radio"><input type="radio" name="regions" value="own"{% if settings.regions == "own" %} checked{% endif %}><span>{% translate "свои" %}</span></label>
+        <label class="radio"><input type="radio" name="regions" value="own"{% if settings.regions == "own" %} checked{% endif %}><span>{% blocktranslate trimmed with count=settings.max_compare %}свои — не больше {{ count }}{% endblocktranslate %}</span></label>
       </div>
-      <details class="card-settings__picker"{% if settings.regions == "own" %} open{% endif %}>
-        <summary>{% blocktranslate trimmed with count=settings.max_compare %}Выбрать свои — не больше {{ count }}{% endblocktranslate %}</summary>
+      <div class="card-settings__picker">
         <label class="filter-field">
           <svg aria-hidden="true"><use href="#icon-filter"></use></svg>
           <span class="visually-hidden">{% translate "Отобрать регион" %}</span>
@@ -71,16 +72,17 @@
             </div>
           {% endfor %}
         </div>
-      </details>
+      </div>
     </fieldset>
+    {% endif %}
 
     {% if settings.marks %}
       <fieldset class="field">
-        <legend class="field__label">{% translate "Знаки карты" %}</legend>
+        <legend class="field__label">{% translate "Способ изображения" %}</legend>
         <div class="stack stack--tight">
-          <label class="radio"><input type="radio" name="marks" value="auto"{% if settings.marks == "auto" %} checked{% endif %}><span>{% translate "по виду величины: у сумм значки" %}</span></label>
-          <label class="radio"><input type="radio" name="marks" value="fill"{% if settings.marks == "fill" %} checked{% endif %}><span>{% translate "заливка по шкале" %}</span></label>
-          <label class="radio"><input type="radio" name="marks" value="symbols"{% if settings.marks == "symbols" %} checked{% endif %}><span>{% translate "значки: площадь круга — значение" %}</span></label>
+          <label class="radio"><input type="radio" name="marks" value="auto"{% if settings.marks == "auto" %} checked{% endif %}><span>{% translate "по типу величины: сумма — картодиаграммой" %}</span></label>
+          <label class="radio"><input type="radio" name="marks" value="fill"{% if settings.marks == "fill" %} checked{% endif %}><span>{% translate "картограмма — заливка по классам" %}</span></label>
+          <label class="radio"><input type="radio" name="marks" value="symbols"{% if settings.marks == "symbols" %} checked{% endif %}><span>{% translate "картодиаграмма — площадь круга равна значению" %}</span></label>
         </div>
       </fieldset>
     {% endif %}
@@ -88,10 +90,10 @@
     {% if settings.scale %}
       <div class="card-settings__pair">
         <div class="field">
-          <label class="field__label" for="settings-method-{{ block_id }}">{% translate "Шкала" %}</label>
+          <label class="field__label" for="settings-method-{{ block_id }}">{% translate "Способ разбиения" %}</label>
           <select class="select" id="settings-method-{{ block_id }}" name="method">
             {% for code, title in settings.methods.items %}
-              <option value="{{ code }}"{% if code == settings.method %} selected{% endif %}>{{ title }}</option>
+              <option value="{{ code }}"{% if code == settings.method %} selected{% endif %}>{{ title|capfirst }}</option>
             {% endfor %}
           </select>
         </div>
@@ -118,22 +120,22 @@
 
     {% if settings.colour is not None %}
       <fieldset class="field">
-        <legend class="field__label">{% translate "Раскраска таблицы" %}</legend>
+        <legend class="field__label">{% translate "Цветовая шкала" %}</legend>
         <div class="stack stack--tight">
-          <label class="radio"><input type="radio" name="colour" value=""{% if not settings.colour %} checked{% endif %}><span>{% translate "без цвета" %}</span></label>
-          <label class="radio"><input type="radio" name="colour" value="value"{% if settings.colour %} checked{% endif %}><span>{% translate "цвет по значению" %}</span></label>
+          <label class="radio"><input type="radio" name="colour" value=""{% if not settings.colour %} checked{% endif %}><span>{% translate "нет" %}</span></label>
+          <label class="radio"><input type="radio" name="colour" value="value"{% if settings.colour %} checked{% endif %}><span>{% translate "по значению" %}</span></label>
         </div>
       </fieldset>
     {% endif %}
 
     {% if settings.multiples %}
       <fieldset class="field">
-        <legend class="field__label">{% translate "Шкала графиков" %}</legend>
+        <legend class="field__label">{% translate "Ось значений" %}</legend>
         <div class="stack stack--tight">
           <label class="radio"><input type="radio" name="scale" value="common"{% if settings.multiples == "common" %} checked{% endif %}><span>{% translate "общая для всех" %}</span></label>
           <label class="radio"><input type="radio" name="scale" value="own"{% if settings.multiples == "own" %} checked{% endif %}><span>{% translate "своя у каждого" %}</span></label>
         </div>
-        <p class="field__hint">{% translate "Общая шкала: высота линии сравнима между регионами. Своя: в каждой клетке линия от наименьшего до наибольшего значения этого региона — виден ход, но не уровень." %}</p>
+        <p class="field__hint">{% translate "Общая ось: высота линии сравнима между регионами. Своя: в каждой клетке линия от наименьшего до наибольшего значения этого региона — виден ход, но не уровень." %}</p>
       </fieldset>
     {% endif %}
 
