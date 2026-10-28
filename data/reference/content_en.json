@@ -165,6 +165,22 @@
       "limitations": "The conclusion depends on the neighbourhood scheme, and one that holds under all three is more reliable.\nThe global index describes the country as a whole, not a single region.",
       "body": "Neighbours w are set by one of three schemes. By default it is a common border together with bridges and sea links. You can take only the land border or the five nearest regions by distance. Under the land scheme the Kaliningrad and Sakhalin oblasts have no neighbours and do not enter the calculation.\n\nSignificance is tested by permutations: the values are randomly reassigned to regions. For the global index this is done 999 times, so the smallest level is written as “≤ 0.001”. For local indices it is done 9,999 times. A local index is tested for every region. Without a correction about four regions out of 85 turn out significant by chance. So the Benjamini–Hochberg correction applies by default. Reopening gives the same result.",
       "source": "62948219f0c64ac69b195d00471a9558199af334"
+    },
+    "value-types": {
+      "title": "Value type and the limits of calculations",
+      "summary": "The value type decides which calculations and conclusions are valid for it.",
+      "formula": "",
+      "limitations": "The type is guessed from the name and the unit, and a wrong guess can be fixed in the indicator’s “Edit”.\nAn invalid calculation is not hidden: next to it the site says why it does not fit.",
+      "body": "A flow is a total for a period: housing completed in a year, deaths in a year. Flows of adjacent years add up. A stock is a total at a date: population on 1 January, deposits at the end of the year. Stocks at different dates do not add up. A relative value is a share, an average or a value per inhabitant. It is not summed and not divided by population. An index already shows the change against another period, so no growth rate is computed from it.\n\nA total depends on the size of the region. A large region has more people, more money and more events. So the gap, convergence, neighbourhood and correlation of a total are computed per inhabitant. The site builds that recalculation first.",
+      "source": "a84b3d322c96de2064f4052b125a57b85f731149"
+    },
+    "own-data-signs": {
+      "title": "Dashes, hidden values and zeros in your own tables",
+      "summary": "Source signs are read by their meaning, and suspicious zeros are shown before the build.",
+      "formula": "",
+      "limitations": "For an unfamiliar source the site asks what a dash means: in yearbooks the notes specify it.\nInput errors are not searched for by sharp jumps: on the corpus the rule mostly flagged real events.",
+      "body": "In Rosstat tables a dash “–” means “the phenomenon is absent”. The site puts a zero with this mark. An ellipsis “…” and the sign “x” mean “no data”, a missing value. The sign “K” means “hidden for confidentiality”. Such a value is taken into account in the bounds of inequality measures. The value “0.0” is below the unit of measurement. It is left out of growth rates and logarithms.\n\nA placeholder zero is a zero put in place of a missing value. Its signs are a zero between non-zero years, more than 30% zeros, a zero for all regions in a year. The site shows such zeros before the build and offers to turn them into missing values.\n\nThe site does not treat a sharp jump between years as an error. On the 2,900 corpus tables the jump rule flagged 505 of 783 bulletin tables, almost all of them real events.",
+      "source": "ae9125ef18f3840c50888302c7472aff350dbef0"
     }
   },
   "GlossaryTerm": {
@@ -234,9 +250,9 @@
     "coefficient-of-variation": {
       "term": "Coefficient of variation",
       "short_definition": "The ratio of the standard deviation to the mean: the spread as a share of the average level.",
-      "definition": "The simplest measure of differences between regions. It is dimensionless and therefore comparable between indicators in different units. It is undefined at a zero or negative mean.",
+      "definition": "The simplest measure of differences between regions. It is dimensionless and therefore comparable between indicators in different units. It is undefined at a zero or negative mean. The standard deviation is the sample one, with the divisor n − 1.",
       "synonyms": "CV, coefficient of variation",
-      "source": "b9536ce42aa5842693e2811300d8ad7ca98854bc"
+      "source": "1df492249781eccefc1eaac32468bfcad0aa808d"
     },
     "decile-ratio": {
       "term": "Decile ratio",
@@ -566,6 +582,41 @@
       "definition": "The first part is growth as in Russia on average. The second is the effect of the region’s industry mix. The third is the regional shift: how much faster or slower the region grew than expected.",
       "synonyms": "shift-share analysis, structural shift",
       "source": "4978cd78b3102e1ea3ba599ab95258a075c618ac"
+    },
+    "flow": {
+      "term": "Flow",
+      "short_definition": "A total for a period: how much happened in a year, quarter or month.",
+      "definition": "Housing completed in a year, the number of deaths, budget revenue. Flows of adjacent periods add up to the flow for a longer period.",
+      "synonyms": "value for a period, interval indicator",
+      "source": "ec9090a0d671b45d8367e1c40643d081b5dc53d7"
+    },
+    "stock": {
+      "term": "Stock",
+      "short_definition": "A total at a date: how much there was at a given moment.",
+      "definition": "Population on 1 January, deposits at the end of the year. Stocks at different dates do not add up: the same people and money would be counted twice.",
+      "synonyms": "value at a date, point-in-time indicator",
+      "source": "2b7ba7b3523fe3757f0440c7eea3f430d2516f59"
+    },
+    "size-effect": {
+      "term": "Size effect",
+      "short_definition": "A region’s total grows with the number of its inhabitants.",
+      "definition": "That is why large regions lead on almost any total. To compare regions, the total is divided by population to get a value per inhabitant.",
+      "synonyms": "scale effect",
+      "source": "b9d1e5da4f42adaabb57d24242e70e54ca61c776"
+    },
+    "absent-phenomenon": {
+      "term": "Phenomenon absent",
+      "short_definition": "The value is zero in substance: there were no events.",
+      "definition": "Rosstat marks it with a dash “–”. It differs from a “no data” gap: the zero here is real and enters calculations.",
+      "synonyms": "dash",
+      "source": "e15e4af96e5c67293e1fdec598d8c6e59ac3f408"
+    },
+    "zero-stub": {
+      "term": "Placeholder zero",
+      "short_definition": "A zero put in a table in place of a missing value.",
+      "definition": "A false zero puts a region in last place and produces “growth from zero”. The site finds such zeros by their signs and offers to turn them into missing values.",
+      "synonyms": "false zero",
+      "source": "33f022b469918bebce7ae5b00889076aff417ff7"
     }
   }
 }
