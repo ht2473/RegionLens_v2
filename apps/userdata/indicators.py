@@ -112,8 +112,27 @@ class Indicator:
 
     @property
     def scale_options(self) -> list[tuple[int, str]]:
-        """Масштабы с единицей, которая получится: (степень тысячи, единица)."""
-        return [(exponent, naming.scaled_unit(self.unit, exponent)) for exponent in SCALES]
+        """
+        Масштабы с единицей, которая получится: (степень тысячи, единица). Только в пределах
+        разрядов: «руб. × 0,001» никто не запишет, выбранный прежде масштаб остаётся.
+        """
+        options = [(exponent, naming.scaled_unit(self.unit, exponent)) for exponent in SCALES]
+        return [
+            (exponent, unit)
+            for exponent, unit in options
+            if "×" not in unit or exponent == self.scale
+        ]
+
+    @property
+    def scalable(self) -> bool:
+        """
+        Разряд единицы имеет смысл у сумм, денег и единиц с разрядом («тыс. человек»), но не
+        у месяцев, процентов и баллов; без единицы его не к чему приписать.
+        """
+        has_order = semantics.unit_scale(self.unit)[1] != 1
+        return bool(self.unit) and (
+            self.is_sum or self.is_currency or has_order or bool(self.scale)
+        )
 
     @property
     def is_sum(self) -> bool:
@@ -205,7 +224,11 @@ class Indicator:
     @property
     def fields(self) -> tuple[str, ...]:
         """Поля описания, кроме вопросов: они — в «Изменить»."""
-        return tuple(name for name in FIELDS if name not in self.questions)
+        return tuple(
+            name
+            for name in FIELDS
+            if name not in self.questions and (name != "scale" or self.scalable)
+        )
 
     @property
     def recounts(self) -> tuple[str, ...]:

@@ -290,14 +290,29 @@ def is_additive(kind: str) -> bool:
     return kind in ADDITIVE
 
 
+# Единица из одного разряда («тыс.», «млн») о деньгах не говорит — смотрят и название.
+_ORDER_ONLY = re.compile(r"^\s*(?:тыс|млн|млрд|трлн)\.?\s*$", re.IGNORECASE)
+
+
+def _money_text(name: str, unit: str) -> str:
+    """
+    Где искать признак денег: в единице, если она указана; в названии — только без единицы
+    или при единице из одного разряда. «Срок кредитов в рублях», месяцев, — не деньги.
+    """
+    unit = (unit or "").strip()
+    if unit and not _ORDER_ONLY.match(unit):
+        return unit
+    return f"{unit} {name}"
+
+
 def is_rubles(name: str, unit: str) -> bool:
-    """Рубли — по единице или названию: в цены года их переводит индекс цен."""
-    return bool(_RUBLES.search(f"{unit} {name}"))
+    """Рубли — по единице, без неё по названию: в цены года их переводит индекс цен."""
+    return bool(_RUBLES.search(_money_text(name, unit)))
 
 
 def is_currency(name: str, unit: str) -> bool:
-    """Деньги в любой валюте — по единице или названию."""
-    return bool(_CURRENCY.search(f"{unit} {name}"))
+    """Деньги в любой валюте — по единице, без неё по названию."""
+    return bool(_CURRENCY.search(_money_text(name, unit)))
 
 
 def is_monthly(name: str, unit: str) -> bool:
