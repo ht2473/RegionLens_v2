@@ -110,3 +110,36 @@ def test_other_users_study_is_not_found(
     other.force_login(make_user(email="other@example.com"))
     assert other.get(_url(study)).status_code == 404
     assert other.post(_url(study), {"action": "save"}).status_code == 404
+
+
+def test_concentration_warns_when_parts_miss_the_total(
+    member_client: Client, warehouse: Any
+) -> None:
+    from tests.support.userdata import build, describe, upload
+
+    regions = ["Москва", "Тверская область", "Курская область", "Белгородская область"]
+    lines = ["Регион;Показатель;Единица;2022;2023"]
+    for region in regions:
+        lines += [
+            f"{region};Отгружено всего;млн руб.;100;120",
+            f"{region};Промышленность;млн руб.;50;60",
+            f"{region};Торговля;млн руб.;30;36",
+            f"{region};Прочее;млн руб.;20;24",
+        ]
+    dataset = upload(member_client, "отрасли.csv", "\n".join(lines).encode("utf-8"))
+    describe(member_client, dataset)
+    assert build(member_client, dataset).status_code == 302
+    keys = {record.title: _key(dataset, record) for record in _version(dataset).series.all()}
+    total = next(key for title, key in keys.items() if "всего" in title)
+    industry = next(key for title, key in keys.items() if "Промышленность" in title)
+    trade = next(key for title, key in keys.items() if "Торговля" in title)
+    study = _study(member_client)
+    data = {"op": "hhi", "a": total, "b": total, "parts": [industry, trade]}
+    page = member_client.post(_url(study), {**data, "table": dataset.code})
+    # Промышленность и торговля — 80 % итога: индекс выйдет неточным.
+    assert "покрывают около 80 % итога" in page.text
+    other = next(key for title, key in keys.items() if "Прочее" in title)
+    full = member_client.post(
+        _url(study), {**data, "parts": [industry, trade, other], "table": dataset.code}
+    )
+    assert "покрывают около" not in full.text

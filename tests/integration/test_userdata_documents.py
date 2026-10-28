@@ -17,6 +17,7 @@ from django.urls import reverse
 
 from apps.catalog.models import Territory
 from apps.userdata import documents as reader
+from apps.userdata.ingest import IngestError
 from apps.userdata.models import Dataset
 from tests.support import documents
 from tests.support.userdata import (
@@ -153,6 +154,21 @@ def test_pdf_tables_with_own_titles_stay_apart(tmp_path: Path) -> None:
     path.write_bytes(documents.pdf(pages, captions=["Pigs"]))
     (table,) = reader.pdf_tables(path)
     assert len(table.rows) == 3
+
+
+def test_pdf_page_limit(tmp_path: Path, settings: Any) -> None:
+    # Страниц больше предела — отказ с советом до чтения; в пределе — читается.
+    header = ["Region", "2022", "2023"]
+    pages = [[header, [code, "1.5", "2.5"]] for code in ("RU-MOW", "RU-SPE", "RU-TVE")]
+    path = tmp_path / "long.pdf"
+    path.write_bytes(documents.pdf(pages))
+    settings.USERDATA_PDF_MAX_PAGES = 2
+    with pytest.raises(IngestError) as refused:
+        reader.pdf_tables(path)
+    assert refused.value.code == "pdf_pages"
+    assert "больше 2 страниц" in str(refused.value)
+    settings.USERDATA_PDF_MAX_PAGES = 3
+    assert reader.pdf_tables(path)
 
 
 def test_wrapped_labels_are_joined() -> None:

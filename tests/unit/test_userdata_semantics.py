@@ -49,8 +49,6 @@ EXPECTED = {
     "answer:comparison": "+++++",
     "answer:relation": "→→→++",
     "set:profile": "+++++",
-    "set:inequality": "→→→+-",
-    "set:neighbours": "+++++",
     "set:pair": "+++++",
     "calc:per1": "+++--",
     "calc:per1000": "+++--",
@@ -61,23 +59,17 @@ EXPECTED = {
     "calc:pricelevel": "---+-",
     "calc:subsistence": "---+-",
     "calc:share": "+++--",
-    "calc:russiashare": "+++--",
     "calc:structure": "+++--",
     "calc:hhi": "+++--",
     "calc:growth": "++++-",
     "calc:baseyear": "++++-",
     "calc:between": "++++-",
     "calc:annualrate": "++++-",
-    "calc:moving": "+++++",
-    "calc:cumulative": "+----",
     "calc:real": "++++-",
     "calc:russia": "---+-",
     "calc:russiadeviation": "---++",
     "calc:districtdeviation": "---++",
-    "calc:zscore": "---++",
-    "calc:target": "+++++",
     "calc:sum": "+++--",
-    "calc:weighteddistrict": "---+-",
     "calc:lq": "+++--",
     "calc:structuralshift": "+++--",
     "calc:shiftshare": "+++--",
@@ -268,6 +260,23 @@ def test_parts_reason() -> None:
     assert "индексы" in semantics.parts_reason([FLOW, RELATIVE], ["т", "%"])
     assert "на дату" in semantics.parts_reason([FLOW, STOCK], ["т", "т"])
     assert "единице" in semantics.parts_reason([STOCK, STOCK], ["т", "кг"])
+    # Разряд не мешает: сумма приведёт слагаемые к единице первого.
+    assert semantics.parts_reason([FLOW, FLOW], ["млн руб.", "тыс. руб."]) == ""
+    assert "единице" in semantics.parts_reason([FLOW, FLOW], ["млн руб.", "тыс. человек"])
+
+
+@pytest.mark.parametrize(
+    ("unit", "expected"),
+    [
+        ("млн руб.", ("руб.", 1e6)),
+        ("тыс.  человек", ("человек", 1e3)),
+        ("Млрд руб", ("руб", 1e9)),
+        ("руб.", ("руб.", 1.0)),
+        ("тысяча", ("тысяча", 1.0)),
+    ],
+)
+def test_unit_scale(unit: str, expected: tuple[str, float]) -> None:
+    assert semantics.unit_scale(unit) == expected
 
 
 def test_country_only_indicator() -> None:

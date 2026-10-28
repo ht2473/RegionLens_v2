@@ -62,10 +62,6 @@ def _values(operation: operations.Operation) -> Values:
             values.lists[item.name] = ["u:t:x", "u:t:y"]
         elif item.kind == operations.YEAR:
             values.numbers[item.name] = 2021 if item.name == "last" else 2019
-        elif item.kind == operations.WINDOW:
-            values.numbers[item.name] = 2
-        elif item.kind == operations.NUMBER:
-            values.numbers[item.name] = 50
         else:
             values.choices[item.name] = item.choices[0][0]
     return values
@@ -125,6 +121,28 @@ def test_structure_and_regional_methods() -> None:
     assert shift == pytest.approx(12.5)
 
 
+def test_sum_brings_parts_to_the_unit_of_the_first() -> None:
+    """«млн руб.» и «тыс. руб.» складываются в миллионах: второе слагаемое делится на 1 000."""
+    operation = operations.BY_CODE["sum"]
+    values = _values(operation)
+    values.info = {
+        "u:t:x": Info("u:t:x", "X", "млн руб.", is_sum=True),
+        "u:t:y": Info("u:t:y", "Y", "тыс. руб.", is_sum=True),
+    }
+    assert operation.outputs is not None
+    (output,) = operation.outputs(values)
+    assert output.unit == "млн руб."
+    assert _run(output.expression)[("RU-A", 2019)] == pytest.approx(10 + 30 / 1000)
+
+
+def test_coverage_expression_is_parts_over_total() -> None:
+    """Покрытие итога: сумма частей, деленная на итог; у X и Y из «Всего» — ровно 1."""
+    values = _values(operations.BY_CODE["hhi"])
+    found = _run(operations.coverage_expression(values))
+    assert found[("RU-A", 2019)] == pytest.approx(1)
+    assert set(operations.COVERAGE_OPERATIONS) == {"hhi", "structuralshift"}
+
+
 def test_shift_share_adds_up_to_the_change() -> None:
     """Три части сдвига-доли в сумме дают изменение суммы отраслей региона."""
     operation = operations.BY_CODE["shiftshare"]
@@ -161,17 +179,6 @@ def test_reason_explains_mismatch() -> None:
         regions=85,
     )
     assert "темп" in operations.reason(operations.BY_CODE["growth"], index)
-    stock = Info(
-        "k",
-        "Вклады",
-        "млн руб.",
-        is_sum=True,
-        kind="stock",
-        first_year=2020,
-        last_year=2024,
-        regions=85,
-    )
-    assert "остатки" in operations.reason(operations.BY_CODE["cumulative"], stock)
     missing = dict.fromkeys(operations.OFFICIAL_INPUTS, False)
     assert "нет на сайте" in operations.reason(operations.BY_CODE["subsistence"], money, missing)
 

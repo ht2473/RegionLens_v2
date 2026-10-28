@@ -13,7 +13,6 @@ import pytest
 from django.test import Client
 from django.urls import reverse
 
-from apps.analytics.selectors import neighbour_map
 from apps.catalog.models import Territory
 from apps.userdata import groups, studies
 from apps.userdata.models import RegionGroup, Study
@@ -209,43 +208,22 @@ class TestSets:
         assert response.status_code == 204
         assert response["HX-Redirect"].startswith(reverse("userdata:study", args=[study.public_id]))
 
-    def test_inequality(self, member_client: Client, warehouse: Any) -> None:
-        # Сумме неравенство — через показатель на жителя: набор ставится на пересчёт.
+    @pytest.mark.parametrize("code", ["inequality", "neighbours"])
+    def test_removed_sets_add_nothing(
+        self, member_client: Client, warehouse: Any, code: str
+    ) -> None:
+        # Наборы «Неравенство и сближение» и «Мой регион среди соседей» убраны: карточки
+        # ставятся по одной.
         dataset = _built(member_client, "crime_wide.csv")
         study = _study(member_client)
-        key = _key(dataset, _first(dataset))
-        _edit(member_client, study, action="add", do="set:inequality", series=key)
-        recount = {block.get("series") for block in _blocks(study) if block.get("series")}
-        assert recount and key not in recount
-        assert all(found.startswith(f"{key}-p") for found in recount)
-        study = _study(member_client)
-        rates = _built(member_client, "crime_wide.csv", kind="relative")
         _edit(
             member_client,
             study,
             action="add",
-            do="set:inequality",
-            series=_key(rates, _first(rates)),
+            do=f"set:{code}",
+            series=_key(dataset, _first(dataset)),
         )
-        kinds = [block.get("target") or block.get("question") for block in _blocks(study)]
-        assert kinds == ["spread", "convergence", "distribution", "multiples"]
-
-    def test_neighbours_needs_my_region(
-        self, member_client: Client, member: Any, warehouse: Any
-    ) -> None:
-        dataset = _built(member_client, "crime_wide.csv")
-        key = _key(dataset, _first(dataset))
-        study = _study(member_client)
-        _edit(member_client, study, action="add", do="set:neighbours", series=key)
         assert _blocks(study) == []
-        member.region = Territory.objects.get(code="RU-TVE")
-        member.save(update_fields=["region"])
-        _edit(member_client, study, action="add", do="set:neighbours", series=key)
-        kinds = [block.get("target") or block.get("question") for block in _blocks(study)]
-        assert kinds[:3] == ["mine", "map", "rankings"]
-        study.refresh_from_db()
-        assert study.territories[0] == "RU-TVE"
-        assert set(study.territories[1:]) <= set(neighbour_map("all")["RU-TVE"])
 
     def test_pair(self, member_client: Client, warehouse: Any) -> None:
         from apps.catalog.models import Series
