@@ -25,21 +25,21 @@
 
 <div class="field view-field">
   <div class="field__head">
-    <div class="field__label" id="surface-marks-label">{% translate "Знаки" %}</div>
-    {% translate "Заливка по шкале подходит для относительных величин: значений на жителя, долей, темпов. Сумму честнее показывать значками: площадь круга — значение, и крупный регион не кажется главным." as marks_hint %}
-    {% include "partials/_hint.html" with hint_id="hint-map-marks" hint_text=marks_hint hint_label=_("Чем отличаются знаки карты") %}
+    <div class="field__label" id="surface-marks-label">{% translate "Способ изображения" %}</div>
+    {% translate "Картограмма — заливка по классам. Она подходит для относительных величин: значений на жителя, долей, темпов. Сумму честнее показывать картодиаграммой: площадь круга равна значению, и крупный регион не кажется главным." as marks_hint %}
+    {% include "partials/_hint.html" with hint_id="hint-map-marks" hint_text=marks_hint hint_label=_("Чем картограмма отличается от картодиаграммы") %}
   </div>
   <div class="segmented" role="radiogroup" aria-labelledby="surface-marks-label">
     <label class="segmented__option">
       <input type="radio" name="marks" value="fill" id="view-marks-fill" form="surface-rail"
              {% if marks != 'symbols' %}checked{% endif %}>
-      <span>{% translate "заливка" %}</span>
+      <span>{% translate "картограмма" %}</span>
     </label>
     <label class="segmented__option">
       <input type="radio" name="marks" value="symbols" id="view-marks-symbols" form="surface-rail"
              {% if marks == 'symbols' %}checked{% endif %}
              {% if not symbols_possible %}disabled{% endif %}>
-      <span>{% translate "значки" %}</span>
+      <span>{% translate "картодиаграмма" %}</span>
     </label>
   </div>
 </div>

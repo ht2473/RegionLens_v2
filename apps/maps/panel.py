@@ -28,7 +28,7 @@ from .classification import (
     DEFAULT_CLASSES,
     DEFAULT_METHOD,
     MAX_CLASSES,
-    METHOD_TERMS,
+    METHOD_NOTES,
     METHODS,
     MIN_CLASSES,
     classify,
@@ -44,8 +44,9 @@ MODE_GEOGRAPHIC = "geo"
 MODE_TILES = "tiles"
 MODES = (MODE_GEOGRAPHIC, MODE_TILES)
 
-# Знаки карты: заливка по шкале или круги, площадь которых — значение. «По виду величины» —
-# значки у сумм (абсолютных величин), заливка у относительных; так строит карту исследование.
+# Способ изображения: картограмма (заливка по классам) или картодиаграмма (круги, площадь
+# которых — значение). «По типу величины» — картодиаграмма у сумм, картограмма у относительных;
+# так строит карту исследование.
 MARKS_FILL = "fill"
 MARKS_SYMBOLS = "symbols"
 MARKS_AUTO = "auto"
@@ -289,7 +290,7 @@ def build_values(request: HttpRequest, state: SurfaceState) -> dict[str, Any]:
 
 def _scale_options(values: list[float], class_count: int) -> list[dict[str, Any]]:
     """
-    Способы разбиения для «Настроить вид»: подпись словами, термин и образец — доли размаха
+    Способы разбиения для «Настроить вид»: термин, что он значит и образец — доли размаха
     значений года, занятые классами этого способа (строками: дробь шаблон записал бы с запятой).
     """
     low, high = (min(values), max(values)) if values else (0.0, 0.0)
@@ -308,7 +309,7 @@ def _scale_options(values: list[float], class_count: int) -> list[dict[str, Any]
                 }
                 for index in range(result.class_count)
             ]
-        options.append({"code": code, "title": title, "term": METHOD_TERMS[code], "sample": sample})
+        options.append({"code": code, "title": title, "note": METHOD_NOTES[code], "sample": sample})
     return options
 
 

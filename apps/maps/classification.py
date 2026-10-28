@@ -11,18 +11,18 @@ from typing import Any
 
 from django.utils.translation import gettext_lazy as _
 
-# Допустимые способы разбиения: подпись словами для интерфейса и термин — мелко рядом.
+# Допустимые способы разбиения: принятый термин картографии и что он значит — мелко рядом.
 METHODS: dict[str, Any] = {
-    "quantile": _("поровну регионов"),
-    "equal": _("равными шагами"),
-    "jenks": _("по разрывам"),
-    "stddev": _("от среднего"),
-}
-METHOD_TERMS: dict[str, Any] = {
     "quantile": _("квантили"),
     "equal": _("равные интервалы"),
-    "jenks": _("естественные границы"),
+    "jenks": _("естественные границы (Дженкс)"),
     "stddev": _("стандартные отклонения"),
+}
+METHOD_NOTES: dict[str, Any] = {
+    "quantile": _("поровну регионов в классе"),
+    "equal": _("классы равной ширины"),
+    "jenks": _("границы по разрывам в значениях"),
+    "stddev": _("шаги от среднего"),
 }
 # Что значат цвета карты — заголовок легенды обычными словами; термин — в подсказке.
 LEGEND_TITLES: dict[str, Any] = {
@@ -69,18 +69,13 @@ class Classification:
 
     @property
     def method_label(self) -> Any:
-        """Подпись способа разбиения словами для легенды."""
+        """Термин способа разбиения."""
         return METHODS.get(self.method, self.method)
 
     @property
     def legend_title(self) -> Any:
         """Что значат цвета карты — заголовок легенды."""
         return LEGEND_TITLES.get(self.method, self.method_label)
-
-    @property
-    def method_term(self) -> Any:
-        """Термин способа разбиения."""
-        return METHOD_TERMS.get(self.method, self.method)
 
     def class_of(self, value: float | None) -> int | None:
         """Определить номер класса значения, считая от нуля; пропуск — ``None``."""

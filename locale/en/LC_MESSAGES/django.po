@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 04:18+0000\n"
+"POT-Creation-Date: 2026-10-28 06:04+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1980,8 +1980,6 @@ msgid "проверка устойчивости"
 msgstr "robustness check"
 
 #: apps/analytics/templates/analytics/partials/_index_results.html:81
-#: apps/surface/templates/surface/partials/_scale.html:8
-#: apps/userdata/templates/userdata/cards/_settings.html:91
 msgid "Шкала"
 msgstr "Scale"
 
@@ -6425,11 +6423,11 @@ msgid "Найти регион"
 msgstr "Find a region"
 
 #: apps/core/templates/core/partials/_live_legend.html:8
-msgid "Классы шкалы · в каждом поровну регионов"
-msgstr "Scale classes · an equal number of regions in each"
+msgid "Квантили · в каждом классе поровну регионов"
+msgstr "Quantiles · an equal number of regions in each class"
 
 #: apps/core/templates/core/partials/_live_legend.html:38
-#: apps/maps/panel.py:349
+#: apps/maps/panel.py:351
 #: apps/maps/templates/maps/partials/_legend.html:21
 #: apps/maps/templates/maps/partials/_legend.html:74
 #: apps/userdata/export.py:250
@@ -7525,6 +7523,7 @@ msgid "да"
 msgstr "yes"
 
 #: apps/dashboard/templates/dashboard/content.html:87
+#: apps/userdata/templates/userdata/cards/_settings.html:125
 msgid "нет"
 msgstr "no"
 
@@ -8004,7 +8003,7 @@ msgid "Тип проверки"
 msgstr "Check type"
 
 #: apps/dashboard/templates/dashboard/quality.html:49
-#: apps/userdata/templates/userdata/cards/_settings.html:140
+#: apps/userdata/templates/userdata/cards/_settings.html:142
 msgid "Применить"
 msgstr "Apply"
 
@@ -9080,36 +9079,36 @@ msgid "Северный Кавказ"
 msgstr "North Caucasus"
 
 #: apps/maps/classification.py:16
-msgid "поровну регионов"
-msgstr "equal number of regions"
-
-#: apps/maps/classification.py:17
-msgid "равными шагами"
-msgstr "equal steps"
-
-#: apps/maps/classification.py:18
-msgid "по разрывам"
-msgstr "at natural gaps"
-
-#: apps/maps/classification.py:19
-msgid "от среднего"
-msgstr "from the mean"
-
-#: apps/maps/classification.py:22
 msgid "квантили"
 msgstr "quantiles"
 
-#: apps/maps/classification.py:23
+#: apps/maps/classification.py:17
 msgid "равные интервалы"
 msgstr "equal intervals"
 
-#: apps/maps/classification.py:24
-msgid "естественные границы"
-msgstr "natural breaks"
+#: apps/maps/classification.py:18
+msgid "естественные границы (Дженкс)"
+msgstr "natural breaks (Jenks)"
 
-#: apps/maps/classification.py:25
+#: apps/maps/classification.py:19
 msgid "стандартные отклонения"
 msgstr "standard deviations"
+
+#: apps/maps/classification.py:22
+msgid "поровну регионов в классе"
+msgstr "an equal number of regions per class"
+
+#: apps/maps/classification.py:23
+msgid "классы равной ширины"
+msgstr "classes of equal width"
+
+#: apps/maps/classification.py:24
+msgid "границы по разрывам в значениях"
+msgstr "bounds at gaps in the values"
+
+#: apps/maps/classification.py:25
+msgid "шаги от среднего"
+msgstr "steps from the mean"
 
 #: apps/maps/classification.py:29
 msgid "В каждом цвете — поровну регионов"
@@ -9127,33 +9126,33 @@ msgstr "Colours are split at the gaps in the values"
 msgid "Цвета — отклонение от среднего"
 msgstr "Colours show the deviation from the mean"
 
-#: apps/maps/panel.py:81
+#: apps/maps/panel.py:82
 #: apps/maps/templates/maps/partials/_view.html:16
 msgid "география"
 msgstr "geography"
 
-#: apps/maps/panel.py:81
+#: apps/maps/panel.py:82
 #: apps/maps/templates/maps/partials/_view.html:21
 msgid "плитки"
 msgstr "tiles"
 
-#: apps/maps/panel.py:108
+#: apps/maps/panel.py:109
 msgid "Плиточная картограмма: %(title)s"
 msgstr "Tile choropleth map: %(title)s"
 
-#: apps/maps/panel.py:114
+#: apps/maps/panel.py:115
 msgid "Картограмма: %(title)s"
 msgstr "Choropleth map: %(title)s"
 
-#: apps/maps/panel.py:317
+#: apps/maps/panel.py:319
 msgid "изменение с %(start)s по %(end)s год"
 msgstr "change from %(start)s to %(end)s"
 
-#: apps/maps/panel.py:320
+#: apps/maps/panel.py:322
 msgid "классов: %(count)s"
 msgstr "classes: %(count)s"
 
-#: apps/maps/panel.py:355
+#: apps/maps/panel.py:357
 msgid "изменение"
 msgstr "change"
 
@@ -9172,8 +9171,10 @@ msgid "Изменение значения"
 msgstr "Change of the value"
 
 #: apps/maps/templates/maps/partials/_legend.html:33
+#: apps/surface/templates/surface/partials/_scale.html:8
+#: apps/userdata/templates/userdata/cards/_settings.html:93
 msgid "Способ разбиения"
-msgstr "Division method"
+msgstr "Classification method"
 
 #: apps/maps/templates/maps/partials/_legend.html:44
 msgid "Распределение значений по шкале"
@@ -9221,20 +9222,21 @@ msgid "На плиточной карте все регионы одного р�
 msgstr "On the tile map all regions are the same size: area has nothing to do with the indicator, and small regions are as visible as large ones."
 
 #: apps/maps/templates/maps/partials/_view.html:28
-msgid "Знаки"
-msgstr "Marks"
+#: apps/userdata/templates/userdata/cards/_settings.html:81
+msgid "Способ изображения"
+msgstr "Map type"
 
 #: apps/maps/templates/maps/partials/_view.html:29
-msgid "Заливка по шкале подходит для относительных величин: значений на жителя, долей, темпов. Сумму честнее показывать значками: площадь круга — значение, и крупный регион не кажется главным."
-msgstr "Shading by scale suits relative values: per person, shares, rates. A total is shown more honestly with circles: the area of a circle is the value, so a large region does not look like the main one."
+msgid "Картограмма — заливка по классам. Она подходит для относительных величин: значений на жителя, долей, темпов. Сумму честнее показывать картодиаграммой: площадь круга равна значению, и крупный регион не кажется главным."
+msgstr "A choropleth map shades regions by class. It suits relative values: per person, shares, rates. A total is shown more honestly with a proportional symbol map: the area of a circle equals the value, so a large region does not look like the main one."
 
 #: apps/maps/templates/maps/partials/_view.html:36
-msgid "заливка"
-msgstr "shading"
+msgid "картограмма"
+msgstr "choropleth"
 
 #: apps/maps/templates/maps/partials/_view.html:42
-msgid "значки"
-msgstr "circles"
+msgid "картодиаграмма"
+msgstr "proportional symbols"
 
 #: apps/maps/templates/maps/partials/_view.html:49
 msgid "Сравнить с годом"
@@ -9253,8 +9255,8 @@ msgid "Чем отличаются виды карты"
 msgstr "How the map views differ"
 
 #: apps/maps/templates/maps/partials/_view.html:30
-msgid "Чем отличаются знаки карты"
-msgstr "How map marks differ"
+msgid "Чем картограмма отличается от картодиаграммы"
+msgstr "How a choropleth differs from proportional symbols"
 
 #: apps/maps/templates/maps/partials/_view.html:51
 msgid "Что даёт сравнение лет"
@@ -9620,6 +9622,7 @@ msgid "%(title)s, опубликован %(date)s"
 msgstr "%(title)s, published %(date)s"
 
 #: apps/surface/builders.py:35
+#: apps/userdata/templates/userdata/cards/_settings.html:126
 msgid "по значению"
 msgstr "by value"
 
@@ -9838,7 +9841,7 @@ msgstr "Maximum"
 
 #: apps/surface/templates/surface/panels/_distribution.html:86
 #: apps/surface/templates/surface/partials/_subject.html:68
-#: apps/userdata/templates/userdata/cards/_settings.html:45
+#: apps/userdata/templates/userdata/cards/_settings.html:47
 msgid "Отмеченные регионы"
 msgstr "Marked regions"
 
@@ -10086,7 +10089,7 @@ msgstr "Full list"
 #: apps/surface/templates/surface/partials/_territories.html:83
 #: apps/userdata/templates/userdata/_dataset_exclusions.html:43
 #: apps/userdata/templates/userdata/_study_toolbar.html:62
-#: apps/userdata/templates/userdata/cards/_settings.html:62
+#: apps/userdata/templates/userdata/cards/_settings.html:63
 #: apps/userdata/templates/userdata/groups.html:70
 msgid "вне округов"
 msgstr "outside the districts"
@@ -10726,21 +10729,21 @@ msgid "Своя формула"
 msgstr "Own formula"
 
 #: apps/userdata/formula_views.py:118
-#: apps/userdata/formula_views.py:148
+#: apps/userdata/formula_views.py:145
 #: apps/userdata/templates/userdata/_dataset_data.html:66
 #: apps/userdata/templates/userdata/formula.html:24
 msgid "Показатель по формуле"
 msgstr "Indicator from a formula"
 
-#: apps/userdata/formula_views.py:193
+#: apps/userdata/formula_views.py:192
 msgid "Показатель «%(title)s» удалён."
 msgstr "Indicator “%(title)s” deleted."
 
-#: apps/userdata/formula_views.py:214
+#: apps/userdata/formula_views.py:213
 msgid "Выберите оба показателя: A и B."
 msgstr "Choose both indicators: A and B."
 
-#: apps/userdata/formula_views.py:216
+#: apps/userdata/formula_views.py:215
 msgid "A и B — один и тот же показатель."
 msgstr "A and B are the same indicator."
 
@@ -12168,7 +12171,7 @@ msgstr "There are already %(count)s active links — that is the limit. Revoke t
 msgid "Этот вид в исследование не ставится."
 msgstr "This view cannot be added to a study."
 
-#: apps/userdata/studies.py:504
+#: apps/userdata/studies.py:518
 msgid "Такого региона нет."
 msgstr "There is no such region."
 
@@ -12190,15 +12193,15 @@ msgstr "The study already has %(count)s cards and notes — that is the limit."
 msgid "Исследование"
 msgstr "Study"
 
-#: apps/userdata/studies.py:509
+#: apps/userdata/studies.py:523
 msgid "В исследовании уже %(count)s регионов — это предел."
 msgstr "The study already has %(count)s regions, which is the limit."
 
-#: apps/userdata/study_cards.py:346
+#: apps/userdata/study_cards.py:351
 msgid "Посчитано по значению на км²."
 msgstr "Calculated from the value per km²."
 
-#: apps/userdata/study_cards.py:348
+#: apps/userdata/study_cards.py:353
 msgid "Посчитано по значению на жителя."
 msgstr "Calculated from the value per resident."
 
@@ -13460,103 +13463,87 @@ msgstr "There are no significant relationships with indicators of the main set."
 msgid "значимых связей: %(count)s"
 msgstr "significant relationships: %(count)s"
 
-#: apps/userdata/templates/userdata/cards/_settings.html:10
+#: apps/userdata/templates/userdata/cards/_settings.html:11
 msgid "Настроить карточку"
 msgstr "Set up the card"
 
-#: apps/userdata/templates/userdata/cards/_settings.html:11
+#: apps/userdata/templates/userdata/cards/_settings.html:12
 #: templates/partials/_rail_dock.html:16
 msgid "Настроить"
 msgstr "Configure"
 
-#: apps/userdata/templates/userdata/cards/_settings.html:14
+#: apps/userdata/templates/userdata/cards/_settings.html:15
 msgid "Настройки карточки"
 msgstr "Card settings"
 
-#: apps/userdata/templates/userdata/cards/_settings.html:23
+#: apps/userdata/templates/userdata/cards/_settings.html:24
 msgid "Показать как"
 msgstr "Show as"
 
-#: apps/userdata/templates/userdata/cards/_settings.html:36
-#: apps/userdata/templates/userdata/cards/_settings.html:47
+#: apps/userdata/templates/userdata/cards/_settings.html:37
+#: apps/userdata/templates/userdata/cards/_settings.html:49
 msgid "как у исследования"
 msgstr "as in the study"
 
-#: apps/userdata/templates/userdata/cards/_settings.html:48
+#: apps/userdata/templates/userdata/cards/_settings.html:50
 msgid "без отметок"
 msgstr "none marked"
 
-#: apps/userdata/templates/userdata/cards/_settings.html:49
-msgid "свои"
-msgstr "own"
-
-#: apps/userdata/templates/userdata/cards/_settings.html:79
-msgid "Знаки карты"
-msgstr "Map marks"
-
-#: apps/userdata/templates/userdata/cards/_settings.html:81
-msgid "по виду величины: у сумм значки"
-msgstr "by kind of value: circles for totals"
-
-#: apps/userdata/templates/userdata/cards/_settings.html:82
-msgid "заливка по шкале"
-msgstr "shading by scale"
-
 #: apps/userdata/templates/userdata/cards/_settings.html:83
-msgid "значки: площадь круга — значение"
-msgstr "circles: the area is the value"
+msgid "по типу величины: сумма — картодиаграммой"
+msgstr "by value type: proportional symbols for a total"
 
-#: apps/userdata/templates/userdata/cards/_settings.html:99
+#: apps/userdata/templates/userdata/cards/_settings.html:84
+msgid "картограмма — заливка по классам"
+msgstr "choropleth: shading by class"
+
+#: apps/userdata/templates/userdata/cards/_settings.html:85
+msgid "картодиаграмма — площадь круга равна значению"
+msgstr "proportional symbols: circle area equals the value"
+
+#: apps/userdata/templates/userdata/cards/_settings.html:101
 msgid "Классов"
 msgstr "Classes"
 
-#: apps/userdata/templates/userdata/cards/_settings.html:111
+#: apps/userdata/templates/userdata/cards/_settings.html:113
 msgid "Подписи"
 msgstr "Labels"
 
-#: apps/userdata/templates/userdata/cards/_settings.html:113
+#: apps/userdata/templates/userdata/cards/_settings.html:115
 msgid "значения отмеченных регионов"
 msgstr "values of marked regions"
 
-#: apps/userdata/templates/userdata/cards/_settings.html:114
+#: apps/userdata/templates/userdata/cards/_settings.html:116
 msgid "без подписей значений"
 msgstr "no value labels"
 
-#: apps/userdata/templates/userdata/cards/_settings.html:121
-msgid "Раскраска таблицы"
-msgstr "Table colouring"
-
 #: apps/userdata/templates/userdata/cards/_settings.html:123
-msgid "без цвета"
-msgstr "no colour"
-
-#: apps/userdata/templates/userdata/cards/_settings.html:124
-msgid "цвет по значению"
-msgstr "colour by value"
-
-#: apps/userdata/templates/userdata/cards/_settings.html:131
-msgid "Шкала графиков"
-msgstr "Chart scale"
+msgid "Цветовая шкала"
+msgstr "Colour scale"
 
 #: apps/userdata/templates/userdata/cards/_settings.html:133
+msgid "Ось значений"
+msgstr "Value axis"
+
+#: apps/userdata/templates/userdata/cards/_settings.html:135
 msgid "общая для всех"
 msgstr "common for all"
 
-#: apps/userdata/templates/userdata/cards/_settings.html:134
+#: apps/userdata/templates/userdata/cards/_settings.html:136
 msgid "своя у каждого"
 msgstr "own for each"
 
-#: apps/userdata/templates/userdata/cards/_settings.html:136
-msgid "Общая шкала: высота линии сравнима между регионами. Своя: в каждой клетке линия от наименьшего до наибольшего значения этого региона — виден ход, но не уровень."
-msgstr "Common scale: line heights are comparable between regions. Own scale: in each cell the line runs from that region’s lowest to its highest value — the course is visible, but not the level."
+#: apps/userdata/templates/userdata/cards/_settings.html:138
+msgid "Общая ось: высота линии сравнима между регионами. Своя: в каждой клетке линия от наименьшего до наибольшего значения этого региона — виден ход, но не уровень."
+msgstr "Shared axis: line heights are comparable between regions. Own axis: in each cell the line runs from that region’s lowest to its highest value — the course is visible, but not the level."
 
-#: apps/userdata/templates/userdata/cards/_settings.html:36
+#: apps/userdata/templates/userdata/cards/_settings.html:37
 msgid "как у исследования (%(year)s)"
 msgstr "as in the study (%(year)s)"
 
-#: apps/userdata/templates/userdata/cards/_settings.html:52
-msgid "Выбрать свои — не больше %(count)s"
-msgstr "Choose your own, up to %(count)s"
+#: apps/userdata/templates/userdata/cards/_settings.html:51
+msgid "свои — не больше %(count)s"
+msgstr "own, up to %(count)s"
 
 #: apps/userdata/templates/userdata/cards/_spread.html:7
 msgid "раза — верхние 10 %% регионов к нижним"
@@ -13761,10 +13748,6 @@ msgstr "Regions recognised: %(count)s of 85."
 #: apps/userdata/templates/userdata/file_step.html:113
 msgid "Таблица в документе разбита на части? Вставьте следующую часть — строки добавятся в конец, повторённая шапка отбросится."
 msgstr "Is the table split into parts in the document? Paste the next part — the rows are added at the end, a repeated header is dropped."
-
-#: apps/userdata/templates/userdata/formula.html:24
-msgid "Новый показатель по формуле"
-msgstr "New indicator from a formula"
 
 #: apps/userdata/templates/userdata/formula.html:26
 msgid "Из показателей ваших таблиц и показателей сайта. Считается заново, когда таблица обновляется."
