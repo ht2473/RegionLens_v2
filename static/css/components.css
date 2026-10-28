@@ -4401,7 +4401,13 @@ rl-combobox:defined > select {
   gap: var(--space-4) var(--space-8);
 }
 
+/* Число и подпись — отдельными элементами: подпись стоит рядом или целиком под числом.
+   Строкой внутри числа она при переносе брала его высоту строки и рвалась с пустотой. */
 .answer__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-2);
   margin: 0;
   font-size: var(--text-3xl);
   font-weight: var(--weight-bold);
@@ -4412,6 +4418,7 @@ rl-combobox:defined > select {
 .answer__unit {
   font-size: var(--text-sm);
   font-weight: var(--weight-regular);
+  line-height: var(--leading-snug);
   letter-spacing: 0;
   color: var(--text-muted);
 }
