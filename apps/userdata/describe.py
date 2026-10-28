@@ -143,7 +143,8 @@ def save_answers(
     """
     Записать ответы человека в рецепт версии.
 
-    ``answers``: ``roles`` (номер столбца → роль), ``year``, ``slices`` (номер → значения),
+    ``answers``: ``roles`` (номер столбца → роль), ``year``, ``repeats`` (что в повторах
+    регионов), ``slices`` (номер → значения),
     ``territories`` и ``nested`` (подпись → код, «outside» или «none»), ``remember``.
     Рядом — шапки столбцов и подписи, о которых спрашивали: новая версия файла переносит
     роли по шапке и спрашивает только о новом (``renew``).
@@ -158,6 +159,9 @@ def save_answers(
     recipe["form"] = result.form
     year = answers.get("year")
     recipe["year"] = int(year) if year else None
+    repeats = answers.get("repeats")
+    if repeats in recognize.REPEATS_ANSWERS:
+        recipe["repeats"] = repeats
     slices = {
         str(index): [
             value

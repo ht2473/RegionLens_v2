@@ -244,6 +244,20 @@ def extract(version: DatasetVersion) -> dict[str, Any]:
         )
     if result.form == recognize.INDICATORS and result.needs_year:
         raise ExtractError(_("Годы в таблице не найдены. Укажите год на шаге «Что в таблице»."))
+    if result.needs_repeats:
+        raise ExtractError(
+            _(
+                "Регионы повторяются в нескольких строках. "
+                "Ответьте на шаге «Что в таблице», что в этих строках."
+            )
+        )
+    if result.repeats is not None and result.repeats_answer == recognize.REPEATS_PLACES:
+        raise ExtractError(
+            _(
+                "На карте сайта только субъекты РФ. "
+                "Нужна таблица, где у каждого региона одна строка."
+            )
+        )
     places = _places(result)
     collector = Collector(limit=value_limit(version), secret_notes=_secret_notes(result, loaded))
     reader = _Reader(version, result, places, collector, loaded)

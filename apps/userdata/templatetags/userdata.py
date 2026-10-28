@@ -7,6 +7,8 @@ from collections.abc import Mapping
 from typing import Any
 
 from django import template
+from django.utils.html import format_html
+from django.utils.safestring import SafeString
 from django.utils.translation import get_language
 
 register = template.Library()
@@ -20,6 +22,15 @@ def source_lang(text: Any) -> str:
     if get_language() != "ru" and _CYRILLIC.search(str(text or "")):
         return "ru"
     return ""
+
+
+@register.filter
+def in_source_lang(text: Any) -> SafeString:
+    """Текст таблицы внутри переводимой фразы: с ``lang="ru"`` на странице не по-русски."""
+    lang = source_lang(text)
+    if lang:
+        return format_html('<span lang="{}">{}</span>', lang, text)
+    return format_html("{}", text)
 
 
 @register.filter

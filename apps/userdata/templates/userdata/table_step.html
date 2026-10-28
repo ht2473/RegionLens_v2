@@ -110,6 +110,27 @@
       <input type="hidden" name="year" value="{{ result.year }}">
     {% endif %}
 
+    {% if result.repeats %}
+      <fieldset class="question-card" id="repeats">
+        <legend class="question-card__title">{% translate "Регионы повторяются в нескольких строках" %}</legend>
+        <p>
+          {% blocktranslate trimmed with regions=result.repeats.regions total=result.repeats.total %}
+            Регионов с повторами: {{ regions }} из {{ total }}. Числа в повторах разные. На карте у региона одно значение.
+          {% endblocktranslate %}
+        </p>
+        {% if result.repeats.municipal %}
+          <p>
+            {% blocktranslate trimmed with header=result.repeats.municipal|in_source_lang %}
+              Рядом есть столбец «{{ header }}». Похоже, в строках города или районы.
+            {% endblocktranslate %}
+          </p>
+        {% endif %}
+        <p>{% translate "Что в этих строках?" %}</p>
+        <label class="radio"><input type="radio" name="repeats" value="places"{% if result.repeats_answer == "places" %} checked{% endif %}>{% translate "Города, районы или другие части регионов" %}</label>
+        <label class="radio"><input type="radio" name="repeats" value="first"{% if result.repeats_answer == "first" %} checked{% endif %}> {% translate "Разные части таблицы одна под другой — взять первую" %}</label>
+      </fieldset>
+    {% endif %}
+
     {% if unresolved %}
       <section class="question-card" aria-labelledby="unresolved-title">
         <h2 class="question-card__title" id="unresolved-title">
@@ -145,7 +166,7 @@
       </section>
     {% endif %}
 
-    {% if result.duplicates %}
+    {% if result.duplicates and not result.repeats %}
       <div class="callout callout--warning">
         <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
         <div>

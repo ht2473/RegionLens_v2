@@ -77,6 +77,19 @@ NUMERIC_SHARE = 0.8
 PERIOD_SHARE = 0.9
 # Рядов в наборе не больше этого; больше — отбор значений разрезов.
 MAX_SERIES = 500
+# Регион в нескольких строках с разными числами у половины регионов, но не меньше чем у пяти:
+# в строках города или районы, или таблица из частей одна под другой. Спрашивается, что это.
+# На корпусе 28.10.2026 между 20 и 79 % повторов не было ни одной таблицы.
+REPEAT_SHARE = 0.5
+REPEAT_MIN_REGIONS = 5
+# Разрез, у которого столько значений встречаются у одного региона, — города или районы.
+PLACE_SHARE = 0.9
+# Ответы на вопрос о повторах: города и районы — карты нет, части таблицы — первое значение.
+REPEATS_PLACES = "places"
+REPEATS_FIRST = "first"
+REPEATS_ANSWERS = (REPEATS_PLACES, REPEATS_FIRST)
+# Столбец муниципальных образований рядом с регионами — подсказка, что в строках города.
+_MUNICIPAL_HEADER = re.compile(r"октмо|муниципальн", re.IGNORECASE)
 # Сколько самых частых значений столбца хватает для его профиля.
 PROFILE_VALUES = 1500
 # Строк начала таблицы достаточно, чтобы найти шапку и роли.
@@ -239,6 +252,10 @@ class Recognition:
     districts: bool = False
     # Значения разреза строками под регионом-заголовком (в порядке таблицы).
     row_parts: list[str] = field(default_factory=list)
+    # Регионы в нескольких строках с разными числами: сколько их, из скольких и подпись
+    # столбца муниципальных образований, если он есть; ответ человека — ``repeats_answer``.
+    repeats: dict[str, Any] | None = None
+    repeats_answer: str = ""
 
     def role_of(self, role: str) -> list[ColumnInfo]:
         return [column for column in self.columns if column.role == role]
@@ -246,6 +263,11 @@ class Recognition:
     @property
     def value_columns(self) -> list[ColumnInfo]:
         return self.role_of(VALUE)
+
+    @property
+    def needs_repeats(self) -> bool:
+        """Регионы повторяются, а человек не сказал, что в строках: его спрашивают."""
+        return self.repeats is not None and self.repeats_answer not in REPEATS_ANSWERS
 
     @property
     def needs_year(self) -> bool:
@@ -311,10 +333,15 @@ def recognize(
     result.territories = matching.match_column(result.labels, codes=codes, remembered=remembered)
     _apply_territory_choices(result, recipe)
     result.municipal = _looks_municipal(result)
+    if not recipe.get("roles"):
+        _places_are_not_slices(result, rows)
     _summarize_periods(result, loaded)
     _summarize_slices(result, loaded, recipe)
     _check_values(result, loaded)
     _find_duplicates(result, rows)
+    _find_repeats(result)
+    if result.repeats is not None:
+        result.repeats_answer = str(recipe.get("repeats") or "")
     _find_same_headers(result)
     return result
 
@@ -1293,6 +1320,59 @@ def _find_duplicates(result: Recognition, rows: list[list[Any]]) -> None:
                     }
                 )
             seen.setdefault(key, (raw, row.index))
+
+
+def _places_are_not_slices(result: Recognition, rows: list[list[Any]]) -> None:
+    """
+    Разрез, каждое значение которого встречается у одного региона, — города или районы
+    внутри регионов («Белгородская область» и «Губкин», «Старый Оскол»), а не разрез вроде
+    пола или отрасли. Столбец пропускается: повторы регионов спросит ``_find_repeats``.
+    """
+    if result.territories is None or result.form not in {WIDE, INDICATORS}:
+        return
+    codes = result.territories.codes()
+    for column in result.role_of(SLICE):
+        if column.guessed != SLICE:
+            continue
+        owners: dict[str, set[str]] = defaultdict(set)
+        places: dict[str, set[str]] = defaultdict(set)
+        for row in result.rows:
+            code = codes.get(row.label)
+            line = rows[row.index]
+            value = cell_text(line[column.index]).strip() if column.index < len(line) else ""
+            if code and value:
+                owners[value].add(code)
+                places[code].add(value)
+        if not owners:
+            continue
+        alone = sum(1 for regions in owners.values() if len(regions) == 1)
+        several = sum(1 for values in places.values() if len(values) > 1)
+        if alone >= len(owners) * PLACE_SHARE and several >= max(
+            REPEAT_MIN_REGIONS, len(places) * REPEAT_SHARE
+        ):
+            column.role = column.guessed = SKIP
+
+
+def _find_repeats(result: Recognition) -> None:
+    """
+    Половина регионов в нескольких строках с разными числами: моногорода ЕМИСС под своим
+    регионом или таблица из частей («зерновые», ниже «подсолнечник»). Карта взяла бы первое.
+    """
+    if result.territories is None:
+        return
+    regions = {code for code in result.territories.codes().values() if code}
+    repeated = {item["code"] for item in result.duplicates}
+    if len(repeated) < max(REPEAT_MIN_REGIONS, len(regions) * REPEAT_SHARE):
+        return
+    municipal = next(
+        (
+            column.header.split(" | ")[-1]
+            for column in result.columns
+            if column.role != TERRITORY and _MUNICIPAL_HEADER.search(column.header)
+        ),
+        "",
+    )
+    result.repeats = {"regions": len(repeated), "total": len(regions), "municipal": municipal}
 
 
 def _find_same_headers(result: Recognition) -> None:

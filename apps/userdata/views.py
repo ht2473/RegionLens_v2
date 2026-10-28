@@ -647,7 +647,7 @@ ROLE_HEADERS_SHOWN = 3
 def questions_of(result: recognize.Recognition) -> int:
     """
     Сколько вопросов на шаге «Что в таблице»: вид таблицы не понят, вложенные области,
-    год, неузнанные подписи территорий, слишком много рядов.
+    год, повторы регионов, неузнанные подписи территорий, слишком много рядов.
     """
     nested = result.territories.nested if result.territories else []
     return sum(
@@ -655,6 +655,7 @@ def questions_of(result: recognize.Recognition) -> int:
             result.form == recognize.UNKNOWN,
             len(nested),
             result.needs_year,
+            result.needs_repeats,
             bool(describe.unresolved(result)),
             result.series > recognize.MAX_SERIES,
         )
@@ -760,7 +761,7 @@ def _resolved_regions(result: recognize.Recognition) -> int:
 
 
 def _answers(request: HttpRequest, result: recognize.Recognition) -> dict[str, Any]:
-    """Ответы формы шага: роли, год, разрезы, территории, вложенные области."""
+    """Ответы формы шага: роли, год, повторы регионов, разрезы, территории, вложенные области."""
     data = request.POST
     answers: dict[str, Any] = {
         "roles": {
@@ -774,6 +775,7 @@ def _answers(request: HttpRequest, result: recognize.Recognition) -> dict[str, A
         and data.get("year", "").strip() != data.get("year-auto", "")
         else "",
         "remember": data.get("remember") == "on",
+        "repeats": data.get("repeats", ""),
         "territories": {},
         "nested": {},
         "slices": {},

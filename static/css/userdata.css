@@ -354,6 +354,11 @@ legend.question-card__title ~ * {
   margin-top: var(--space-2);
 }
 
+/* Пояснение в вопросе: абзацы отделены друг от друга и от вариантов ответа. */
+.question-card > p {
+  margin: 0 0 var(--space-3);
+}
+
 .input--year {
   width: 8rem;
 }
