@@ -22,7 +22,10 @@ def ranking_table(
     previous_year: int | None = None,
     ascending: bool = False,
 ) -> list[dict[str, Any]]:
-    """Получить рейтинг субъектов за год с рангом года сравнения — одним запросом."""
+    """
+    Получить рейтинг субъектов за год с рангом года сравнения — одним запросом. Регионы
+    с равным местом — по алфавиту: порядок одинаков от запроса к запросу.
+    """
     order_column = validate_identifier("rank_asc" if ascending else "rank_desc", ORDER_COLUMNS)
 
     return fetch_dicts(
@@ -54,7 +57,7 @@ def ranking_table(
               AND p.territory_code = r.territory_code
               AND p.year = ?
         WHERE r.series_key = ? AND r.year = ?
-        ORDER BY r.{order_column}
+        ORDER BY r.{order_column}, t.name_ru
         """,  # noqa: S608 - имя столбца проверено по белому списку
         [previous_year, series_key, year],
     )
