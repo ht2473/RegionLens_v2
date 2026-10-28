@@ -129,7 +129,8 @@ class CalcView(TemplateView):
         options = self.series_options()
         known = {item["key"] for group in options for item in group["items"]}
         if form["a"] not in known:
-            form["a"] = next(iter(known), "") if known else ""
+            # Первый по порядку перечня, а не из множества: иначе выбор случаен.
+            form["a"] = next((item["key"] for group in options for item in group["items"]), "")
         info = operations.info_of(form["a"]) if form["a"] else None
         available = operations.available_official()
         catalog = operations.grouped(info, available)

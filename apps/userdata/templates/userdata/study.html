@@ -56,8 +56,8 @@
           </a>
         {% endif %}
         {% url 'userdata:calc' study.public_id as calc_url %}
-        <a class="button button--sm button--secondary" href="{{ calc_url }}{% if panel.chosen.is_user %}?series={{ panel.chosen.key|urlencode }}{% endif %}"
-           data-dialog-open="calc-dialog" hx-get="{{ calc_url }}{% if panel.chosen.is_user %}?series={{ panel.chosen.key|urlencode }}{% endif %}"
+        <a class="button button--sm button--secondary" href="{{ calc_url }}{% if default_series %}?series={{ default_series|urlencode }}{% endif %}"
+           data-dialog-open="calc-dialog" hx-get="{{ calc_url }}{% if default_series %}?series={{ default_series|urlencode }}{% endif %}"
            hx-target="#calc-dialog-body" hx-swap="innerHTML" hx-push-url="false">
           {% translate "Рассчитать показатель" %}
         </a>
