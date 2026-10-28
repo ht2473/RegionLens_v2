@@ -456,8 +456,10 @@ USERDATA_TABLE_MAX_BYTES = env.int("USERDATA_TABLE_MAX_BYTES", default=300 * 102
 USERDATA_ZIP_MAX_RATIO = env.int("USERDATA_ZIP_MAX_RATIO", default=100)
 USERDATA_ZIP_MAX_FILES = env.int("USERDATA_ZIP_MAX_FILES", default=50)
 # PDF читается при загрузке: страниц не больше, чтение не дольше (секунд), иначе — отказ
-# с советом сохранить нужные страницы отдельным файлом.
-USERDATA_PDF_MAX_PAGES = env.int("USERDATA_PDF_MAX_PAGES", default=40)
+# с советом сохранить нужные страницы отдельным файлом. Сборники ведомств — по 50–100
+# страниц; страница читается за 0,06–0,31 с (замер 28.10.2026 на PDF корпуса), так что
+# сервер бережёт в первую очередь предел времени.
+USERDATA_PDF_MAX_PAGES = env.int("USERDATA_PDF_MAX_PAGES", default=100)
 USERDATA_PDF_SECONDS = env.int("USERDATA_PDF_SECONDS", default=30)
 # Вставка из буфера: текст таблицы, разметка таблицы из Word и Excel — больше текста.
 USERDATA_PASTE_MAX_BYTES = env.int("USERDATA_PASTE_MAX_BYTES", default=5 * 1024 * 1024)
