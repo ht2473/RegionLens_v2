@@ -192,7 +192,24 @@ class TestWizard:
 
 
 class TestFormulaTemplates:
-    """Шаблоны формулы, предпросмотр и возврат в исследование."""
+    """Шаблоны на странице правки формулы и предел предпросмотров."""
+
+    @staticmethod
+    def _draft(client: Client, dataset: Any, key: str) -> str:
+        """Черновой показатель окном «Расчёт показателя»; вернуть адрес его правки."""
+        saved = client.post(
+            reverse("userdata:dataset-calc", args=[dataset.public_id]),
+            {
+                "op": "free",
+                "table": dataset.code,
+                "title": "Черновик",
+                "expression": f"{{{key}}} * 2",
+                "action": "save",
+            },
+        )
+        assert saved.status_code == 302
+        (draft,) = formula_store.definitions(version_of(dataset))
+        return reverse("userdata:formula", args=[dataset.public_id, draft.code])
 
     def test_template_builds_expression_and_title(self, client: Client, warehouse: Any) -> None:
         from apps.catalog.models import Series
@@ -200,7 +217,7 @@ class TestFormulaTemplates:
         dataset = _built(client, "crime_wide.csv", kind=indicators.SUM, per=())
         key = _key(dataset, _first(dataset))
         site = Series.objects.get(key="Y477110461:00")
-        url = reverse("userdata:formula-new", args=[dataset.public_id])
+        url = self._draft(client, dataset, key)
         data = {"template": "per1000", "a": key, "b": site.key, "kind": "relative"}
         checked = client.post(url, {**data, "action": "check"})
         assert "Посчитано для" in checked.text
@@ -214,46 +231,23 @@ class TestFormulaTemplates:
         location = urlparse(saved["Location"])
         assert location.path == reverse("userdata:dataset", args=[dataset.public_id])
         assert parse_qs(location.query)["show"] == [definition.code]
-        # Правка формулы по шаблону открывается шаблоном.
-        edit = client.get(reverse("userdata:formula", args=[dataset.public_id, definition.code]))
-        assert 'value="per1000" checked' in edit.text
+        # Формула по шаблону открывается шаблоном.
+        assert 'value="per1000" checked' in client.get(url).text
 
     def test_template_needs_both_series(self, client: Client, warehouse: Any) -> None:
         dataset = _built(client)
-        url = reverse("userdata:formula-new", args=[dataset.public_id])
+        url = self._draft(client, dataset, _key(dataset, _first(dataset)))
         response = client.post(url, {"template": "diff", "a": "", "b": "", "action": "check"})
         assert "Выберите оба показателя" in response.text
-
-    def test_from_study_returns_with_map(self, client: Client, warehouse: Any) -> None:
-        dataset = _built(client, "crime_wide.csv", kind=indicators.SUM, per=())
-        key = _key(dataset, _first(dataset))
-        client.post(reverse("userdata:study-new"), {"title": "К курсовой"})
-        study = Study.objects.latest("created_at")
-        url = reverse("userdata:formula-new", args=[dataset.public_id])
-        saved = client.post(
-            url,
-            {
-                "template": "free",
-                "title": "Вдвое",
-                "expression": f"{{{key}}} * 2",
-                "kind": "sum",
-                "study": str(study.public_id),
-                "action": "save",
-            },
-        )
-        assert urlparse(saved["Location"]).path == reverse("userdata:study", args=[study.public_id])
-        study.refresh_from_db()
-        (block,) = studies.blocks_of(study)
-        assert block["target"] == "map"
 
     def test_previews_are_rate_limited(self, client: Client, settings: Any, warehouse: Any) -> None:
         from django.core.cache import cache
 
         dataset = _built(client)
         key = _key(dataset, _first(dataset))
+        url = self._draft(client, dataset, key)
         settings.USERDATA_FORMULA_PREVIEWS = 1
         cache.clear()
-        url = reverse("userdata:formula-new", args=[dataset.public_id])
         data = {"template": "free", "title": "X", "expression": f"{{{key}}} * 2"}
         statuses = [
             client.post(url, data, headers={"HX-Request": "true"}).status_code for _ in range(2)

@@ -73,10 +73,17 @@ def _accidents_and_cars(client: Client) -> tuple[Dataset, Dataset]:
     return accidents, cars
 
 
-def _formula_url(dataset: Dataset, code: str = "") -> str:
-    if code:
-        return reverse("userdata:formula", args=[dataset.public_id, code])
-    return reverse("userdata:formula-new", args=[dataset.public_id])
+def _formula_url(dataset: Dataset, code: str) -> str:
+    return reverse("userdata:formula", args=[dataset.public_id, code])
+
+
+def _calc_url(dataset: Dataset) -> str:
+    return reverse("userdata:dataset-calc", args=[dataset.public_id])
+
+
+def _create(client: Client, dataset: Dataset, data: dict[str, Any]) -> Any:
+    """Новый показатель своей формулой — окном «Расчёт показателя» со страницы таблицы."""
+    return client.post(_calc_url(dataset), {"op": "free", "table": dataset.code, **data})
 
 
 def _values(dataset: Dataset, key: str) -> dict[tuple[str, int], float]:
@@ -107,16 +114,16 @@ class TestFormulas:
     def test_two_tables_on_map(self, client: Client, warehouse: Any) -> None:
         accidents, cars = _accidents_and_cars(client)
         # Новый показатель заводится в окне «Расчёт показателя»: прежний адрес ведёт туда.
-        page = client.get(_formula_url(accidents))
-        assert page["Location"] == reverse("userdata:dataset-calc", args=[accidents.public_id])
+        old = reverse("userdata:formula-new", args=[accidents.public_id])
+        assert client.get(old)["Location"] == _calc_url(accidents)
+        assert client.post(old, {"title": "X"})["Location"] == _calc_url(accidents)
         data = {
             "title": "ДТП на 1 000 автомобилей",
             "expression": "[ДТП] / [Автомобили: Автомобили] * 1000",
             "unit": "на 1 000 автомобилей",
             "kind": "relative",
-            "polarity": "negative",
         }
-        checked = client.post(_formula_url(accidents), {**data, "action": "check"})
+        checked = _create(client, accidents, {**data, "action": "check"})
         assert checked.status_code == 200
         # Предпросмотр: малая карта и сколько субъектов посчитано.
         assert "Посчитано для" in checked.text
@@ -124,7 +131,7 @@ class TestFormulas:
         assert "Субъектов с делением на ноль: 1" in checked.text
         assert not formula_store.definitions(version_of(accidents))
 
-        saved = client.post(_formula_url(accidents), {**data, "action": "save"})
+        saved = _create(client, accidents, {**data, "action": "save"})
         assert saved.status_code == 302
         # Сохранённая формула — выбранной на странице таблицы.
         location = urlparse(saved["Location"])
@@ -148,7 +155,13 @@ class TestFormulas:
         assert "Субъектов с делением на ноль: 1" in about.text
         record = version_of(accidents).series.get(code=definition.code)
         assert record.derived == DatasetSeries.Derived.FORMULA
-        assert record.polarity == "negative"
+        # Направленность задаётся правкой формулы.
+        edited = client.post(
+            _formula_url(accidents, definition.code),
+            {**data, "polarity": "negative", "action": "save"},
+        )
+        assert edited.status_code == 302
+        assert version_of(accidents).series.get(code=definition.code).polarity == "negative"
 
         # Таблица, на которую ссылается формула, пересобрана — формула пересчитана.
         old_file = version_of(accidents).data_file
@@ -183,10 +196,9 @@ class TestFormulas:
             "expression": "RANK([ДТП] / [Численность населения] * 1000)",
             "unit": "место",
             "kind": "relative",
-            "polarity": "neutral",
             "action": "save",
         }
-        response = client.post(_formula_url(accidents), data)
+        response = _create(client, accidents, data)
         assert response.status_code == 302, response.content[:500]
         definition = formula_store.definitions(version_of(accidents))[0]
         assert "{Y477110461:00}" in definition.expression
@@ -204,7 +216,7 @@ class TestFormulas:
             "polarity": "neutral",
             "action": "save",
         }
-        client.post(_formula_url(accidents), first)
+        _create(client, accidents, first)
         second = {
             "title": "Рост",
             "expression": "[ДТП вдвое] / AGO([ДТП вдвое]; 1) * 100",
@@ -212,7 +224,7 @@ class TestFormulas:
             "polarity": "neutral",
             "action": "save",
         }
-        assert client.post(_formula_url(accidents), second).status_code == 302
+        assert _create(client, accidents, second).status_code == 302
         items = formula_store.definitions(version_of(accidents))
         values = _values(accidents, f"u:{accidents.code}:{items[1].code}")
         code = _regions()[2].code
@@ -227,34 +239,32 @@ class TestFormulas:
     def test_errors_are_explained(self, client: Client, warehouse: Any) -> None:
         accidents, _cars = _accidents_and_cars(client)
         cases = [
-            ({"title": "", "expression": "[ДТП]"}, "Назовите показатель"),
             ({"title": "X", "expression": "[ДТП] / [Пешеходы]"}, "Нет показателя «Пешеходы»"),
             ({"title": "X", "expression": "[ДТП] +"}, "Формула обрывается"),
             ({"title": "X", "expression": "СУММ([ДТП])"}, "Нет функции «СУММ»"),
         ]
         for data, message in cases:
-            response = client.post(_formula_url(accidents), {**data, "action": "save"})
+            response = _create(client, accidents, {**data, "action": "save"})
             assert response.status_code == 200
             assert message in response.text, message
         assert not formula_store.definitions(version_of(accidents))
 
     def test_cycle_between_tables(self, client: Client, warehouse: Any) -> None:
         accidents, cars = _accidents_and_cars(client)
-        client.post(
-            _formula_url(accidents),
+        _create(
+            client,
+            accidents,
             {"title": "Доля", "expression": "[ДТП] / [Автомобили: Автомобили]", "action": "save"},
         )
-        response = client.post(
-            _formula_url(cars),
-            {"title": "Назад", "expression": "[ДТП: Доля] * 2", "action": "save"},
+        response = _create(
+            client, cars, {"title": "Назад", "expression": "[ДТП: Доля] * 2", "action": "save"}
         )
         assert "Такой круг не посчитать" in response.text
 
     def test_delete_formula(self, client: Client, warehouse: Any) -> None:
         accidents, _cars = _accidents_and_cars(client)
-        client.post(
-            _formula_url(accidents),
-            {"title": "ДТП вдвое", "expression": "[ДТП] * 2", "action": "save"},
+        _create(
+            client, accidents, {"title": "ДТП вдвое", "expression": "[ДТП] * 2", "action": "save"}
         )
         code = formula_store.definitions(version_of(accidents))[0].code
         response = client.post(_formula_url(accidents, code), {"action": "delete"})
@@ -265,7 +275,7 @@ class TestFormulas:
     def test_other_session_and_foreign_table(self, client: Client, warehouse: Any) -> None:
         accidents, _cars = _accidents_and_cars(client)
         stranger = Client()
-        assert stranger.get(_formula_url(accidents)).status_code == 404
+        assert stranger.get(_calc_url(accidents)).status_code == 404
         # Таблица другого человека в формуле не видна.
         mine = _table(
             stranger,
@@ -273,13 +283,13 @@ class TestFormulas:
             "2021;2022",
             {item.name_ru: [1, 2] for item in _regions()},
         )
-        response = stranger.post(
-            _formula_url(mine),
-            {"title": "X", "expression": "[Своё] / [ДТП]", "action": "check"},
+        response = _create(
+            stranger, mine, {"title": "X", "expression": "[Своё] / [ДТП]", "action": "check"}
         )
         assert "Нет показателя «ДТП»" in response.text
-        keyed = stranger.post(
-            _formula_url(mine),
+        keyed = _create(
+            stranger,
+            mine,
             {
                 "title": "X",
                 "expression": f"[Своё] / {{{_first_key(accidents)}}}",
@@ -306,8 +316,9 @@ def test_new_version_keeps_derived_keys(client: Client, warehouse: Any) -> None:
         title="ДТП",
         extra={"recalc-1": ["share", "growth"]},
     )
-    client.post(
-        _formula_url(accidents),
+    _create(
+        client,
+        accidents,
         {"title": "Доля ДТП", "expression": "[ДТП] / [Автомобили: Автомобили]", "action": "save"},
     )
     first = version_of(accidents)
