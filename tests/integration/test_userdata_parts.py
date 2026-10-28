@@ -207,7 +207,7 @@ class TestSymbolsAndSettings:
         card = _card(member_client, study, block)
         assert "geo-map__symbol" in card.text and "Площадь круга" in card.text
         assert "marks=symbols" in card.text
-        assert "Знаки карты" in card.text
+        assert "Способ изображения" in card.text
 
         _edit(
             member_client, study, action="configure", block=block["id"], marks="fill", year="2019"

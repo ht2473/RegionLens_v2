@@ -482,6 +482,48 @@ class TestLab:
         )
         assert f"<b>{expected}</b>" in card.text
 
+    def test_settings_only_what_changes_the_card(
+        self, member_client: Client, warehouse: Any
+    ) -> None:
+        """
+        «Настроить» показывает только то, что меняет карточку: у лидеров нет отмеченных
+        регионов, у сближения и связи с другими показателями нет ни года, ни регионов —
+        и кнопки; у графиков по регионам регионы есть. Неуместное поле формы не сохраняется.
+        """
+        dataset = _built(member_client)
+        key = _key(dataset, _first(dataset))
+        study = _study(member_client)
+        for question in ("leaders", "convergence", "related", "multiples"):
+            _edit(member_client, study, action="add", do=f"answer:{question}", series=key)
+        study.refresh_from_db()
+        blocks = {block["question"]: block for block in studies.blocks_of(study)}
+
+        leaders = _card(member_client, study, blocks["leaders"]).text
+        assert 'name="year"' in leaders and 'name="regions"' not in leaders
+        for question in ("convergence", "related"):
+            assert "card-settings" not in _card(member_client, study, blocks[question]).text
+        assert 'name="regions"' in _card(member_client, study, blocks["multiples"]).text
+
+        _edit(
+            member_client,
+            study,
+            action="configure",
+            block=blocks["leaders"]["id"],
+            regions="own",
+            territory=["RU-MOW"],
+        )
+        _edit(
+            member_client,
+            study,
+            action="configure",
+            block=blocks["convergence"]["id"],
+            year="2019",
+        )
+        study.refresh_from_db()
+        saved = {block["question"]: block for block in studies.blocks_of(study)}
+        assert "territories" not in saved["leaders"]
+        assert "year" not in saved["convergence"]
+
     def test_small_multiples_by_districts(self, member_client: Client, warehouse: Any) -> None:
         """
         Малые графики: клетки по округам с полными названиями, во всю ширину поля;
