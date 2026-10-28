@@ -1177,3 +1177,26 @@ class TestIndicatorCodes:
             "Пробы почв с превышением, % (Y331)",
             "Пробы почв с превышением, % (Y332)",
         ]
+
+
+@pytest.mark.django_db
+def test_equal_values_are_ranked_alphabetically(client: Client, warehouse: Any) -> None:
+    # Равные значения — одно место; порядок внутри — по алфавиту, а не как придётся.
+    from apps.warehouse.queries import ranking_table
+
+    lines = [
+        "Регион;2023",
+        "Тверская область;5",
+        "Москва;5",
+        "Курская область;5",
+        "Брянская область;3",
+    ]
+    dataset = _upload(client, "равные.csv", "\n".join(lines).encode("utf-8"))
+    _describe(client, dataset)
+    assert _build(client, dataset).status_code == 302
+    key = _key(dataset, _version(dataset).series.get(derived=""))
+    with scope.reading_as(fingerprint=dataset.guest_key):
+        rows = ranking_table(key, 2023)
+    names = [row["name_ru"] for row in rows]
+    assert names[:3] == ["Курская область", "Москва", "Тверская область"]
+    assert {row["rank_desc"] for row in rows[:3]} == {1}

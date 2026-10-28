@@ -1,0 +1,968 @@
+{
+ "about": "Эталон расчётов анализа: данные склада и независимые ответы (scripts/reference_fixture.py).",
+ "series": {
+  "income": "Y477110374:00",
+  "grp": "Y477110006:00"
+ },
+ "years": {
+  "first": 2001,
+  "both": 2024,
+  "last": 2025
+ },
+ "income": {
+  "2001": {
+   "RU-BEL": 2121.0,
+   "RU-BRY": 1818.0,
+   "RU-VLA": 1666.0,
+   "RU-VOR": 2040.0,
+   "RU-IVA": 1298.0,
+   "RU-KLU": 1782.0,
+   "RU-KOS": 1905.0,
+   "RU-KRS": 1980.0,
+   "RU-LIP": 2261.0,
+   "RU-MOS": 2626.0,
+   "RU-ORL": 1963.0,
+   "RU-RYA": 1853.0,
+   "RU-SMO": 2336.0,
+   "RU-TAM": 2072.0,
+   "RU-TVE": 1690.0,
+   "RU-TUL": 2015.0,
+   "RU-YAR": 2518.0,
+   "RU-MOW": 10282.0,
+   "RU-KR": 2931.0,
+   "RU-KO": 4862.0,
+   "RU-NEN": 5888.0,
+   "RU-VLG": 2719.0,
+   "RU-KGD": 2340.0,
+   "RU-LEN": 1869.0,
+   "RU-MUR": 4620.0,
+   "RU-NGR": 2408.0,
+   "RU-PSK": 1848.0,
+   "RU-SPE": 3426.0,
+   "RU-AD": 1642.0,
+   "RU-KL": 1546.0,
+   "RU-KDA": 2125.0,
+   "RU-AST": 2333.0,
+   "RU-VGG": 2163.0,
+   "RU-ROS": 2271.0,
+   "RU-DA": 1141.0,
+   "RU-IN": 909.0,
+   "RU-KB": 1466.0,
+   "RU-KC": 1342.0,
+   "RU-SE": 1632.0,
+   "RU-STA": 1767.0,
+   "RU-BA": 2400.0,
+   "RU-ME": 1388.0,
+   "RU-MO": 1570.0,
+   "RU-TA": 2472.0,
+   "RU-UD": 2025.0,
+   "RU-CU": 1553.0,
+   "RU-PER": 3254.0,
+   "RU-KIR": 1831.0,
+   "RU-NIZ": 2407.0,
+   "RU-ORE": 1927.0,
+   "RU-PNZ": 1708.0,
+   "RU-SAM": 3263.0,
+   "RU-SAR": 2035.0,
+   "RU-ULY": 1717.0,
+   "RU-KGN": 1785.0,
+   "RU-SVE": 2994.0,
+   "RU-KHM": 9594.0,
+   "RU-YAN": 10733.0,
+   "RU-CHE": 2500.0,
+   "RU-AL": 1620.0,
+   "RU-TY": 1638.0,
+   "RU-KK": 2476.0,
+   "RU-ALT": 1691.0,
+   "RU-KYA": 3572.0,
+   "RU-IRK": 2879.0,
+   "RU-KEM": 3086.0,
+   "RU-NVS": 2140.0,
+   "RU-OMS": 2341.0,
+   "RU-TOM": 2851.0,
+   "RU-BU": 2262.0,
+   "RU-SA": 5010.0,
+   "RU-ZAB": 2011.0,
+   "RU-KAM": 4559.0,
+   "RU-PRI": 2367.0,
+   "RU-KHA": 3396.0,
+   "RU-AMU": 2313.0,
+   "RU-MAG": 5069.0,
+   "RU-SAK": 3872.0,
+   "RU-YEV": 2029.0,
+   "RU-CHU": 7952.0
+  },
+  "2024": {
+   "RU-BEL": 56798.0,
+   "RU-BRY": 48502.0,
+   "RU-VLA": 46302.0,
+   "RU-VOR": 53449.0,
+   "RU-IVA": 47881.0,
+   "RU-KLU": 52675.0,
+   "RU-KOS": 51119.0,
+   "RU-KRS": 50630.0,
+   "RU-LIP": 53842.0,
+   "RU-MOS": 77409.0,
+   "RU-ORL": 54805.0,
+   "RU-RYA": 47477.0,
+   "RU-SMO": 52435.0,
+   "RU-TAM": 46416.0,
+   "RU-TVE": 49121.0,
+   "RU-TUL": 51931.0,
+   "RU-YAR": 54027.0,
+   "RU-MOW": 143171.0,
+   "RU-KR": 62566.0,
+   "RU-KO": 63437.0,
+   "RU-ARK": 64019.0,
+   "RU-NEN": 143512.0,
+   "RU-VLG": 51811.0,
+   "RU-KGD": 53580.0,
+   "RU-LEN": 54808.0,
+   "RU-MUR": 86687.0,
+   "RU-NGR": 46148.0,
+   "RU-PSK": 46858.0,
+   "RU-SPE": 87888.0,
+   "RU-AD": 52224.0,
+   "RU-KL": 35438.0,
+   "RU-CR": 38765.0,
+   "RU-KDA": 64985.0,
+   "RU-AST": 41620.0,
+   "RU-VGG": 41803.0,
+   "RU-ROS": 55854.0,
+   "RU-SEV": 44998.0,
+   "RU-DA": 45175.0,
+   "RU-IN": 27311.0,
+   "RU-KB": 45587.0,
+   "RU-KC": 29960.0,
+   "RU-SE": 40531.0,
+   "RU-CE": 40797.0,
+   "RU-STA": 38344.0,
+   "RU-BA": 47220.0,
+   "RU-ME": 36763.0,
+   "RU-MO": 36862.0,
+   "RU-TA": 62278.0,
+   "RU-UD": 47813.0,
+   "RU-CU": 40121.0,
+   "RU-PER": 53869.0,
+   "RU-KIR": 44816.0,
+   "RU-NIZ": 61278.0,
+   "RU-ORE": 42812.0,
+   "RU-PNZ": 43388.0,
+   "RU-SAM": 51253.0,
+   "RU-SAR": 38251.0,
+   "RU-ULY": 42563.0,
+   "RU-KGN": 41494.0,
+   "RU-SVE": 64683.0,
+   "RU-TYU": 51490.0,
+   "RU-KHM": 83038.0,
+   "RU-YAN": 154347.0,
+   "RU-CHE": 48016.0,
+   "RU-AL": 40630.0,
+   "RU-TY": 34294.0,
+   "RU-KK": 40582.0,
+   "RU-ALT": 42745.0,
+   "RU-KYA": 59368.0,
+   "RU-IRK": 50291.0,
+   "RU-KEM": 46839.0,
+   "RU-NVS": 58500.0,
+   "RU-OMS": 48160.0,
+   "RU-TOM": 47848.0,
+   "RU-BU": 44730.0,
+   "RU-SA": 79768.0,
+   "RU-ZAB": 50738.0,
+   "RU-KAM": 96478.0,
+   "RU-PRI": 64985.0,
+   "RU-KHA": 67920.0,
+   "RU-AMU": 64343.0,
+   "RU-MAG": 127865.0,
+   "RU-SAK": 101220.0,
+   "RU-YEV": 52015.0,
+   "RU-CHU": 187687.0
+  },
+  "2025": {
+   "RU-BEL": 65726.25,
+   "RU-BRY": 55938.0,
+   "RU-VLA": 53992.5,
+   "RU-VOR": 62725.5,
+   "RU-IVA": 55509.75,
+   "RU-KLU": 60297.75,
+   "RU-KOS": 58305.25,
+   "RU-KRS": 58264.75,
+   "RU-LIP": 61977.75,
+   "RU-MOS": 91489.75,
+   "RU-ORL": 63262.25,
+   "RU-RYA": 55388.75,
+   "RU-SMO": 60962.0,
+   "RU-TAM": 54332.0,
+   "RU-TVE": 56462.5,
+   "RU-TUL": 60820.25,
+   "RU-YAR": 61345.75,
+   "RU-MOW": 167033.5,
+   "RU-KR": 74334.25,
+   "RU-KO": 71935.0,
+   "RU-ARK": 71742.0,
+   "RU-NEN": 164961.5,
+   "RU-VLG": 59952.5,
+   "RU-KGD": 62941.75,
+   "RU-LEN": 65524.75,
+   "RU-MUR": 96543.25,
+   "RU-NGR": 54522.75,
+   "RU-PSK": 55686.75,
+   "RU-SPE": 104431.5,
+   "RU-AD": 60740.25,
+   "RU-KL": 41930.5,
+   "RU-CR": 45439.0,
+   "RU-KDA": 77306.5,
+   "RU-AST": 47406.0,
+   "RU-VGG": 48846.0,
+   "RU-ROS": 64410.75,
+   "RU-SEV": 51010.5,
+   "RU-DA": 52032.25,
+   "RU-IN": 30448.75,
+   "RU-KB": 54016.5,
+   "RU-KC": 35044.75,
+   "RU-SE": 47504.25,
+   "RU-CE": 46981.0,
+   "RU-STA": 44048.25,
+   "RU-BA": 53985.0,
+   "RU-ME": 43342.5,
+   "RU-MO": 43958.5,
+   "RU-TA": 74505.75,
+   "RU-UD": 56743.5,
+   "RU-CU": 47021.75,
+   "RU-PER": 61406.5,
+   "RU-KIR": 52101.75,
+   "RU-NIZ": 72046.5,
+   "RU-ORE": 50543.75,
+   "RU-PNZ": 51118.5,
+   "RU-SAM": 59253.5,
+   "RU-SAR": 44870.25,
+   "RU-ULY": 49777.25,
+   "RU-KGN": 48666.75,
+   "RU-SVE": 74968.75,
+   "RU-TYU": 62097.75,
+   "RU-KHM": 93947.25,
+   "RU-YAN": 170426.75,
+   "RU-CHE": 55184.0,
+   "RU-AL": 47482.75,
+   "RU-TY": 39103.75,
+   "RU-KK": 46994.25,
+   "RU-ALT": 50210.75,
+   "RU-KYA": 68749.0,
+   "RU-IRK": 57342.5,
+   "RU-KEM": 52784.75,
+   "RU-NVS": 68265.0,
+   "RU-OMS": 54716.0,
+   "RU-TOM": 55450.25,
+   "RU-BU": 53329.5,
+   "RU-SA": 91492.5,
+   "RU-ZAB": 60965.25,
+   "RU-KAM": 113627.5,
+   "RU-PRI": 74804.0,
+   "RU-KHA": 79078.75,
+   "RU-AMU": 76161.0,
+   "RU-MAG": 144817.5,
+   "RU-SAK": 117483.0,
+   "RU-YEV": 61036.75,
+   "RU-CHU": 216291.0
+  }
+ },
+ "grp": {
+  "RU-BEL": 1015794.3,
+  "RU-BRY": 636574.9,
+  "RU-VLA": 743499.4,
+  "RU-VOR": 757721.5,
+  "RU-IVA": 557301.6,
+  "RU-KLU": 855283.0,
+  "RU-KOS": 711209.6,
+  "RU-KRS": 788412.4,
+  "RU-LIP": 939205.1,
+  "RU-MOS": 1249020.0,
+  "RU-ORL": 639832.9,
+  "RU-RYA": 757419.2,
+  "RU-SMO": 761464.9,
+  "RU-TAM": 609973.4,
+  "RU-TVE": 690822.6,
+  "RU-TUL": 891343.5,
+  "RU-YAR": 868435.0,
+  "RU-MOW": 3103504.3,
+  "RU-KR": 919389.3,
+  "RU-KO": 1671787.7,
+  "RU-ARK": 883412.2,
+  "RU-NEN": 14250822.0,
+  "RU-VLG": 1081980.5,
+  "RU-KGD": 937145.2,
+  "RU-LEN": 1174111.0,
+  "RU-MUR": 1714105.5,
+  "RU-NGR": 842000.4,
+  "RU-PSK": 607584.9,
+  "RU-SPE": 2301327.3,
+  "RU-AD": 567832.3,
+  "RU-KL": 813186.7,
+  "RU-CR": 470792.5,
+  "RU-KDA": 922283.2,
+  "RU-AST": 944946.6,
+  "RU-VGG": 621115.4,
+  "RU-ROS": 746513.3,
+  "RU-SEV": 504990.4,
+  "RU-DA": 348978.2,
+  "RU-IN": 204565.5,
+  "RU-KB": 381560.1,
+  "RU-KC": 347710.7,
+  "RU-SE": 473305.3,
+  "RU-CE": 344807.2,
+  "RU-STA": 553019.8,
+  "RU-BA": 739698.6,
+  "RU-ME": 530998.4,
+  "RU-MO": 625378.5,
+  "RU-TA": 1361838.5,
+  "RU-UD": 979470.7,
+  "RU-CU": 606491.9,
+  "RU-PER": 1046002.4,
+  "RU-KIR": 635116.8,
+  "RU-NIZ": 1009913.6,
+  "RU-ORE": 1134335.7,
+  "RU-PNZ": 652089.9,
+  "RU-SAM": 1062849.0,
+  "RU-SAR": 645768.2,
+  "RU-ULY": 669091.6,
+  "RU-KGN": 615394.1,
+  "RU-SVE": 1124324.2,
+  "RU-TYU": 1365511.2,
+  "RU-KHM": 5610363.4,
+  "RU-YAN": 12196002.9,
+  "RU-CHE": 870656.5,
+  "RU-AL": 623315.6,
+  "RU-TY": 449353.0,
+  "RU-KK": 749962.8,
+  "RU-ALT": 605546.5,
+  "RU-KYA": 1522495.3,
+  "RU-IRK": 1284373.8,
+  "RU-KEM": 716693.7,
+  "RU-NVS": 966864.7,
+  "RU-OMS": 779598.9,
+  "RU-TOM": 1053059.7,
+  "RU-BU": 594962.1,
+  "RU-SA": 2520579.0,
+  "RU-ZAB": 923856.6,
+  "RU-KAM": 1611200.8,
+  "RU-PRI": 1184384.4,
+  "RU-KHA": 1240000.4,
+  "RU-AMU": 1365680.0,
+  "RU-MAG": 3936319.7,
+  "RU-SAK": 3665840.4,
+  "RU-YEV": 786447.5,
+  "RU-CHU": 4678056.5
+ },
+ "neighbours": {
+  "RU-BEL": [
+   "RU-KRS",
+   "RU-VOR"
+  ],
+  "RU-BRY": [
+   "RU-KLU",
+   "RU-KRS",
+   "RU-ORL",
+   "RU-SMO"
+  ],
+  "RU-VLA": [
+   "RU-IVA",
+   "RU-MOS",
+   "RU-NIZ",
+   "RU-RYA",
+   "RU-YAR"
+  ],
+  "RU-VOR": [
+   "RU-BEL",
+   "RU-KRS",
+   "RU-LIP",
+   "RU-ROS",
+   "RU-SAR",
+   "RU-TAM",
+   "RU-VGG"
+  ],
+  "RU-IVA": [
+   "RU-KOS",
+   "RU-NIZ",
+   "RU-VLA",
+   "RU-YAR"
+  ],
+  "RU-KLU": [
+   "RU-BRY",
+   "RU-MOS",
+   "RU-ORL",
+   "RU-SMO",
+   "RU-TUL"
+  ],
+  "RU-KOS": [
+   "RU-IVA",
+   "RU-KIR",
+   "RU-NIZ",
+   "RU-VLG",
+   "RU-YAR"
+  ],
+  "RU-KRS": [
+   "RU-BEL",
+   "RU-BRY",
+   "RU-LIP",
+   "RU-ORL",
+   "RU-VOR"
+  ],
+  "RU-LIP": [
+   "RU-KRS",
+   "RU-ORL",
+   "RU-RYA",
+   "RU-TAM",
+   "RU-TUL",
+   "RU-VOR"
+  ],
+  "RU-MOS": [
+   "RU-KLU",
+   "RU-MOW",
+   "RU-RYA",
+   "RU-SMO",
+   "RU-TUL",
+   "RU-TVE",
+   "RU-VLA",
+   "RU-YAR"
+  ],
+  "RU-ORL": [
+   "RU-BRY",
+   "RU-KLU",
+   "RU-KRS",
+   "RU-LIP",
+   "RU-TUL"
+  ],
+  "RU-RYA": [
+   "RU-LIP",
+   "RU-MO",
+   "RU-MOS",
+   "RU-NIZ",
+   "RU-PNZ",
+   "RU-TAM",
+   "RU-TUL",
+   "RU-VLA"
+  ],
+  "RU-SMO": [
+   "RU-BRY",
+   "RU-KLU",
+   "RU-MOS",
+   "RU-PSK",
+   "RU-TVE"
+  ],
+  "RU-TAM": [
+   "RU-LIP",
+   "RU-PNZ",
+   "RU-RYA",
+   "RU-SAR",
+   "RU-VOR"
+  ],
+  "RU-TVE": [
+   "RU-MOS",
+   "RU-NGR",
+   "RU-PSK",
+   "RU-SMO",
+   "RU-VLG",
+   "RU-YAR"
+  ],
+  "RU-TUL": [
+   "RU-KLU",
+   "RU-LIP",
+   "RU-MOS",
+   "RU-ORL",
+   "RU-RYA"
+  ],
+  "RU-YAR": [
+   "RU-IVA",
+   "RU-KOS",
+   "RU-MOS",
+   "RU-TVE",
+   "RU-VLA",
+   "RU-VLG"
+  ],
+  "RU-MOW": [
+   "RU-MOS"
+  ],
+  "RU-KR": [
+   "RU-ARK",
+   "RU-LEN",
+   "RU-MUR",
+   "RU-VLG"
+  ],
+  "RU-KO": [
+   "RU-ARK",
+   "RU-KHM",
+   "RU-KIR",
+   "RU-NEN",
+   "RU-PER",
+   "RU-SVE",
+   "RU-YAN"
+  ],
+  "RU-ARK": [
+   "RU-KIR",
+   "RU-KO",
+   "RU-KR",
+   "RU-NEN",
+   "RU-VLG"
+  ],
+  "RU-NEN": [
+   "RU-ARK",
+   "RU-KO",
+   "RU-YAN"
+  ],
+  "RU-VLG": [
+   "RU-ARK",
+   "RU-KIR",
+   "RU-KOS",
+   "RU-KR",
+   "RU-LEN",
+   "RU-NGR",
+   "RU-TVE",
+   "RU-YAR"
+  ],
+  "RU-KGD": [],
+  "RU-LEN": [
+   "RU-KR",
+   "RU-NGR",
+   "RU-PSK",
+   "RU-SPE",
+   "RU-VLG"
+  ],
+  "RU-MUR": [
+   "RU-KR"
+  ],
+  "RU-NGR": [
+   "RU-LEN",
+   "RU-PSK",
+   "RU-TVE",
+   "RU-VLG"
+  ],
+  "RU-PSK": [
+   "RU-LEN",
+   "RU-NGR",
+   "RU-SMO",
+   "RU-TVE"
+  ],
+  "RU-SPE": [
+   "RU-LEN"
+  ],
+  "RU-AD": [
+   "RU-KDA"
+  ],
+  "RU-KL": [
+   "RU-AST",
+   "RU-DA",
+   "RU-ROS",
+   "RU-STA",
+   "RU-VGG"
+  ],
+  "RU-CR": [
+   "RU-KDA",
+   "RU-SEV"
+  ],
+  "RU-KDA": [
+   "RU-AD",
+   "RU-CR",
+   "RU-KC",
+   "RU-ROS",
+   "RU-STA"
+  ],
+  "RU-AST": [
+   "RU-KL",
+   "RU-VGG"
+  ],
+  "RU-VGG": [
+   "RU-AST",
+   "RU-KL",
+   "RU-ROS",
+   "RU-SAR",
+   "RU-VOR"
+  ],
+  "RU-ROS": [
+   "RU-KDA",
+   "RU-KL",
+   "RU-STA",
+   "RU-VGG",
+   "RU-VOR"
+  ],
+  "RU-SEV": [
+   "RU-CR"
+  ],
+  "RU-DA": [
+   "RU-CE",
+   "RU-KL",
+   "RU-STA"
+  ],
+  "RU-IN": [
+   "RU-CE",
+   "RU-SE"
+  ],
+  "RU-KB": [
+   "RU-KC",
+   "RU-SE",
+   "RU-STA"
+  ],
+  "RU-KC": [
+   "RU-KB",
+   "RU-KDA",
+   "RU-STA"
+  ],
+  "RU-SE": [
+   "RU-IN",
+   "RU-KB",
+   "RU-STA"
+  ],
+  "RU-CE": [
+   "RU-DA",
+   "RU-IN",
+   "RU-STA"
+  ],
+  "RU-STA": [
+   "RU-CE",
+   "RU-DA",
+   "RU-KB",
+   "RU-KC",
+   "RU-KDA",
+   "RU-KL",
+   "RU-ROS",
+   "RU-SE"
+  ],
+  "RU-BA": [
+   "RU-CHE",
+   "RU-ORE",
+   "RU-PER",
+   "RU-SVE",
+   "RU-TA",
+   "RU-UD"
+  ],
+  "RU-ME": [
+   "RU-CU",
+   "RU-KIR",
+   "RU-NIZ",
+   "RU-TA"
+  ],
+  "RU-MO": [
+   "RU-CU",
+   "RU-NIZ",
+   "RU-PNZ",
+   "RU-RYA",
+   "RU-ULY"
+  ],
+  "RU-TA": [
+   "RU-BA",
+   "RU-CU",
+   "RU-KIR",
+   "RU-ME",
+   "RU-ORE",
+   "RU-SAM",
+   "RU-UD",
+   "RU-ULY"
+  ],
+  "RU-UD": [
+   "RU-BA",
+   "RU-KIR",
+   "RU-PER",
+   "RU-TA"
+  ],
+  "RU-CU": [
+   "RU-ME",
+   "RU-MO",
+   "RU-NIZ",
+   "RU-TA",
+   "RU-ULY"
+  ],
+  "RU-PER": [
+   "RU-BA",
+   "RU-KIR",
+   "RU-KO",
+   "RU-SVE",
+   "RU-UD"
+  ],
+  "RU-KIR": [
+   "RU-ARK",
+   "RU-KO",
+   "RU-KOS",
+   "RU-ME",
+   "RU-NIZ",
+   "RU-PER",
+   "RU-TA",
+   "RU-UD",
+   "RU-VLG"
+  ],
+  "RU-NIZ": [
+   "RU-CU",
+   "RU-IVA",
+   "RU-KIR",
+   "RU-KOS",
+   "RU-ME",
+   "RU-MO",
+   "RU-RYA",
+   "RU-VLA"
+  ],
+  "RU-ORE": [
+   "RU-BA",
+   "RU-CHE",
+   "RU-SAM",
+   "RU-TA"
+  ],
+  "RU-PNZ": [
+   "RU-MO",
+   "RU-RYA",
+   "RU-SAR",
+   "RU-TAM",
+   "RU-ULY"
+  ],
+  "RU-SAM": [
+   "RU-ORE",
+   "RU-SAR",
+   "RU-TA",
+   "RU-ULY"
+  ],
+  "RU-SAR": [
+   "RU-PNZ",
+   "RU-SAM",
+   "RU-TAM",
+   "RU-ULY",
+   "RU-VGG",
+   "RU-VOR"
+  ],
+  "RU-ULY": [
+   "RU-CU",
+   "RU-MO",
+   "RU-PNZ",
+   "RU-SAM",
+   "RU-SAR",
+   "RU-TA"
+  ],
+  "RU-KGN": [
+   "RU-CHE",
+   "RU-SVE",
+   "RU-TYU"
+  ],
+  "RU-SVE": [
+   "RU-BA",
+   "RU-CHE",
+   "RU-KGN",
+   "RU-KHM",
+   "RU-KO",
+   "RU-PER",
+   "RU-TYU"
+  ],
+  "RU-TYU": [
+   "RU-KGN",
+   "RU-KHM",
+   "RU-OMS",
+   "RU-SVE"
+  ],
+  "RU-KHM": [
+   "RU-KO",
+   "RU-KYA",
+   "RU-SVE",
+   "RU-TOM",
+   "RU-TYU",
+   "RU-YAN"
+  ],
+  "RU-YAN": [
+   "RU-KHM",
+   "RU-KO",
+   "RU-KYA",
+   "RU-NEN"
+  ],
+  "RU-CHE": [
+   "RU-BA",
+   "RU-KGN",
+   "RU-ORE",
+   "RU-SVE"
+  ],
+  "RU-AL": [
+   "RU-ALT",
+   "RU-KEM",
+   "RU-KK",
+   "RU-TY"
+  ],
+  "RU-TY": [
+   "RU-AL",
+   "RU-BU",
+   "RU-IRK",
+   "RU-KK",
+   "RU-KYA"
+  ],
+  "RU-KK": [
+   "RU-AL",
+   "RU-KEM",
+   "RU-KYA",
+   "RU-TY"
+  ],
+  "RU-ALT": [
+   "RU-AL",
+   "RU-KEM",
+   "RU-NVS"
+  ],
+  "RU-KYA": [
+   "RU-IRK",
+   "RU-KEM",
+   "RU-KHM",
+   "RU-KK",
+   "RU-SA",
+   "RU-TOM",
+   "RU-TY",
+   "RU-YAN"
+  ],
+  "RU-IRK": [
+   "RU-BU",
+   "RU-KYA",
+   "RU-SA",
+   "RU-TY",
+   "RU-ZAB"
+  ],
+  "RU-KEM": [
+   "RU-AL",
+   "RU-ALT",
+   "RU-KK",
+   "RU-KYA",
+   "RU-NVS",
+   "RU-TOM"
+  ],
+  "RU-NVS": [
+   "RU-ALT",
+   "RU-KEM",
+   "RU-OMS",
+   "RU-TOM"
+  ],
+  "RU-OMS": [
+   "RU-NVS",
+   "RU-TOM",
+   "RU-TYU"
+  ],
+  "RU-TOM": [
+   "RU-KEM",
+   "RU-KHM",
+   "RU-KYA",
+   "RU-NVS",
+   "RU-OMS"
+  ],
+  "RU-BU": [
+   "RU-IRK",
+   "RU-TY",
+   "RU-ZAB"
+  ],
+  "RU-SA": [
+   "RU-AMU",
+   "RU-CHU",
+   "RU-IRK",
+   "RU-KHA",
+   "RU-KYA",
+   "RU-MAG",
+   "RU-ZAB"
+  ],
+  "RU-ZAB": [
+   "RU-AMU",
+   "RU-BU",
+   "RU-IRK",
+   "RU-SA"
+  ],
+  "RU-KAM": [
+   "RU-CHU",
+   "RU-MAG",
+   "RU-SAK"
+  ],
+  "RU-PRI": [
+   "RU-KHA"
+  ],
+  "RU-KHA": [
+   "RU-AMU",
+   "RU-MAG",
+   "RU-PRI",
+   "RU-SA",
+   "RU-SAK",
+   "RU-YEV"
+  ],
+  "RU-AMU": [
+   "RU-KHA",
+   "RU-SA",
+   "RU-YEV",
+   "RU-ZAB"
+  ],
+  "RU-MAG": [
+   "RU-CHU",
+   "RU-KAM",
+   "RU-KHA",
+   "RU-SA"
+  ],
+  "RU-SAK": [
+   "RU-KAM",
+   "RU-KHA"
+  ],
+  "RU-YEV": [
+   "RU-AMU",
+   "RU-KHA"
+  ],
+  "RU-CHU": [
+   "RU-KAM",
+   "RU-MAG",
+   "RU-SA"
+  ]
+ },
+ "expected": {
+  "inequality": {
+   "gini": 0.2020263996232035,
+   "theil": 0.08344517129411093,
+   "atkinson": 0.03775533115838592,
+   "cv": 0.4648459005955046,
+   "decile": 2.0736769310271455
+  },
+  "correlation": {
+   "spearman": 0.8226735522550416,
+   "spearman_p": 4.644914361890691e-22,
+   "pearson": 0.7705683690968771,
+   "bh_raw": [
+    0.001,
+    0.008,
+    0.039,
+    0.041,
+    0.042,
+    0.06,
+    0.074,
+    0.205,
+    0.212,
+    0.216
+   ],
+   "bh_adjusted": [
+    0.01,
+    0.04,
+    0.084,
+    0.084,
+    0.084,
+    0.09999999999999999,
+    0.10571428571428572,
+    0.21600000000000003,
+    0.21600000000000003,
+    0.21600000000000003
+   ]
+  },
+  "spatial": {
+   "moran": 0.4671311074368461,
+   "expected": -0.011904761904761904
+  },
+  "convergence": {
+   "beta": -0.014913259038820084,
+   "speed": 0.018459983143685462,
+   "sigma_last": 0.3482555224108386
+  },
+  "maps": {
+   "equal_width": 37168.45,
+   "jenks": [
+    30448.75,
+    58264.75,
+    91489.75,
+    144817.5,
+    216291.0,
+    216291.0
+   ]
+  },
+  "normalization": {
+   "minmax_first": 16.299576657084167,
+   "zscore_first": 46.453169724960816
+  }
+ }
+}
