@@ -1193,6 +1193,28 @@ def related(asked: Asked) -> dict[str, Any]:
 # --- Связь двух показателей ----------------------------------------------------------------
 
 
+def _pair_names(state: SurfaceState, other: SurfaceState, subject: Any, partner: Any) -> list[str]:
+    """
+    Подписи двух показателей на графике: при одинаковых названиях — откуда каждый (своя
+    таблица или данные сайта), иначе две линии и две оси неразличимы.
+    """
+    from apps.warehouse.routing import is_user_key
+
+    names = [str(subject.title), str(partner.title)]
+    if names[0].strip().casefold() != names[1].strip().casefold():
+        return names
+    assert state.series is not None and other.series is not None
+    kinds = [is_user_key(state.series.key), is_user_key(other.series.key)]
+    if kinds[0] == kinds[1]:
+        return [f"{names[0]} (1)", f"{names[1]} (2)"]
+    return [
+        _("%(title)s — своя таблица") % {"title": name}
+        if own
+        else _("%(title)s — данные сайта") % {"title": name}
+        for name, own in zip(names, kinds, strict=True)
+    ]
+
+
 def relation(asked: Asked, other: SurfaceState, partner: Any) -> dict[str, Any]:
     """Коэффициент Спирмена двух рядов по регионам за общий год и облако точек."""
     from apps.analytics.charts import scatter_fit_option
@@ -1209,7 +1231,8 @@ def relation(asked: Asked, other: SurfaceState, partner: Any) -> dict[str, Any]:
         {"code": code, "name": names[code], "x": first[year][code], "y": second[year][code]}
         for code in codes
     ]
-    option = scatter_fit_option(points, x_name=subject.title, y_name=partner.title)
+    x_name, y_name = _pair_names(state, other, subject, partner)
+    option = scatter_fit_option(points, x_name=x_name, y_name=y_name)
     return {
         "year": year,
         "coefficient": coefficient(result.coefficient),
@@ -1298,6 +1321,7 @@ def comparison(asked: Asked, other: SurfaceState, partner: Any) -> dict[str, Any
             break
     chart: dict[str, Any] | None = None
     base_year = None
+    names = _pair_names(state, other, subject, partner)
     same_unit = subject.unit.strip().casefold() == partner.unit.strip().casefold()
     if focus:
         mine = values[keys[0]][focus]
@@ -1317,8 +1341,8 @@ def comparison(asked: Asked, other: SurfaceState, partner: Any) -> dict[str, Any
             chart = timeline_option(
                 years,
                 [
-                    {"name": subject.title, "values": lines[0], "primary": True},
-                    {"name": partner.title, "values": lines[1]},
+                    {"name": names[0], "values": lines[0], "primary": True},
+                    {"name": names[1], "values": lines[1]},
                 ],
                 unit=unit,
                 end_labels=False,
@@ -1334,7 +1358,7 @@ def comparison(asked: Asked, other: SurfaceState, partner: Any) -> dict[str, Any
         # В своих единицах линии — только при общей единице, иначе первый год = 100.
         "unit": subject.unit if same_unit else "",
         "chart": chart,
-        "titles": [subject.title, partner.title],
+        "titles": names,
         "other_title": partner.title,
         "coefficient": "",
         "apart": [],

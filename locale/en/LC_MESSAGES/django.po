@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 19:49+0000\n"
+"POT-Creation-Date: 2026-10-28 21:24+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -5412,7 +5412,7 @@ msgid "к базовому году"
 msgstr "rebased"
 
 #: apps/compare/panel.py:208
-#: apps/userdata/answers.py:1316
+#: apps/userdata/answers.py:1340
 msgid "%(year)s = 100"
 msgstr "%(year)s = 100"
 
@@ -10308,15 +10308,15 @@ msgstr "There are no regional values for these years."
 msgid "Индекс не рассчитать: значения регионов одинаковы."
 msgstr "The index cannot be calculated: the regions’ values are equal."
 
-#: apps/userdata/answers.py:1243
+#: apps/userdata/answers.py:1266
 msgid "У показателей нет общего года."
 msgstr "The indicators have no year in common."
 
-#: apps/userdata/answers.py:1255
+#: apps/userdata/answers.py:1278
 msgid "Пар значений слишком мало для оценки связи."
 msgstr "There are too few pairs of values to estimate a relationship."
 
-#: apps/userdata/answers.py:1260
+#: apps/userdata/answers.py:1283
 msgid "Связь не рассчитать: у одного из показателей значения одинаковы."
 msgstr "The relationship cannot be calculated: one of the indicators has equal values."
 
@@ -10343,6 +10343,14 @@ msgstr "At least %(count)s years are needed between the first and the last year.
 #: apps/userdata/answers.py:1141
 msgid "Нужны положительные значения хотя бы по %(count)s регионам каждый год."
 msgstr "Positive values for at least %(count)s regions are needed in every year."
+
+#: apps/userdata/answers.py:1211
+msgid "%(title)s — своя таблица"
+msgstr "%(title)s — own table"
+
+#: apps/userdata/answers.py:1213
+msgid "%(title)s — данные сайта"
+msgstr "%(title)s — site data"
 
 #: apps/userdata/answers.py:722
 msgid "доля группы в сумме регионов"
