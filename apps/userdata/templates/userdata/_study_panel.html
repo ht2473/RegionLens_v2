@@ -38,7 +38,7 @@
       {% for source in panel.tables %}
         <details class="study-source" data-filter-group{% if source.open %} open{% endif %}>
           <summary class="study-source__summary">
-            <span class="study-source__title"{% with lang=source.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ source.title }}</span>
+            <span class="study-source__title"{% with lang=source.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ source.title }}{% if source.note %}<span class="study-source__note">{{ source.note }}</span>{% endif %}</span>
             <svg class="study-source__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
           </summary>
           <a class="study-source__open" href="{{ source.url }}">

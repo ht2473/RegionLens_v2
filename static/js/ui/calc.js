@@ -1,6 +1,7 @@
 /* Панель расчёта: подсказка названий показателей в своей формуле. После «[» под полем
    появляются подходящие названия; стрелки выбирают, Enter или щелчок вставляет «[название]»,
-   Escape закрывает перечень. Панель приходит фрагментом — обработчики висят на документе.
+   Escape закрывает перечень. Раскрытый перечень показателей прокручивается к выбранному.
+   Панель приходит фрагментом — обработчики висят на документе.
    Без сценариев названия пишут сами, предпросмотр — кнопкой «Проверить». */
 
 // Подсказок в перечне — не больше.
@@ -95,6 +96,21 @@ function move(field, step) {
 }
 
 export function init() {
+  // Раскрытый перечень показателей — сразу у выбранного: он может стоять ниже видимой части.
+  // Событие toggle не всплывает — ловится на погружении.
+  document.addEventListener(
+    "toggle",
+    (event) => {
+      const pick = event.target;
+      if (pick.matches?.(".series-pick") && pick.open) {
+        const chosen = pick.querySelector("input[type=radio]:checked")?.closest("label");
+        // Таблица выбранного раскрыта, даже если её свернули прежде.
+        chosen?.closest(".series-pick__group")?.setAttribute("open", "");
+        chosen?.scrollIntoView({ block: "nearest" });
+      }
+    },
+    true
+  );
   document.addEventListener("input", (event) => {
     if (event.target.matches?.("[data-calc-expression]")) {
       suggest(event.target);

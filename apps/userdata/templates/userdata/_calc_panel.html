@@ -4,18 +4,20 @@
   получится, остальные подходящие — под «Все расчёты» с поиском, неподходящие — одной строкой
   с причинами; поля расчёта, название, единица и таблица нового ряда; предпросмотр — карта
   года, крайние регионы, предупреждения о смысле, формула и метод. Изменение поля пересчитывает
-  предпросмотр (со сценарием); без сценария — кнопка «Проверить». Поиск по расчётам формы
-  не отправляет: у него нет имени.
+  предпросмотр (со сценарием); без сценария — кнопка «Проверить». Поиск по расчётам и
+  показателям формы не отправляет: у него нет имени, а его изменение до формы не доходит
+  (forms.js). Условие в hx-trigger не ставить: htmx исполняет его через eval, а политика
+  безопасности сайта eval запрещает.
 {% endcomment %}
 <form method="post" action="{{ calc_url }}" class="calc-panel" id="calc-form"
       hx-post="{{ calc_url }}" hx-target="#calc-dialog-body" hx-swap="innerHTML"
-      hx-trigger="change[target.name] delay:350ms, submit" data-calc-form>
+      hx-trigger="change delay:350ms, submit" data-calc-form>
   {% csrf_token %}
 
-  <div class="field">
-    <label class="field__label" for="calc-a">{% translate "Показатель" %}</label>
+  <fieldset class="field">
+    <legend class="field__label">{% translate "Показатель" %}</legend>
     {% include "userdata/_calc_series.html" with name="a" id="calc-a" value=form.a %}
-  </div>
+  </fieldset>
 
   <fieldset class="calc-catalog">
     <legend class="field__label">{% translate "Расчёт" %}</legend>
@@ -74,10 +76,10 @@
         {% if field.name != "a" %}
           {% with value=form|dict_value:field.name field_id="calc-"|add:field.name %}
             {% if field.kind == "series" %}
-              <div class="field">
-                <label class="field__label" for="{{ field_id }}">{{ field.label }}</label>
+              <fieldset class="field">
+                <legend class="field__label">{{ field.label }}</legend>
                 {% include "userdata/_calc_series.html" with name=field.name id=field_id value=value %}
-              </div>
+              </fieldset>
             {% elif field.kind == "series_list" %}
               <fieldset class="field calc-parts">
                 <legend class="field__label">{{ field.label }}</legend>

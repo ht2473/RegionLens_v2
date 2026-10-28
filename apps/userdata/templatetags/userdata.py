@@ -31,6 +31,12 @@ def available_count(actions: Any) -> int:
 
 
 @register.filter
+def has_key(items: Any, key: Any) -> bool:
+    """Среди записей перечня (``{"key": …}``) есть выбранная — её группа раскрыта."""
+    return bool(key) and any(item.get("key") == key for item in items or ())
+
+
+@register.filter
 def in_source_lang(text: Any) -> SafeString:
     """Текст таблицы внутри переводимой фразы: с ``lang="ru"`` на странице не по-русски."""
     lang = source_lang(text)

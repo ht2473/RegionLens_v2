@@ -26,7 +26,7 @@ from apps.warehouse import routing
 
 from . import access, answers, build, extract, indicators, jobs, operations, semantics, studies, via
 from .models import Dataset, DatasetSeries, DatasetVersion, Study
-from .series import PER_CAPITA, UserSeries
+from .series import PER_CAPITA, UserSeries, twin_notes
 
 # Разделы окна «Добавить карточку»: визуализация, анализ, сравнение, расчёты.
 LOOK, ASK, PAIR, COMPUTE = "look", "ask", "pair", "compute"
@@ -199,6 +199,8 @@ class Source:
     url: str
     indicators: list[Indicator] = field(default_factory=list)
     open: bool = False
+    # Когда загружена — только у таблиц с одинаковым названием (series.twin_notes).
+    note: str = ""
 
 
 def panel(
@@ -328,7 +330,8 @@ def _tables(request: HttpRequest, wanted: set[str], study: Study) -> list[Source
     вернётся в исследование.
     """
     found = []
-    datasets = access.owned(request).select_related("current_version")
+    datasets = list(access.owned(request).select_related("current_version"))
+    notes = twin_notes(datasets)
     for dataset in datasets:
         version = dataset.current_version
         if version is None or version.state != DatasetVersion.State.BUILT:
@@ -339,6 +342,7 @@ def _tables(request: HttpRequest, wanted: set[str], study: Study) -> list[Source
         source = Source(
             title=dataset.title,
             url=reverse("userdata:dataset", args=[dataset.public_id]),
+            note=notes.get(dataset.pk, ""),
         )
         records = [record for record in version.series.order_by("order") if record.values_count]
         recounts: dict[str, dict[str, str]] = {}
@@ -689,7 +693,7 @@ def _pair(
     group_url: str,
 ) -> list[Action]:
     group = Action(
-        _("Моя группа регионов против остальных"),
+        _("Группа регионов"),
         icon="group",
         href=group_url,
         reason=why("answer:group") or ("" if group_url else _("группы — в исследовании")),

@@ -1,10 +1,54 @@
-{% load userdata %}
-{# Выбор ряда панели расчёта: свои таблицы группами, затем официальные ряды поля. #}
-<select class="select" id="{{ id }}" name="{{ name }}">
-  <option value="">—</option>
-  {% for group in options %}
-    <optgroup label="{{ group.title }}">
-      {% for item in group.items %}<option value="{{ item.key }}"{% if value == item.key %} selected{% endif %}>{{ item.title }}</option>{% endfor %}
-    </optgroup>
-  {% endfor %}
-</select>
+{% load i18n formatting userdata %}
+{% comment %}
+  Выбор ряда панели расчёта — как панель «Мои таблицы»: таблицы по одной раскрываются,
+  раскрыта таблица выбранного показателя (или единственная), у показателя — единица и годы.
+  Перечнем внутри окна, а не выпадающим списком: тот раскрывается по ширине самого длинного
+  названия во весь экран. Поиск — по всем таблицам, найденное раскрывает свою таблицу; без
+  имени он формы не отправляет. Выбор пересчитывает панель (hx-trigger формы), и перечень
+  сворачивается сам; раскрытый прокручивается к выбранному (calc.js). Подпись поля — legend
+  снаружи (_calc_panel.html).
+{% endcomment %}
+<details class="series-pick" id="{{ id }}-pick">
+  <summary class="series-pick__current">
+    {% for group in options %}{% for item in group.items %}{% if item.key == value %}
+      <span class="series-pick__title"{% with lang=item.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.title }}</span>
+      <span class="series-pick__meta"><span{% with lang=group.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ group.table|default:group.title }}</span>{% if group.note %} ({{ group.note }}){% endif %}{% include "userdata/_calc_series_meta.html" %}</span>
+    {% endif %}{% endfor %}{% endfor %}
+    {% if not value %}<span class="series-pick__title series-pick__title--empty">{% translate "Выберите показатель" %}</span>{% endif %}
+    <span class="series-pick__change">{% translate "Сменить" %}</span>
+  </summary>
+  <div class="series-pick__panel">
+    <label class="filter-field">
+      <svg aria-hidden="true"><use href="#icon-filter"></use></svg>
+      <span class="visually-hidden">{% translate "Найти показатель" %}</span>
+      <input type="search" autocomplete="off" placeholder="{% translate 'Найти показатель во всех таблицах' %}"
+             data-filter-input="#{{ id }}-list" data-filter-empty="#{{ id }}-empty">
+    </label>
+    <div class="series-pick__list" id="{{ id }}-list">
+      {% for group in options %}
+        <details class="series-pick__group" data-filter-group{% if group.items|has_key:value or options|length == 1 %} open{% endif %}>
+          <summary class="series-pick__table">
+            <span class="series-pick__table-name"><span{% with lang=group.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ group.table|default:group.title }}</span>{% if group.note %}<span class="series-pick__note">{{ group.note }}</span>{% endif %}</span>
+            <span class="series-pick__count numeric" data-filter-count>{{ group.items|length }}</span>
+          </summary>
+          {% regroup group.items by name as indicators %}
+          {% for indicator in indicators %}
+            <div class="series-pick__parts" data-filter-group>
+              {% if indicator.list.0.detail %}<p class="series-pick__indicator"{% with lang=indicator.grouper|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ indicator.grouper }}</p>{% endif %}
+              {% for item in indicator.list %}
+                <label class="radio series-pick__item{% if item.detail %} series-pick__item--part{% endif %}" data-filter-item data-filter-text="{{ item.title }}">
+                  <input type="radio" name="{{ name }}" id="{{ id }}-{{ forloop.parentloop.parentloop.counter }}-{{ forloop.parentloop.counter }}-{{ forloop.counter }}" value="{{ item.key }}"{% if value == item.key %} checked{% endif %}>
+                  <span class="series-pick__name">
+                    {% with label=item.detail|default:item.title %}<span{% with lang=label|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ label }}</span>{% endwith %}
+                    {% if item.unit or item.first_year %}<span class="series-pick__meta">{% include "userdata/_calc_series_meta.html" with first=True %}</span>{% endif %}
+                  </span>
+                </label>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        </details>
+      {% endfor %}
+    </div>
+    <p class="series-pick__empty" id="{{ id }}-empty" hidden>{% translate "Такого показателя нет." %}</p>
+  </div>
+</details>

@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+from collections import Counter, defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
@@ -14,7 +15,8 @@ from typing import Any
 from django.db.models import F
 from django.http import HttpRequest
 from django.urls import reverse
-from django.utils import translation
+from django.utils import timezone, translation
+from django.utils.dateformat import format as date_format
 from django.utils.translation import gettext
 
 from apps.warehouse import routing
@@ -302,19 +304,55 @@ def option_item(item: UserSeries) -> dict[str, Any]:
         "group_title": group_title(item.dataset),
         # Подписи таблицы — как есть: на английской странице кириллица помечается.
         "lang": source_lang(item.full_title),
+        # Показатель и его часть (разрезы, период) порознь: в перечне расчёта части одного
+        # показателя стоят под ним, как в панели «Мои таблицы». Единица и годы — строкой ниже.
+        "name": item.record.title,
+        "detail": naming.subsection(item.record.slices, item.record.period),
+        "unit": item.record.unit,
+        "first_year": item.record.first_year,
+        "last_year": item.record.last_year,
     }
+
+
+def twin_notes(datasets: Iterable[Dataset]) -> dict[int, str]:
+    """
+    Пометка у таблиц с одинаковым названием — когда загружена: иначе в перечне их не
+    различить. Загруженные в один день различает и время.
+    """
+    by_title: dict[str, list[Dataset]] = defaultdict(list)
+    for dataset in datasets:
+        by_title[" ".join(dataset.title.casefold().split())].append(dataset)
+    notes: dict[int, str] = {}
+    for same in by_title.values():
+        if len(same) < 2:  # noqa: PLR2004 — пометка нужна только двойникам
+            continue
+        days = Counter(timezone.localtime(item.created_at).date() for item in same)
+        for item in same:
+            moment = timezone.localtime(item.created_at)
+            shown = date_format(moment, "d.m.Y" if days[moment.date()] == 1 else "d.m.Y H:i")
+            notes[item.pk] = gettext("загружена %(date)s") % {"date": shown}
+    return notes
 
 
 def option_groups(datasets: list[Dataset]) -> list[dict[str, Any]]:
     """Группы перечня выбора ряда: по набору на группу, ряды — в порядке набора."""
     groups = []
+    notes = twin_notes(datasets)
     for dataset in datasets:
         version = dataset.current_version
         if version is None or version.state != DatasetVersion.State.BUILT:
             continue
         items = [option_item(item) for item in series_of(version)]
         if items:
-            groups.append({"title": group_title(dataset), "items": items})
+            # «table» — название таблицы без «Мои таблицы:»: в перечне расчёта таблицы и так свои.
+            groups.append(
+                {
+                    "title": group_title(dataset),
+                    "table": dataset.title,
+                    "note": notes.get(dataset.pk, ""),
+                    "items": items,
+                }
+            )
     return groups
 
 
