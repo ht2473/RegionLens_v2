@@ -869,9 +869,14 @@ a.leader-list__name:hover {
   gap: var(--space-2);
 }
 
-/* Отступ между полями: иначе подсказка читается продолжением следующей подписи. */
+/* Отступ между полями: иначе подсказка читается продолжением следующей подписи. В колонке
+   .stack отступ уже задан промежутком — второй сложился бы с ним вдвое. */
 .field + .field {
   margin-top: var(--space-4);
+}
+
+.stack > .field + .field {
+  margin-top: 0;
 }
 
 .field__label {
@@ -1151,10 +1156,11 @@ a.leader-list__name:hover {
   margin-bottom: var(--space-3);
 }
 
+/* Флажок — на уровне первой строки подписи: у подписи в две строки он не встаёт между ними. */
 .checkbox,
 .radio {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-2);
   font-size: var(--text-sm);
   cursor: pointer;
@@ -1164,6 +1170,10 @@ a.leader-list__name:hover {
 .radio input {
   width: 16px;
   height: 16px;
+  /* Середина первой строки: высота строки подписи (1lh) минус размер флажка, пополам. */
+  margin-block: calc((1lh - 16px) / 2) 0;
+  line-height: inherit;
+  font-size: inherit;
   accent-color: var(--accent);
   cursor: pointer;
   flex-shrink: 0;
