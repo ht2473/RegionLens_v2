@@ -6,12 +6,15 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from django.http import HttpRequest
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
+from apps.catalog import value_notes
+from apps.catalog.constants import ValueQuality
 from apps.catalog.indicator import describe_series
 from apps.catalog.models import Territory
 from apps.core.templatetags.formatting import position_share, ru_number
@@ -20,12 +23,12 @@ from apps.surface.state import SurfaceState
 from apps.warehouse.queries import series_values_by_territory
 
 from .boundaries import boundaries_available, boundaries_meta
-from .cartogram import DEFINITION_PREFIX, build_map
+from .cartogram import DEFINITION_PREFIX, build_map, symbol_radius
 from .classification import (
     DEFAULT_CLASSES,
     DEFAULT_METHOD,
     MAX_CLASSES,
-    METHOD_TERMS,
+    METHOD_NOTES,
     METHODS,
     MIN_CLASSES,
     classify,
@@ -41,16 +44,32 @@ MODE_GEOGRAPHIC = "geo"
 MODE_TILES = "tiles"
 MODES = (MODE_GEOGRAPHIC, MODE_TILES)
 
+# Способ изображения: картограмма (заливка по классам) или картодиаграмма (круги, площадь
+# которых — значение). «По типу величины» — картодиаграмма у сумм, картограмма у относительных;
+# так строит карту исследование.
+MARKS_FILL = "fill"
+MARKS_SYMBOLS = "symbols"
+MARKS_AUTO = "auto"
+MARKS = (MARKS_FILL, MARKS_SYMBOLS)
+# Образцовые значения легенды значков — доли наибольшего: площадь каждого круга вчетверо
+# меньше предыдущего, радиус — вдвое.
+SYMBOL_STEPS = (1.0, 0.25, 0.0625)
+
 # Число территорий в списках лидеров и аутсайдеров под картой.
 LEADERS_LIMIT = 5
 
 
 def build(
-    request: HttpRequest, state: SurfaceState, *, prefix: str = DEFINITION_PREFIX
+    request: HttpRequest,
+    state: SurfaceState,
+    *,
+    prefix: str = DEFINITION_PREFIX,
+    marks: str = MARKS_FILL,
 ) -> dict[str, Any]:
     """
     Подготовить всё, что нужно для отрисовки карты и легенды; ``prefix`` — приставка
-    опознавателей контуров, если карт на странице несколько (исследование).
+    опознавателей контуров, если карт на странице несколько (исследование); ``marks`` — знаки,
+    если запрос их не называет (``MARKS_AUTO`` — по виду величины).
     """
     context: dict[str, Any] = {
         "boundaries_available": boundaries_available(),
@@ -69,6 +88,16 @@ def build(
     series = state.series
     mode = context["mode"]
     item = describe_series(series)
+    possible = _symbols_possible(rows, mode, context["compare_year"])
+    wanted = request.GET.get("marks") or marks
+    symbols = possible and (
+        wanted == MARKS_SYMBOLS or (wanted == MARKS_AUTO and bool(item.absolute))
+    )
+    context.update(
+        marks=MARKS_SYMBOLS if symbols else MARKS_FILL,
+        symbols_possible=possible,
+        symbol_legend=_symbol_legend(rows, item.precision) if symbols else [],
+    )
     top, bottom = _leaders(
         rows, item.precision, coloured=not context["compare_year"], ratio=not item.absolute
     )
@@ -79,7 +108,7 @@ def build(
             "tile_grid": tile_grid(rows),
             "tile_caption": _("Плиточная картограмма: %(title)s") % {"title": series.full_title},
             "geo_map": (
-                build_map(rows, selected=state.codes, prefix=prefix)
+                build_map(rows, selected=state.codes, prefix=prefix, symbols=symbols)
                 if mode == MODE_GEOGRAPHIC
                 else None
             ),
@@ -94,6 +123,48 @@ def build(
         }
     )
     return context
+
+
+def _symbols_possible(rows: list[dict[str, Any]], mode: str, compare_year: int | None) -> bool:
+    """
+    Значки можно нарисовать: карта географическая, лет не сравнивают (изменение со знаком —
+    заливка расходящейся шкалой) и значения не отрицательны, хотя бы одно больше нуля.
+    """
+    values = [row["mapped"] for row in rows if row["mapped"] is not None]
+    return (
+        mode == MODE_GEOGRAPHIC
+        and compare_year is None
+        and bool(values)
+        and min(values) >= 0
+        and max(values) > 0
+    )
+
+
+def _symbol_legend(rows: list[dict[str, Any]], precision: int) -> list[dict[str, str]]:
+    """Круги легенды: круглые значения не больше долей наибольшего, диаметр в единицах чертежа."""
+    highest = max(row["mapped"] for row in rows if row["mapped"] is not None)
+    items: list[dict[str, str]] = []
+    shown: list[float] = []
+    for share in SYMBOL_STEPS:
+        value = _round_down(highest * share)
+        if value <= 0 or (shown and value >= shown[-1]):
+            continue
+        shown.append(value)
+        items.append(
+            {
+                "diameter": f"{2 * symbol_radius(value, highest):.1f}",
+                "label": ru_number(value, precision if value < 1 else 0),
+            }
+        )
+    return items
+
+
+def _round_down(value: float) -> float:
+    """Круглое число не больше данного: 1, 2 или 5 с нулями — для подписи легенды."""
+    if value <= 0:
+        return 0.0
+    power = 10.0 ** math.floor(math.log10(value))
+    return next(step * power for step in (5, 2, 1) if step * power <= value)
 
 
 def _leaders(
@@ -219,7 +290,7 @@ def build_values(request: HttpRequest, state: SurfaceState) -> dict[str, Any]:
 
 def _scale_options(values: list[float], class_count: int) -> list[dict[str, Any]]:
     """
-    Способы разбиения для «Настроить вид»: подпись словами, термин и образец — доли размаха
+    Способы разбиения для «Настроить вид»: термин, что он значит и образец — доли размаха
     значений года, занятые классами этого способа (строками: дробь шаблон записал бы с запятой).
     """
     low, high = (min(values), max(values)) if values else (0.0, 0.0)
@@ -232,12 +303,13 @@ def _scale_options(values: list[float], class_count: int) -> list[dict[str, Any]
             edges = [min(max(edge, low), high) for edge in result.breaks]
             sample = [
                 {
-                    "grow": f"{(edges[index + 1] - edges[index]) / (high - low):.4f}",
+                    # Класс из одного значения (выброс у Дженкса) — узкой, но видимой полосой.
+                    "grow": f"{max((edges[index + 1] - edges[index]) / (high - low), 0.03):.4f}",
                     "colour": palette[index],
                 }
                 for index in range(result.class_count)
             ]
-        options.append({"code": code, "title": title, "term": METHOD_TERMS[code], "sample": sample})
+        options.append({"code": code, "title": title, "note": METHOD_NOTES[code], "sample": sample})
     return options
 
 
@@ -274,9 +346,13 @@ def _tile_title(row: dict[str, Any], compare_year: int | None) -> str:
     При сравнении лет положение не называется: раскрашено изменение, а положение — об уровне.
     """
     if row["mapped"] is None:
-        return f"{row['name']} — {_('нет данных')}"
+        # Причина пропуска — когда она не просто «нет данных»: скрыто, явление отсутствует.
+        reason = row.get("note") if row.get("quality") != ValueQuality.NO_DATA else ""
+        return f"{row['name']} — {reason or _('нет данных')}"
 
     parts = [f"{row['name']} — {ru_number(row['mapped'])}"]
+    if row.get("note") and compare_year is None:
+        parts.append(f" ({row['note']})")
     if compare_year is not None:
         parts.append(f" ({_('изменение')})")
     elif row["percentile"] is not None:
@@ -366,6 +442,9 @@ def _merge_with_reference(
                 "mapped": mapped,
                 "change": change,
                 "quality": observation["quality"],
+                "note": value_notes.note(
+                    observation["value"], observation["quality"], observation.get("flags")
+                ),
                 "rank_desc": observation["rank_desc"],
                 "percentile": observation["percentile"],
                 "ratio_to_country": observation["ratio_to_country"],

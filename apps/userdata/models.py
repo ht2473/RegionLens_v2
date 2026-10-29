@@ -155,8 +155,13 @@ class DatasetSeries(models.Model):
     """Ряд набора: показатель, значения разрезов и период года; ключ — «u:<набор>:<ряд>»."""
 
     class Kind(models.TextChoices):
+        """Тип величины: смысл и правила — ``semantics``."""
+
+        FLOW = "flow", _("сумма за период")
+        STOCK = "stock", _("сумма на дату")
         SUM = "sum", _("сумма")
-        RELATIVE = "relative", _("относительная величина")
+        RELATIVE = "relative", _("доля, среднее или на жителя")
+        INDEX = "index", _("изменение к другому периоду")
 
     class Polarity(models.TextChoices):
         POSITIVE = "positive", _("рост — к лучшему")
@@ -165,7 +170,9 @@ class DatasetSeries(models.Model):
 
     class Derived(models.TextChoices):
         NONE = "", _("из таблицы")
+        PER_1 = "per1", _("на жителя")
         PER_1000 = "per1000", _("на 1 000 жителей")
+        PER_10000 = "per10000", _("на 10 000 жителей")
         PER_100000 = "per100000", _("на 100 000 жителей")
         PER_KM2 = "perkm2", _("на км²")
         REAL = "real", _("в ценах последнего года")
@@ -283,6 +290,43 @@ class Study(PublicIdentifierModel, TimeStampedModel):
             models.CheckConstraint(
                 condition=models.Q(owner__isnull=False) | ~models.Q(guest_key=""),
                 name="userdata_study_has_owner",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class RegionGroup(PublicIdentifierModel, TimeStampedModel):
+    """
+    Своя группа регионов: название и субъекты — для карточки «Группа регионов» (итог группы
+    против остальных). Группа гостя, как исследование, привязана к отпечатку ключа из сеанса,
+    хранится сутки и после входа переходит в учётную запись.
+    """
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="владелец",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="region_groups",
+    )
+    guest_key = models.CharField(
+        "отпечаток гостевого ключа", max_length=64, blank=True, db_index=True
+    )
+    expires_at = models.DateTimeField("хранится до", null=True, blank=True)
+    title = models.CharField("название", max_length=120)
+    codes = models.JSONField("субъекты", default=list, blank=True)
+
+    class Meta:
+        verbose_name = "группа регионов"
+        verbose_name_plural = "группы регионов"
+        ordering = ["title"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(owner__isnull=False) | ~models.Q(guest_key=""),
+                name="userdata_group_has_owner",
             )
         ]
 

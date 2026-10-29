@@ -108,6 +108,12 @@ FROM_AGENCIES = [
     ("Итого по Российской Федерации", "RU"),
     ("Всего по Российской Федерации", "RU"),
     ("Средний уровень по Российской Федерации", "RU"),
+    # Выгрузка ЕМИСС: код ОКАТО перед названием, у межведомственного ОКАТО — 12 знаков.
+    ("        14000000000 Белгородская область", "RU-BEL"),
+    ("45000000000 Город Москва столица Российской Федерации город федерального значения", "RU-MOW"),
+    ("140000000001 Белгородская область", "RU-BEL"),
+    ("    030 Центральный федеральный округ", "FD-CFO"),
+    ("643 Российская Федерация", "RU"),
 ]
 TYPOS = [
     ("Нижегородская облать", "RU-NIZ"),
@@ -290,6 +296,14 @@ class TestRules:
         without = matching.matcher(frozenset({rule})).match(label)
         # Без правила подпись не узнаётся или узнаётся только как исправленное написание.
         assert without.kind != found.kind or not without.is_resolved
+
+    def test_code_before_name_rescues_unknown_name(self) -> None:
+        # Название не узнано — известный код ОКАТО решает; неизвестный код — нет.
+        assert match("14000000000 Белгородщина-1").code == "RU-BEL"
+        assert match("2 Женщины").kind == matching.NONE
+
+    def test_name_decides_over_code_before_it(self) -> None:
+        assert match("14000000000 Брянская область").code == "RU-BRY"
 
     def test_without_nested_rule_oblast_is_silent_total(self) -> None:
         found = matching.matcher(frozenset({"nested"})).match("Архангельская область")

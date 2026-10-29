@@ -12,7 +12,7 @@
   <span>{% term "correlation-coefficient" _("коэффициент Спирмена") %}</span>
 </p>
 {% with option_id=card.prefix|add:"-scatter" %}
-  <rl-chart class="chart study-card__chart" data-options="{{ option_id }}"
+  <rl-chart data-report-image class="chart study-card__chart" data-options="{{ option_id }}"
             data-image-title="{{ card.title }}" data-image-subtitle="{{ card.year|stringformat:'d' }}"
             data-image-source="{{ card.source }}"></rl-chart>
   {{ card.chart|json_script:option_id }}

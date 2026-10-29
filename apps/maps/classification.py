@@ -11,18 +11,25 @@ from typing import Any
 
 from django.utils.translation import gettext_lazy as _
 
-# Допустимые способы разбиения: подпись словами для интерфейса и термин — мелко рядом.
+# Допустимые способы разбиения: принятый термин картографии и что он значит — мелко рядом.
 METHODS: dict[str, Any] = {
-    "quantile": _("поровну регионов"),
-    "equal": _("равными шагами"),
-    "jenks": _("по разрывам"),
-    "stddev": _("от среднего"),
-}
-METHOD_TERMS: dict[str, Any] = {
     "quantile": _("квантили"),
     "equal": _("равные интервалы"),
-    "jenks": _("естественные границы"),
+    "jenks": _("естественные границы (Дженкс)"),
     "stddev": _("стандартные отклонения"),
+}
+METHOD_NOTES: dict[str, Any] = {
+    "quantile": _("поровну регионов в классе"),
+    "equal": _("классы равной ширины"),
+    "jenks": _("границы по разрывам в значениях"),
+    "stddev": _("шаги от среднего"),
+}
+# Что значат цвета карты — заголовок легенды обычными словами; термин — в подсказке.
+LEGEND_TITLES: dict[str, Any] = {
+    "quantile": _("В каждом цвете — поровну регионов"),
+    "equal": _("Цвета делят значения на равные отрезки"),
+    "jenks": _("Цвета разделены по разрывам в значениях"),
+    "stddev": _("Цвета — отклонение от среднего"),
 }
 DEFAULT_METHOD = "quantile"
 
@@ -62,13 +69,13 @@ class Classification:
 
     @property
     def method_label(self) -> Any:
-        """Подпись способа разбиения словами для легенды."""
+        """Термин способа разбиения."""
         return METHODS.get(self.method, self.method)
 
     @property
-    def method_term(self) -> Any:
-        """Термин способа разбиения."""
-        return METHOD_TERMS.get(self.method, self.method)
+    def legend_title(self) -> Any:
+        """Что значат цвета карты — заголовок легенды."""
+        return LEGEND_TITLES.get(self.method, self.method_label)
 
     def class_of(self, value: float | None) -> int | None:
         """Определить номер класса значения, считая от нуля; пропуск — ``None``."""
@@ -123,7 +130,7 @@ def classify(
         method = "quantile"
         breaks = _quantile_breaks(clean, class_count)
 
-    breaks = _deduplicate(breaks, clean)
+    breaks = _deduplicate(breaks, clean, keep_top=method == "jenks")
     counts = _count_by_class(clean, breaks)
     return Classification(
         method=method, breaks=tuple(breaks), counts=tuple(counts), values_count=len(clean)
@@ -239,16 +246,22 @@ def _interpolate(values: list[float], position: float) -> float:
     return values[lower] * (1 - weight) + values[upper] * weight
 
 
-def _deduplicate(breaks: list[float], values: list[float]) -> list[float]:
+def _deduplicate(
+    breaks: list[float], values: list[float], *, keep_top: bool = False
+) -> list[float]:
     """
     Устранить совпадающие границы.
 
     Вырожденные классы убираются, поэтому классов может оказаться меньше запрошенного.
+    ``keep_top`` — у Дженкса верхний класс из одного наибольшего значения (выброс) остаётся
+    своим классом: граница его начала совпадает с максимумом, а не сливается с ним.
     """
     unique: list[float] = []
     for edge in breaks:
         if not unique or edge > unique[-1]:
             unique.append(edge)
+    if keep_top and len(breaks) > 2 and breaks[-2] == breaks[-1] > breaks[-3]:  # noqa: PLR2004
+        unique.append(breaks[-1])
 
     if len(unique) < MIN_DISTINCT_VALUES:
         return [values[0], values[-1]]

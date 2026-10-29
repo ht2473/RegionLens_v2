@@ -3,7 +3,7 @@
 {% if not rows %}
   <p class="study-card__empty">{% translate "За этот год значений по субъектам нет." %}</p>
 {% else %}
-  <rl-choropleth class="study-map"
+  <rl-choropleth class="study-map" data-report-image
                  data-image-title="{{ card.title }}"
                  data-image-subtitle="{% if year %}{{ year|stringformat:'d' }}{% endif %}{% if unit %} · {{ unit }}{% endif %}"
                  data-image-source="{{ card.source }}">

@@ -499,3 +499,108 @@ def scatter_option(
             }
         ],
     }
+
+
+# Структура по регионам: высота строки одного столбца, точки.
+STRUCTURE_ROW = 18
+STRUCTURE_PAD = 48
+
+
+def structure_option(names: Sequence[str], parts: list[dict[str, Any]]) -> dict[str, Any]:
+    """
+    Построить структуру по регионам: столбец каждого — 100 %, отрезки — доли частей
+    в постоянном порядке цветов палитры рядов; ``parts`` — ``{"name", "shares"}``, доли
+    по порядку ``names``. Между отрезками — кромка цвета подложки.
+    """
+    return {
+        "grid": {"left": 8, "right": 24, "top": 8, "bottom": 8, "containLabel": True},
+        "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}, "valueFormatter": None},
+        "xAxis": {"type": "value", "min": 0, "max": 100, "name": "%", "nameGap": 6},
+        "yAxis": {
+            "type": "category",
+            "data": list(names),
+            "inverse": True,
+            "axisTick": {"show": False},
+        },
+        "series": [
+            {
+                "name": part["name"],
+                "type": "bar",
+                "stack": "share",
+                "data": part["shares"],
+                "barCategoryGap": "28%",
+                "itemStyle": {
+                    "color": f"var(--series-{index})",
+                    "borderColor": "var(--surface-raised)",
+                    "borderWidth": 1,
+                },
+                "emphasis": {"focus": "series"},
+            }
+            for index, part in enumerate(parts, start=1)
+        ],
+    }
+
+
+def waterfall_option(steps: list[dict[str, Any]], *, low: float | None = None) -> dict[str, Any]:
+    """
+    Построить водопад вкладов: первый и последний столбцы — итог, между ними — вклады
+    со знаком; ``steps`` — ``{"name", "start", "end", "total", "label"}`` сверху вниз.
+    ``low`` — начало оси, когда изменения малы рядом с итогом: иначе вклады не видны.
+    """
+    bases = []
+    bars = []
+    for step in steps:
+        start, end = float(step["start"]), float(step["end"])
+        if step["total"]:
+            colour = "var(--text-muted)"
+        else:
+            colour = "var(--rank-up)" if end >= start else "var(--rank-down)"
+        # Столбец начинается не левее оси: от нуля при оси не с нуля он уходил бы за край
+        # сетки и держался только обрезкой по ней.
+        base = min(start, end) if low is None else max(min(start, end), low)
+        bases.append(base)
+        bars.append(
+            {
+                "value": max(start, end) - base,
+                "name": step["name"],
+                "itemStyle": {"color": colour},
+                "label": {"formatter": step["label"]},
+            }
+        )
+    axis: dict[str, Any] = {"type": "value", "scale": low is not None}
+    if low is not None:
+        axis["min"] = low
+    return {
+        "grid": {"left": 8, "right": 72, "top": 8, "bottom": 8, "containLabel": True},
+        # Подсказка показала бы длину столбца без знака; вклад со знаком — в подписи.
+        "tooltip": {"show": False},
+        "xAxis": axis,
+        "yAxis": {
+            "type": "category",
+            "data": [step["name"] for step in steps],
+            "inverse": True,
+            "axisTick": {"show": False},
+        },
+        "series": [
+            {
+                "type": "bar",
+                "stack": "fall",
+                "data": bases,
+                "itemStyle": {"color": "transparent"},
+                "silent": True,
+                "tooltip": {"show": False},
+            },
+            {
+                "type": "bar",
+                "stack": "fall",
+                "data": bars,
+                "barCategoryGap": "30%",
+                "label": {
+                    "show": True,
+                    "position": "right",
+                    "fontSize": 11,
+                    "color": "var(--text-secondary)",
+                },
+            },
+        ],
+    }

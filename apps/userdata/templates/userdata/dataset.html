@@ -2,10 +2,11 @@
 {% load i18n static formatting userdata %}
 
 {% comment %}
-  Страница таблицы: вкладки «Данные» (показатели списком и выбранный — с картой ряда),
-  «Проверки», «Файл и версии», «Доступ» (две последние — владельцу). Вкладка и выбранный
-  ряд — в адресе: без сценариев — переходами, со сценарием выбор ряда меняет только правую
-  часть. Несобранной таблице — продолжить загрузку или удалить.
+  Страница таблицы — служебная: вкладки «Обзор» (показатели списком и выбранный — с переходами
+  в исследование и на карту; покрытие по годам, замечания, исключения), «Версии», «Доступ»
+  (две последние — владельцу). Вкладка и выбранный ряд — в адресе: без сценариев —
+  переходами, со сценарием выбор ряда меняет только правую часть. Несобранной таблице —
+  продолжить загрузку или удалить.
 {% endcomment %}
 
 {% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
@@ -27,9 +28,8 @@
     <p class="page-head__meta">
       {% if built %}
         <span>{% blocktranslate trimmed with count=indicator_count %}показателей: {{ count }}{% endblocktranslate %}</span>
-        <span>{% blocktranslate trimmed with count=version.series_count|ru_number:0 %}рядов: {{ count }}{% endblocktranslate %}</span>
-        <span>{% blocktranslate trimmed with count=version.values_count|ru_number:0 %}значений: {{ count }}{% endblocktranslate %}</span>
-        <span>{% blocktranslate trimmed with count=version.regions_count %}субъектов: {{ count }} из 85{% endblocktranslate %}</span>
+        <span>{% blocktranslate trimmed with count=version.values_count|ru_number:0 %}чисел: {{ count }}{% endblocktranslate %}</span>
+        <span>{% blocktranslate trimmed with count=version.regions_count %}регионов: {{ count }} из 85{% endblocktranslate %}</span>
         {% if version.first_year %}<span class="numeric">{{ version.first_year|year }}{% if version.last_year != version.first_year %}–{{ version.last_year|year }}{% endif %}</span>{% endif %}
       {% endif %}
       <span>{% translate "источник" %}:
@@ -57,7 +57,7 @@
           <div class="menu-popover dataset-menu" id="dataset-edit" popover role="dialog" aria-label="{% translate 'Изменить таблицу' %}">
             <a class="menu-item" href="{% url 'userdata:table' dataset.public_id %}">{% translate "Столбцы и отбор разрезов" %}</a>
             <a class="menu-item" href="{% url 'userdata:series' dataset.public_id %}">{% translate "Описание показателей" %}</a>
-            <a class="menu-item" href="{% url 'userdata:formula-new' dataset.public_id %}">{% translate "Показатель по формуле" %}</a>
+            <a class="menu-item" href="{% url 'userdata:dataset-calc' dataset.public_id %}">{% translate "Рассчитать показатель" %}</a>
             <a class="menu-item" href="?tab=file#own-version-new">{% translate "Новая версия файла" %}</a>
           </div>
         {% endif %}
@@ -88,8 +88,8 @@
 
     {% if tab == "data" %}
       {% include "userdata/_dataset_data.html" %}
-    {% elif tab == "checks" %}
       {% include "userdata/_dataset_checks.html" %}
+      {% if exclusions %}{% include "userdata/_dataset_exclusions.html" %}{% endif %}
     {% elif tab == "file" %}
       {% include "userdata/_dataset_file.html" %}
     {% elif tab == "access" %}

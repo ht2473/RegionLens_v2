@@ -21,7 +21,7 @@
         <span>{% blocktranslate trimmed with count=table|rows_text %}строк: {{ count }}{% endblocktranslate %}</span>
         <span>{% blocktranslate trimmed with count=resolved_regions %}субъектов узнано: {{ count }} из 85{% endblocktranslate %}</span>
         {% if result.periods %}<span><span class="numeric">{{ result.periods.first }}{% if result.periods.last != result.periods.first %}–{{ result.periods.last }}{% endif %}</span>, {{ period_kinds|join:", " }}</span>{% endif %}
-        <span>{% blocktranslate trimmed with count=result.series|ru_number:0 %}рядов получится: {{ count }}{% endblocktranslate %}</span>
+        <span>{% blocktranslate trimmed with count=result.series|ru_number:0 %}временных рядов получится: {{ count }}{% endblocktranslate %}</span>
       </p>
     {% endif %}
   </header>
@@ -100,8 +100,35 @@
         <label class="question-card__title" for="year-input">{% translate "Годы в таблице не найдены. Укажите год значений:" %}</label>
         <input class="input input--year" id="year-input" type="number" name="year" min="1900" max="2100" inputmode="numeric" value="{{ result.year_hint|default_if_none:'' }}">
       </div>
+    {% elif result.year_auto %}
+      <div class="question-card">
+        <label class="question-card__title" for="year-input">{{ year_note }} {% translate "Если неверно — исправьте год:" %}</label>
+        <input class="input input--year" id="year-input" type="number" name="year" min="1900" max="2100" inputmode="numeric" value="{{ result.year }}">
+        <input type="hidden" name="year-auto" value="{{ result.year }}">
+      </div>
     {% elif result.form == "indicators" %}
       <input type="hidden" name="year" value="{{ result.year }}">
+    {% endif %}
+
+    {% if result.repeats %}
+      <fieldset class="question-card" id="repeats">
+        <legend class="question-card__title">{% translate "Регионы повторяются в нескольких строках" %}</legend>
+        <p>
+          {% blocktranslate trimmed with regions=result.repeats.regions total=result.repeats.total %}
+            Регионов с повторами: {{ regions }} из {{ total }}. Числа в повторах разные. На карте у региона одно значение.
+          {% endblocktranslate %}
+        </p>
+        {% if result.repeats.municipal %}
+          <p>
+            {% blocktranslate trimmed with header=result.repeats.municipal|in_source_lang %}
+              Рядом есть столбец «{{ header }}». Похоже, в строках города или районы.
+            {% endblocktranslate %}
+          </p>
+        {% endif %}
+        <p>{% translate "Что в этих строках?" %}</p>
+        <label class="radio"><input type="radio" name="repeats" value="places"{% if result.repeats_answer == "places" %} checked{% endif %}>{% translate "Города, районы или другие части регионов" %}</label>
+        <label class="radio"><input type="radio" name="repeats" value="first"{% if result.repeats_answer == "first" %} checked{% endif %}> {% translate "Разные части таблицы одна под другой — взять первую" %}</label>
+      </fieldset>
     {% endif %}
 
     {% if unresolved %}
@@ -139,7 +166,7 @@
       </section>
     {% endif %}
 
-    {% if result.duplicates %}
+    {% if result.duplicates and not result.repeats %}
       <div class="callout callout--warning">
         <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
         <div>
@@ -194,10 +221,10 @@
     {% if result.slices %}
       <details class="question-card{% if too_many %} question-card--ask{% else %} question-card--quiet{% endif %}"{% if too_many %} open{% endif %}>
         <summary class="question-card__title">
-          {% if too_many %}{% translate "Разрезы: рядов слишком много" %}{% else %}{% translate "Разрезы: отбор значений" %}{% endif %}
+          {% if too_many %}{% translate "Разрезы: показателей слишком много" %}{% else %}{% translate "Разрезы: отбор значений" %}{% endif %}
         </summary>
         {% if too_many %}
-          <p class="field__error">{% blocktranslate trimmed with count=result.series|ru_number:0 limit=max_series %}Получается {{ count }} рядов — больше {{ limit }}. Выберите значения разрезов.{% endblocktranslate %}</p>
+          <p class="field__error">{% blocktranslate trimmed with count=result.series|ru_number:0 limit=max_series %}Получается временных рядов: {{ count }}, больше {{ limit }}. Выберите значения разрезов.{% endblocktranslate %}</p>
         {% endif %}
         <input type="hidden" name="slices-present" value="1">
         {% for index, info in result.slices.items %}
@@ -216,7 +243,7 @@
     {% if result.row_parts %}
       <details class="question-card question-card--quiet">
         <summary class="question-card__title">{% translate "Разрез строками под регионом" %}</summary>
-        <p>{% translate "Под каждым регионом идут строки с числами. Каждая такая строка станет отдельным рядом." %}</p>
+        <p>{% translate "Под каждым регионом идут строки с числами. Каждая такая строка станет отдельным показателем." %}</p>
         <ul class="compact-list">
           {% for part in result.row_parts %}<li{% with lang=part|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ part|truncatechars:60 }}</li>{% endfor %}
         </ul>

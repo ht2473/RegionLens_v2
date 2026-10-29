@@ -1,10 +1,10 @@
-{% load i18n %}
+{% load i18n formatting %}
 {# С чем связан: самые тесные значимые связи с показателями сайта за год. #}
 {% if card.links %}
   <ol class="answer-list study-card__answer">
     {% for link in card.links %}
       <li>
-        <a href="{{ link.url }}">{{ link.title }}</a>
+        <a href="{{ link.url }}">{{ link.title }}</a>{% if link.other_year %} <span class="study-card__muted">(<span class="numeric">{{ link.other_year|year }}</span>)</span>{% endif %}
         <span class="numeric">{{ link.coefficient }}</span>
         <span class="study-card__muted">{{ link.strength }}, {% if link.direct %}{% translate "прямая" %}{% else %}{% translate "обратная" %}{% endif %}</span>
       </li>
@@ -15,6 +15,9 @@
     <span>{% blocktranslate trimmed with count=card.pairs %}регионов: {{ count }}{% endblocktranslate %}</span>
     <span>{% translate "коэффициент Спирмена" %}</span>
   </p>
+  {% if card.other_years %}
+    <p class="answer__meta">{% translate "У показателя сайта без значений за этот год взят ближайший полный год — он в скобках." %}</p>
+  {% endif %}
 {% else %}
   <p class="study-card__empty">{% translate "Значимых связей с показателями основного набора нет." %}</p>
 {% endif %}

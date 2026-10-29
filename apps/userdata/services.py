@@ -8,7 +8,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import shutil
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -24,20 +24,36 @@ from apps.core.throttle import allow, allow_key
 from apps.warehouse.duckdb_client import close_dataset
 
 from . import access, ingest, paste, tables
-from .models import Dataset, DatasetVersion, Study
+from .models import Dataset, DatasetVersion, RegionGroup, Study
 
 logger = logging.getLogger(__name__)
 
-# Пример: набор «Если быть точным» «Состояние окружающей среды в регионах России с 2014 года».
-EXAMPLE_PATH = Path(settings.REFERENCE_DIR) / "userdata_example.zip"
-EXAMPLE_NAME = "data_environment_113_v20230123_csv.zip"
-EXAMPLE_URL = "https://tochno.st/datasets/environment"
+# Пример — вклады населения по регионам на 1 января 2020–2026 годов, в рублях и в валюте:
+# выборка из открытой таблицы Банка России «Вклады (депозиты) физических лиц»
+# (02_06_Dep_ind.xlsx, скачана 10.10.2026; только субъекты, области без автономных округов).
+EXAMPLE_PATH = Path(settings.REFERENCE_DIR) / "userdata_example.csv"
+EXAMPLE_NAME = "Вклады населения по регионам.csv"
+EXAMPLE_URL = "https://www.cbr.ru/vfs/statistics/BankSector/Borrowings/02_06_Dep_ind.xlsx"
 
 SOURCE_STEM = "source"
 TABLE_STEM = "table"
 # Расширения, с которыми исходный файл хранится; прочее — «.bin»: вид решают первые байты.
 KNOWN_SUFFIXES = frozenset(
-    {".csv", ".tsv", ".txt", ".xlsx", ".xlsm", ".xls", ".ods", ".parquet", ".zip", ".htm", ".html"}
+    {
+        ".csv",
+        ".tsv",
+        ".txt",
+        ".xlsx",
+        ".xlsm",
+        ".xls",
+        ".ods",
+        ".parquet",
+        ".zip",
+        ".htm",
+        ".html",
+        ".docx",
+        ".pdf",
+    }
 )
 
 
@@ -223,6 +239,14 @@ def choose_table(version: DatasetVersion, key: str, *, encoding: str = "") -> in
         path = ingest.extract_member(
             source, table.member, version.directory / (TABLE_STEM + suffix)
         )
+    if inspection.kind in ingest.DOCUMENT_KINDS:
+        # Таблица документа — дальше как вставка: файл TSV в UTF-8.
+        from . import documents
+
+        rows = documents.load(source)[int(table.key.removeprefix("#")) - 1].rows
+        path = version.directory / f"{TABLE_STEM}.tsv"
+        paste.write(rows, path)
+        table = replace(table, kind=ingest.CSV, encoding="utf-8", delimiter="\t")
     chosen = asdict(table)
     chosen.pop("sample")
     if table.kind == ingest.CSV and table.encoding != "utf-8":
@@ -325,10 +349,24 @@ def used_bytes(user: Any) -> int:
     return int(total or 0)
 
 
+def example_of(request: HttpRequest) -> Dataset | None:
+    """Уже собранный пример того, кто спрашивает: повторное нажатие не делает копию."""
+    return (
+        access.owned(request)
+        .filter(
+            versions__file_name=EXAMPLE_NAME,
+            current_version__state=DatasetVersion.State.BUILT,
+        )
+        .select_related("current_version")
+        .order_by("-created_at")
+        .first()
+    )
+
+
 def create_example(request: HttpRequest) -> Dataset:
     """
-    Таблица-пример: набор «Если быть точным» об окружающей среде (CC BY 4.0) как скачан —
-    архивом; разбор и сборка — без вопросов, по распознаванию.
+    Таблица-пример: вклады населения по регионам (Банк России) — разбор и сборка без
+    вопросов, по распознаванию.
     """
     from . import describe, jobs
 
@@ -336,12 +374,12 @@ def create_example(request: HttpRequest) -> Dataset:
         uploaded = File(handle, name=EXAMPLE_NAME)
         uploaded.size = EXAMPLE_PATH.stat().st_size
         dataset = create_from_upload(request, uploaded)  # type: ignore[arg-type]
-    dataset.title = _("Состояние окружающей среды в регионах России")
-    dataset.source_title = _("«Если быть точным», обработка данных Росгидромета и Росстата")
+    dataset.title = _("Вклады населения по регионам")
+    dataset.source_title = _("Банк России")
     dataset.source_url = EXAMPLE_URL
     dataset.description = _(
-        "Пример таблицы: набор «Если быть точным» в архиве, как он скачивается с сайта "
-        "набора. Условия использования — Creative Commons BY 4.0."
+        "Пример: вклады физических лиц в банках на 1 января 2020–2026 годов, в рублях "
+        "и в иностранной валюте."
     )
     dataset.save(update_fields=["title", "source_title", "source_url", "description"])
     version = dataset.current_version
@@ -435,6 +473,18 @@ def update_size(dataset: Dataset) -> None:
     dataset.size_bytes = total
 
 
+def suggested_title(dataset: Dataset, version: DatasetVersion, items: list[Any]) -> dict[str, str]:
+    """
+    Название таблицы вместо подставленного из имени файла («R 16», «Вставленная таблица»):
+    у таблицы с одним показателем — его название. Пустой словарь — название уже своё.
+    """
+    placeholders = {_title(version.file_name), str(_("Вставленная таблица"))}
+    if dataset.title not in placeholders or len(items) != 1:
+        return {}
+    title = str(items[0].title or "").strip()
+    return {"title": title[:200]} if title and title not in placeholders else {}
+
+
 def _title(file_name: str) -> str:
     """Название набора по имени файла: без расширения и подчёркиваний."""
     stem = PurePosixPath(file_name).stem.replace("_", " ").strip()
@@ -456,6 +506,14 @@ def export_studies(user: Any) -> list[dict[str, Any]]:
             "shares": _export_shares(study.shares.all()),
         }
         for study in Study.objects.filter(owner=user).prefetch_related("shares")
+    ]
+
+
+def export_groups(user: Any) -> list[dict[str, Any]]:
+    """Свои группы регионов для выгрузки «Персональных данных»: название и субъекты."""
+    return [
+        {"title": group.title, "codes": group.codes, "created_at": group.created_at.isoformat()}
+        for group in RegionGroup.objects.filter(owner=user)
     ]
 
 
@@ -524,7 +582,7 @@ def export_datasets(user: Any) -> list[dict[str, Any]]:
 
 def prune() -> tuple[int, int]:
     """
-    Удалить истёкшие таблицы и исследования гостей и осиротевшие файлы: каталоги без
+    Удалить истёкшие таблицы, исследования и группы гостей и осиротевшие файлы: каталоги без
     набора, прежние файлы сборки. Занятый другим процессом файл (Windows) удалится
     при следующей очистке.
     Возвращает число удалённых таблиц и каталогов.
@@ -535,11 +593,17 @@ def prune() -> tuple[int, int]:
     for dataset in expired:
         discard(dataset)
     Study.objects.filter(owner__isnull=True, expires_at__lt=timezone.now()).delete()
+    RegionGroup.objects.filter(owner__isnull=True, expires_at__lt=timezone.now()).delete()
     root = Path(settings.USERDATA_DIR)
     if not root.exists():
         return len(expired), 0
     known = {str(value) for value in Dataset.objects.values_list("public_id", flat=True)}
-    orphans = [path for path in root.iterdir() if path.is_dir() and path.name not in known]
+    # Скрытые каталоги — служебные (очередь службы разборов), а не таблицы.
+    orphans = [
+        path
+        for path in root.iterdir()
+        if path.is_dir() and not path.name.startswith(".") and path.name not in known
+    ]
     for path in orphans:
         shutil.rmtree(path, ignore_errors=True)
     current = {

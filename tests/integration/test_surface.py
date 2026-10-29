@@ -737,7 +737,7 @@ class TestRailLayout:
         assert re.search(
             r'<details class="view-settings[^"]*" id="surface-view"(?![^>]*\sopen[\s>])', plain
         )
-        assert "Поровну регионов" in plain
+        assert "Квантили" in plain
 
         compared = client.get(
             reverse("maps:choropleth"),

@@ -39,7 +39,11 @@ PARQUET = "parquet"
 HTML = "html"
 ZIP = "zip"
 PASTE = "paste"
+DOCX = "docx"
+PDF = "pdf"
 WORKBOOK_KINDS = frozenset({XLSX, XLS, ODS})
+# Документы: таблицы извлекаются при загрузке, выбранная пишется файлом TSV.
+DOCUMENT_KINDS = frozenset({DOCX, PDF})
 
 # Сколько байт таблицы читается для образца и проверки кодировки.
 HEAD_BYTES = 256 * 1024
@@ -147,6 +151,8 @@ def sniff(head: bytes, name: str = "") -> str:
         return XLS
     if head.startswith(b"PAR1"):
         return PARQUET
+    if head.startswith(b"%PDF"):
+        return PDF
     for signature, code in _REFUSED_SIGNATURES:
         if head.startswith(signature):
             raise IngestError(_refusal_text(code), code)
@@ -159,7 +165,6 @@ def sniff(head: bytes, name: str = "") -> str:
 
 
 _REFUSED_SIGNATURES = (
-    (b"%PDF", "pdf"),
     (b"\x89PNG", "image"),
     (b"\xff\xd8\xff", "image"),
     (b"GIF8", "image"),
@@ -171,7 +176,7 @@ _REFUSED_SIGNATURES = (
 
 
 def zip_kind(bundle: zipfile.ZipFile) -> str:
-    """ZIP — книга XLSX или ODS, документ Word или архив с файлами."""
+    """ZIP — книга XLSX или ODS, документ Word (DOCX) или архив с файлами."""
     names = set(bundle.namelist())
     if "xl/workbook.xml" in names:
         return XLSX
@@ -180,7 +185,7 @@ def zip_kind(bundle: zipfile.ZipFile) -> str:
             return ODS
         raise IngestError(_refusal_text("word"), "word")
     if "word/document.xml" in names:
-        raise IngestError(_refusal_text("word"), "word")
+        return DOCX
     if "ppt/presentation.xml" in names:
         raise IngestError(_refusal_text("binary"), "binary")
     return ZIP
@@ -284,6 +289,8 @@ def inspect(path: Path, file_name: str = "", *, encoding: str = "") -> Inspectio
                 inner = zip_kind(bundle)
                 if inner == ZIP:
                     inspection = _inspect_archive(path, bundle, encoding)
+                elif inner == DOCX:
+                    inspection = _inspect_document(path, DOCX, file_name)
                 else:
                     inspection = Inspection(inner, _workbook_tables(path, inner, ""))
         except zipfile.BadZipFile as error:
@@ -292,6 +299,8 @@ def inspect(path: Path, file_name: str = "", *, encoding: str = "") -> Inspectio
         inspection = Inspection(kind, _workbook_tables(path, kind, ""))
     elif kind == PARQUET:
         inspection = Inspection(kind, [_parquet_table(path, "")])
+    elif kind == PDF:
+        inspection = _inspect_document(path, PDF, file_name)
     else:
         table = _text_table(
             head, path.stat().st_size, key="", kind=kind, name=file_name, encoding=encoding
@@ -303,6 +312,38 @@ def inspect(path: Path, file_name: str = "", *, encoding: str = "") -> Inspectio
     best = max(inspection.tables, key=lambda table: (table.regions, -table.size))
     best.best = True
     return inspection
+
+
+def _inspect_document(path: Path, kind: str, file_name: str) -> Inspection:
+    """
+    Таблицы документа Word или PDF: извлекаются один раз и хранятся рядом с файлом;
+    ключ таблицы — её номер в документе.
+    """
+    from . import documents
+
+    found = (
+        documents.word_tables(path, file_name)
+        if kind == DOCX
+        else documents.pdf_tables(path, file_name)
+    )
+    documents.save(path, found)
+    tables = []
+    for number, item in enumerate(found, start=1):
+        table = TableInfo(
+            key=f"#{number}",
+            name=item.name,
+            kind=kind,
+            size=0,
+            rows=len(item.rows),
+            rows_exact=True,
+        )
+        _describe(table, item.rows)
+        if table.territory_column is not None:
+            table.regions = len(
+                matching.subjects_in(set(_column(item.rows, table.territory_column)))
+            )
+        tables.append(table)
+    return Inspection(kind, tables)
 
 
 def _inspect_archive(path: Path, bundle: zipfile.ZipFile, encoding: str) -> Inspection:
@@ -702,16 +743,11 @@ def _table_size_text(name: str) -> str:
 
 
 def _refusal_text(code: str) -> str:
-    accepted = _("Подходят CSV, TXT, XLSX, XLS, ODS, Parquet и ZIP с ними.")
+    accepted = _("Подходят CSV, TXT, XLSX, XLS, ODS, Parquet, DOCX, PDF и ZIP с ними.")
     texts = {
-        "pdf": _("Это не таблица.")
-        + " "
-        + accepted
-        + " "
-        + _("Таблицу из Word или PDF можно скопировать и вставить в поле «Вставить таблицу»."),
         "word": _(
-            "Это документ, а не таблица. Скопируйте таблицу из документа и вставьте её "
-            "в поле «Вставить таблицу»."
+            "Документ этого вида не читается. Сохраните его в Word как DOCX или скопируйте "
+            "таблицу и вставьте её в поле «Вставить таблицу»."
         ),
         "image": _("Это изображение, а не таблица.") + " " + accepted,
         "rar": _("Архивы RAR и 7z не принимаются. Распакуйте архив и загрузите таблицу или ZIP."),

@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% load i18n static formatting userdata %}
 
-{# Шаг «Показатели»: таблица и её источник; вопросы — только о неуверенном, прочее описание — в «Изменить»; сборка. #}
+{% comment %}
+  Шаг «Проверка»: что найдено — крупно, вопросы — только о том, чего не понять из таблицы,
+  показатели; название и источник таблицы — свёрнуто (необязательно); сборка.
+{% endcomment %}
 
 {% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
@@ -14,20 +17,13 @@
 <div class="container page">
 
   <header class="page-head">
-    <h1 class="page-head__title">{% translate "Показатели" %}</h1>
+    <h1 class="page-head__title">{% translate "Проверка таблицы" %}</h1>
     <p class="page-head__lead">
       {% blocktranslate trimmed %}
-        Как называются показатели и что означают их значения. Описание действует на все
-        ряды показателя — по разрезам и периодам года.
+        Проверьте, что сайт нашёл в таблице, и откройте результат. Название, единицу и вид
+        показателя можно поправить в «Изменить».
       {% endblocktranslate %}
     </p>
-    {% if not waiting %}
-      <p class="page-head__meta">
-        <span>{% blocktranslate trimmed with count=report.values|ru_number:0 %}значений: {{ count }}{% endblocktranslate %}</span>
-        <span>{% blocktranslate trimmed with count=indicators|length %}показателей: {{ count }}{% endblocktranslate %}</span>
-        <span>{% blocktranslate trimmed with count=report.series|length %}рядов: {{ count }}{% endblocktranslate %}</span>
-      </p>
-    {% endif %}
   </header>
 
   {% include "userdata/_steps.html" %}
@@ -38,6 +34,30 @@
       <p><a class="button button--secondary" href="{% url 'userdata:table' dataset.public_id %}">{% translate "Вернуться к описанию таблицы" %}</a></p>
     {% endif %}
   {% else %}
+
+  <ul class="review-summary" aria-label="{% translate 'Что прочитано' %}">
+    <li class="review-summary__tile">
+      <p class="review-summary__label">{% translate "Регионы" %}</p>
+      <p class="review-summary__value numeric">{% blocktranslate trimmed with count=summary.regions total=summary.regions_total %}{{ count }} из {{ total }}{% endblocktranslate %}</p>
+    </li>
+    <li class="review-summary__tile">
+      <p class="review-summary__label">{% translate "Годы" %}</p>
+      <p class="review-summary__value numeric">{% if summary.first_year %}{{ summary.first_year|year }}{% if summary.last_year != summary.first_year %}–{{ summary.last_year|year }}{% endif %}{% else %}—{% endif %}</p>
+      <p class="review-summary__note">{% blocktranslate trimmed with count=report.values|ru_number:0 %}чисел: {{ count }}{% endblocktranslate %}</p>
+      {% if summary.year_note %}<p class="review-summary__note">{{ summary.year_note }}</p>{% endif %}
+    </li>
+    <li class="review-summary__tile">
+      <p class="review-summary__label">{% translate "Показатели" %}</p>
+      <p class="review-summary__value numeric">{{ summary.indicators }}</p>
+      {% if summary.with_unit < summary.series %}<p class="review-summary__note">{% translate "единица указана не у всех" %}</p>{% endif %}
+    </li>
+    {% if summary.form %}
+      <li class="review-summary__tile review-summary__tile--text">
+        <p class="review-summary__label">{% translate "Как устроена" %}</p>
+        <p class="review-summary__text">{{ summary.form }}</p>
+      </li>
+    {% endif %}
+  </ul>
 
   {% if build_error %}
     <div class="callout callout--danger" role="alert">
@@ -52,7 +72,7 @@
   {% if few_regions %}
     <div class="callout callout--info">
       <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
-      <div>{% translate "Субъектов меньше 20: неравенство и пространственный анализ по таблице не считаются. Карта, таблица и динамика работают." %}</div>
+      <div>{% translate "Регионов меньше 20. Карта, рейтинг и изменения по годам будут, а разрыв между регионами и сходство соседей — от 20 регионов." %}</div>
     </div>
   {% endif %}
 
@@ -66,9 +86,8 @@
         <p>
           {% blocktranslate trimmed %}
             Эти числа из одинаковых цифр в десять и более раз больше почти всех остальных
-            значений своих показателей. Так наборы «Если быть точным» и другие обозначают
-            пропуски и значения без точного числа — смысл кодов написан в описании набора.
-            Отмеченные считаются пропусками и на карту не попадают.
+            значений своих показателей. Так в таблицах обозначают пропуски и значения без
+            точного числа. Отмеченные считаются пропусками и на карту не попадают.
           {% endblocktranslate %}
         </p>
         <ul class="own-masks__list">
@@ -108,11 +127,49 @@
     </div>
   {% endif %}
 
+  {% with review=data_review %}
+    {% if review.hidden or review.below_unit or review.absent and not review.ask_dashes %}
+      <div class="callout callout--info">
+        <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+        <ul class="data-review__marks">
+          {% if review.absent and not review.ask_dashes %}
+            <li>{% blocktranslate trimmed with count=review.absent|ru_number:0 %}Прочерков «–»: {{ count }}. У Росстата прочерк значит «явление отсутствует»: у сумм это ноль, у долей, средних и индексов значения нет.{% endblocktranslate %}</li>
+          {% endif %}
+          {% if review.hidden %}
+            <li>{% blocktranslate trimmed with count=review.hidden|ru_number:0 %}Скрыто источником: {{ count }}. Такие значения не публикуются, чтобы сохранить тайну данных организаций.{% endblocktranslate %}</li>
+          {% endif %}
+          {% if review.below_unit %}
+            <li>{% blocktranslate trimmed with count=review.below_unit|ru_number:0 %}Значений «0,0»: {{ count }}. Это меньше единицы измерения: ноль с пометкой, в темпы роста он не идёт.{% endblocktranslate %}</li>
+          {% endif %}
+        </ul>
+      </div>
+    {% endif %}
+    {% if review.checks %}
+      <details class="callout callout--warning data-review" open>
+        <summary>{% blocktranslate trimmed with count=review.checks|length %}Проверьте данные: {{ count }}{% endblocktranslate %}</summary>
+        <ul class="data-review__list">
+          {% for text in review.checks %}<li>{{ text }}</li>{% endfor %}
+        </ul>
+        <p>{% translate "Сборке это не мешает. Если в таблице ошибка, исправьте файл и загрузите его новой версией." %}</p>
+      </details>
+    {% endif %}
+  {% endwith %}
+
+  {% if report.outside %}
+    <details class="callout callout--info review-outside">
+      <summary>{% blocktranslate trimmed with count=report.outside|length %}Строк вне справочника: {{ count }} — на карту и в рейтинг они не попадут{% endblocktranslate %}</summary>
+      <ul>
+        {% for label, code in report.outside|slice:":30" %}<li{% with lang=label|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ label|truncatechars:80 }}</li>{% endfor %}
+      </ul>
+      <a href="{% url 'userdata:table' dataset.public_id %}">{% translate "Изменить разметку" %}</a>
+    </details>
+  {% endif %}
+
   {% if alone_missing %}
     <div class="callout callout--info">
       <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
       <div>
-        {% translate "В таблице есть область вместе с автономными округами. Для сумм область без округов вычислена (пометка «расчёт RegionLens»); для долей и средних её не вычислить — на карте она остаётся пустой:" %}
+        {% translate "В таблице есть область вместе с автономными округами. Для сумм область без округов вычислена, у таких значений пометка «вычислено». Для долей и средних её не вычислить, на карте она остаётся пустой:" %}
         {% for code in alone_missing %}{{ code|territory_name }}{% if not forloop.last %}, {% endif %}{% endfor %}.
       </div>
     </div>
@@ -133,14 +190,38 @@
       </div>
     {% endif %}
 
-    <fieldset class="question-card">
-      <legend class="question-card__title">{% translate "Таблица" %}</legend>
-      <div class="series-form__meta">
-        {% for field in meta_form %}
-          {% include "partials/_field.html" with field=field %}
-        {% endfor %}
-      </div>
-    </fieldset>
+    {% if data_review.ask_dashes %}
+      <section class="question-card question-card--ask" aria-labelledby="dashes-title">
+        <h2 class="question-card__title" id="dashes-title">{% translate "Что значит прочерк «–» в этой таблице?" %}</h2>
+        <p class="series-form__hint">{% blocktranslate trimmed with count=data_review.absent|ru_number:0 %}Прочерков: {{ count }}. Ответ подсказан: так прочерк пишут Росстат и большинство ведомств.{% endblocktranslate %}</p>
+        <fieldset class="data-review__choice">
+          <legend class="visually-hidden">{% translate "Что значит прочерк «–» в этой таблице?" %}</legend>
+          <label class="radio"><input type="radio" name="dashes" value="absent"{% if data_review.dashes != "missing" %} checked{% endif %}> <span>{% translate "Явления нет" %}<span class="field__hint">{% translate "У сумм это ноль. У долей, средних и индексов значения нет." %}</span></span></label>
+          <label class="radio"><input type="radio" name="dashes" value="missing"{% if data_review.dashes == "missing" %} checked{% endif %}> <span>{% translate "Данных нет" %}<span class="field__hint">{% translate "Прочерк — пропуск, как «…»." %}</span></span></label>
+        </fieldset>
+      </section>
+    {% endif %}
+
+    {% if data_review.zeros %}
+      <section class="question-card question-card--ask" aria-labelledby="zeros-title">
+        <h2 class="question-card__title" id="zeros-title">{% translate "Нули, похожие на пропуски" %}</h2>
+        <input type="hidden" name="zeros-asked" value="1">
+        <p class="series-form__hint">{% translate "Так иногда пишут «нет данных». Отметьте показатели, у которых ноль значит пропуск: такие нули не попадут на карту, в рейтинг и в расчёты." %}</p>
+        <fieldset class="data-review__choice">
+          <legend class="visually-hidden">{% translate "Нули, похожие на пропуски" %}</legend>
+          <ul class="data-review__zeros">
+            {% for item in data_review.zeros %}
+              <li>
+                <label class="checkbox">
+                  <input type="checkbox" name="zero" value="{{ item.name }}"{% if item.checked %} checked{% endif %}>
+                  <span><b{% with lang=item.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.title }}</b><span class="field__hint">{{ item.text }}</span></span>
+                </label>
+              </li>
+            {% endfor %}
+          </ul>
+        </fieldset>
+      </section>
+    {% endif %}
 
     {% if asking %}
       <section class="question-card question-card--ask" aria-labelledby="asking-title">
@@ -148,7 +229,7 @@
           {% blocktranslate trimmed with count=asking|length %}Показателей с вопросами: {{ count }}{% endblocktranslate %}
         </h2>
         <p class="series-form__hint">
-          {% translate "Это не понять из таблицы. Ответ подсказан; проверьте его. Остальное — в «Изменить»." %}
+          {% translate "Этого не понять из таблицы. Ответ подсказан, проверьте его." %}
         </p>
         <ol class="indicator-list">
           {% for item in asking %}{% include "userdata/_indicator.html" %}{% endfor %}
@@ -171,6 +252,31 @@
       </section>
     {% endif %}
 
+    {# Название и источник — необязательно: подставлены из файла; раскрыто, если в них ошибка. #}
+    <details class="question-card review-meta"{% if meta_form.errors %} open{% endif %}>
+      <summary class="review-meta__summary">{% translate "Название таблицы и источник" %} <span class="review-meta__optional">{% translate "необязательно" %}</span></summary>
+      <div class="series-form__meta">
+        {% for field in meta_form %}
+          {% include "partials/_field.html" with field=field %}
+        {% endfor %}
+      </div>
+    </details>
+
+    {% if roles %}
+      <details class="review-roles">
+        <summary class="review-roles__summary">{% translate "Как прочитаны столбцы" %}</summary>
+        <ul class="review-roles__list">
+          {% for item in roles %}
+            <li class="review-roles__item{% if item.skipped %} is-skipped{% endif %}">
+              <span{% with lang=item.headers.0|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ item.headers|join:", " }}</span>{% if item.more %} {% blocktranslate trimmed with count=item.more %}и ещё {{ count }}{% endblocktranslate %}{% endif %}
+              → <b>{{ item.role }}</b>
+            </li>
+          {% endfor %}
+        </ul>
+        <a class="review-roles__change" href="{% url 'userdata:table' dataset.public_id %}">{% translate "Изменить разметку" %}</a>
+      </details>
+    {% endif %}
+
     <div class="form-sheet__actions wizard-actions">
       <button class="button button--primary" type="submit">
         {% if built %}{% translate "Собрать заново и открыть" %}{% else %}{% translate "Собрать и открыть" %}{% endif %}
@@ -178,14 +284,19 @@
       {% if built %}
         <a class="button button--secondary" href="{% url 'userdata:dataset' dataset.public_id %}">{% translate "Страница таблицы" %}</a>
       {% endif %}
-      <a class="button button--ghost" href="{% url 'userdata:table' dataset.public_id %}">{% translate "Назад к описанию таблицы" %}</a>
+      <a class="button button--ghost" href="{% url 'userdata:table' dataset.public_id %}">{% translate "Изменить разметку" %}</a>
     </div>
+    {% if version.file_kind == "paste" and not built %}
+      <p class="wizard-actions__note">
+        <a href="{% url 'userdata:file' dataset.public_id %}#paste-append-title">{% translate "Вставили не всю таблицу? Добавить строки" %}</a>
+      </p>
+    {% endif %}
     {% if not built %}
       <p class="wizard-actions__note">
         {% if destination %}
           {% blocktranslate trimmed with study=destination.title %}Карта собранной таблицы добавится в исследование «{{ study }}».{% endblocktranslate %}
         {% else %}
-          {% translate "Карта собранной таблицы откроется в новом исследовании." %}
+          {% translate "Откроется исследование: карта, главное в цифрах, рейтинг и изменения по годам." %}
         {% endif %}
       </p>
     {% endif %}

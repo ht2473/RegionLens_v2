@@ -40,3 +40,24 @@ def test_tags_and_comments_close_on_their_line() -> None:
         if OPEN_TAG.search(line) or OPEN_COMMENT.search(line)
     ]
     assert not found, "\n".join(found)
+
+
+# Условие события htmx в квадратных скобках, выражение js: и обработчики hx-on — код из строки.
+EVAL_HTMX = re.compile(r"hx-trigger=\"[^\"]*\[|hx-(?:vals|vars)=['\"]\s*js:|hx-on[:-]")
+
+
+def test_htmx_runs_no_code_from_strings() -> None:
+    """
+    В разметке нет того, что htmx исполняет через ``Function()``: условий событий
+    (``change[…]``), ``js:`` в значениях и ``hx-on``. Политика безопасности сайта запрещает eval:
+    на стенде такое условие отбрасывается, а там, где политика лишь пишет в журнал, оно
+    исполняется — и окно ведёт себя по-разному. Так окно расчёта однажды перестало
+    пересчитываться.
+    """
+    found = [
+        f"{path.relative_to(ROOT)}:{number}"
+        for path in TEMPLATES
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1)
+        if EVAL_HTMX.search(line)
+    ]
+    assert not found, "\n".join(found)

@@ -6,18 +6,26 @@
 перезапуск рабочего процесса сервера разбор не обрывает. Оборванный разбор считается
 неудавшимся через ``ABANDONED_AFTER``; одновременно идёт не больше
 ``USERDATA_PARALLEL_JOBS`` разборов, остальные ждут очереди.
+
+На стенде (``USERDATA_JOB_WORKER``) отдельный процесс запускает не сайт, а служба разборов
+в своём контейнере со своим пределом памяти (``userdata_worker``): сайт кладёт заявку
+в каталог очереди в томе таблиц. В разработке процесс запускается рядом с сайтом.
 """
 
 from __future__ import annotations
 
+import json
 import logging
 import subprocess  # nosec B404 — запускается собственная команда проекта
 import sys
+import time
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 from django.conf import settings
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from . import ingest, tables
 from .models import DatasetVersion
@@ -41,6 +49,13 @@ INLINE_TABLE_BYTES = 8 * 1024 * 1024
 INLINE_BOOK_BYTES = 3 * 1024 * 1024
 # Собирается в запросе набор не больше этого числа наблюдений.
 INLINE_OBSERVATIONS = 200_000
+# Очередь службы разборов — каталог в томе таблиц: заявка, взятая заявка, отметка жизни.
+QUEUE = ".jobs"
+REQUEST = ".job"
+CLAIMED = ".run"
+HEARTBEAT = "heartbeat"
+# Команды, которые служба выполняет по заявке, и число их аргументов.
+COMMANDS = {"userdata_build": 2, "userdata_summarize": 1}
 
 
 def summary_state(version: DatasetVersion) -> str:
@@ -214,8 +229,81 @@ def _alert(version: DatasetVersion, stage: str, error: Exception) -> None:
     )
 
 
+def interrupted(arguments: list[str]) -> None:
+    """
+    Процесс разбора оборвался без итога (нехватка памяти, остановка службы): отметить
+    неудачу сразу, а не через ``ABANDONED_AFTER``. Итог, записанный самим процессом, остаётся.
+    """
+    command, pk, *rest = arguments
+    version = DatasetVersion.objects.filter(pk=int(pk)).first()
+    if version is None:
+        return
+    if command == "userdata_summarize":
+        if version.report.get("profile_state") == RUNNING:
+            mark(version, profile_state=FAILED)
+        return
+    stage = rest[0]
+    if stage_state(version, stage) != RUNNING:
+        return
+    mark(
+        version,
+        **{
+            f"{stage}_state": FAILED,
+            f"{stage}_error": _(
+                "Разбор прервался. Попробуйте ещё раз или оставьте в таблице только нужные "
+                "показатели и годы."
+            ),
+        },
+    )
+    if stage == BUILD:
+        DatasetVersion.objects.filter(pk=version.pk).update(state=DatasetVersion.State.FAILED)
+
+
+def queue_dir() -> Path:
+    """Каталог очереди службы разборов."""
+    return Path(settings.USERDATA_DIR) / QUEUE
+
+
+def request_arguments(path: Path) -> list[str] | None:
+    """Аргументы заявки — только известная команда с правильными аргументами, иначе ``None``."""
+    try:
+        arguments = json.loads(path.read_text(encoding="utf-8"))
+    except OSError, ValueError:
+        return None
+    if not isinstance(arguments, list) or not all(isinstance(item, str) for item in arguments):
+        return None
+    if not arguments or COMMANDS.get(arguments[0]) != len(arguments) - 1:
+        return None
+    pk = arguments[1]
+    if not (pk.isascii() and pk.isdigit()):
+        return None
+    if arguments[0] == "userdata_build" and arguments[2] not in STAGES:
+        return None
+    return arguments
+
+
+def _enqueue(arguments: list[str]) -> bool:
+    """Положить заявку в очередь службы разборов; имя — время, запись — подменой файла."""
+    folder = queue_dir()
+    name = "-".join([str(time.time_ns()), *arguments[1:]])
+    try:
+        folder.mkdir(parents=True, exist_ok=True)
+        draft = folder / f"{name}.tmp"
+        draft.write_text(json.dumps(arguments), encoding="utf-8")
+        draft.replace(folder / f"{name}{REQUEST}")
+    except OSError:
+        logger.exception("userdata: заявка на разбор не записана")
+        return False
+    return True
+
+
 def _spawn(arguments: list[str]) -> bool:
-    """Запустить команду проекта отделённым процессом; ``False`` — не запустилась."""
+    """
+    Запустить команду проекта: на стенде — заявкой службе разборов, в разработке —
+    отделённым процессом; ``False`` — не запустилась.
+    """
+    if settings.USERDATA_JOB_WORKER:
+        return _enqueue(arguments)
     command = [sys.executable, str(settings.BASE_DIR / "manage.py"), *arguments]
     detached: dict[str, Any] = {"start_new_session": True}
     if sys.platform == "win32":

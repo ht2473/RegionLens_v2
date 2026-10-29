@@ -45,7 +45,7 @@
             {% if summary %}
               <span class="own-versions__facts">
                 {% blocktranslate trimmed with base=summary.base %}к версии {{ base }}:{% endblocktranslate %}
-                {% blocktranslate trimmed with count=summary.changed %}изменено значений — {{ count }}{% endblocktranslate %}{% if summary.added %}, {% blocktranslate trimmed with count=summary.added %}новых — {{ count }}{% endblocktranslate %}{% endif %}{% if summary.removed %}, {% blocktranslate trimmed with count=summary.removed %}пропало — {{ count }}{% endblocktranslate %}{% endif %}{% if summary.new_series %}; {% blocktranslate trimmed with count=summary.new_series|length %}новых рядов — {{ count }}{% endblocktranslate %}{% endif %}{% if summary.gone_series %}; {% blocktranslate trimmed with count=summary.gone_series|length %}пропавших рядов — {{ count }}{% endblocktranslate %}{% endif %}
+                {% blocktranslate trimmed with count=summary.changed %}изменено значений — {{ count }}{% endblocktranslate %}{% if summary.added %}, {% blocktranslate trimmed with count=summary.added %}новых — {{ count }}{% endblocktranslate %}{% endif %}{% if summary.removed %}, {% blocktranslate trimmed with count=summary.removed %}пропало — {{ count }}{% endblocktranslate %}{% endif %}{% if summary.new_series %}; {% blocktranslate trimmed with count=summary.new_series|length %}новых показателей — {{ count }}{% endblocktranslate %}{% endif %}{% if summary.gone_series %}; {% blocktranslate trimmed with count=summary.gone_series|length %}пропавших показателей — {{ count }}{% endblocktranslate %}{% endif %}
               </span>
             {% endif %}
           {% endwith %}
@@ -81,9 +81,7 @@
         <input type="hidden" name="action" value="upload">
         <div class="field">
           <label class="field__label" for="{{ version_upload_form.file.id_for_label }}">{{ version_upload_form.file.label }}</label>
-          {{ version_upload_form.file }}
-          <span class="field__hint">{{ version_upload_form.file.help_text }}</span>
-          <span class="field__error" data-size-error hidden>{{ upload_limit }}</span>
+          {% include "userdata/_file_drop.html" with field=version_upload_form.file size_error=upload_limit %}
         </div>
         <div class="form-sheet__actions">
           <button class="button button--primary" type="submit">{% translate "Загрузить новую версию" %}</button>

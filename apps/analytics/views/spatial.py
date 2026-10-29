@@ -40,6 +40,11 @@ QUADRANT_COLOURS: dict[str, str] = {
 # Типы окружения, у которых заливка тёмная и подпись плитки должна быть светлой.
 LIGHT_LABEL_QUADRANTS = (spatial.QUADRANT_HIGH_HIGH, spatial.QUADRANT_LOW_LOW)
 
+# Значение параметра «без поправки на число сравнений» у локальных индексов.
+NO_CORRECTION = "none"
+# Редакция содержимого: кэш расчётов не знает о правке кода (2 — поправка и 9 999 перестановок).
+RESULT_REVISION = 2
+
 
 class SpatialView(AnalyticsView):
     """Глобальный индекс Морана и карта локальных пространственных кластеров."""
@@ -53,12 +58,16 @@ class SpatialView(AnalyticsView):
         request = self.request
         series = resolve_one(request.GET.get("series"))
         scheme = resolve_choice(request.GET.get("scheme"), spatial.SCHEMES, spatial.DEFAULT_SCHEME)
+        # Локальные индексы — с поправкой на число сравнений; «none» — без неё.
+        corrected = request.GET.get("correction") != NO_CORRECTION
 
         context: dict[str, Any] = {
             "series_options": series_options,
             "series": series,
             "schemes": spatial.SCHEMES,
             "scheme": scheme,
+            "corrected": corrected,
+            "no_correction": NO_CORRECTION,
         }
         if series is None:
             return context
@@ -85,8 +94,14 @@ class SpatialView(AnalyticsView):
 
         analysis = cached_result(
             "spatial",
-            {"series": series.key, "year": year, "scheme": scheme},
-            lambda: _analyse(vector, weights, codes, present, scheme),
+            {
+                "series": series.key,
+                "year": year,
+                "scheme": scheme,
+                "corrected": corrected,
+                "revision": RESULT_REVISION,
+            },
+            lambda: _analyse(vector, weights, codes, present, scheme, corrected=corrected),
         )
 
         isolated = [
@@ -119,11 +134,16 @@ def _analyse(
     codes: list[str],
     rows: list[dict[str, Any]],
     scheme: str,
+    *,
+    corrected: bool,
 ) -> dict[str, Any]:
     """Выполнить пространственный анализ; результат с перестановками кэшируется целиком."""
     names = {row["code"]: row["name"] for row in rows}
     global_index = spatial.global_moran(vector, weights, scheme=scheme)
     local = spatial.local_moran(vector, weights, codes, names)
+    raw_count = sum(1 for entry in local if entry.is_significant)
+    if corrected:
+        local = spatial.adjusted(local)
 
     return {
         "global_moran": global_index,
@@ -131,6 +151,9 @@ def _analyse(
         "quadrants": spatial.summarize_quadrants(local),
         "moran_option": _moran_option(global_index, local),
         "significant_count": sum(1 for entry in local if entry.is_significant),
+        "raw_count": raw_count,
+        # Сколько субъектов окажутся значимыми случайно при уровне 0,05 без поправки.
+        "chance_count": round(len(local) * spatial.SIGNIFICANCE_LEVEL),
     }
 
 

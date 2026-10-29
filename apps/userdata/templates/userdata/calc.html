@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{# Окно «Расчёт показателя» отдельной страницей: из исследования без сценариев и со страницы таблицы. #}
+
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+  <link rel="stylesheet" href="{% static 'css/userdata.css' %}">
+  <link rel="stylesheet" href="{% static 'css/lab.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Расчёт показателя" %}</h1>
+    {% if study %}
+      <p class="page-head__lead">{% translate "Готовый расчёт или своя формула. Результат — новый показатель в вашей таблице, его карта встанет на поле исследования." %}</p>
+      <p><a href="{% url 'userdata:study' study.public_id %}">{% translate "К исследованию" %}</a></p>
+    {% else %}
+      <p class="page-head__lead">{% translate "Готовый расчёт или своя формула. Результат — новый показатель в этой таблице." %}</p>
+      <p><a href="{% url 'userdata:dataset' dataset.public_id %}">{% translate "К таблице" %}</a></p>
+    {% endif %}
+  </header>
+  <div id="calc-dialog-body">{% include "userdata/_calc_panel.html" %}</div>
+</div>
+{% endblock %}

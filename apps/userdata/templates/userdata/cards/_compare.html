@@ -2,7 +2,7 @@
 {# Динамика на карточке исследования: линии отмеченных территорий. #}
 {% if timeline_option %}
   {% with option_id=card.prefix|add:"-timeline" %}
-    <rl-chart class="chart study-card__chart" data-options="{{ option_id }}"
+    <rl-chart data-report-image class="chart study-card__chart" data-options="{{ option_id }}"
               data-image-title="{{ card.title }}" data-image-subtitle="{{ unit }}"
               data-image-source="{{ card.source }}"></rl-chart>
     {{ timeline_option|json_script:option_id }}

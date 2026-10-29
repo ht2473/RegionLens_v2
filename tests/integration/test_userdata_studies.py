@@ -21,6 +21,7 @@ from tests.support.userdata import built as _built
 from tests.support.userdata import first_record as _first
 from tests.support.userdata import key_of as _key
 from tests.support.userdata import userdata_dir  # noqa: F401 — приспособление модуля
+from tests.support.userdata import version_of as _version
 
 pytestmark = [pytest.mark.integration, pytest.mark.django_db]
 
@@ -96,7 +97,7 @@ class TestOwner:
         for block in studies.blocks_of(study):
             card = _card(member_client, study, block)
             assert card.status_code == 200, block["target"]
-            assert "Открыть вид" in card.text, block["target"]
+            assert "На отдельной странице" in card.text, block["target"]
         tool = studies.blocks_of(study)[-1]
         assert "analytics/correlation" in _card(member_client, study, tool).text
 
@@ -344,7 +345,6 @@ class TestLab:
         assert site is not None
         study = _study(member_client)
         markers = {
-            "heat": "heat-table",
             "districts": "district-bars",
             "growth": "Изменение с",
             "mine": "Мой регион не выбран",
@@ -355,8 +355,8 @@ class TestLab:
         study.refresh_from_db()
         blocks = studies.blocks_of(study)
         assert [block["question"] for block in blocks] == [*markers, "comparison"]
-        # Тепловая таблица и сравнение — во всю ширину поля.
-        assert [block["wide"] for block in blocks] == [True, False, False, False, True]
+        # Сравнение — во всю ширину поля.
+        assert [block["wide"] for block in blocks] == [False, False, False, True]
         for block in blocks:
             card = _card(member_client, study, block)
             assert card.status_code == 200
@@ -369,6 +369,84 @@ class TestLab:
         card = _card(member_client, study, mine)
         assert "Рядом в рейтинге" in card.text or "значения по моему региону нет" in card.text
 
+    def test_section_desk(self, member_client: Client, warehouse: Any) -> None:
+        """
+        Рабочий стол: в первый раз — «Что получится» и примеры; затем исследования
+        карточками с миниатюрой плитками и таблицы строками.
+        """
+        first = member_client.get(reverse("userdata:index")).text
+        assert "Что получится" in first and "Начните с примера" in first
+        assert "desk-drop--big" in first and "Продолжить" not in first
+
+        dataset = _built(member_client, "crime_wide.csv")
+        key = _key(dataset, _first(dataset))
+        study = _study(member_client)
+        _edit(member_client, study, action="add", do="view:map", series=key)
+        desk = member_client.get(reverse("userdata:index")).text
+        assert "Продолжить" in desk and "desk-drop--big" not in desk
+        assert reverse("userdata:study", args=[study.public_id]) in desk
+        assert "desk-thumb" in desk and 'data-step="' in desk
+        assert reverse("userdata:dataset", args=[dataset.public_id]) in desk
+        # Сборка открыла таблицу в своём исследовании, второе — с картой из неё.
+        assert "исследований: 2" in desk
+
+    def test_notable_and_next_steps(self, member_client: Client, warehouse: Any) -> None:
+        """
+        «Что заметно» — крайние значения числами; под первой карточкой своего ряда —
+        «Дальше»: карта уже собранного пересчёта на жителя, рейтинг, сравнение с официальным.
+        """
+        dataset = _built(member_client, "crime_wide.csv", per=("per100000",))
+        key = _key(dataset, _first(dataset))
+        study = _study(member_client)
+        _edit(member_client, study, action="add", do="answer:notable", series=key)
+        _edit(member_client, study, action="add", do="view:map", series=key)
+        study.refresh_from_db()
+        notable, chosen = studies.blocks_of(study)
+        card = _card(member_client, study, notable)
+        assert "Больше всего" in card.text and "Меньше всего" in card.text
+        assert "card-next" in card.text
+        assert "Рейтинг" in card.text and "Сравнить с официальным" in card.text
+        # Под второй карточкой того же ряда подсказки не повторяются.
+        assert "card-next" not in _card(member_client, study, chosen).text
+
+        per_capita = next(
+            record for record in _version(dataset).series.all() if record.derived == "per100000"
+        )
+        per_key = f"u:{dataset.code}:{per_capita.code}"
+        assert f'value="{per_key}"' in card.text
+        # Пересчёт на жителя уже на поле — подсказки о нём нет.
+        _edit(member_client, study, action="add", do="view:map", series=per_key)
+        study.refresh_from_db()
+        assert f'value="{per_key}"' not in _card(member_client, study, notable).text
+
+    def test_table_colour(self, member_client: Client, warehouse: Any) -> None:
+        """
+        Таблица по годам раскрашивается по значению по выбору владельца; прежняя карточка
+        «Тепловая таблица» открывается раскрашенной таблицей.
+        """
+        dataset = _built(member_client, "crime_wide.csv")
+        key = _key(dataset, _first(dataset))
+        study = _study(member_client)
+        _edit(member_client, study, action="add", do="view:table", series=key)
+        study.refresh_from_db()
+        table = studies.blocks_of(study)[0]
+        card = _card(member_client, study, table)
+        assert "data-table--years" in card.text and "data-step=" not in card.text
+
+        _edit(member_client, study, action="change", block=table["id"], colour="value")
+        study.refresh_from_db()
+        assert studies.blocks_of(study)[0]["colour"] == "value"
+        card = _card(member_client, study, table)
+        assert 'data-step="' in card.text and "scale-legend" in card.text
+
+        legacy = {"id": "old1", "kind": "answer", "question": "heat", "series": key, "wide": True}
+        study.blocks = [*study.blocks, legacy]
+        study.save(update_fields=["blocks"])
+        converted = studies.blocks_of(study)[-1]
+        assert converted["kind"] == "view" and converted["target"] == "table"
+        assert converted["colour"] == "value" and converted["wide"]
+        assert 'data-step="' in _card(member_client, study, converted).text
+
     def test_convergence_answer_agrees_with_tool(
         self, member_client: Client, warehouse: Any
     ) -> None:
@@ -376,7 +454,15 @@ class TestLab:
         from apps.catalog.models import Series
         from tests.support import synthetic
 
-        key = Series.objects.get(indicator__code=synthetic.POPULATION_CODE).key
+        # Сближение — по уровню на жителя: численность населения (сумма) вывода не даёт.
+        population = Series.objects.get(indicator__code=synthetic.POPULATION_CODE).key
+        study = _study(member_client)
+        _edit(member_client, study, action="add", do="answer:convergence", series=population)
+        study.refresh_from_db()
+        refused = _card(member_client, study, studies.blocks_of(study)[0])
+        # Основа численности — площадь: причина ведёт к пересчёту на км².
+        assert "на км²" in refused.text
+        key = Series.objects.get(indicator__code=synthetic.GRP_PER_CAPITA_CODE).key
         study = _study(member_client)
         _edit(member_client, study, action="add", do="answer:convergence", series=key)
         study.refresh_from_db()
@@ -395,6 +481,48 @@ class TestLab:
             else "без устойчивого изменения"
         )
         assert f"<b>{expected}</b>" in card.text
+
+    def test_settings_only_what_changes_the_card(
+        self, member_client: Client, warehouse: Any
+    ) -> None:
+        """
+        «Настроить» показывает только то, что меняет карточку: у лидеров нет отмеченных
+        регионов, у сближения и связи с другими показателями нет ни года, ни регионов —
+        и кнопки; у графиков по регионам регионы есть. Неуместное поле формы не сохраняется.
+        """
+        dataset = _built(member_client)
+        key = _key(dataset, _first(dataset))
+        study = _study(member_client)
+        for question in ("leaders", "convergence", "related", "multiples"):
+            _edit(member_client, study, action="add", do=f"answer:{question}", series=key)
+        study.refresh_from_db()
+        blocks = {block["question"]: block for block in studies.blocks_of(study)}
+
+        leaders = _card(member_client, study, blocks["leaders"]).text
+        assert 'name="year"' in leaders and 'name="regions"' not in leaders
+        for question in ("convergence", "related"):
+            assert "card-settings" not in _card(member_client, study, blocks[question]).text
+        assert 'name="regions"' in _card(member_client, study, blocks["multiples"]).text
+
+        _edit(
+            member_client,
+            study,
+            action="configure",
+            block=blocks["leaders"]["id"],
+            regions="own",
+            territory=["RU-MOW"],
+        )
+        _edit(
+            member_client,
+            study,
+            action="configure",
+            block=blocks["convergence"]["id"],
+            year="2019",
+        )
+        study.refresh_from_db()
+        saved = {block["question"]: block for block in studies.blocks_of(study)}
+        assert "territories" not in saved["leaders"]
+        assert "year" not in saved["convergence"]
 
     def test_small_multiples_by_districts(self, member_client: Client, warehouse: Any) -> None:
         """
@@ -416,13 +544,14 @@ class TestLab:
         assert card.status_code == 200
         assert "multiples-cell" in card.text
         assert "федеральный округ" in card.text
-        assert 'value="common" aria-pressed="true"' in card.text
+        # Шкала — в «Виде» карточки.
+        assert 'name="scale" value="common" checked' in card.text
 
-        _edit(member_client, study, action="change", block=block["id"], scale="own")
+        _edit(member_client, study, action="configure", block=block["id"], scale="own")
         study.refresh_from_db()
         block = studies.blocks_of(study)[0]
         assert block["scale"] == "own"
-        assert 'value="own" aria-pressed="true"' in _card(member_client, study, block).text
+        assert 'name="scale" value="own" checked' in _card(member_client, study, block).text
 
         # Чужое значение шкалы не принимается.
         _edit(member_client, study, action="change", block=block["id"], scale="<b>")
@@ -430,7 +559,8 @@ class TestLab:
         assert studies.blocks_of(study)[0]["scale"] == "own"
 
     def test_partners_offered_for_comparison(self, member_client: Client, warehouse: Any) -> None:
-        dataset = _built(member_client, "crime_wide.csv")
+        # Связь — у относительных величин: суммы сравниваются через показатель на жителя.
+        dataset = _built(member_client, "crime_wide.csv", kind="relative")
         records = list(dataset.current_version.series.filter(derived="").order_by("order"))
         # Два разных показателя: пересчёт того же ряда к сравнению не предлагается.
         first = next(record for record in records if record.indicator == records[0].indicator)
@@ -542,7 +672,7 @@ class TestLab:
     def test_per_capita_unit_names_its_base(self, member_client: Client, warehouse: Any) -> None:
         from apps.userdata.models import DatasetSeries
 
-        dataset = _built(member_client, "crime_wide.csv")
+        dataset = _built(member_client, "crime_wide.csv", per=("per100000",))
         derived = DatasetSeries.objects.filter(
             version__dataset=dataset, derived=DatasetSeries.Derived.PER_100000
         ).first()

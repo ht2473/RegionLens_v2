@@ -869,9 +869,14 @@ a.leader-list__name:hover {
   gap: var(--space-2);
 }
 
-/* Отступ между полями: иначе подсказка читается продолжением следующей подписи. */
+/* Отступ между полями: иначе подсказка читается продолжением следующей подписи. В колонке
+   .stack отступ уже задан промежутком — второй сложился бы с ним вдвое. */
 .field + .field {
   margin-top: var(--space-4);
+}
+
+.stack > .field + .field {
+  margin-top: 0;
 }
 
 .field__label {
@@ -924,12 +929,15 @@ a.leader-list__name:hover {
   color: var(--text-accent);
 }
 
+/* Пояснение не наследует оформление заголовка, у которого стоит «?»: прописные, разрядка. */
 .menu-popover.hint__panel {
   width: min(22rem, calc(100vw - 2 * var(--space-4)));
   padding: var(--space-3) var(--space-4);
   font-size: var(--text-sm);
   font-weight: var(--weight-regular);
   line-height: var(--leading-normal);
+  letter-spacing: normal;
+  text-transform: none;
   color: var(--text-secondary);
   text-align: left;
   white-space: normal;
@@ -1148,10 +1156,11 @@ a.leader-list__name:hover {
   margin-bottom: var(--space-3);
 }
 
+/* Флажок — на уровне первой строки подписи: у подписи в две строки он не встаёт между ними. */
 .checkbox,
 .radio {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-2);
   font-size: var(--text-sm);
   cursor: pointer;
@@ -1161,6 +1170,10 @@ a.leader-list__name:hover {
 .radio input {
   width: 16px;
   height: 16px;
+  /* Середина первой строки: высота строки подписи (1lh) минус размер флажка, пополам. */
+  margin-block: calc((1lh - 16px) / 2) 0;
+  line-height: inherit;
+  font-size: inherit;
   accent-color: var(--accent);
   cursor: pointer;
   flex-shrink: 0;
@@ -1677,6 +1690,33 @@ a.leader-list__name:hover {
 
 .toast--success {
   border-left-color: var(--positive);
+}
+
+.toast__text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* «Закрыть» у каждого уведомления: успех и сведения исчезают сами, ошибка — по нажатию. */
+.toast__close {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin: -4px -8px -4px 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.toast__close:hover,
+.toast__close:focus-visible {
+  color: var(--text-primary);
+  background-color: var(--surface-sunken);
 }
 
 .toast a {
@@ -2551,6 +2591,21 @@ rl-time-slider {
   stroke-opacity: 0.45;
 }
 
+/* Карта значками: круг полупрозрачный, кромка цвета подложки разделяет соседние круги;
+   наведение и щелчок проходят к субъекту под кругом. */
+.geo-map__symbol {
+  fill: var(--symbol-fill);
+  stroke: var(--symbol-stroke);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.geo-map__symbol.is-selected {
+  stroke: var(--map-label);
+  stroke-width: 2.5;
+}
+
 .geo-map__inset-frame {
   fill: none;
   stroke: var(--map-frame);
@@ -2812,6 +2867,54 @@ rl-time-slider {
 /* Метка перед текстом заголовка или подписи — с отступом, а не вплотную. */
 .card__title > .map-legend__swatch {
   margin-inline-end: var(--space-2);
+}
+
+/* Легенда значков: круги образцовых значений в масштабе карты — диаметр в единицах чертежа
+   (ширина 2000) переводится в ширину карты; на телефоне карта не уже 720 px. */
+.symbol-key {
+  --map-width: 100cqw;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2) var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.map-legend--symbols {
+  container-type: inline-size;
+}
+
+@media (max-width: 720px) {
+  .symbol-key {
+    --map-width: max(100cqw, 720px);
+  }
+}
+
+.symbol-key__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.symbol-key__item--no-data {
+  flex-direction: row;
+  align-self: center;
+}
+
+.symbol-key__circle {
+  width: calc(var(--d) * var(--map-width) / 2000);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background-color: var(--symbol-fill);
+  box-shadow: 0 0 0 1px var(--symbol-stroke);
+}
+
+.symbol-key__value {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
 .map-legend__swatch--no-data {
@@ -3822,14 +3925,11 @@ rl-combobox:defined > select {
   gap: var(--space-3);
 }
 
+/* Привязанная панель держится за окно и переставляется за кнопкой при прокрутке
+   (popovers.js): кнопка может стоять в закреплённом рейле или шапке. */
 .menu-popover[data-anchored] {
-  position: absolute;
-  margin: 0;
-}
-
-/* Панели шапки держатся за окно: шапка закреплена (app.js, placeMenuPopover). */
-.menu-popover[data-anchored][data-anchor-fixed] {
   position: fixed;
+  margin: 0;
 }
 
 /* --- Мой регион полосой: главная и обзор кабинета (catalog/_region_band) ------------------ */
@@ -4301,7 +4401,13 @@ rl-combobox:defined > select {
   gap: var(--space-4) var(--space-8);
 }
 
+/* Число и подпись — отдельными элементами: подпись стоит рядом или целиком под числом.
+   Строкой внутри числа она при переносе брала его высоту строки и рвалась с пустотой. */
 .answer__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-2);
   margin: 0;
   font-size: var(--text-3xl);
   font-weight: var(--weight-bold);
@@ -4312,6 +4418,7 @@ rl-combobox:defined > select {
 .answer__unit {
   font-size: var(--text-sm);
   font-weight: var(--weight-regular);
+  line-height: var(--leading-snug);
   letter-spacing: 0;
   color: var(--text-muted);
 }

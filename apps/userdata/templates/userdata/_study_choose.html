@@ -1,0 +1,81 @@
+{% load i18n formatting userdata %}
+{% comment %}
+  Окно «Добавить карточку» по выбранному показателю — одно место для всех карточек:
+  «Рекомендуемое» (подобрано по данным) и «Визуализация» открыты, «Анализ», «Сравнение»
+  и «Расчёты» свёрнуты с числом пунктов. Недоступное — одной строкой с причинами. Новая
+  карточка добавляется в конец поля без перезагрузки (из ответа забираются карточка, панель
+  и сведения над полем).
+{% endcomment %}
+{% with chosen=panel.chosen %}
+<div class="choose" id="study-actions">
+  <header class="choose__head">
+    <p class="kicker choose__kicker">{% if chosen.is_user %}{% translate "Своя таблица" %}{% else %}{% translate "Показатель сайта" %}{% endif %}</p>
+    <h3 class="choose__title"{% with lang=chosen.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>
+      {{ chosen.title }}{% if chosen.detail %} <span class="choose__detail">· {{ chosen.detail }}</span>{% endif %}
+    </h3>
+    <p class="choose__facts">
+      {% if chosen.unit %}<span{% with lang=chosen.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ chosen.unit }}</span> · {% endif %}{% if chosen.first_year %}<span class="numeric">{{ chosen.first_year|year }}{% if chosen.last_year != chosen.first_year %}–{{ chosen.last_year|year }}{% endif %}</span> · {% endif %}{% blocktranslate trimmed with count=chosen.regions %}регионов: {{ count }}{% endblocktranslate %}
+    </p>
+    {% if panel.partner %}
+      <p class="choose__pair">{% blocktranslate trimmed with title=panel.partner.title %}Вместе с «{{ title }}»{% endblocktranslate %}</p>
+    {% endif %}
+  </header>
+
+  <form method="post" action="{% url 'userdata:study-edit' study.public_id %}" class="choose__form" data-choose-form
+        aria-label="{% translate 'Добавить карточку' %}"
+        hx-post="{% url 'userdata:study-edit' study.public_id %}" hx-target="#study-cards"
+        hx-select=".study-cards > .is-new" hx-swap="beforeend" hx-push-url="false"
+        hx-select-oob="#study-sources,#study-meta,#study-empty,#study-toolbar,#study-toast,#study-sources-list">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add">
+    <input type="hidden" name="series" value="{{ chosen.key }}">
+    {% if panel.partner %}<input type="hidden" name="other" value="{{ panel.partner.key }}">{% endif %}
+
+    {% if panel.advice %}
+      <section class="choose__section choose__section--advice" aria-labelledby="choose-advice">
+        <h4 class="choose__label" id="choose-advice">{% translate "Рекомендуемое" %}</h4>
+        <ul class="choose__tiles">
+          {% for action in panel.advice %}{% include "userdata/_choose_item.html" with large=True %}{% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+
+    {% for group in panel.groups %}
+      {% with count=group.actions|available_count %}
+        {% if count and group.code == "look" %}
+          <section class="choose__section" aria-labelledby="choose-{{ group.code }}">
+            <h4 class="choose__label" id="choose-{{ group.code }}">
+              {{ group.title }}
+              {% if group.hint %}{% include "partials/_hint.html" with hint_id="hint-choose-"|add:group.code hint_text=group.hint hint_label=_("Как это устроено") %}{% endif %}
+            </h4>
+            <ul class="choose__list">
+              {% for action in group.actions %}{% if not action.reason %}{% include "userdata/_choose_item.html" %}{% endif %}{% endfor %}
+            </ul>
+          </section>
+        {% elif count %}
+          <details class="choose__section choose__fold" id="choose-{{ group.code }}">
+            <summary class="choose__label">
+              {{ group.title }} <span class="choose__count numeric">{{ count }}</span>
+            </summary>
+            {% if group.hint %}<p class="choose__hint">{{ group.hint }}</p>{% endif %}
+            <ul class="choose__list">
+              {% for action in group.actions %}{% if not action.reason %}{% include "userdata/_choose_item.html" %}{% endif %}{% endfor %}
+            </ul>
+          </details>
+        {% endif %}
+      {% endwith %}
+    {% endfor %}
+
+    {% if panel.unavailable %}
+      <details class="choose__unavailable">
+        <summary>{% blocktranslate trimmed with count=panel.unavailable|length %}Недоступно сейчас: {{ count }}. Почему{% endblocktranslate %}</summary>
+        <ul class="choose__reasons">
+          {% for action in panel.unavailable %}
+            <li><span class="choose__reason-title">{{ action.title }}</span> — {{ action.reason }}</li>
+          {% endfor %}
+        </ul>
+      </details>
+    {% endif %}
+  </form>
+</div>
+{% endwith %}

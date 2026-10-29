@@ -229,6 +229,7 @@ def series_values_by_territory(
             t.district_code,
             f.value,
             f.quality,
+            f.flags,
             r.rank_desc,
             r.rank_asc,
             r.percentile,
@@ -263,7 +264,7 @@ def series_year_grid(
     """
     rows = fetch_dicts(
         """
-        SELECT territory_code, territory_level, year, value, quality
+        SELECT territory_code, territory_level, year, value, quality, flags
         FROM fact_observation
         WHERE series_key = ? AND year BETWEEN ? AND ?
           AND ((territory_level = ? AND NOT is_aggregate) OR territory_code = 'RU')
@@ -280,6 +281,7 @@ def series_year_grid(
         regions.setdefault(row["territory_code"], {})[year] = {
             "value": row["value"],
             "quality": row["quality"],
+            "flags": row["flags"],
         }
     return {"regions": regions, "country": country}
 

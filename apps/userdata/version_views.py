@@ -26,7 +26,7 @@ from .series import UserSeries
 
 
 def _versions_url(public_id: Any) -> str:
-    """Версии — на вкладке «Файл и версии» страницы таблицы."""
+    """Версии — на вкладке «Версии» страницы таблицы."""
     return f"{reverse('userdata:dataset', args=[public_id])}?tab=file#own-versions"
 
 

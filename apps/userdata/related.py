@@ -1,7 +1,10 @@
 """
-«С чем связан показатель»: связь ряда таблицы с рядами основного набора сайта за общий год —
-коэффициент Спирмена по субъектам, уровни значимости с поправкой Бенджамини — Хохберга
-на число сравнений. Облако точек пары — в инструменте «Корреляции».
+«С чем связан показатель»: связь ряда таблицы с относительными рядами основного набора сайта
+за общий год — коэффициент Спирмена по субъектам, уровни значимости с поправкой Бенджамини —
+Хохберга на число сравнений. Суммы сайта (численность, ВРП, выбросы) не сравниваются: связь
+с ними показывает размер региона, а не связь показателей. У ряда сайта без значений за год
+таблицы берётся ближайший полный год — он записан у связи. Облако точек пары — в инструменте
+«Корреляции».
 """
 
 from __future__ import annotations
@@ -22,7 +25,7 @@ from .series import UserSeries
 
 METHOD = "spearman"
 # Редакция содержимого: кэш расчётов не знает о правке кода.
-RESULT_REVISION = 1
+RESULT_REVISION = 2
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,7 +52,7 @@ def related(series: UserSeries) -> dict[str, Any]:
 
 
 def _compute(series: UserSeries, year: int, values: dict[str, float]) -> dict[str, Any]:
-    items = featured_series()
+    items = [item for item in featured_series() if not item.absolute]
     codes = [row["code"] for row in region_rows()]
     matrix = region_matrix([item.key for item in items], year)
     own = [values.get(code) for code in codes]

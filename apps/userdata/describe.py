@@ -11,8 +11,9 @@ from typing import Any
 
 from django.db import transaction
 from django.utils.translation import get_language
+from django.utils.translation import gettext as _
 
-from . import jobs, matching, recognize, tables
+from . import jobs, matching, naming, recognize, tables
 from .models import DatasetVersion, TerritoryLabel
 
 NOT_TERRITORY = recognize.NOT_TERRITORY
@@ -47,6 +48,31 @@ def load_and_recognize(
         remembered=remembered_labels(user),
     )
     return loaded, result
+
+
+def year_note(year: int | None, period: str, source: str, text: str) -> str:
+    """
+    Откуда взят год таблицы без столбца с годом — словами, для шагов «Что в таблице»
+    и «Проверка»: «Год 2023 и период «I квартал» взяты из имени листа «2023г - 1 квартал»».
+    """
+    if not year or not source:
+        return ""
+    where = {
+        recognize.YEAR_FROM_COLUMNS: _("из шапки соседних столбцов"),
+        recognize.YEAR_FROM_TITLE: _("из заголовка таблицы «%(text)s»"),
+        recognize.YEAR_FROM_HEADER: _("из шапки таблицы «%(text)s»"),
+        recognize.YEAR_FROM_CAPTION: _("из подписи таблицы «%(text)s»"),
+        recognize.YEAR_FROM_SHEET: _("из имени листа «%(text)s»"),
+        recognize.YEAR_FROM_FILE: _("из имени файла «%(text)s»"),
+    }[source] % {"text": text}
+    named = naming.period_text(period) if period else ""
+    if named:
+        return _("Год %(year)s и период «%(period)s» взяты %(where)s.") % {
+            "year": year,
+            "period": named,
+            "where": where,
+        }
+    return _("Год %(year)s взят %(where)s.") % {"year": year, "where": where}
 
 
 def remembered_labels(user: Any) -> dict[str, str]:
@@ -117,7 +143,8 @@ def save_answers(
     """
     Записать ответы человека в рецепт версии.
 
-    ``answers``: ``roles`` (номер столбца → роль), ``year``, ``slices`` (номер → значения),
+    ``answers``: ``roles`` (номер столбца → роль), ``year``, ``repeats`` (что в повторах
+    регионов), ``slices`` (номер → значения),
     ``territories`` и ``nested`` (подпись → код, «outside» или «none»), ``remember``.
     Рядом — шапки столбцов и подписи, о которых спрашивали: новая версия файла переносит
     роли по шапке и спрашивает только о новом (``renew``).
@@ -132,6 +159,9 @@ def save_answers(
     recipe["form"] = result.form
     year = answers.get("year")
     recipe["year"] = int(year) if year else None
+    repeats = answers.get("repeats")
+    if repeats in recognize.REPEATS_ANSWERS:
+        recipe["repeats"] = repeats
     slices = {
         str(index): [
             value

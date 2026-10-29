@@ -1,9 +1,49 @@
 {% load i18n formatting userdata %}
 {% comment %}
-  Вкладка «Проверки»: пометки таблицы (суммы, коды вместо чисел, мало субъектов, неполный
-  последний год, вложенные области), замечания по ведущим рядам и территории.
+  Качество в «Обзоре» таблицы: профиль ряда картинкой (регион × год: есть, скрыто, нет),
+  пометки таблицы (суммы, коды вместо чисел, мало субъектов, неполный последний год,
+  вложенные области), замечания по ведущим рядам и территории.
 {% endcomment %}
-<div class="dataset-checks">
+<div class="dataset-checks" id="dataset-checks">
+  {% if profile %}
+    <section class="page-section quality-profile" aria-labelledby="own-profile">
+      <div class="page-section__head">
+        <h2 class="page-section__title" id="own-profile">{% translate "Покрытие по годам" %}</h2>
+      </div>
+      {% if profile.choices|length > 1 %}
+        <form method="get" action="#own-profile" class="quality-profile__pick" data-autosubmit>
+          <label class="field__label" for="profile-series">{% translate "Показатель" %}</label>
+          <select class="select" id="profile-series" name="series">
+            {% for code, title in profile.choices %}<option value="{{ code }}"{% if code == profile.look.series.record.code %} selected{% endif %}>{{ title|truncatechars:90 }}</option>{% endfor %}
+          </select>
+          <button class="button button--secondary button--sm" type="submit" data-autosubmit-button>{% translate "Показать" %}</button>
+        </form>
+      {% endif %}
+      <div class="quality-profile__figure">
+        <svg class="quality-matrix" viewBox="0 0 {{ profile.width }} {{ profile.height }}"
+             width="{{ profile.shown_width }}" height="{{ profile.shown_height }}" role="img"
+             aria-label="{% blocktranslate trimmed with share=profile.share first=profile.first_year|year last=profile.last_year|year %}Субъекты по годам {{ first }}–{{ last }}: значения есть в {{ share }} % клеток{% endblocktranslate %}">
+          {% for column in profile.columns %}
+            <g transform="translate({{ column.x }} 0)"><title>{{ column.name }}</title>{% for cell in column.cells %}<rect y="{{ cell.y }}" width="{{ profile.cell }}" height="{{ profile.cell }}" class="is-{{ cell.state }}"></rect>{% endfor %}</g>
+          {% endfor %}
+          {% for label in profile.years %}<text class="quality-matrix__year" x="26" y="{{ label.y }}" text-anchor="end">{{ label.year|year }}</text>{% endfor %}
+          {% for district in profile.districts %}<g><title>{{ district.name }}</title><text x="{{ district.x }}" y="{{ district.y }}" text-anchor="middle">{{ district.text }}</text></g>{% endfor %}
+        </svg>
+        <div class="quality-profile__notes">
+          <ul class="quality-legend">
+            <li><span class="quality-legend__swatch is-present" aria-hidden="true"></span>{% translate "есть значение" %} — <span class="numeric">{{ profile.counts.present }}</span></li>
+            <li><span class="quality-legend__swatch is-hidden" aria-hidden="true"></span>{% translate "скрыто: строка есть, числа нет" %} — <span class="numeric">{{ profile.counts.hidden }}</span></li>
+            <li><span class="quality-legend__swatch is-absent" aria-hidden="true"></span>{% translate "нет строки" %} — <span class="numeric">{{ profile.counts.absent }}</span></li>
+          </ul>
+          <p>{% blocktranslate trimmed with share=profile.share %}Значения есть в {{ share }} % клеток «субъект × год».{% endblocktranslate %}</p>
+          {% if profile.look.composition_text %}<p>{{ profile.look.composition_text }}</p>{% endif %}
+          {% if profile.look.kind_note %}<p>{{ profile.look.kind_note }}</p>{% endif %}
+          <p class="field__hint">{% translate "Столбцы — субъекты по федеральным округам, строки — годы. Название субъекта — при наведении на столбец." %}</p>
+        </div>
+      </div>
+    </section>
+  {% endif %}
+
   {% if sums and not per_capita %}
     <div class="callout callout--warning">
       <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
@@ -11,7 +51,7 @@
         <div class="callout__title">{% translate "Абсолютные величины" %}</div>
         <p>
           {% translate "На карте сумм крупные регионы выделяются размером: больше людей — больше преступлений, рублей и случаев." %}
-          {% if owner %}{% translate "Пересчёт на жителей — в исследовании: «Что сделать» → «Посчитать»." %}{% endif %}
+          {% if owner %}{% translate "Пересчитать на жителей можно в исследовании: нажмите на показатель, раздел «Расчёты»." %}{% endif %}
         </p>
       </div>
     </div>
@@ -30,7 +70,7 @@
   {% if few_regions %}
     <div class="callout callout--info">
       <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
-      <div>{% translate "Субъектов меньше 20: неравенство и пространственный анализ по таблице не считаются. Карта, таблица и динамика работают." %}</div>
+      <div>{% translate "Регионов меньше 20: неравенство и соседство регионов по таблице не считаются. Карта, таблица и линии по годам работают." %}</div>
     </div>
   {% endif %}
 
@@ -76,7 +116,7 @@
   {% if checks %}
     <section class="page-section" aria-labelledby="own-checks">
       <div class="page-section__head">
-        <h2 class="page-section__title" id="own-checks">{% translate "Ряды" %}</h2>
+        <h2 class="page-section__title" id="own-checks">{% translate "Сводка по показателям" %}</h2>
       </div>
       <ul class="compact-list own-checks" id="own-checks-list" data-more-list>
         {% for look in checks %}
@@ -84,7 +124,7 @@
             <b{% with lang=look.series.full_title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ look.series.full_title }}</b>.
             {% if look.kind_note %}{{ look.kind_note }}{% endif %}
             {% if look.composition_text %}{{ look.composition_text }}{% endif %}
-            {% if look.missing_count %}{% blocktranslate trimmed with year=look.last_year|year count=look.missing_count %}Субъектов без значений в {{ year }} году: {{ count }}{% endblocktranslate %}: {{ look.missing_last|join:", " }}{% if look.missing_count > look.missing_last|length %}…{% endif %}.{% endif %}
+            {% if look.missing_count %}{% blocktranslate trimmed with year=look.last_year|year count=look.missing_count %}Регионов без значений в {{ year }} году: {{ count }}{% endblocktranslate %}: {{ look.missing_last|join:", " }}{% if look.missing_count > look.missing_last|length %}…{% endif %}.{% endif %}
           </li>
         {% endfor %}
       </ul>
@@ -102,7 +142,7 @@
     <p class="page-section__lead">
       {% blocktranslate trimmed with count=version.regions_count %}Субъектов со значениями: {{ count }} из 85.{% endblocktranslate %}
       {% if nested %}
-        {% translate "Область с автономными округами в таблице — итогом вместе с ними; для сумм область без округов вычислена (пометка «расчёт RegionLens»):" %}
+        {% translate "Область с автономными округами в таблице дана итогом вместе с ними. Для сумм область без округов вычислена, у таких значений пометка «вычислено»:" %}
         {% for code in nested %}{{ code|territory_name }}{% if not forloop.last %}, {% endif %}{% endfor %}.
       {% endif %}
       {% if conflicts %}

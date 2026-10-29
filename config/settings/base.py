@@ -38,7 +38,7 @@ if _env_file.exists():
 
 PROJECT_NAME = "RegionLens"
 PROJECT_TAGLINE = "Анализ и визуализация социально-экономических показателей регионов России"
-PROJECT_VERSION = "0.1.0"
+PROJECT_VERSION = "0.9.0"
 PROJECT_AUTHOR = "Кузьмин Евгений Олегович"
 PROJECT_AUTHOR_SHORT = "Кузьмин Е. О."
 PROJECT_AUTHOR_EN = "Evgeny Kuzmin"
@@ -455,6 +455,12 @@ USERDATA_TABLE_MAX_BYTES = env.int("USERDATA_TABLE_MAX_BYTES", default=300 * 102
 # Архив: сжатие таблицы не сильнее 100 : 1 (у ЕБТ — до 60 : 1), файлов не больше 50.
 USERDATA_ZIP_MAX_RATIO = env.int("USERDATA_ZIP_MAX_RATIO", default=100)
 USERDATA_ZIP_MAX_FILES = env.int("USERDATA_ZIP_MAX_FILES", default=50)
+# PDF читается при загрузке: страниц не больше, чтение не дольше (секунд), иначе — отказ
+# с советом сохранить нужные страницы отдельным файлом. Сборники ведомств — по 50–100
+# страниц; страница читается за 0,06–0,31 с (замер 28.10.2026 на PDF корпуса), так что
+# сервер бережёт в первую очередь предел времени.
+USERDATA_PDF_MAX_PAGES = env.int("USERDATA_PDF_MAX_PAGES", default=100)
+USERDATA_PDF_SECONDS = env.int("USERDATA_PDF_SECONDS", default=30)
 # Вставка из буфера: текст таблицы, разметка таблицы из Word и Excel — больше текста.
 USERDATA_PASTE_MAX_BYTES = env.int("USERDATA_PASTE_MAX_BYTES", default=5 * 1024 * 1024)
 USERDATA_MAX_ROWS = env.int("USERDATA_MAX_ROWS", default=3_000_000)
@@ -475,6 +481,9 @@ USERDATA_GUEST_UPLOADS_PER_HOUR = env.int("USERDATA_GUEST_UPLOADS_PER_HOUR", def
 # Разборов отдельным процессом одновременно на сервер и предел времени одного разбора.
 USERDATA_PARALLEL_JOBS = env.int("USERDATA_PARALLEL_JOBS", default=2)
 USERDATA_JOB_SECONDS = env.int("USERDATA_JOB_SECONDS", default=120)
+# На стенде разборы выполняет служба userdata-worker (свой контейнер и предел памяти): сайт
+# кладёт заявку в очередь в томе таблиц. Выключено — процессом рядом с сайтом (разработка).
+USERDATA_JOB_WORKER = env.bool("USERDATA_JOB_WORKER", default=False)
 # Показ ряда набора: память соединения с файлом набора (поток — один).
 USERDATA_QUERY_MEMORY = env.str("USERDATA_QUERY_MEMORY", default="128MB")
 # Версий таблицы на диске: значения прежних остаются в отчёте о различиях новой.

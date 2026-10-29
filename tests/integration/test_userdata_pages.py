@@ -37,16 +37,24 @@ def _page(client: Client, dataset: Dataset, **query: Any) -> Any:
 class TestDatasetPage:
     """Вкладки страницы таблицы и выбранный ряд."""
 
-    def test_data_tab_shows_chosen_series_with_map(self, client: Client, warehouse: Any) -> None:
+    def test_overview_shows_series_quality_and_exclusions(
+        self, client: Client, warehouse: Any
+    ) -> None:
+        """
+        «Обзор» — показатели с переходом в исследование, качество и исключения; карты на
+        странице таблицы нет: смотрят данные в исследовании.
+        """
         dataset = _built(client)
         page = _page(client, dataset)
         assert page.status_code == 200
         assert 'id="dataset-detail"' in page.text
-        assert "geo-map" in page.text or "tile-map" in page.text
+        assert "geo-map" not in page.text and "dataset-preview" not in page.text
         assert reverse("userdata:dataset-study", args=[dataset.public_id]) in page.text
-        # Вкладки владельца — все четыре.
-        for title in ("Данные", "Проверки", "Файл и версии", "Доступ"):
+        assert 'id="dataset-checks"' in page.text and 'id="own-exclusions"' in page.text
+        # Вкладки владельца — три.
+        for title in ("Обзор", "Версии", "Доступ"):
             assert title in page.text
+        assert "Проверки" not in page.text and "Файл и версии" not in page.text
 
     def test_show_selects_series(self, client: Client, warehouse: Any) -> None:
         dataset = _built(client, "crime_wide.csv")
@@ -90,8 +98,9 @@ class TestDatasetPage:
         reader.get(reverse("share-open", args=[token]))
         page = reader.get(reverse("userdata:dataset", args=[dataset.public_id]), {"tab": "file"})
         assert page.status_code == 200
-        assert "Файл и версии" not in page.text
+        assert 'href="?tab=file"' not in page.text
         assert 'id="own-versions"' not in page.text
+        assert 'id="own-exclusions"' not in page.text
         assert reverse("userdata:dataset-study", args=[dataset.public_id]) not in page.text
         assert share.pk
 
@@ -159,14 +168,14 @@ class TestWizard:
         describe(client, dataset, {"year": "2023"})
         page = client.get(reverse("userdata:series", args=[dataset.public_id]))
         assert "Показателей с вопросами: 1" in page.text
-        assert "Складывается ли по регионам?" in page.text
+        assert "Что это за величина?" in page.text
         # Новые пересчёты в мастере не предлагаются.
         assert 'name="recalc-1" value="russia"' not in page.text
 
     def test_recounts_kept_unless_unchecked(self, client: Client, warehouse: Any) -> None:
-        dataset = _built(client, "crime_wide.csv", kind=indicators.SUM)
+        dataset = _built(client, "crime_wide.csv", kind=indicators.SUM, per=("per100000",))
         version = version_of(dataset)
-        assert indicators.indicators_of(version)[0].per == indicators.DEFAULT_PER
+        assert indicators.indicators_of(version)[0].per == ("per100000",)
         # Форма без перечня пересчётов (старая или без поля) их не трогает.
         answers = {
             item.name: {"title": item.title, "unit": item.unit, "kind": item.kind}
@@ -174,7 +183,7 @@ class TestWizard:
         }
         indicators.save(version, answers)
         version.refresh_from_db()
-        assert indicators.indicators_of(version)[0].per == indicators.DEFAULT_PER
+        assert indicators.indicators_of(version)[0].per == ("per100000",)
         # Снятая отметка убирает пересчёт.
         answers = {name: {**answer, "per": [], "recalc": []} for name, answer in answers.items()}
         indicators.save(version, answers)
@@ -183,7 +192,24 @@ class TestWizard:
 
 
 class TestFormulaTemplates:
-    """Шаблоны формулы, предпросмотр и возврат в исследование."""
+    """Шаблоны на странице правки формулы и предел предпросмотров."""
+
+    @staticmethod
+    def _draft(client: Client, dataset: Any, key: str) -> str:
+        """Черновой показатель окном «Расчёт показателя»; вернуть адрес его правки."""
+        saved = client.post(
+            reverse("userdata:dataset-calc", args=[dataset.public_id]),
+            {
+                "op": "free",
+                "table": dataset.code,
+                "title": "Черновик",
+                "expression": f"{{{key}}} * 2",
+                "action": "save",
+            },
+        )
+        assert saved.status_code == 302
+        (draft,) = formula_store.definitions(version_of(dataset))
+        return reverse("userdata:formula", args=[dataset.public_id, draft.code])
 
     def test_template_builds_expression_and_title(self, client: Client, warehouse: Any) -> None:
         from apps.catalog.models import Series
@@ -191,9 +217,7 @@ class TestFormulaTemplates:
         dataset = _built(client, "crime_wide.csv", kind=indicators.SUM, per=())
         key = _key(dataset, _first(dataset))
         site = Series.objects.get(key="Y477110461:00")
-        url = reverse("userdata:formula-new", args=[dataset.public_id])
-        page = client.get(url)
-        assert 'value="per1000" checked' in page.text
+        url = self._draft(client, dataset, key)
         data = {"template": "per1000", "a": key, "b": site.key, "kind": "relative"}
         checked = client.post(url, {**data, "action": "check"})
         assert "Посчитано для" in checked.text
@@ -207,48 +231,23 @@ class TestFormulaTemplates:
         location = urlparse(saved["Location"])
         assert location.path == reverse("userdata:dataset", args=[dataset.public_id])
         assert parse_qs(location.query)["show"] == [definition.code]
-        # Правка формулы по шаблону открывается шаблоном.
-        edit = client.get(reverse("userdata:formula", args=[dataset.public_id, definition.code]))
-        assert 'value="per1000" checked' in edit.text
+        # Формула по шаблону открывается шаблоном.
+        assert 'value="per1000" checked' in client.get(url).text
 
     def test_template_needs_both_series(self, client: Client, warehouse: Any) -> None:
         dataset = _built(client)
-        url = reverse("userdata:formula-new", args=[dataset.public_id])
+        url = self._draft(client, dataset, _key(dataset, _first(dataset)))
         response = client.post(url, {"template": "diff", "a": "", "b": "", "action": "check"})
         assert "Выберите оба показателя" in response.text
-
-    def test_from_study_returns_with_map(self, client: Client, warehouse: Any) -> None:
-        dataset = _built(client, "crime_wide.csv", kind=indicators.SUM, per=())
-        key = _key(dataset, _first(dataset))
-        client.post(reverse("userdata:study-new"), {"title": "К курсовой"})
-        study = Study.objects.latest("created_at")
-        url = reverse("userdata:formula-new", args=[dataset.public_id])
-        page = client.get(url, {"study": str(study.public_id)})
-        assert f'name="study" value="{study.public_id}"' in page.text
-        saved = client.post(
-            url,
-            {
-                "template": "free",
-                "title": "Вдвое",
-                "expression": f"{{{key}}} * 2",
-                "kind": "sum",
-                "study": str(study.public_id),
-                "action": "save",
-            },
-        )
-        assert urlparse(saved["Location"]).path == reverse("userdata:study", args=[study.public_id])
-        study.refresh_from_db()
-        (block,) = studies.blocks_of(study)
-        assert block["target"] == "map"
 
     def test_previews_are_rate_limited(self, client: Client, settings: Any, warehouse: Any) -> None:
         from django.core.cache import cache
 
         dataset = _built(client)
         key = _key(dataset, _first(dataset))
+        url = self._draft(client, dataset, key)
         settings.USERDATA_FORMULA_PREVIEWS = 1
         cache.clear()
-        url = reverse("userdata:formula-new", args=[dataset.public_id])
         data = {"template": "free", "title": "X", "expression": f"{{{key}}} * 2"}
         statuses = [
             client.post(url, data, headers={"HX-Request": "true"}).status_code for _ in range(2)

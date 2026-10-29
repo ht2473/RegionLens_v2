@@ -248,7 +248,8 @@ class TestGlance:
         assert look.regions >= 80
         assert look.gini is not None and look.moran is not None
         assert "похоже на долю или среднее" in page.text
-        assert "Проверки" in page.text
+        # Прежний адрес «Проверок» открывает «Обзор» с качеством таблицы.
+        assert 'id="dataset-checks"' in page.text
         assert "Первый взгляд" not in page.text
 
     def test_inconsistent_country_gives_no_verdict(self, client: Client, warehouse: Any) -> None:
@@ -322,7 +323,7 @@ class TestRelated:
             reverse("userdata:related", args=[dataset.public_id]),
             {"series": key_of(dataset, first_record(dataset))},
         )
-        assert "Смотреть ряд на жителя" in page.text
+        assert "Смотреть в пересчёте на жителя" in page.text
 
 
 ALL_TOOLS = (

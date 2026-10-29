@@ -103,7 +103,7 @@ class Combobox extends HTMLElement {
       unnormalised: data.unnormalised || "абс.",
       unnormalisedHint: data.unnormalisedHint || "",
       recent: data.recent || "Недавние",
-      rest: data.rest || "Остальные ряды",
+      rest: data.rest || "Остальные показатели",
     };
   }
 

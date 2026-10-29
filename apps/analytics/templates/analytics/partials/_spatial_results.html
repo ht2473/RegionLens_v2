@@ -57,7 +57,7 @@
       </div>
       <div class="kpi">
         <div class="kpi__label">{% term "significance-level" %}</div>
-        <div class="kpi__value numeric">{{ global_moran.p_value|p_level }}</div>
+        <div class="kpi__value numeric">{{ global_moran.p_value|permutation_p:global_moran.permutations }}</div>
         <div class="kpi__footer">
           {% if global_moran.is_significant %}
             {% translate "структура отличается от случайной" %}
@@ -74,7 +74,13 @@
       <div class="kpi">
         <div class="kpi__label">{% translate "Выделяющихся субъектов" %}</div>
         <div class="kpi__value numeric">{{ significant_count }}</div>
-        <div class="kpi__footer">{% translate "со значимым локальным индексом" %}</div>
+        <div class="kpi__footer">
+          {% if corrected %}
+            {% blocktranslate trimmed with count=raw_count %}со значимым локальным индексом с поправкой на число сравнений; без поправки — {{ count }}{% endblocktranslate %}
+          {% else %}
+            {% blocktranslate trimmed with count=chance_count %}со значимым локальным индексом без поправки; около {{ count }} из них могут быть случайными{% endblocktranslate %}
+          {% endif %}
+        </div>
       </div>
     </div>
 
@@ -95,7 +101,7 @@
       <div>
         <div class="chart-frame__title">{% translate "Локальные пространственные кластеры" %}</div>
         <div class="chart-frame__subtitle">
-          {% translate "раскрашены только субъекты со значимым локальным индексом" %}
+          {% if corrected %}{% translate "раскрашены только субъекты со значимым локальным индексом с поправкой на число сравнений" %}{% else %}{% translate "раскрашены субъекты со значимым локальным индексом без поправки на число сравнений" %}{% endif %}
         </div>
       </div>
     </div>
@@ -169,7 +175,7 @@
                     {% translate "Соседи" %}
                   </th>
                   <th scope="col" class="is-numeric">{% translate "Соседей" %}</th>
-                  <th scope="col" class="is-numeric">{% translate "p" %}</th>
+                  <th scope="col" class="is-numeric">{% if corrected %}{% translate "p с поправкой" %}{% else %}{% translate "p" %}{% endif %}</th>
                 </tr>
               </thead>
               <tbody>
@@ -179,7 +185,7 @@
                     <td class="is-numeric">{{ entry.value|ru_number }}</td>
                     <td class="is-numeric text-secondary">{{ entry.spatial_lag|ru_number:2 }}</td>
                     <td class="is-numeric text-secondary">{{ entry.neighbours }}</td>
-                    <td class="is-numeric text-secondary">{{ entry.p_value|p_level }}</td>
+                    <td class="is-numeric text-secondary">{% if entry.p_adjusted is not None %}{{ entry.p_adjusted|p_level }}{% else %}{{ entry.p_value|p_level }}{% endif %}</td>
                   </tr>
                 {% endfor %}
               </tbody>

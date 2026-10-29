@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+from collections import Counter, defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
@@ -14,22 +15,25 @@ from typing import Any
 from django.db.models import F
 from django.http import HttpRequest
 from django.urls import reverse
-from django.utils import translation
+from django.utils import timezone, translation
+from django.utils.dateformat import format as date_format
 from django.utils.translation import gettext
 
 from apps.warehouse import routing
 from apps.warehouse.queries import FeaturedSeries
 
-from . import indicators, naming
+from . import indicators, naming, semantics
 from .models import Dataset, DatasetSeries, DatasetVersion
 
 ABSOLUTE_KIND = "absolute"
 RELATIVE_KIND = "rate"
 # Субъектов меньше этого: неравенство и пространственный анализ по набору не считаются.
-FEW_REGIONS = 20
+FEW_REGIONS = semantics.FEW_REGIONS
 # Пересчёты на жителей — в порядке предпочтения для замены суммы.
 PER_CAPITA = (
+    DatasetSeries.Derived.PER_1.value,
     DatasetSeries.Derived.PER_100000.value,
+    DatasetSeries.Derived.PER_10000.value,
     DatasetSeries.Derived.PER_1000.value,
 )
 
@@ -90,7 +94,53 @@ class UserSeries:
 
     @property
     def is_sum(self) -> bool:
-        return self.record.kind == DatasetSeries.Kind.SUM
+        """Складывается по регионам: поток, запас или сумма."""
+        return semantics.is_additive(self.record.kind)
+
+    @property
+    def described(self) -> dict[str, Any]:
+        """Описание показателя ряда в рецепте версии; у формулы и без описания — пусто."""
+        answers = self.record.version.recipe.get("indicators") or {}
+        found = answers.get(self.record.indicator)
+        return found if isinstance(found, dict) else {}
+
+    @property
+    def value_type(self) -> str:
+        """Тип величины: выбранный человеком, у пересчёта — по пересчёту, иначе уточнённый вид."""
+        record = self.record
+        return semantics.series_type(
+            record.kind,
+            derived=record.derived,
+            name=record.indicator,
+            unit=record.unit,
+            chosen=str(self.described.get("type") or ""),
+        )
+
+    @property
+    def base(self) -> str:
+        """Основа сравнения регионов: из описания, иначе по названию."""
+        base = self.described.get("base")
+        return str(base) if base in semantics.BASES else semantics.guess_base(self.record.indicator)
+
+    def value(self, parts: int = 0) -> semantics.Value:
+        """Что о ряде нужно таблице правил."""
+        record = self.record
+        years = (
+            record.last_year - record.first_year + 1
+            if record.first_year is not None and record.last_year is not None
+            else 0
+        )
+        return semantics.Value(
+            type=self.value_type,
+            base=self.base,
+            is_rubles=semantics.is_rubles(record.title, record.unit),
+            is_currency=semantics.is_currency(record.title, record.unit),
+            monthly=semantics.is_monthly(f"{record.indicator} {record.title}", record.unit),
+            years=years,
+            regions=record.regions_count,
+            parts=parts,
+            is_user=True,
+        )
 
     @property
     def name(self) -> str:
@@ -168,7 +218,7 @@ class UserSeries:
         return self.dataset.source_title or gettext("таблица пользователя")
 
     def source_line(self) -> str:
-        """Реквизит источника: «Данные: …; загружены пользователем; обработка RegionLens»."""
+        """Реквизит источника: «Данные: …, загружены пользователем»."""
         return source_line(self.dataset)
 
     def describe(self) -> FeaturedSeries:
@@ -254,19 +304,55 @@ def option_item(item: UserSeries) -> dict[str, Any]:
         "group_title": group_title(item.dataset),
         # Подписи таблицы — как есть: на английской странице кириллица помечается.
         "lang": source_lang(item.full_title),
+        # Показатель и его часть (разрезы, период) порознь: в перечне расчёта части одного
+        # показателя стоят под ним, как в панели «Мои таблицы». Единица и годы — строкой ниже.
+        "name": item.record.title,
+        "detail": naming.subsection(item.record.slices, item.record.period),
+        "unit": item.record.unit,
+        "first_year": item.record.first_year,
+        "last_year": item.record.last_year,
     }
+
+
+def twin_notes(datasets: Iterable[Dataset]) -> dict[int, str]:
+    """
+    Пометка у таблиц с одинаковым названием — когда загружена: иначе в перечне их не
+    различить. Загруженные в один день различает и время.
+    """
+    by_title: dict[str, list[Dataset]] = defaultdict(list)
+    for dataset in datasets:
+        by_title[" ".join(dataset.title.casefold().split())].append(dataset)
+    notes: dict[int, str] = {}
+    for same in by_title.values():
+        if len(same) < 2:  # noqa: PLR2004 — пометка нужна только двойникам
+            continue
+        days = Counter(timezone.localtime(item.created_at).date() for item in same)
+        for item in same:
+            moment = timezone.localtime(item.created_at)
+            shown = date_format(moment, "d.m.Y" if days[moment.date()] == 1 else "d.m.Y H:i")
+            notes[item.pk] = gettext("загружена %(date)s") % {"date": shown}
+    return notes
 
 
 def option_groups(datasets: list[Dataset]) -> list[dict[str, Any]]:
     """Группы перечня выбора ряда: по набору на группу, ряды — в порядке набора."""
     groups = []
+    notes = twin_notes(datasets)
     for dataset in datasets:
         version = dataset.current_version
         if version is None or version.state != DatasetVersion.State.BUILT:
             continue
         items = [option_item(item) for item in series_of(version)]
         if items:
-            groups.append({"title": group_title(dataset), "items": items})
+            # «table» — название таблицы без «Мои таблицы:»: в перечне расчёта таблицы и так свои.
+            groups.append(
+                {
+                    "title": group_title(dataset),
+                    "table": dataset.title,
+                    "note": notes.get(dataset.pk, ""),
+                    "items": items,
+                }
+            )
     return groups
 
 
@@ -297,13 +383,12 @@ def selected_options(keys: Iterable[str]) -> list[dict[str, Any]]:
 
 
 def source_line(dataset: Dataset) -> str:
-    """Реквизит источника набора для документов и ссылок на расчёт."""
+    """
+    Реквизит источника набора для документов и ссылок на расчёт: без адреса и имени сайта;
+    пометка «загружены пользователем» — по условиям использования.
+    """
     source = dataset.source_title or gettext("таблица пользователя")
-    if dataset.source_url:
-        source = f"{source} ({dataset.source_url})"
-    return gettext("Данные: %(source)s; загружены пользователем; обработка RegionLens.") % {
-        "source": source
-    }
+    return gettext("Данные: %(source)s, загружены пользователем.") % {"source": source}
 
 
 def detail_url(series: Any) -> str:

@@ -406,7 +406,10 @@ button.main-nav__link {
     margin-bottom: var(--space-8);
   }
 
+  /* Под текстом шапки, а не между строкой раздела и заголовком: правило для шапки
+     со строкой раздела сильнее, поэтому названо здесь же. */
   .page-head > .page-head__actions,
+  .page-head:has(> .kicker) > .page-head__actions,
   .page-head > .page-head__aside {
     grid-column: 1;
     grid-row: auto;

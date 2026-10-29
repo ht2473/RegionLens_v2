@@ -49,6 +49,17 @@ function initMenuBar() {
 }
 
 export function init() {
+  // Окно, открытое адресом (выбранный показатель исследования), — сразу окном поверх страницы.
+  document.querySelectorAll("dialog[data-open-on-load]").forEach((dialog) => {
+    if (dialog.id) {
+      dialog.removeAttribute("data-open-on-load");
+      // Без сценария окно открыто в потоке страницы (open); со сценарием — поверх неё.
+      if (dialog.open) {
+        dialog.close();
+      }
+      open(dialog.id);
+    }
+  });
   // «Мимо» — только если и начато по самому окну, а не выделением в поле.
   let pressedOn = null;
   document.addEventListener("pointerdown", (event) => {

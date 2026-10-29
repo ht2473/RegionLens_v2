@@ -9,7 +9,9 @@
   "population": {
     "total": "Y477110005:00",
     "per_capita": "Y477110006:00",
-    "scale": 1000000
+    "scale": 1000000,
+    "end_of_year": "Y477110461:00",
+    "end_of_year_scale": 1000
   },
   "sections": [
     {

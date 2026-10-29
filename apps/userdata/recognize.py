@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import datetime
 import itertools
 import re
 from collections import Counter, defaultdict
@@ -22,7 +23,7 @@ from apps.sources import periods
 from apps.sources.periods import Period, Stamp
 
 from . import cells, matching
-from .ingest import TableInfo, cell_text
+from .ingest import DOCUMENT_KINDS, TableInfo, cell_text
 from .tables import Loaded
 
 # Формы таблиц.
@@ -76,6 +77,19 @@ NUMERIC_SHARE = 0.8
 PERIOD_SHARE = 0.9
 # Рядов в наборе не больше этого; больше — отбор значений разрезов.
 MAX_SERIES = 500
+# Регион в нескольких строках с разными числами у половины регионов, но не меньше чем у пяти:
+# в строках города или районы, или таблица из частей одна под другой. Спрашивается, что это.
+# На корпусе 28.10.2026 между 20 и 79 % повторов не было ни одной таблицы.
+REPEAT_SHARE = 0.5
+REPEAT_MIN_REGIONS = 5
+# Разрез, у которого столько значений встречаются у одного региона, — города или районы.
+PLACE_SHARE = 0.9
+# Ответы на вопрос о повторах: города и районы — карты нет, части таблицы — первое значение.
+REPEATS_PLACES = "places"
+REPEATS_FIRST = "first"
+REPEATS_ANSWERS = (REPEATS_PLACES, REPEATS_FIRST)
+# Столбец муниципальных образований рядом с регионами — подсказка, что в строках города.
+_MUNICIPAL_HEADER = re.compile(r"октмо|муниципальн", re.IGNORECASE)
 # Сколько самых частых значений столбца хватает для его профиля.
 PROFILE_VALUES = 1500
 # Строк начала таблицы достаточно, чтобы найти шапку и роли.
@@ -118,6 +132,44 @@ _NAMED_POINT = re.compile(r"на\s+1\s+([а-я]+)\s+((?:19|20)\d{2})")
 # от него в названии показателя остаётся «оду».
 _NAMED_YEAR = re.compile(r"(?:в|за)\s+((?:19|20)\d{2})\s*г(?:од[уа]?|г\.?|\.)?")
 _CODE_VALUE = re.compile(r"^\d{8}(\d{3})?(\.0)?$")
+# Период в заголовке, подписи, имени листа или файла: «за I квартал 2023 года», «на 1 января
+# 2024 г.», «январь–сентябрь 2025 года», «2023г - 1 квартал», «на 01.07.2026».
+# «1 кв.» — квартал, «1 кв. м» — площадь.
+_QUARTER_WORD = r"([IV]{1,3}|[1-4])\s*(?:-?(?:й|ый))?\s*кв(?:артал[а-я]*|\.(?!\s*м))"
+_CONTEXT_QUARTER = re.compile(rf"{_QUARTER_WORD}\s+((?:19|20)\d{{2}})", re.IGNORECASE)
+_CONTEXT_YEAR_QUARTER = re.compile(
+    rf"((?:19|20)\d{{2}})\s*(?:г\.?|года?)?\s*[-–—,]?\s*{_QUARTER_WORD}", re.IGNORECASE
+)
+_CONTEXT_PHRASES = (
+    re.compile(r"на\s+1\s+[а-я]+\s+(?:19|20)\d{2}(?:\s*г(?:ода?|\.)?)?", re.IGNORECASE),
+    re.compile(r"[а-я]+\s*[-–—]\s*[а-я]+\s+(?:19|20)\d{2}(?:\s*г(?:ода?|\.)?)?", re.IGNORECASE),
+)
+_CONTEXT_DATE = re.compile(r"(?<!\d)(\d{1,2})\.(\d{2})\.((?:19|20)\d{2})(?!\d)")
+_CONTEXT_HALF = re.compile(
+    r"(I{1,2}|[12])\s*(?:-?е)?\s*полугоди[а-я]*\s+((?:19|20)\d{2})", re.IGNORECASE
+)
+# Перед периодом — база сравнения: «в % к январю–сентябрю 2023 г.», «против 2022 г.».
+_COMPARED = re.compile(r"(?:\bк|\bпротив|\bот)[\s|]*$", re.IGNORECASE)
+# В шапке — часть года: такой период по одному году из имени файла не угадать.
+_PART_OF_YEAR = re.compile(
+    r"полугоди|квартал|\bкв\.(?!\s*м)|январ|феврал|март|апрел|\bма[йяе]\b|июн|июл|август|"
+    r"сентябр|октябр|ноябр|декабр|\bна\s+1\s",
+    re.IGNORECASE,
+)
+# Имя файла открытых данных (методические рекомендации, версии 3.0 и 4.0):
+# «7708234640-healthregions-2021_data-20220624T1406-structure-20220624T1406.csv» — ИНН
+# издателя, код набора и даты версий набора и структуры. Год данных в нём не записан: даты —
+# версии, а цифры кода — что угодно («totalnotmarried16th2024th» — возраст 20–24 года).
+_OPEN_DATA_NAME = re.compile(r"(?:^|[-_])data-\d{8}", re.IGNORECASE)
+# Год числом, в том числе с пробелом между разрядами: «2025», «2 025», «2025,0».
+_YEAR_NUMBER = re.compile(r"(?:1\s?9|2\s?0)\d{2}(?:[.,]0+)?")
+# Откуда взят год таблицы без столбца с годом — подпись для человека.
+YEAR_FROM_COLUMNS = "columns"
+YEAR_FROM_TITLE = "title"
+YEAR_FROM_HEADER = "header"
+YEAR_FROM_CAPTION = "caption"
+YEAR_FROM_SHEET = "sheet"
+YEAR_FROM_FILE = "file"
 # Шапка из Word: перенос слова («обрабаты- вающие») и знак сноски у слова («организаций4)»).
 # Союз после дефиса — не перенос: «сельско- и лесохозяйственная»; месяц по любую сторону —
 # тоже: «январь- май» — промежуток, а не слово.
@@ -181,6 +233,12 @@ class Recognition:
     footnotes: dict[int, str] = field(default_factory=dict)
     year: int | None = None
     year_hint: int | None = None
+    # Период года таблицы «показатели в столбцах» (ключ ``periods``), откуда взят год
+    # (``YEAR_FROM_*``) и сам текст; ``year_auto`` — год подставлен без ответа человека.
+    period: str = ""
+    year_from: str = ""
+    year_text: str = ""
+    year_auto: bool = False
     periods: dict[str, Any] = field(default_factory=dict)
     slices: dict[int, dict[str, Any]] = field(default_factory=dict)
     series: int = 0
@@ -194,6 +252,10 @@ class Recognition:
     districts: bool = False
     # Значения разреза строками под регионом-заголовком (в порядке таблицы).
     row_parts: list[str] = field(default_factory=list)
+    # Регионы в нескольких строках с разными числами: сколько их, из скольких и подпись
+    # столбца муниципальных образований, если он есть; ответ человека — ``repeats_answer``.
+    repeats: dict[str, Any] | None = None
+    repeats_answer: str = ""
 
     def role_of(self, role: str) -> list[ColumnInfo]:
         return [column for column in self.columns if column.role == role]
@@ -201,6 +263,11 @@ class Recognition:
     @property
     def value_columns(self) -> list[ColumnInfo]:
         return self.role_of(VALUE)
+
+    @property
+    def needs_repeats(self) -> bool:
+        """Регионы повторяются, а человек не сказал, что в строках: его спрашивают."""
+        return self.repeats is not None and self.repeats_answer not in REPEATS_ANSWERS
 
     @property
     def needs_year(self) -> bool:
@@ -256,7 +323,7 @@ def recognize(
     _apply_overrides(result, recipe)
     if result.form == INDICATORS:
         result.year = recipe.get("year") or None
-        result.year_hint = _year_hint(result, table, file_name)
+        _context_year(result, table, file_name, rows)
     if result.form in {WIDE, INDICATORS} and loaded.complete:
         if not _subtitle_rows(result, rows):
             _sheet_rows(result, rows)
@@ -266,10 +333,15 @@ def recognize(
     result.territories = matching.match_column(result.labels, codes=codes, remembered=remembered)
     _apply_territory_choices(result, recipe)
     result.municipal = _looks_municipal(result)
+    if not recipe.get("roles"):
+        _places_are_not_slices(result, rows)
     _summarize_periods(result, loaded)
     _summarize_slices(result, loaded, recipe)
     _check_values(result, loaded)
     _find_duplicates(result, rows)
+    _find_repeats(result)
+    if result.repeats is not None:
+        result.repeats_answer = str(recipe.get("repeats") or "")
     _find_same_headers(result)
     return result
 
@@ -561,7 +633,7 @@ def _shares(column: ColumnInfo, values: dict[str, int]) -> None:
         status = cells.parse(value, style).status
         if status != cells.EMPTY:
             present += count
-            numeric += count if status in {cells.VALUE, cells.MISSING, cells.HIDDEN} else 0
+            numeric += count if status in cells.NUMERIC_STATUSES else 0
         periods_found += count if _is_period(value) else 0
         codes += count if _CODE_VALUE.match(value) else 0
     column.numeric = numeric / present if present else 0.0
@@ -727,9 +799,16 @@ def _role(column: ColumnInfo, form: str) -> str:  # noqa: PLR0911 — табли
     if column.numeric >= NUMERIC_SHARE:
         # Числа — значения, кроме кодов и номеров: «Валовой региональный продукт» — значение,
         # хотя в названии есть «регион».
-        if hint in {TERRITORY_CODE, INDICATOR_CODE, PERIOD, LEVEL} or _CODE_SUFFIX.search(
-            column.header.lower()
+        if hint in {TERRITORY_CODE, INDICATOR_CODE} or _CODE_SUFFIX.search(column.header.lower()):
+            return SKIP
+        # Слово в названии отнимает у чисел роль значения, только если числа к нему подходят:
+        # «Год» с 2023, «Месяц» с 1–12, «Уровень» с 1–3. «Количество карт на конец периода»
+        # и «Уровень безработицы, %» — значения.
+        if hint == PERIOD and (
+            column.periods >= PERIOD_SHARE / 2 or _small_integers(column) or _years(column)
         ):
+            return SKIP
+        if hint == LEVEL and _small_integers(column):
             return SKIP
         return VALUE if form != WIDE else SKIP
     if hint in {MISSING_REASON, LEVEL, UNIT, INDICATOR, INDICATOR_CODE, NOTE}:
@@ -741,6 +820,13 @@ def _role(column: ColumnInfo, form: str) -> str:  # noqa: PLR0911 — табли
     if 0 < column.distinct <= SLICE_DISTINCT:
         return SLICE if column.distinct > 1 else SKIP
     return SKIP
+
+
+def _years(column: ColumnInfo) -> bool:
+    """«2 025» с пробелом между разрядами — тоже год: так его пишет выгрузка СФР."""
+    total = sum(count for _value, count in column.values)
+    found = sum(count for value, count in column.values if _YEAR_NUMBER.fullmatch(value))
+    return total > 0 and found >= total * PERIOD_SHARE / 2
 
 
 def _small_integers(column: ColumnInfo) -> bool:
@@ -1089,16 +1175,103 @@ def _check_values(result: Recognition, loaded: Loaded) -> None:
     result.text_cells = texts.most_common(10)
 
 
-def _year_hint(result: Recognition, table: TableInfo, file_name: str) -> int | None:
-    """Год для таблицы «показатели в столбцах»: из столбцов с годом, заголовка, листа, файла."""
+def _context_year(
+    result: Recognition, table: TableInfo, file_name: str, rows: list[list[Any]]
+) -> None:
+    """
+    Год и период таблицы «показатели в столбцах» без столбца с годом: из столбцов с годом,
+    заголовка, шапки, подписи таблицы в документе, имени листа, имени файла — по порядку.
+    Ответа человека нет — год подставляется сам (``year_auto``) и виден с источником на
+    шагах. Год только из столбцов или имени файла при части года в шапке («I полугодие»,
+    «январь–сентябрь») не подставляется: период не угадать — спрашивается, как раньше.
+    """
+    header = " | ".join(
+        text
+        for index in result.header_rows
+        if index < len(rows)
+        for text in (cell_text(cell).strip() for cell in rows[index])
+        if text
+    )
     named = Counter(column.stamp["year"] for column in result.value_columns if column.stamp)
+    found: tuple[Stamp, str, str] | None = None
     if named:
-        return named.most_common(1)[0][0]
-    for text in (result.title, table.sheet, PurePosixPath(table.member or file_name).stem):
-        years = _YEAR_IN_TEXT.findall(text or "") or _DATE_DIGITS.findall(text or "")
-        if years:
-            return int(years[-1])
-    return None
+        year = named.most_common(1)[0][0]
+        found = (Stamp(year, periods.ANNUAL), YEAR_FROM_COLUMNS, "")
+    else:
+        # Подпись — только у таблиц документа: у листа и файла имя — это лист или файл.
+        caption = table.name if table.kind in DOCUMENT_KINDS else ""
+        stem = PurePosixPath(table.member or file_name).stem
+        sources = (
+            (YEAR_FROM_TITLE, result.title),
+            (YEAR_FROM_HEADER, header),
+            (YEAR_FROM_CAPTION, caption),
+            (YEAR_FROM_SHEET, table.sheet),
+            (YEAR_FROM_FILE, "" if _OPEN_DATA_NAME.search(stem) else stem),
+        )
+        for source, text in sources:
+            stamp = context_stamp(text or "", whole_year=source != YEAR_FROM_HEADER)
+            if stamp is not None:
+                found = (stamp, source, " ".join((text or "").split())[:120])
+                break
+    if found is None:
+        return
+    stamp, result.year_from, result.year_text = found
+    result.year_hint = stamp.year
+    result.period = stamp.period.key
+    unsure = (
+        result.year_from in {YEAR_FROM_COLUMNS, YEAR_FROM_FILE}
+        and stamp.period == periods.ANNUAL
+        and _PART_OF_YEAR.search(header)
+    )
+    if result.year is None and result.needs_year and not unsure:
+        result.year = stamp.year
+        result.year_auto = True
+
+
+def context_stamp(text: str, *, whole_year: bool = True) -> Stamp | None:  # noqa: PLR0911, PLR0912 — по ветви на запись периода
+    """
+    Период с годом в свободном тексте; база сравнения («в % к январю 2023») не период.
+    Нет периода — год как годовой (``whole_year``; в шапке таблицы год без периода — часто
+    год другого столбца, его не берут); нет года — ``None``.
+    """
+    found = periods.stamp(text)
+    if found is not None and found.year is not None:
+        return found
+    for match in _CONTEXT_QUARTER.finditer(text):
+        if not _compared(text, match):
+            return Stamp(int(match.group(2)), Period(periods.QUARTER, _quarter(match.group(1))))
+    for match in _CONTEXT_YEAR_QUARTER.finditer(text):
+        if not _compared(text, match):
+            return Stamp(int(match.group(1)), Period(periods.QUARTER, _quarter(match.group(2))))
+    for match in _CONTEXT_HALF.finditer(text):
+        if not _compared(text, match):
+            return Stamp(int(match.group(2)), Period(periods.HALF, _quarter(match.group(1))))
+    for pattern in _CONTEXT_PHRASES:
+        for match in pattern.finditer(text):
+            found = periods.stamp(match.group(0))
+            if found is not None and found.year is not None and not _compared(text, match):
+                return found
+    for match in _CONTEXT_DATE.finditer(text):
+        if _compared(text, match):
+            continue
+        found = periods.stamp(
+            datetime.date(int(match.group(3)), int(match.group(2)), int(match.group(1)))
+        )
+        if found is not None:
+            return found
+    if not whole_year:
+        return None
+    years = _YEAR_IN_TEXT.findall(text) or _DATE_DIGITS.findall(text)
+    return Stamp(int(years[-1]), periods.ANNUAL) if years else None
+
+
+def _compared(text: str, match: re.Match[str]) -> bool:
+    """Найденный период — база сравнения: перед ним «к», «против», «от»."""
+    return bool(_COMPARED.search(text[max(0, match.start() - 16) : match.start()]))
+
+
+def _quarter(raw: str) -> int:
+    return periods.ROMAN.get(raw.lower()) or int(raw)
 
 
 def _find_duplicates(result: Recognition, rows: list[list[Any]]) -> None:
@@ -1147,6 +1320,59 @@ def _find_duplicates(result: Recognition, rows: list[list[Any]]) -> None:
                     }
                 )
             seen.setdefault(key, (raw, row.index))
+
+
+def _places_are_not_slices(result: Recognition, rows: list[list[Any]]) -> None:
+    """
+    Разрез, каждое значение которого встречается у одного региона, — города или районы
+    внутри регионов («Белгородская область» и «Губкин», «Старый Оскол»), а не разрез вроде
+    пола или отрасли. Столбец пропускается: повторы регионов спросит ``_find_repeats``.
+    """
+    if result.territories is None or result.form not in {WIDE, INDICATORS}:
+        return
+    codes = result.territories.codes()
+    for column in result.role_of(SLICE):
+        if column.guessed != SLICE:
+            continue
+        owners: dict[str, set[str]] = defaultdict(set)
+        places: dict[str, set[str]] = defaultdict(set)
+        for row in result.rows:
+            code = codes.get(row.label)
+            line = rows[row.index]
+            value = cell_text(line[column.index]).strip() if column.index < len(line) else ""
+            if code and value:
+                owners[value].add(code)
+                places[code].add(value)
+        if not owners:
+            continue
+        alone = sum(1 for regions in owners.values() if len(regions) == 1)
+        several = sum(1 for values in places.values() if len(values) > 1)
+        if alone >= len(owners) * PLACE_SHARE and several >= max(
+            REPEAT_MIN_REGIONS, len(places) * REPEAT_SHARE
+        ):
+            column.role = column.guessed = SKIP
+
+
+def _find_repeats(result: Recognition) -> None:
+    """
+    Половина регионов в нескольких строках с разными числами: моногорода ЕМИСС под своим
+    регионом или таблица из частей («зерновые», ниже «подсолнечник»). Карта взяла бы первое.
+    """
+    if result.territories is None:
+        return
+    regions = {code for code in result.territories.codes().values() if code}
+    repeated = {item["code"] for item in result.duplicates}
+    if len(repeated) < max(REPEAT_MIN_REGIONS, len(regions) * REPEAT_SHARE):
+        return
+    municipal = next(
+        (
+            column.header.split(" | ")[-1]
+            for column in result.columns
+            if column.role != TERRITORY and _MUNICIPAL_HEADER.search(column.header)
+        ),
+        "",
+    )
+    result.repeats = {"regions": len(repeated), "total": len(regions), "municipal": municipal}
 
 
 def _find_same_headers(result: Recognition) -> None:

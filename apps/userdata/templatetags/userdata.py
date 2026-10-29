@@ -7,6 +7,8 @@ from collections.abc import Mapping
 from typing import Any
 
 from django import template
+from django.utils.html import format_html
+from django.utils.safestring import SafeString
 from django.utils.translation import get_language
 
 register = template.Library()
@@ -20,6 +22,27 @@ def source_lang(text: Any) -> str:
     if get_language() != "ru" and _CYRILLIC.search(str(text or "")):
         return "ru"
     return ""
+
+
+@register.filter
+def available_count(actions: Any) -> int:
+    """Пунктов раздела окна без причины отказа — их число стоит у свёрнутого раздела."""
+    return sum(1 for action in actions or () if not action.reason)
+
+
+@register.filter
+def has_key(items: Any, key: Any) -> bool:
+    """Среди записей перечня (``{"key": …}``) есть выбранная — её группа раскрыта."""
+    return bool(key) and any(item.get("key") == key for item in items or ())
+
+
+@register.filter
+def in_source_lang(text: Any) -> SafeString:
+    """Текст таблицы внутри переводимой фразы: с ``lang="ru"`` на странице не по-русски."""
+    lang = source_lang(text)
+    if lang:
+        return format_html('<span lang="{}">{}</span>', lang, text)
+    return format_html("{}", text)
 
 
 @register.filter

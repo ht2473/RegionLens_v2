@@ -61,7 +61,7 @@
   <div class="surface-columns">
     <section aria-labelledby="map-top-title">
       <div class="surface-block__head">
-        <h2 class="surface-block__title" id="map-top-title">{% translate "Больше всего" %}</h2>
+        <h2 class="surface-block__title" id="map-top-title">{% translate "Наибольшие значения" %}</h2>
         {% if leaders_top.0.ratio %}
           <span class="surface-block__note">{% translate "× — отношение к значению по России" %}</span>
         {% endif %}
@@ -71,7 +71,7 @@
 
     <section aria-labelledby="map-bottom-title">
       <div class="surface-block__head">
-        <h2 class="surface-block__title" id="map-bottom-title">{% translate "Меньше всего" %}</h2>
+        <h2 class="surface-block__title" id="map-bottom-title">{% translate "Наименьшие значения" %}</h2>
       </div>
       {% include "maps/partials/_leaders.html" with leaders=leaders_bottom %}
     </section>

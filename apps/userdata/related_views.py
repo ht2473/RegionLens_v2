@@ -30,7 +30,7 @@ class RelatedView(ReadableDatasetMixin, BreadcrumbMixin, TemplateView):
                 title=self.dataset.title,
                 url=reverse("userdata:dataset", args=[self.dataset.public_id]),
             ),
-            Crumb(title=_("С чем связан показатель")),
+            Crumb(title=_("Связь с другими показателями")),
         )
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
@@ -44,7 +44,7 @@ class RelatedView(ReadableDatasetMixin, BreadcrumbMixin, TemplateView):
         wanted = self.request.GET.get("series", "")
         series = next((item for item in choices if item.key == wanted), choices[0])
         context.update(
-            page_title=_("С чем связан показатель"),
+            page_title=_("Связь с другими показателями"),
             dataset=self.dataset,
             choices=choices,
             series=series,

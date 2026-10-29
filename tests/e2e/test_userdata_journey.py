@@ -1,7 +1,8 @@
 """
-Свои данные целиком в браузере: файл → «Что в таблице» → «Показатели» → исследование
-с картой → карта на холсте → страница таблицы; на 1440 и 390 точках, по-английски;
-разметка каждого шага — под аудитом доступности.
+Свои данные целиком в браузере: выбор файла → сразу «Проверка» (одна таблица и вопросов
+нет — шаги «Файл» и «Что в таблице» проходятся сами) → исследование с первыми карточками →
+карта на холсте → страница таблицы; на 1440 и 390 точках, по-английски; разметка каждого
+шага, и пропущенных, — под аудитом доступности.
 """
 
 from __future__ import annotations
@@ -45,21 +46,39 @@ def _walk(page: Page, base: str, language: str = "ru") -> list[str]:
 
     page.goto(f"{base}/{language}/own-data/new/")
     audit()
+    # Выбранный файл уходит сам; одна таблица без вопросов — сразу проверка.
     page.set_input_files("input[type=file]", str(FIXTURE))
-    page.locator("form[data-upload-form] button[type=submit]").click()
-    page.wait_for_url("**/file/")
-    audit()
-    page.locator("button.button--primary[type=submit]").last.click()
-    page.wait_for_url("**/table/")
-    audit()
-    page.locator("button[name=action][value=next]").click()
     page.wait_for_url("**/series/")
     audit()
+    review = page.url
+    for step in ("file", "table"):
+        page.goto(review.replace("/series/", f"/{step}/"))
+        audit()
+    page.goto(review)
     page.locator(".series-form button.button--primary[type=submit]").click()
     page.wait_for_url("**/own-data/studies/**")
     expect(page.locator(".study-card .geo-map, .study-card .tile-map")).to_have_count(1)
+    expect(page.locator(".study-card")).to_have_count(5)
     audit()
+    _calc_dialog(page)
+    audit()
+    page.keyboard.press("Escape")
     return problems
+
+
+def _calc_dialog(page: Page) -> None:
+    """
+    Окно «Расчёт показателя» в исследовании перестраивается от выбора расчёта сразу, без
+    «Проверить»: своя формула — поле формулы, плитка — описание метода.
+    """
+    page.locator("[data-dialog-open=calc-dialog]").first.click()
+    dialog = page.locator("#calc-dialog")
+    dialog.locator("#calc-form").wait_for()
+    dialog.locator("label.calc-pill:has(#calc-op-free)").click()
+    expect(dialog.locator("#calc-expression")).to_be_visible()
+    dialog.locator(".calc-tile").first.click()
+    expect(dialog.locator(".calc-panel__method")).to_be_visible()
+    expect(dialog.locator("#calc-expression")).to_have_count(0)
 
 
 def _open_card(page: Page) -> None:
@@ -77,10 +96,11 @@ def test_journey_desktop(page: Page, own_data: Any) -> None:
     _open_card(page)
     expect(page.locator(".surface-head__private")).to_have_text("видно только вам")
     page.locator(".surface-head__about a").click()
-    # Ссылка ведёт к ряду на странице таблицы: он выбран, рядом — его карта.
+    # Ссылка ведёт к ряду в «Обзоре» таблицы: он выбран, рядом — переход в исследование.
     page.wait_for_url(re.compile(r"/own-data/[^/]+/\?show="))
     problems.extend(page.evaluate(AUDIT_SCRIPT))
-    expect(page.locator(".dataset-preview .geo-map, .dataset-preview .tile-map")).to_be_visible()
+    expect(page.locator(".dataset-detail__actions").first).to_be_visible()
+    expect(page.locator("#dataset-checks")).to_be_attached()
     assert not problems, "\n".join(problems)
 
 
@@ -111,10 +131,27 @@ def test_journey_english(page: Page, own_data: Any) -> None:
     assert not problems, "\n".join(problems)
 
 
+def _series_pick(page: Page) -> None:
+    """
+    Показатель в окне расчёта — перечнем с поиском внутри окна, а не выпадающим списком во
+    весь экран; поиск отбирает на месте, Enter окно не пересчитывает и перечень не сворачивает.
+    """
+    pick = page.locator("#calc-a-pick")
+    expect(pick.locator(".series-pick__title")).to_contain_text(TITLE)
+    pick.locator("summary.series-pick__current").click()
+    search = pick.locator("input[type=search]")
+    search.fill("нет такого")
+    expect(pick.locator(".series-pick__empty")).to_be_visible()
+    search.fill("загрязн")
+    expect(pick.locator("[data-filter-item]:not([hidden])").first).to_contain_text(TITLE)
+    search.press("Enter")
+    expect(pick).to_have_attribute("open", "")
+
+
 def _analysis(page: Page, base: str) -> list[str]:
     """
     После сборки: страница таблицы с выбранным рядом, своя формула с показателем нажатием,
-    предпросмотр и сохранение, «С чем связан показатель», неравенство по ряду таблицы.
+    предпросмотр и сохранение, «Связь с другими показателями», неравенство по ряду таблицы.
     """
     problems: list[str] = []
 
@@ -129,22 +166,30 @@ def _analysis(page: Page, base: str) -> list[str]:
     page.locator(".surface-head__about a").click()
     page.wait_for_url(re.compile(r"/own-data/[^/]+/"))
     audit()
-    expect(page.locator(".dataset-preview").first).to_be_visible()
+    expect(page.locator(".dataset-detail__actions").first).to_be_visible()
     table_url = page.url.split("?")[0]
     page.locator("button[popovertarget=dataset-edit]").click()
-    page.locator("#dataset-edit a[href$='/formula/']").click()
-    page.wait_for_url("**/formula/")
+    # Новый показатель — в окне «Расчёт показателя», как и в исследовании.
+    page.locator("#dataset-edit a[href$='/calc/']").click()
+    page.wait_for_url("**/calc/")
     audit()
-    page.fill("#formula-title", "Вдвое")
-    page.locator(".segmented__option", has_text="Своя формула").click()
-    field = page.locator("#formula-expression")
+    _series_pick(page)
+    audit()
+    page.locator("#calc-a-pick summary.series-pick__current").click()
+    page.locator(".calc-pill", has_text="Своя формула").click()
+    field = page.locator("#calc-expression")
+    expect(field).to_be_visible()
+    # Название показателя — из подсказки после «[».
     field.click()
-    page.locator("[data-formula-chip]", has_text=TITLE).first.click()
+    field.press_sequentially("[")
+    page.locator("[data-calc-suggest] button", has_text=TITLE).first.click()
     expect(field).to_have_value(re.compile(r"^\[.+\]$"))
     field.press("End")
-    field.type(" * 2")
-    # Предпросмотр приходит сам: карта и сколько субъектов посчитано.
-    expect(page.locator("#formula-preview .formula-preview__count")).to_be_visible()
+    field.press_sequentially(" * 2")
+    page.fill("#calc-title", "Вдвое")
+    page.locator("button[name=action][value=check]").click()
+    # Предпросмотр: карта и сколько субъектов посчитано.
+    expect(page.locator(".calc-preview__count")).to_be_visible()
     audit()
     page.locator("button[name=action][value=save]").click()
     page.wait_for_url(re.compile(r"/own-data/[^/]+/\?show="))
@@ -152,7 +197,7 @@ def _analysis(page: Page, base: str) -> list[str]:
     audit()
     expect(page.locator("h1")).to_be_visible()
     page.goto(table_url)
-    key = page.locator(".dataset-view").first.get_attribute("href") or ""
+    key = page.locator("#dataset-views a").first.get_attribute("href") or ""
     page.goto(f"{base}/ru/analytics/inequality/?{key.split('?', 1)[1]}")
     audit()
     expect(page.locator(".tool-subject__title")).to_contain_text(TITLE)

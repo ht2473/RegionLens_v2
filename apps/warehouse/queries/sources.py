@@ -103,6 +103,35 @@ def population_table() -> dict[str, dict[int, float]]:
     return table
 
 
+@by_generation("population_start_table")
+def population_start_table() -> dict[str, dict[int, float]]:
+    """
+    Численность на 1 января по территориям и годам — оценка на конец прошлого года:
+    знаменатель запасов на начало года («вклады на 1 января»). Ряда нет — пусто.
+    """
+    from apps.sources.registry import registry
+
+    book = registry()
+    if not book.population_end:
+        return {}
+    rows = fetch_dicts(
+        """
+        SELECT territory_code, year, value
+        FROM fact_observation
+        WHERE series_key = ? AND value IS NOT NULL
+        ORDER BY 1, 2
+        """,
+        [book.population_end],
+    )
+    table: dict[str, dict[int, float]] = {}
+    for row in rows:
+        year = int(row["year"]) + 1
+        table.setdefault(str(row["territory_code"]), {})[year] = (
+            float(row["value"]) * book.population_end_scale
+        )
+    return table
+
+
 @by_generation("release_editions")
 def release_editions() -> list[dict[str, Any]]:
     """Выпуски источников в складе: издание, дата, число версий значений и годы."""

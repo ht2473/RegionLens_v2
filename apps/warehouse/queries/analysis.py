@@ -10,7 +10,7 @@ from typing import Any
 
 from django.utils.translation import gettext_lazy as _
 
-from apps.catalog.constants import ValueQuality
+from apps.catalog.constants import ValueFlag, ValueQuality
 
 from ..duckdb_client import fetch_dicts, fetch_one, placeholders
 from ..routing import by_key, by_keys
@@ -131,7 +131,10 @@ def region_matrix(series_keys: list[str], year: int) -> dict[str, dict[str, Any]
 @by_key()
 @by_generation("paired_years")
 def paired_years(series_key: str, first_year: int, last_year: int) -> list[dict[str, Any]]:
-    """Получить значения ряда в двух годах для субъектов, у которых есть оба."""
+    """
+    Получить значения ряда в двух годах для субъектов, у которых есть оба. «0,0» своих
+    таблиц (меньше единицы измерения) в темпы не идёт: такого значения в паре нет.
+    """
     return fetch_dicts(
         f"""
         WITH bounds AS (
@@ -141,6 +144,7 @@ def paired_years(series_key: str, first_year: int, last_year: int) -> list[dict[
                 max(value) FILTER (WHERE year = ?) AS end_value
             FROM fact_observation
             WHERE series_key = ? AND {REGION_CONDITION} AND year IN (?, ?)
+              AND flags & {int(ValueFlag.BELOW_UNIT)} = 0
             GROUP BY 1
         )
         SELECT

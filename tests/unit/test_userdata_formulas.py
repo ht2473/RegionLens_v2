@@ -104,7 +104,7 @@ class TestParse:
             ("[Доход] / 2", "подходит к нескольким рядам"),
             ("{u:x:missing} / 2", "Нет показателя с ключом"),
             ("1" * 21 + " + [ДТП]", "Слишком длинное число"),
-            ("[ДТП]" + " + 1" * 200, "длиннее 500 знаков"),
+            ("[ДТП]" + " + 1" * 600, "длиннее 2000 знаков"),
             ("(" * 25 + "[ДТП]" + ")" * 25, "Слишком глубокая вложенность"),
         ],
     )
@@ -183,6 +183,112 @@ class TestEvaluate:
         }
 
 
+# Значения для условий, лет, России и округов: субъекты A и B — в одном округе, C — в другом.
+SERIES: dict[str, list[tuple[str, int, float | None]]] = {
+    "u:t:dtp": [
+        ("RU", 2019, 100.0),
+        ("RU", 2020, 120.0),
+        ("RU", 2021, 150.0),
+        ("RU-A", 2019, 10.0),
+        ("RU-A", 2020, 20.0),
+        ("RU-A", 2021, 30.0),
+        ("RU-B", 2019, 40.0),
+        ("RU-B", 2020, None),
+        ("RU-B", 2021, 60.0),
+        ("RU-C", 2019, 70.0),
+        ("RU-C", 2020, 80.0),
+        ("RU-C", 2021, 90.0),
+    ],
+    "u:t:cars": [
+        ("RU-A", 2021, 1.0),
+        ("RU-B", 2021, 3.0),
+        ("RU-C", 2021, 2.0),
+    ],
+}
+DISTRICTS = {"RU-A": "FD-1", "RU-B": "FD-1", "RU-C": "FD-2"}
+
+
+def _values(text: str) -> dict[tuple[str, int], float]:
+    expression, _keys = formulas.canonical(text, _directory())
+    outcome = formulas.evaluate(formulas.parse(expression), SERIES, TERRITORIES, DISTRICTS)
+    return {(code, year): value for code, year, value in outcome.rows}
+
+
+class TestConditionsAndWindows:
+    """Условия, пропуски, годы, Россия, субъекты и округ, окна по годам."""
+
+    def test_if_with_comparison(self) -> None:
+        found = _values("ЕСЛИ([ДТП] > 50; 1; 0)")
+        assert found[("RU-A", 2021)] == 0
+        assert found[("RU-C", 2021)] == 1
+        # Пропуск в условии — пропуск результата, а не ветка «иначе».
+        assert ("RU-B", 2020) not in found
+
+    def test_and_or_not_isna(self) -> None:
+        found = _values("IF(AND([ДТП] >= 20; [ДТП] <= 60); 1; 0)")
+        assert found[("RU-A", 2020)] == 1 and found[("RU-C", 2021)] == 0
+        assert _values("ЕСЛИ(НЕ([ДТП] <> 30); 5; 6)")[("RU-A", 2021)] == 5
+        assert _values("ЕСЛИ(ЕПУСТО([ДТП]); -1; [ДТП])")[("RU-B", 2020)] == -1
+        assert _values("ЕСЛИ(ИЛИ([ДТП] = 10; [ДТП] = 90); 1; 0)")[("RU-C", 2021)] == 1
+
+    def test_ifna(self) -> None:
+        found = _values("ЕСЛИПУСТО([ДТП]; 0)")
+        assert found[("RU-B", 2020)] == 0 and found[("RU-B", 2021)] == 60
+
+    def test_base_year_and_one_year(self) -> None:
+        found = _values("[ДТП] / ВГОДУ([ДТП]; 2019) * 100")
+        assert found[("RU-A", 2021)] == pytest.approx(300)
+        assert found[("RU-C", 2019)] == pytest.approx(100)
+        change = _values("ЗАГОД([ДТП] - ВГОДУ([ДТП]; 2019); 2021)")
+        assert change == {
+            ("RU", 2021): 50.0,
+            ("RU-A", 2021): 20.0,
+            ("RU-B", 2021): 20.0,
+            ("RU-C", 2021): 20.0,
+        }
+
+    def test_russia_total_mean_stdev(self) -> None:
+        assert _values("[ДТП] - РОССИЯ([ДТП])")[("RU-A", 2021)] == pytest.approx(-120)
+        assert _values("[ДТП] / ИТОГ([ДТП]) * 100")[("RU-A", 2021)] == pytest.approx(30 / 180 * 100)
+        found = _values("([ДТП] - СРЕДНЕЕ([ДТП])) / СТАНДОТКЛОН([ДТП])")
+        assert found[("RU-B", 2021)] == pytest.approx(0)
+        assert found[("RU-C", 2021)] == pytest.approx(1)
+
+    def test_district_means(self) -> None:
+        found = _values("[ДТП] - ОКРУГ([ДТП])")
+        assert found[("RU-A", 2021)] == pytest.approx(-15)
+        assert found[("RU-C", 2021)] == pytest.approx(0)
+        weighted = _values("ВЗВОКРУГ([ДТП]; [Автомобили])")
+        assert weighted[("RU-A", 2021)] == pytest.approx((30 * 1 + 60 * 3) / 4)
+        assert weighted[("RU-C", 2021)] == pytest.approx(90)
+
+    def test_moving_and_cumulative(self) -> None:
+        moving = _values("СКОЛЬЗЯЩЕЕ([ДТП]; 2)")
+        assert moving[("RU-A", 2020)] == pytest.approx(15)
+        assert ("RU-A", 2019) not in moving
+        # Окно с пропуском — без значения.
+        assert ("RU-B", 2020) not in moving and ("RU-B", 2021) not in moving
+        total = _values("НАКОПЛЕННОЕ([ДТП])")
+        assert total[("RU-A", 2021)] == pytest.approx(60)
+        assert total[("RU-B", 2019)] == pytest.approx(40)
+        # После пропуска накопленный итог не продолжается.
+        assert ("RU-B", 2021) not in total
+
+    @pytest.mark.parametrize(
+        ("text", "message"),
+        [
+            ("[ДТП] > 1", "только в условии"),
+            ("ЕСЛИ([ДТП]; 1; 0)", "нужно условие"),
+            ("[ДТП] + И([ДТП] > 1; [ДТП] < 3)", "условие"),
+            ("ВГОДУ([ДТП]; 1700)", "целое число от 1900"),
+            ("СКОЛЬЗЯЩЕЕ([ДТП]; 1)", "целое число от 2"),
+        ],
+    )
+    def test_condition_errors(self, text: str, message: str) -> None:
+        with pytest.raises(FormulaError, match=message):
+            formulas.canonical(text, _directory())
+
+
 class TestFuzz:
     """Перебор случайных строк: разбор либо удаётся, либо отвечает понятной ошибкой."""
 
@@ -193,6 +299,16 @@ class TestFuzz:
         "{u:t:dtp}",
         "AGO(",
         "RANK(",
+        "ЕСЛИ(",
+        "И(",
+        "ВГОДУ(",
+        "РОССИЯ(",
+        "СКОЛЬЗЯЩЕЕ(",
+        ">",
+        "<=",
+        "<>",
+        "=",
+        ";",
         "ROUND(",
         "MAX(",
         "1",
@@ -229,7 +345,7 @@ class TestFuzz:
         def tree(depth: int) -> str:  # noqa: PLR0911 — по ветви на вид узла
             if depth == 0 or generator.random() < 0.3:
                 return generator.choice(leaves)
-            choice = generator.randint(0, 6)
+            choice = generator.randint(0, 9)
             if choice == 0:
                 return f"({tree(depth - 1)} {generator.choice('+-*/^')} {tree(depth - 1)})"
             if choice == 1:
@@ -244,6 +360,14 @@ class TestFuzz:
                 )
             if choice == 5:
                 return f"MAX({tree(depth - 1)}; {tree(depth - 1)})"
+            if choice == 6:
+                return f"ЕСЛИ({tree(depth - 1)} > {tree(depth - 1)}; {tree(depth - 1)}; 0)"
+            if choice == 7:
+                return f"ВГОДУ({tree(depth - 1)}; {generator.choice([2020, 2021])})"
+            if choice == 8:
+                return (
+                    f"{generator.choice(['РОССИЯ', 'ИТОГ', 'СРЕДНЕЕ', 'ОКРУГ'])}({tree(depth - 1)})"
+                )
             return f"ROUND({tree(depth - 1)}, {generator.randint(0, 3)})"
 
         for _ in range(300):

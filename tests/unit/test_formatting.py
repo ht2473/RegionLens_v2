@@ -12,6 +12,7 @@ from apps.core.templatetags.formatting import (
     p_level,
     percent,
     percent_delta,
+    permutation_p,
     position_share,
     quality_label,
     ru_delta,
@@ -102,6 +103,12 @@ class TestSignificanceLevel:
     def test_tiny_level_is_not_zero(self) -> None:
         """Уровень меньше тысячной не превращается в «0,000»."""
         assert p_level(0.00001) == f"<{NBSP}0,001"
+
+    def test_smallest_permutation_level_is_a_bound(self) -> None:
+        """У 999 перестановок наименьший уровень — «≤ 0,001»; больший — как обычно."""
+        assert permutation_p(1 / 1000, 999) == f"≤{NBSP}0,001"
+        assert permutation_p(0.012, 999) == "0,012"
+        assert permutation_p(1 / 10000, 9999) == f"<{NBSP}0,001"
 
     def test_named_level_is_a_whole_record(self) -> None:
         """С обозначением — запись целиком: равенство или неравенство."""

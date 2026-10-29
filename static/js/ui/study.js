@@ -218,11 +218,20 @@ function onMenuSubmit(event) {
   const action = submitter.value;
   const block = form.elements.block.value;
   const card = document.getElementById(`block-${block}`);
-  if (!card || !["resize", "up", "down"].includes(action)) {
+  if (!card || !["resize", "report", "up", "down"].includes(action)) {
     return;
   }
   event.preventDefault();
   form.closest("[popover]")?.hidePopover();
+  if (action === "report") {
+    const off = card.classList.toggle("is-off-report");
+    const label = submitter.querySelector("[data-in-label]");
+    if (label) {
+      label.textContent = off ? label.dataset.outLabel : label.dataset.inLabel;
+    }
+    save({ action: "report", block });
+    return;
+  }
   if (action === "resize") {
     const wide = card.classList.toggle("study-card--wide");
     const label = submitter.querySelector("[data-wide-label]");
@@ -246,15 +255,20 @@ function onMenuSubmit(event) {
   save({ action: "reorder", order: order() });
 }
 
-/** Название и пояснение карточки из меню: сохранить и перестроить карточку. */
+/** Название и пояснение из меню, настройки «Вида»: сохранить и перестроить карточку. */
 function onChangeSubmit(event) {
   const form = event.target.closest("[data-card-change]");
   if (!form || !window.htmx) {
     return;
   }
   event.preventDefault();
-  const values = Object.fromEntries(new FormData(form).entries());
-  delete values.csrfmiddlewaretoken;
+  // Повторённое поле (свои регионы карточки) — списком значений.
+  const values = {};
+  new FormData(form).forEach((value, name) => {
+    if (name !== "csrfmiddlewaretoken") {
+      values[name] = name in values ? [].concat(values[name], value) : value;
+    }
+  });
   form.closest("[popover]")?.hidePopover();
   save(values).then((ok) => {
     const card = document.getElementById(`block-${values.block}`);
@@ -428,11 +442,41 @@ export function init() {
     settleNew();
   });
   // Заметка добавлена: поле очищается, форма сворачивается.
+  // Окно открывается сразу, его содержимое приходит следом: до ответа — «Загружается…»,
+  // а не прежнее содержимое для другого показателя.
+  document.body.addEventListener("htmx:beforeRequest", (event) => {
+    const target = event.detail.target;
+    if (!target?.dataset?.waiting || !event.detail.elt.closest?.("[data-dialog-open]")) {
+      return;
+    }
+    const waiting = document.createElement("p");
+    waiting.className = "study-card__waiting";
+    waiting.textContent = target.dataset.waiting;
+    target.replaceChildren(waiting);
+  });
+  // Показатель, по которому открыто окно, отмечен и в панели.
+  document.body.addEventListener("click", (event) => {
+    const item = event.target.closest?.('.study-series__item[data-dialog-open="choose-dialog"]');
+    if (!item || item.closest(".study-panel")?.querySelector(".study-pick")) {
+      return;
+    }
+    document.querySelectorAll(".study-series__item.is-chosen").forEach((other) => {
+      other.classList.remove("is-chosen");
+      other.removeAttribute("aria-current");
+    });
+    item.classList.add("is-chosen");
+    item.setAttribute("aria-current", "true");
+  });
   document.body.addEventListener("htmx:afterRequest", (event) => {
     const form = event.target.closest?.(".study-add-note__form");
     if (form && event.detail.successful) {
       form.reset();
       form.closest("details")?.removeAttribute("open");
+    }
+    // Карточка из окна «Добавить карточку» встала на поле — окно закрывается.
+    const choose = event.target.closest?.("[data-choose-form]");
+    if (choose && event.detail.successful) {
+      choose.closest("dialog")?.close();
     }
   });
   markMine();

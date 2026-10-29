@@ -305,6 +305,65 @@ class TestSheets:
         assert len(_recognize(rows).duplicates) == 1
 
 
+REGIONS = [
+    "Белгородская область",
+    "Брянская область",
+    "Владимирская область",
+    "Воронежская область",
+    "Ивановская область",
+    "Калужская область",
+]
+
+
+def _towns() -> list[list[Any]]:
+    """Два моногорода на регион, как в выгрузке ЕМИСС: регион и город — в своих столбцах."""
+    rows: list[list[Any]] = [
+        ["Регион", "Классификатор территорий муниципальных образований (ОКТМО)", "2022", "2023"]
+    ]
+    for number, region in enumerate(REGIONS):
+        rows.append([region, f"{14 + number}616153000 Город {number}а", "100", f"{110 + number}"])
+        rows.append([region, f"{14 + number}616156000 Город {number}б", "200", f"{210 + number}"])
+    return rows
+
+
+class TestRepeatedRegions:
+    """Регион в нескольких строках с разными числами у половины регионов — вопрос."""
+
+    def test_towns_under_regions_are_asked(self) -> None:
+        result = _recognize(_towns())
+        assert (
+            _roles(result).get("Классификатор территорий муниципальных образований (ОКТМО)") is None
+        )
+        assert result.repeats == {
+            "regions": 6,
+            "total": 6,
+            "municipal": "Классификатор территорий муниципальных образований (ОКТМО)",
+        }
+        assert result.needs_repeats
+
+    @pytest.mark.parametrize("answer", [recognize.REPEATS_PLACES, recognize.REPEATS_FIRST])
+    def test_answer_is_taken_from_recipe(self, answer: str) -> None:
+        result = _recognize(_towns(), {"repeats": answer})
+        assert result.repeats_answer == answer
+        assert not result.needs_repeats
+
+    def test_real_slice_is_not_a_repeat(self) -> None:
+        rows: list[list[Any]] = [["Регион", "Пол", "2023"]]
+        for number, region in enumerate(REGIONS):
+            rows += [[region, "мужчины", f"{number}1"], [region, "женщины", f"{number}2"]]
+        result = _recognize(rows)
+        assert _roles(result)["Пол"] == SLICE
+        assert result.repeats is None
+
+    def test_few_repeated_regions_only_warn(self) -> None:
+        rows: list[list[Any]] = [["Регион", "2023"]]
+        rows += [[region, f"{number}0"] for number, region in enumerate(REGIONS)]
+        rows.append([REGIONS[0], "99"])
+        result = _recognize(rows)
+        assert len(result.duplicates) == 1
+        assert result.repeats is None
+
+
 class TestIndicatorsInColumns:
     """Показатели в столбцах: год спрашивается, если его нет в названиях столбцов."""
 
@@ -438,8 +497,137 @@ class TestOtherAgencies:
         table = ingest.TableInfo(key="", name="t", kind=ingest.PASTE, size=0)
         loaded = Loaded(rows=rows, complete=True, total=len(rows))
         result = recognize.recognize(loaded, table, file_name="01_03_Loans_corp_20260901.xlsx")
+        # Год из даты в имени файла подставлен без вопроса, с источником.
+        assert not result.needs_year
+        assert (result.year, result.year_auto) == (2026, True)
+        assert result.year_from == recognize.YEAR_FROM_FILE
+
+    @pytest.mark.parametrize(
+        "file_name",
+        [
+            # Даты — версии набора и структуры, цифры кода набора — не год (возраст 20–24).
+            "7708234640-healthregions-2021_data-20220624T1406-structure-20220624T1406.csv",
+            "7708234640-totalnotmarried16th2024th_data-20161226T1712-structure-20161225T1712.csv",
+            "data-20140221-structure-20140221.csv",
+        ],
+    )
+    def test_open_data_file_name_gives_no_year(self, file_name: str) -> None:
+        rows = [
+            ["Регион", "Кредиты", "Задолженность"],
+            ["Москва", "13", "25"],
+            ["Тверская область", "1,2", "0,5"],
+            ["Курская область", "1,1", "0,6"],
+        ]
+        table = ingest.TableInfo(key="", name="t", kind=ingest.PASTE, size=0)
+        loaded = Loaded(rows=rows, complete=True, total=len(rows))
+        result = recognize.recognize(loaded, table, file_name=file_name)
+        assert result.year is None
         assert result.needs_year
-        assert result.year_hint == 2026
+
+    def test_numbers_named_with_period_or_level_are_values(self) -> None:
+        rows = [
+            ["Регион", "Количество карт на конец периода, ед.", "Уровень безработицы, %"],
+            ["Москва", "40211953", "1,3"],
+            ["Тверская область", "1622513", "2,9"],
+            ["Курская область", "1490722", "3,1"],
+        ]
+        roles = _roles(_recognize(rows))
+        assert roles["Количество карт на конец периода, ед."] == VALUE
+        assert roles["Уровень безработицы, %"] == VALUE
+
+    def test_small_numbers_named_month_or_level_are_not_values(self) -> None:
+        rows = [
+            ["Регион", "Месяц", "Уровень", "Значение"],
+            ["Москва", "1", "1", "13"],
+            ["Москва", "2", "2", "12"],
+            ["Тверская область", "1", "1", "5"],
+            ["Курская область", "2", "2", "6"],
+        ]
+        roles = _roles(_recognize(rows))
+        assert roles.get("Уровень") != VALUE
+        assert roles.get("Месяц") != VALUE
+
+    def test_year_with_digit_group_space_is_not_value(self) -> None:
+        # Выгрузка СФР пишет год с пробелом между разрядами: «2 025».
+        rows = [
+            ["Регион", "Численность, чел.", "Год"],
+            ["Москва", "104 749", "2 025"],
+            ["Тверская область", "11 977", "2 025"],
+            ["Курская область", "30 867", "2 025"],
+        ]
+        roles = _roles(_recognize(rows))
+        assert roles["Численность, чел."] == VALUE
+        assert roles.get("Год") != VALUE
+
+    @pytest.mark.parametrize(
+        ("text", "year", "period"),
+        [
+            ("за I квартал 2023 года", 2023, "quarter:1"),
+            ("2023г - 1 квартал", 2023, "quarter:1"),
+            ("Число устройств на 1 января 2024 г.", 2024, "point:1"),
+            ("январь–сентябрь 2025 года", 2025, "ytd:9"),
+            ("по состоянию на 01.07.2026", 2026, "point:7"),
+            ("Ввод жилья 2023, тыс. кв. м", 2023, "year:12"),
+            ("t3_1_2025", 2025, "year:12"),
+        ],
+    )
+    def test_period_in_free_text(self, text: str, year: int, period: str) -> None:
+        found = recognize.context_stamp(text)
+        assert found is not None
+        assert (found.year, found.period.key) == (year, period)
+
+    @pytest.mark.parametrize(
+        ("text", "expected"),
+        [
+            ("Млн рублей | В % к январю-сентябрю 2023 г.", None),
+            ("Млрд рублей | В % к | I полугодию 2025 г. | итогу", None),
+            ("млн рублей | I полугодие 2026 г. в % к I полугодию 2025 г.", (2026, "half:1")),
+            ("Тыс. голов | на 1 июля 2026 г.", (2026, "point:7")),
+        ],
+    )
+    def test_period_in_header_skips_comparison_base(
+        self, text: str, expected: tuple[int, str] | None
+    ) -> None:
+        found = recognize.context_stamp(text, whole_year=False)
+        assert (None if found is None else (found.year, found.period.key)) == expected
+
+    def test_every_year_source_has_a_note(self) -> None:
+        from apps.userdata import describe
+
+        sources = [
+            value for name, value in vars(recognize).items() if name.startswith("YEAR_FROM_")
+        ]
+        for source in sources:
+            assert describe.year_note(2024, "half:1", source, "текст").startswith("Год 2024")
+
+    def test_file_year_is_asked_when_header_has_part_of_year(self) -> None:
+        rows = [
+            ["", "Добыча", "в % к январю–сентябрю прошлого года"],
+            ["Москва", "13", "101,2"],
+            ["Тверская область", "12", "99,5"],
+            ["Курская область", "11", "100,4"],
+        ]
+        table = ingest.TableInfo(key="", name="t", kind=ingest.PASTE, size=0)
+        loaded = Loaded(rows=rows, complete=True, total=len(rows))
+        result = recognize.recognize(loaded, table, file_name="bul_09_2024.xlsx")
+        # Год из имени файла есть, а период части года не разобрать — вопрос, с подсказкой.
+        assert result.needs_year
+        assert result.year_hint == 2024
+
+    def test_sheet_name_gives_year_and_quarter(self) -> None:
+        rows = [
+            ["Регион", "Банкоматы", "Терминалы"],
+            ["Москва", "13", "25"],
+            ["Тверская область", "12", "5"],
+            ["Курская область", "11", "6"],
+        ]
+        table = ingest.TableInfo(
+            key="#2023г - 1 квартал", name="2023г - 1 квартал", kind=ingest.XLSX, size=0
+        )
+        loaded = Loaded(rows=rows, complete=True, total=len(rows))
+        result = recognize.recognize(loaded, table, file_name="t.xlsx")
+        assert (result.year, result.period) == (2023, "quarter:1")
+        assert result.year_from == recognize.YEAR_FROM_SHEET
 
     def test_quiet_rows_are_not_asked(self) -> None:
         from apps.userdata import describe

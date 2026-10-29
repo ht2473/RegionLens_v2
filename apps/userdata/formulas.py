@@ -1,5 +1,6 @@
 """
-Формулы своих данных: «[ДТП] / [Автомобили] * 1000», «AGO([X], 1)», «RANK([X])».
+Формулы своих данных: «[ДТП] / [Автомобили] * 1000», «AGO([X], 1)», «RANK([X])»,
+«ЕСЛИ([X] > 0; [X]; 0)», «[X] / ВГОДУ([X]; 2015) * 100», «[X] - РОССИЯ([X])».
 
 Свой разборщик строит дерево, ссылки на ряды (этой таблицы, других своих таблиц, официальные)
 заменяются ключами, дерево переводится в выражение DuckDB с параметрами и считается
@@ -23,14 +24,19 @@ import duckdb
 import pandas as pd
 from django.utils.translation import gettext as _
 
-# Пределы формулы.
-MAX_LENGTH = 500
+# Пределы формулы. Длина — с запасом на формулы операций каталога: у индекса структурных
+# сдвигов по шести составляющим ключи повторяются по четыре раза.
+MAX_LENGTH = 2000
 MAX_DEPTH = 20
 MAX_REFERENCES = 12
 MAX_LAG = 50
 MAX_DIGITS = 10
 MAX_ARGUMENTS = 8
 MAX_FORMULAS = 50
+# Годы в ВГОДУ и ЗАГОД; окно скользящего среднего.
+FIRST_YEAR = 1900
+LAST_YEAR = 2100
+MAX_WINDOW = 20
 # Числа длиннее этого — опечатка, а не значение.
 MAX_NUMBER_LENGTH = 20
 CODE_ALPHABET = string.ascii_lowercase + string.digits
@@ -50,6 +56,26 @@ FUNCTIONS: dict[str, tuple[int, int]] = {
     "MAX": (2, MAX_ARGUMENTS),
     "AGO": (2, 2),
     "RANK": (1, 1),
+    # Условия и пропуски.
+    "IF": (3, 3),
+    "AND": (2, MAX_ARGUMENTS),
+    "OR": (2, MAX_ARGUMENTS),
+    "NOT": (1, 1),
+    "ISNA": (1, 1),
+    "IFNA": (2, 2),
+    # Год: значение того же региона в заданный год; значение только в заданный год.
+    "AT": (2, 2),
+    "INYEAR": (2, 2),
+    # Тот же год по другим территориям: Россия, все субъекты, федеральный округ региона.
+    "RUSSIA": (1, 1),
+    "TOTAL": (1, 1),
+    "MEAN": (1, 1),
+    "STDEV": (1, 1),
+    "DISTRICT": (1, 1),
+    "WDISTRICT": (2, 2),
+    # По годам того же региона.
+    "MOVING": (2, 2),
+    "CUMSUM": (1, 1),
 }
 ALIASES = {
     "ОКРУГЛ": "ROUND",
@@ -58,8 +84,48 @@ ALIASES = {
     "МАКС": "MAX",
     "РАНГ": "RANK",
     "НАЗАД": "AGO",
+    "ЕСЛИ": "IF",
+    "И": "AND",
+    "ИЛИ": "OR",
+    "НЕ": "NOT",
+    "ЕПУСТО": "ISNA",
+    "ЕСЛИПУСТО": "IFNA",
+    "ВГОДУ": "AT",
+    "ЗАГОД": "INYEAR",
+    "РОССИЯ": "RUSSIA",
+    "ИТОГ": "TOTAL",
+    "СРЕДНЕЕ": "MEAN",
+    "СТАНДОТКЛОН": "STDEV",
+    "ОКРУГ": "DISTRICT",
+    "ВЗВОКРУГ": "WDISTRICT",
+    "СКОЛЬЗЯЩЕЕ": "MOVING",
+    "НАКОПЛЕННОЕ": "CUMSUM",
 }
+# Функции по другим годам и территориям и логика — у них свои ветви сборки выражения.
+WINDOWS = frozenset(
+    {
+        "AT",
+        "INYEAR",
+        "RUSSIA",
+        "TOTAL",
+        "MEAN",
+        "STDEV",
+        "DISTRICT",
+        "WDISTRICT",
+        "MOVING",
+        "CUMSUM",
+    }
+)
+LOGIC = frozenset({"IF", "AND", "OR", "NOT", "ISNA", "IFNA"})
+# Код России среди территорий: РОССИЯ берёт её значение того же года.
+COUNTRY = "RU"
+# Функции-условия: их значение — да или нет; место им — только в условии ЕСЛИ.
+CONDITIONS = frozenset({"AND", "OR", "NOT", "ISNA"})
 OPERATORS = "+-*/^"
+# Скобки и разделители аргументов.
+_PUNCTUATION = {"(": "open", ")": "close", ",": "separator", ";": "separator"}
+# Сравнения — только в условии; «<>» и «!=» — «не равно».
+COMPARISONS = ("<=", ">=", "<>", "!=", "<", ">", "=")
 
 _NAME = re.compile(r"[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*")
 _NUMBER = re.compile(r"\d+(?:[.,]\d+)?(?:[eE][+-]?\d+)?")
@@ -109,12 +175,21 @@ class Call:
     position: int
 
 
-Node = Number | Reference | Unary | Binary | Call
+@dataclass(frozen=True, slots=True)
+class Compare:
+    """Сравнение в условии ЕСЛИ: «[X] > 0»."""
+
+    operator: str
+    left: Node
+    right: Node
+
+
+Node = Number | Reference | Unary | Binary | Call | Compare
 
 
 @dataclass(frozen=True, slots=True)
 class Token:
-    kind: str  # number, reference, key, name, operator, open, close, separator, end
+    kind: str  # number, reference, key, name, operator, compare, open, close, separator, end
     text: str
     position: int
 
@@ -148,19 +223,18 @@ def tokenize(text: str) -> list[Token]:
             tokens.append(Token("name", name.group(), index))
             index = name.end()
             continue
-        if char in OPERATORS:
-            tokens.append(Token("operator", char, index))
-        elif char == "(":
-            tokens.append(Token("open", char, index))
-        elif char == ")":
-            tokens.append(Token("close", char, index))
-        elif char in ",;":
-            tokens.append(Token("separator", char, index))
-        else:
+        comparison = next((item for item in COMPARISONS if text.startswith(item, index)), "")
+        if comparison:
+            tokens.append(Token("compare", comparison, index))
+            index += len(comparison)
+            continue
+        kind = "operator" if char in OPERATORS else _PUNCTUATION.get(char)
+        if kind is None:
             raise FormulaError(
                 _("Непонятный знак «%(char)s» у знака %(position)s.")
                 % {"char": char, "position": index + 1}
             )
+        tokens.append(Token(kind, char, index))
         index += 1
     tokens.append(Token("end", "", len(text)))
     return tokens
@@ -219,6 +293,8 @@ class _Parser:
         token = self.current
         if token.kind == "end":
             return FormulaError(_("Формула обрывается: не хватает числа, показателя или скобки."))
+        if token.kind == "compare":
+            return _misplaced(token)
         return FormulaError(
             _("Неожиданное «%(text)s» у знака %(position)s.")
             % {"text": token.text, "position": token.position + 1}
@@ -284,9 +360,35 @@ class _Parser:
             return self.call()
         raise self.unexpected()
 
-    def call(self) -> Node:
+    def condition(self) -> Node:
+        """Условие: сравнение двух выражений или функция-условие (И, ИЛИ, НЕ, ЕПУСТО)."""
+        token = self.current
+        if (
+            token.kind == "name"
+            and ALIASES.get(token.text.upper(), token.text.upper()) in CONDITIONS
+            and self.tokens[self.index + 1].kind == "open"
+        ):
+            return self.call(condition=True)
+        left = self.expression()
+        if self.current.kind != "compare":
+            raise FormulaError(
+                _(
+                    "У знака %(position)s нужно условие — сравнение, например «[X] > 0», "
+                    "или И, ИЛИ, НЕ, ЕПУСТО."
+                )
+                % {"position": token.position + 1}
+            )
+        operator = self.advance().text
+        return Compare("<>" if operator == "!=" else operator, left, self.expression())
+
+    def call(self, *, condition: bool = False) -> Node:
         token = self.advance()
         name = ALIASES.get(token.text.upper(), token.text.upper())
+        if name in CONDITIONS and not condition:
+            raise FormulaError(
+                _("«%(name)s» — условие: оно ставится первым аргументом ЕСЛИ.")
+                % {"name": token.text}
+            )
         if name not in FUNCTIONS:
             raise FormulaError(
                 _(
@@ -302,11 +404,17 @@ class _Parser:
         self.advance()
         self.enter()
         arguments: list[Node] = []
+
+        def argument() -> Node:
+            # Условие — у И, ИЛИ, НЕ и у первого аргумента ЕСЛИ.
+            wanted = name in {"AND", "OR", "NOT"} or (name == "IF" and not arguments)
+            return self.condition() if wanted else self.expression()
+
         if self.current.kind != "close":
-            arguments.append(self.expression())
+            arguments.append(argument())
             while self.current.kind == "separator":
                 self.advance()
-                arguments.append(self.expression())
+                arguments.append(argument())
         if self.current.kind != "close":
             raise self.unexpected()
         self.advance()
@@ -324,11 +432,26 @@ class _Parser:
             _integer(arguments[1], name, 1, MAX_LAG)
         if name == "ROUND" and len(arguments) > 1:
             _integer(arguments[1], name, 0, MAX_DIGITS)
+        if name in {"AT", "INYEAR"}:
+            _integer(arguments[1], name, FIRST_YEAR, LAST_YEAR)
+        if name == "MOVING":
+            _integer(arguments[1], name, 2, MAX_WINDOW)
         return Call(name, tuple(arguments), token.position)
 
 
+def _misplaced(token: Token) -> FormulaError:
+    """Сравнение вне условия ЕСЛИ."""
+    return FormulaError(
+        _(
+            "Сравнение «%(text)s» у знака %(position)s — только в условии ЕСЛИ: "
+            "ЕСЛИ([X] > 0; [X]; 0)."
+        )
+        % {"text": token.text, "position": token.position + 1}
+    )
+
+
 def _integer(node: Node, name: str, low: int, high: int) -> int:
-    """Целое число в границах — второй аргумент AGO и ROUND."""
+    """Целое число в границах — второй аргумент AGO, ROUND, ВГОДУ, ЗАГОД и СКОЛЬЗЯЩЕЕ."""
     if (
         not isinstance(node, Number)
         or node.value != int(node.value)
@@ -355,7 +478,7 @@ def references(node: Node) -> list[Reference]:
             found.append(item)
         elif isinstance(item, Unary):
             walk(item.operand)
-        elif isinstance(item, Binary):
+        elif isinstance(item, Binary | Compare):
             walk(item.left)
             walk(item.right)
         elif isinstance(item, Call):
@@ -428,7 +551,7 @@ class Directory:
         if len(own) == 1:
             return own[0]
         if len(matches) > 1:
-            places = sorted({item.table or _("официальные ряды") for item in matches})
+            places = sorted({item.table or _("показатели сайта") for item in matches})
             raise FormulaError(
                 _(
                     "«%(name)s» подходит к нескольким рядам (%(places)s). Уточните название "
@@ -518,7 +641,10 @@ class Outcome:
 
 
 class _Compiler:
-    """Дерево → выражение DuckDB: окна (AGO, RANK) и знаменатели — отдельными столбцами."""
+    """
+    Дерево → выражение DuckDB: окна (AGO, RANK, годы, Россия, субъекты, округ) и знаменатели —
+    отдельными столбцами. Россия — константа модуля, текста пользователя в запросе нет.
+    """
 
     def __init__(self, columns: Mapping[str, str]) -> None:
         self.columns = columns
@@ -545,6 +671,10 @@ class _Compiler:
             return f"(-({sql}))", parameters
         if isinstance(node, Binary):
             return self.binary(node)
+        if isinstance(node, Compare):
+            left, left_parameters = self.compile(node.left)
+            right, right_parameters = self.compile(node.right)
+            return f"(({left}) {node.operator} ({right}))", left_parameters + right_parameters
         return self.call(node)
 
     def binary(self, node: Binary) -> tuple[str, list[float]]:
@@ -563,6 +693,10 @@ class _Compiler:
 
     def call(self, node: Call) -> tuple[str, list[float]]:  # noqa: PLR0911 — по ветви на функцию
         name = node.name
+        if name in WINDOWS:
+            return self.window(node)
+        if name in LOGIC:
+            return self.logic(node)
         if name == "AGO":
             argument, parameters = self.compile(node.arguments[0])
             lag = _integer(node.arguments[1], name, 1, MAX_LAG)
@@ -606,22 +740,109 @@ class _Compiler:
             flat + flat,
         )
 
+    def logic(self, node: Call) -> tuple[str, list[float]]:
+        """Условия и пропуски: ЕСЛИ, И, ИЛИ, НЕ, ЕПУСТО, ЕСЛИПУСТО."""
+        compiled = [self.compile(argument) for argument in node.arguments]
+        texts = [sql for sql, _parameters in compiled]
+        flat = [value for _sql, values in compiled for value in values]
+        if node.name == "IF":
+            (condition, first), (yes, second), (no, third) = compiled
+            # Условие не определено (пропуск в сравнении) — и результата нет.
+            return (
+                f"(CASE WHEN ({condition}) IS NULL THEN NULL WHEN ({condition}) "
+                f"THEN ({yes}) ELSE ({no}) END)",
+                first + first + second + third,
+            )
+        if node.name in {"AND", "OR"}:
+            return f"({f' {node.name} '.join(f'({sql})' for sql in texts)})", flat
+        if node.name == "NOT":
+            return f"(NOT ({texts[0]}))", flat
+        if node.name == "ISNA":
+            return f"(({texts[0]}) IS NULL)", flat
+        # IFNA: пропуск заменяется вторым аргументом.
+        return f"coalesce({texts[0]}, {texts[1]})", flat
+
+    def window(self, node: Call) -> tuple[str, list[float]]:  # noqa: PLR0911 — по ветви на функцию
+        """Значения той же территории в другие годы или тот же год по другим территориям."""
+        name = node.name
+        value, parameters = self.compile(node.arguments[0])
+        subject = f"CASE WHEN is_subject THEN ({value}) END"
+        if name == "AT":
+            year = float(_integer(node.arguments[1], name, FIRST_YEAR, LAST_YEAR))
+            sql = f"max(CASE WHEN year = ? THEN ({value}) END) OVER (PARTITION BY territory_code)"
+            return self.stage(sql, [year, *parameters]), []
+        if name == "INYEAR":
+            year = float(_integer(node.arguments[1], name, FIRST_YEAR, LAST_YEAR))
+            return f"(CASE WHEN year = ? THEN ({value}) END)", [year, *parameters]
+        if name == "RUSSIA":
+            sql = (
+                f"max(CASE WHEN territory_code = '{COUNTRY}' THEN ({value}) END) "
+                "OVER (PARTITION BY year)"
+            )
+            return self.stage(sql, parameters), []
+        if name in {"TOTAL", "MEAN", "STDEV"}:
+            function = {"TOTAL": "sum", "MEAN": "avg", "STDEV": "stddev_samp"}[name]
+            return self.stage(f"{function}({subject}) OVER (PARTITION BY year)", parameters), []
+        if name == "DISTRICT":
+            sql = f"avg({subject}) OVER (PARTITION BY year, district)"
+            return self.stage(sql, parameters), []
+        if name == "WDISTRICT":
+            weight, weight_parameters = self.compile(node.arguments[1])
+            area = "OVER (PARTITION BY year, district)"
+            both = f"is_subject AND ({value}) IS NOT NULL AND ({weight}) IS NOT NULL"
+            sql = (
+                f"sum(CASE WHEN {both} THEN ({value}) * ({weight}) END) {area} / "
+                f"nullif(sum(CASE WHEN {both} THEN ({weight}) END) {area}, 0)"
+            )
+            pair = parameters + weight_parameters
+            # Значение и вес — трижды в условиях и произведении, вес — ещё раз в знаменателе.
+            return self.stage(sql, pair * 3 + weight_parameters), []
+        if name == "MOVING":
+            size = _integer(node.arguments[1], name, 2, MAX_WINDOW)
+            frame = (
+                "OVER (PARTITION BY territory_code ORDER BY year "
+                f"ROWS BETWEEN {size - 1} PRECEDING AND CURRENT ROW)"
+            )
+            sql = f"CASE WHEN count({value}) {frame} = {size} THEN avg({value}) {frame} END"
+            return self.stage(sql, parameters + parameters), []
+        # CUMSUM: с первого года со значением; пропуск в середине — дальше значений нет.
+        start = self.stage(
+            f"min(CASE WHEN ({value}) IS NOT NULL THEN year END) "
+            "OVER (PARTITION BY territory_code)",
+            parameters,
+        )
+        frame = "OVER (PARTITION BY territory_code ORDER BY year ROWS UNBOUNDED PRECEDING)"
+        sql = (
+            f"CASE WHEN ({value}) IS NOT NULL AND count({value}) {frame} = year - {start} + 1 "
+            f"THEN sum({value}) {frame} END"
+        )
+        return self.stage(sql, parameters * 3), []
+
 
 def evaluate(
     tree: Node,
     inputs: Mapping[str, Sequence[tuple[str, int, float | None]]],
     territories: Mapping[str, bool],
+    districts: Mapping[str, str] | None = None,
 ) -> Outcome:
     """
     Посчитать формулу по значениям рядов (ключ → территория, год, значение) на всех
-    территориях ``territories`` (код → субъект ли) и годах, где есть значения.
+    территориях ``territories`` (код → субъект ли) и годах, где есть значения;
+    ``districts`` — федеральный округ субъекта для ОКРУГ и ВЗВОКРУГ.
     """
     keys = list(dict.fromkeys(reference.key for reference in references(tree)))
     columns = {key: f"r{index}" for index, key in enumerate(keys)}
     years = sorted({int(year) for rows in inputs.values() for _code, year, _value in rows})
     if not years:
         return Outcome(rows=[])
-    grid = _grid(keys, columns, inputs, territories, range(years[0], years[-1] + 1))
+    grid = _grid(
+        keys,
+        columns,
+        inputs,
+        territories,
+        range(years[0], years[-1] + 1),
+        districts=districts or {},
+    )
     compiler = _Compiler(columns)
     final, final_parameters = compiler.compile(tree)
 
@@ -629,7 +850,7 @@ def evaluate(
     parameters: list[float] = []
     for number, (sql, stage_parameters) in enumerate(compiler.stages, start=1):
         # В тексте — только имена столбцов и функций из модуля; числа — параметрами.
-        parts.append(f"s{number} AS (SELECT *, {sql} FROM s{number - 1})")  # noqa: S608
+        parts.append(f"s{number} AS MATERIALIZED (SELECT *, {sql} FROM s{number - 1})")  # noqa: S608
         parameters += stage_parameters
     zero = (
         " OR ".join(f"{name} = 0" for name in compiler.zero_columns)
@@ -681,14 +902,20 @@ def _grid(
     inputs: Mapping[str, Sequence[tuple[str, int, float | None]]],
     territories: Mapping[str, bool],
     years: range,
+    *,
+    districts: Mapping[str, str],
 ) -> pd.DataFrame:
-    """Все территории × все годы подряд: сдвиг AGO на n строк — это n лет."""
+    """
+    Все территории × все годы подряд: сдвиг AGO на n строк — это n лет; у субъекта —
+    его федеральный округ.
+    """
     codes = sorted(territories)
     frame = pd.DataFrame(
         {
             "territory_code": [code for code in codes for _year in years],
             "year": [year for _code in codes for year in years],
             "is_subject": [territories[code] for code in codes for _year in years],
+            "district": [districts.get(code, "") for code in codes for _year in years],
         }
     )
     position = {

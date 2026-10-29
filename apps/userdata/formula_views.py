@@ -73,13 +73,21 @@ def template_of(expression: str) -> tuple[str, str, str]:
 
 
 class FormulaView(DatasetMixin, BreadcrumbMixin, TemplateView):
-    """Новый показатель по формуле (без кода) или правка существующего."""
+    """
+    Правка показателя по формуле. Новый показатель заводится в окне «Расчёт показателя»:
+    прежний адрес создания туда и ведёт.
+    """
 
     template_name = "userdata/formula.html"
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         self.code = str(kwargs.get("code") or "")
         return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        if not self.code:
+            return redirect("userdata:dataset-calc", public_id=self.dataset.public_id)
+        return super().get(request, *args, **kwargs)
 
     @property
     def version(self) -> DatasetVersion:
@@ -130,10 +138,7 @@ class FormulaView(DatasetMixin, BreadcrumbMixin, TemplateView):
         values.setdefault("kind", DatasetSeries.Kind.RELATIVE.value)
         values.setdefault("polarity", DatasetSeries.Polarity.NEUTRAL.value)
         if values.get("template") not in {code for code, _title in TEMPLATE_CHOICES}:
-            # Новая формула — шаблоном; присланная без шаблона — своей формулой.
-            values["template"] = (
-                "per1000" if existing is None and not values.get("expression") else FREE
-            )
+            values["template"] = FREE
         groups = _insert_groups(self.request, self.dataset.code)
         study = _study(self.request, self.request.GET.get("study") or values.get("study", ""))
         context.update(
@@ -158,6 +163,8 @@ class FormulaView(DatasetMixin, BreadcrumbMixin, TemplateView):
         return context
 
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:  # noqa: ARG002
+        if not self.code:
+            return redirect("userdata:dataset-calc", public_id=self.dataset.public_id)
         action = request.POST.get("action", "check")
         if action == "delete" and self.existing is not None:
             return self.delete(request)
@@ -166,7 +173,7 @@ class FormulaView(DatasetMixin, BreadcrumbMixin, TemplateView):
             for name in ("title", "expression", "unit", "kind", "polarity", "template", "a", "b")
         }
         values["study"] = request.POST.get("study", "")
-        if request.headers.get("HX-Request") and not _preview_allowed(request):
+        if request.headers.get("HX-Request") and not preview_allowed(request):
             return HttpResponse(status=429)
         try:
             checked = formula_store.check(self.dataset, self.from_template(values), code=self.code)
@@ -249,7 +256,7 @@ def _study(request: HttpRequest, public_id: Any) -> Study | None:
     return studies.owned(request).filter(public_id=identifier).first()
 
 
-def _preview_allowed(request: HttpRequest) -> bool:
+def preview_allowed(request: HttpRequest) -> bool:
     """Проверки предпросмотра в пределах частоты: с учётной записи, у гостя — с адреса."""
     limit = settings.USERDATA_FORMULA_PREVIEWS
     if request.user.is_authenticated:
@@ -273,7 +280,9 @@ def preview(checked: formula_store.Check, prefix: str = "fp") -> dict[str, Any]:
     for code, year, value in checked.outcome.rows:
         if flags.get(code) and value is not None:
             by_year.setdefault(int(year), {})[code] = value
-    regions = list(Territory.objects.comparable().only("code", "name_ru", "name_en"))
+    regions = list(
+        Territory.objects.comparable().only("code", "name_ru", "name_en", "abbreviation")
+    )
     if not by_year:
         return {"count": 0, "total": len(regions)}
     year = max(by_year, key=lambda item: (len(by_year[item]), item))
@@ -288,6 +297,7 @@ def preview(checked: formula_store.Check, prefix: str = "fp") -> dict[str, Any]:
             {
                 "code": territory.code,
                 "name": territory.name,
+                "abbreviation": territory.short_code,
                 "title": f"{territory.name} — {ru_number(found)}"
                 if found is not None
                 else f"{territory.name} — {gettext('нет данных')}",

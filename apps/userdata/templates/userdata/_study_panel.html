@@ -1,10 +1,10 @@
 {% load i18n formatting userdata %}
 {% comment %}
-  Панель «Данные» исследования: свои таблицы — показатели и их ряды, ряды сайта; у выбранного
-  ряда — «Что сделать». Выбор ряда меняет только перечень (#study-sources): лист на телефоне
-  остаётся открытым. Ряды перетаскиваются на поле и на карточки (study.js). На телефоне —
-  нижний лист. Выбор ряда сайта — в отдельном окне; перечень рядов грузится, когда окно
-  открыто.
+  Панель «Данные» исследования: только данные — свои таблицы с их показателями и показатели
+  сайта. Нажатие на показатель открывает окно «Добавить карточку»; выбор второго показателя меняет
+  только перечень (#study-sources). Показатели перетаскиваются на поле и на карточки
+  (study.js). На телефоне — нижний лист. Показатель сайта выбирается в отдельном окне;
+  перечень грузится, когда окно открыто.
 {% endcomment %}
 <aside class="filter-rail study-panel" id="study-panel" aria-label="{% translate 'Данные исследования' %}">
   {% translate "Данные" as sheet_title %}
@@ -38,10 +38,12 @@
       {% for source in panel.tables %}
         <details class="study-source" data-filter-group{% if source.open %} open{% endif %}>
           <summary class="study-source__summary">
-            <span class="study-source__title"{% with lang=source.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ source.title }}</span>
-            <span class="study-source__facts numeric" title="{% translate 'рядов' %}">{{ source.series_count }}</span>
+            <span class="study-source__title"{% with lang=source.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ source.title }}{% if source.note %}<span class="study-source__note">{{ source.note }}</span>{% endif %}</span>
             <svg class="study-source__chevron" aria-hidden="true"><use href="#icon-chevron-down"></use></svg>
           </summary>
+          <a class="study-source__open" href="{{ source.url }}">
+            {% translate "Страница таблицы" %}<svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+          </a>
           <ul class="study-series" data-drag-source>
             {% for indicator in source.indicators %}
               {% for entry in indicator.entries %}
@@ -80,7 +82,7 @@
       </form>
       <template id="study-site-picker-content">
         {% translate "Показатель сайта" as select_label %}
-        {% translate "выберите ряд" as select_empty %}
+        {% translate "выберите показатель" as select_empty %}
         {% if panel.picking %}
           {% include "partials/_series_select.html" with select_label=select_label select_empty=select_empty select_name="with" %}
         {% else %}
@@ -88,7 +90,7 @@
         {% endif %}
       </template>
       <noscript>
-        <p class="field__hint">{% translate "Ряд сайта добавляется и со страницы его карты: «Сохранить» → «В исследование»." %}</p>
+        <p class="field__hint">{% translate "Показатель сайта добавляется и со страницы его карты: «Сохранить» → «В исследование»." %}</p>
       </noscript>
     </div>
   </div>

@@ -5,7 +5,9 @@
 данных. Блок — словарь с опознавателем ``id``; вид ``text`` несёт текст заметки, вид
 ``view`` — страницу ``target`` из перечня ``QUERY_TARGETS`` с параметрами, вид ``answer`` —
 ответ на вопрос ``question`` о ряде ``series`` (у связи — и о ряде ``other``). У карточек —
-название, пояснение и ширина.
+название, пояснение и ширина; у таблицы — раскраска ``colour``. Настройки карточки
+(``configure``): свой год ``year`` и свои отмеченные регионы ``territories`` поверх общих,
+у карты — знаки и шкала в параметрах вида и подписи ``labels``.
 
 Каждая правка поля запоминает прежние блоки: «Вернуть» меняет их местами с нынешними.
 Исследование гостя, как его таблица, привязано к ключу сеанса и хранится сутки.
@@ -44,24 +46,36 @@ CANVAS_TARGETS = ("map", "compare", "rankings", "distribution", "table")
 WIDE_TARGETS = ("map", "compare")
 # Вопросы карточек-ответов о ряде; у связи и сравнения — о двух рядах.
 QUESTIONS = (
+    "notable",
     "leaders",
     "mine",
     "change",
     "growth",
     "districts",
-    "heat",
     "multiples",
     "spread",
     "convergence",
     "neighbours",
     "related",
+    "structure",
+    "contributions",
+    "group",
 )
 PAIR_QUESTIONS = ("relation", "comparison")
-# Ответы во всю ширину поля по умолчанию: тепловой таблице, малым графикам и сравнению
-# тесно в половине.
-WIDE_ANSWERS = ("heat", "multiples", "comparison")
+# Вопросы о нескольких рядах — частях: ряд карточки — первая часть, все — в ``parts``.
+PARTS_QUESTIONS = ("structure",)
+# Вопросы, где части по желанию: с ними вклады составляющих вместо вкладов регионов.
+SPLIT_QUESTIONS = ("contributions",)
+# Вопросы о своей группе регионов: в блоке — её опознаватель.
+GROUP_QUESTIONS = ("group",)
+# Частей структуры не больше этого.
+MAX_PARTS = 30
+# Ответы во всю ширину поля по умолчанию: малым графикам и сравнению тесно в половине.
+WIDE_ANSWERS = ("multiples", "comparison", "structure", "contributions", "group")
 # Шкала малых графиков: общая для всех клеток или своя у каждой.
 MULTIPLES_SCALES = ("common", "own")
+# Раскраска таблицы: без цвета или по значению — ступенью общей шкалы клеток.
+TABLE_COLOURS = ("", "value")
 
 
 class StudyError(Exception):
@@ -114,9 +128,10 @@ def create(request: HttpRequest, title: str) -> Study:
 def blocks_of(study: Study, blocks: Iterable[Any] | None = None) -> list[dict[str, Any]]:
     """Блоки исследования по порядку; повреждённые и с неизвестной карточкой пропускаются."""
     found = []
-    for block in study.blocks if blocks is None else blocks:
-        if not isinstance(block, dict) or not block.get("id"):
+    for stored in study.blocks if blocks is None else blocks:
+        if not isinstance(stored, dict) or not stored.get("id"):
             continue
+        block = _legacy(stored)
         kind = block.get("kind")
         if kind == TEXT and isinstance(block.get("text"), str):
             found.append(block)
@@ -130,18 +145,44 @@ def blocks_of(study: Study, blocks: Iterable[Any] | None = None) -> list[dict[st
     return found
 
 
+def _legacy(block: dict[str, Any]) -> dict[str, Any]:
+    """
+    Прежняя карточка «Тепловая таблица» — таблица значений по годам с раскраской: вид
+    заменил отдельный ответ, название, пояснение и ширина сохраняются.
+    """
+    if block.get("kind") != ANSWER or block.get("question") != "heat":
+        return block
+    return {
+        "id": block["id"],
+        "kind": VIEW,
+        "target": "table",
+        "parameters": {"series": block.get("series", "")},
+        "title": block.get("title", ""),
+        "note": block.get("note", ""),
+        "wide": block.get("wide", True),
+        "colour": "value",
+    }
+
+
 def _answer_ok(block: dict[str, Any]) -> bool:
     if not isinstance(block.get("series"), str):
         return False
     if block.get("question") in PAIR_QUESTIONS:
         return isinstance(block.get("other"), str)
+    if block.get("question") in GROUP_QUESTIONS and not isinstance(block.get("group"), str):
+        return False
+    if block.get("question") in PARTS_QUESTIONS or "parts" in block:
+        parts = block.get("parts")
+        if not (isinstance(parts, list) and all(isinstance(key, str) for key in parts)):
+            return False
     return block.get("question") in QUESTIONS
 
 
 def series_keys(block: dict[str, Any]) -> list[str]:
     """Ключи рядов карточки вида или ответа."""
     if block.get("kind") == ANSWER:
-        return [key for key in (block.get("series"), block.get("other")) if key]
+        keys = [key for key in (block.get("series"), block.get("other")) if key]
+        return list(dict.fromkeys([*keys, *(block.get("parts") or [])]))
     if block.get("kind") != VIEW:
         return []
     return parameter_series_keys(block.get("parameters"))
@@ -167,25 +208,53 @@ def _save(study: Study, blocks: list[dict[str, Any]]) -> None:
     study.save(update_fields=["blocks", "undo", "updated_at"])
 
 
-def add_view(study: Study, target: str, query_string: str, *, title: str = "") -> dict[str, Any]:
-    """Поставить карточку вида страницы с её параметрами."""
+def view_block(target: str, query_string: str, *, title: str = "") -> dict[str, Any]:
+    """Карточка вида страницы с её параметрами — ещё не на поле."""
     if target not in QUERY_TARGETS_BY_CODE:
         raise StudyError(_("Этот вид в исследование не ставится."))
-    return _append(
-        study,
-        {
-            "kind": VIEW,
-            "target": target,
-            "parameters": parse_query_string(query_string),
-            "title": title.strip()[:TITLE_LENGTH],
-            "note": "",
-            "wide": target in WIDE_TARGETS,
-        },
-    )
+    return {
+        "kind": VIEW,
+        "target": target,
+        "parameters": parse_query_string(query_string),
+        "title": title.strip()[:TITLE_LENGTH],
+        "note": "",
+        "wide": target in WIDE_TARGETS,
+    }
 
 
-def add_answer(study: Study, question: str, series_key: str, other: str = "") -> dict[str, Any]:
-    """Поставить ответ на вопрос о ряде (у связи — о двух рядах)."""
+def add_view(study: Study, target: str, query_string: str, *, title: str = "") -> dict[str, Any]:
+    """Поставить карточку вида страницы с её параметрами."""
+    return _append(study, view_block(target, query_string, title=title))
+
+
+def add_answer(
+    study: Study,
+    question: str,
+    series_key: str,
+    other: str = "",
+    *,
+    parts: list[str] | None = None,
+    group: str = "",
+) -> dict[str, Any]:
+    """
+    Поставить ответ на вопрос о ряде (у связи — о двух рядах, у структуры — о частях,
+    у группы регионов — о ней).
+    """
+    return _append(study, answer_block(question, series_key, other, parts=parts, group=group))
+
+
+def answer_block(
+    question: str,
+    series_key: str,
+    other: str = "",
+    *,
+    parts: list[str] | None = None,
+    group: str = "",
+) -> dict[str, Any]:
+    """
+    Ответ на вопрос о ряде — ещё не на поле: у связи — о двух рядах, у структуры —
+    о частях (ряд карточки — первая из них), у группы регионов — опознаватель группы.
+    """
     block: dict[str, Any] = {
         "kind": ANSWER,
         "question": question,
@@ -198,9 +267,22 @@ def add_answer(study: Study, question: str, series_key: str, other: str = "") ->
         if not other or other == series_key:
             raise StudyError(_("Нужен второй показатель."))
         block["other"] = other
+    elif question in PARTS_QUESTIONS or (question in SPLIT_QUESTIONS and parts):
+        wanted = list(dict.fromkeys(parts or []))[:MAX_PARTS]
+        if len(wanted) < 2:  # noqa: PLR2004
+            raise StudyError(
+                _("Для структуры нужны хотя бы две части.")
+                if question in PARTS_QUESTIONS
+                else _("Для вкладов составляющих нужны хотя бы две части.")
+            )
+        block["series"], block["parts"] = wanted[0], wanted
+    elif question in GROUP_QUESTIONS:
+        if not group:
+            raise StudyError(_("Выберите группу регионов."))
+        block["group"] = group
     elif question not in QUESTIONS:
         raise StudyError(_("Такой карточки нет."))
-    return _append(study, block)
+    return block
 
 
 def add_text(study: Study, text: str) -> dict[str, Any]:
@@ -209,21 +291,26 @@ def add_text(study: Study, text: str) -> dict[str, Any]:
 
 
 def _append(study: Study, block: dict[str, Any]) -> dict[str, Any]:
+    return append_all(study, [block])[0]
+
+
+def append_all(study: Study, new: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Поставить карточки на поле одной правкой: «Вернуть» убирает их все."""
     blocks = blocks_of(study)
-    if len(blocks) >= settings.USERDATA_STUDY_BLOCKS:
+    if len(blocks) + len(new) > settings.USERDATA_STUDY_BLOCKS:
         raise StudyError(
             _("В исследовании уже %(count)s карточек и заметок — это предел.")
             % {"count": settings.USERDATA_STUDY_BLOCKS}
         )
-    block = {"id": secrets.token_hex(4), **block}
-    _save(study, [*blocks, block])
-    return block
+    made = [{"id": secrets.token_hex(4), **block} for block in new]
+    _save(study, [*blocks, *made])
+    return made
 
 
 def change(study: Study, block_id: str, **fields: str) -> bool:
     """
-    Изменить текст заметки, название или пояснение карточки, шкалу малых графиков; вернуть,
-    нашёлся ли блок.
+    Изменить текст заметки, название или пояснение карточки, шкалу малых графиков,
+    раскраску таблицы; вернуть, нашёлся ли блок.
     """
     limits = {"text": TEXT_LENGTH, "title": TITLE_LENGTH, "note": NOTE_LENGTH}
     blocks = blocks_of(study)
@@ -239,9 +326,121 @@ def change(study: Study, block_id: str, **fields: str) -> bool:
                 and value in MULTIPLES_SCALES
             ):
                 block["scale"] = value
+            elif name == "colour" and block.get("target") == "table" and value in TABLE_COLOURS:
+                block["colour"] = value
         _save(study, blocks)
         return True
     return False
+
+
+# Настройки карточки: знаки карты, подписи, выбор отмеченных регионов.
+MARK_CHOICES = ("auto", "fill", "symbols")
+LABEL_CHOICES = ("", "off")
+REGION_CHOICES = ("common", "none", "own")
+# Год карточки — в пределах этих лет.
+YEARS = range(1900, 2101)
+# Карточки-ответы, которые показывают отмеченный регион; у прочих настройки регионов нет.
+MARKED_QUESTIONS = frozenset({"change", "multiples", "comparison"})
+# Карточки-ответы без года: сближение — за весь период, связь — за свой общий год.
+YEARLESS_QUESTIONS = frozenset({"convergence", "related"})
+
+
+def takes_regions(block: dict[str, Any]) -> bool:
+    """Меняют ли карточку отмеченные регионы."""
+    return block["kind"] == VIEW or block.get("question") in MARKED_QUESTIONS
+
+
+def takes_year(block: dict[str, Any]) -> bool:
+    """Меняет ли карточку год."""
+    return block.get("question") not in YEARLESS_QUESTIONS
+
+
+def configure(study: Study, block_id: str, data: Any) -> bool:
+    """
+    Настройки карточки одной формой: вид (у вида холста), год, отмеченные регионы, способ
+    изображения, разбиение и подписи карты, цветовая шкала таблицы, ось малых графиков.
+    Неизвестное и неуместное для вида карточки отбрасывается. ``data`` — поля формы
+    (``QueryDict``); вернуть, нашёлся ли блок.
+    """
+    blocks = blocks_of(study)
+    block = next((item for item in blocks if item["id"] == block_id), None)
+    if block is None or block["kind"] == TEXT:
+        return False
+    if block["kind"] == VIEW and block["target"] in CANVAS_TARGETS:
+        target = data.get("target", block["target"])
+        # Ширина остаётся выбранной: поле не перестраивается от смены вида карточки.
+        if target in CANVAS_TARGETS:
+            block["target"] = target
+    if "year" in data and takes_year(block):
+        raw = str(data.get("year", ""))
+        if raw.isdigit() and int(raw) in YEARS:
+            block["year"] = int(raw)
+        else:
+            block.pop("year", None)
+    if data.get("regions") in REGION_CHOICES and takes_regions(block):
+        _configure_regions(block, data.get("regions"), data.getlist("territory"))
+    if block["kind"] == VIEW:
+        block["parameters"] = _view_parameters(block, data)
+    choices = (
+        ("labels", block.get("target") == "map", LABEL_CHOICES),
+        ("colour", block.get("target") == "table", TABLE_COLOURS),
+        ("scale", block.get("question") == "multiples", MULTIPLES_SCALES),
+    )
+    for name, fits, allowed in choices:
+        if fits and data.get(name) in allowed:
+            block[name] = data.get(name)
+    _save(study, blocks)
+    return True
+
+
+def _view_parameters(block: dict[str, Any], data: Any) -> dict[str, Any]:
+    """Знаки и шкала — параметры вида: с ними же открывается вид целиком."""
+    from apps.maps.classification import MAX_CLASSES, METHODS, MIN_CLASSES
+
+    parameters = dict(block.get("parameters") or {})
+    target = block["target"]
+    if target == "map" and data.get("marks") in MARK_CHOICES:
+        if data.get("marks") == "auto":
+            parameters.pop("marks", None)
+        else:
+            parameters["marks"] = data.get("marks")
+    if target in {"map", "distribution"}:
+        if data.get("method") in METHODS:
+            parameters["method"] = data.get("method")
+        classes = str(data.get("classes", ""))
+        if classes.isdigit() and MIN_CLASSES <= int(classes) <= MAX_CLASSES:
+            parameters["classes"] = classes
+    return parameters
+
+
+def _configure_regions(block: dict[str, Any], choice: str, codes: list[str]) -> None:
+    """Отмеченные регионы карточки: как у исследования, никаких или свои (не больше предела)."""
+    from apps.catalog.models import Territory
+    from apps.catalog.selectors import MAX_COMPARE
+
+    if choice == "common":
+        block.pop("territories", None)
+        return
+    if choice == "none":
+        block["territories"] = []
+        return
+    wanted = list(dict.fromkeys(str(code) for code in codes if code))
+    known = set(
+        Territory.objects.comparable().filter(code__in=wanted).values_list("code", flat=True)
+    )
+    block["territories"] = [code for code in wanted if code in known][:MAX_COMPARE]
+
+
+def card_common(
+    block: dict[str, Any], year: int | None, territories: list[str]
+) -> tuple[int | None, list[str]]:
+    """Год и отмеченные регионы карточки: свои, если заданы в её настройках, иначе общие."""
+    own_year = block.get("year")
+    own_regions = block.get("territories")
+    return (
+        own_year if isinstance(own_year, int) else year,
+        list(own_regions) if isinstance(own_regions, list) else territories,
+    )
 
 
 def move(study: Study, block_id: str, step: int) -> None:
@@ -265,6 +464,19 @@ def reorder(study: Study, order: list[str]) -> None:
     arranged = placed + rest
     if [block["id"] for block in arranged] != [block["id"] for block in blocks]:
         _save(study, arranged)
+
+
+def toggle_report(study: Study, block_id: str) -> None:
+    """Карточка или заметка в отчёте (Word, Excel, печать) или нет; по умолчанию — в отчёте."""
+    blocks = blocks_of(study)
+    for block in blocks:
+        if block["id"] == block_id:
+            if block.get("report", True):
+                block["report"] = False
+            else:
+                block.pop("report", None)
+            _save(study, blocks)
+            return
 
 
 def resize(study: Study, block_id: str) -> None:

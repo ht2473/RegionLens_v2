@@ -21,9 +21,9 @@
 
   <header class="page-head">
     <p class="kicker"><span{% with lang=dataset.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.title }}</span> · <span class="own-private">{% visibility dataset %}</span></p>
-    <h1 class="page-head__title">{% if existing %}{% translate "Показатель по формуле" %}{% else %}{% translate "Новый показатель по формуле" %}{% endif %}</h1>
+    <h1 class="page-head__title">{% translate "Показатель по формуле" %}</h1>
     <p class="page-head__lead">
-      {% translate "Из показателей этой и других ваших таблиц и официальных рядов сайта. Пересчитывается при каждой сборке таблицы." %}
+      {% translate "Из показателей ваших таблиц и показателей сайта. Считается заново, когда таблица обновляется." %}
     </p>
   </header>
 
@@ -168,7 +168,7 @@
           {% endfor %}
         </fieldset>
         <div class="field">
-          <label class="field__label" for="formula-polarity">{% translate "Направленность" %}</label>
+          <label class="field__label" for="formula-polarity">{% translate "Как оценивать рост" %}</label>
           <select class="select" id="formula-polarity" name="polarity">
             {% for value, label in polarities %}
               <option value="{{ value }}"{% if values.polarity == value %} selected{% endif %}>{{ label }}</option>
@@ -220,7 +220,7 @@
             <li><span{% with lang=title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ title }}</span> — <span class="text-secondary"{% with lang=source|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ source }}</span></li>
           {% endfor %}
         </ul>
-        {% for warning in checked.outcome.warnings %}
+        {% for warning in checked.warnings %}
           <div class="callout callout--warning">
             <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
             <div>{{ warning }}</div>

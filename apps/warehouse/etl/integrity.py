@@ -66,8 +66,9 @@ def project_references() -> dict[str, dict[str, str]]:
         found["status"][item["key"]] = item["status"]
 
     population = _read("source_series.json")["population"]
-    for name in ("total", "per_capita"):
-        found["population"][population[name]] = name
+    for name in ("total", "per_capita", "end_of_year"):
+        if population.get(name):
+            found["population"][population[name]] = name
 
     for key in (BASKET_INCOME, BASKET_WAGE, BASKET_COST):
         found["passport"][key] = key

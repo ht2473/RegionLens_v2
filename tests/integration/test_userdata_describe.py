@@ -57,7 +57,13 @@ class TestRecognitionPage:
 
     def test_long_table(self, client: Client) -> None:
         dataset = _chosen(client, "environment.csv", (FIXTURES / "environment.csv").read_bytes())
-        page = client.get(reverse("userdata:table", args=[dataset.public_id]))
+        url = reverse("userdata:table", args=[dataset.public_id])
+        # Вопросов нет: прочитанное сохраняется само, человек — сразу на проверке.
+        first = client.get(url)
+        assert first["Location"] == reverse("userdata:series", args=[dataset.public_id])
+        assert _version(dataset).recipe["form"] == recognize.LONG
+        # Вернувшись поправить разметку, он видит шаг целиком.
+        page = client.get(url)
         assert page.status_code == 200
         text = page.text
         assert "Длинная таблица" in text
@@ -71,6 +77,30 @@ class TestRecognitionPage:
         assert "role-table" in text
         assert text.count('<td data-role="territory"') == 8
         assert "Нужно ответить" not in text
+
+    def test_single_table_skips_the_choice(self, client: Client) -> None:
+        """
+        В файле одна таблица — шаг «Файл» выбирает её сам; вставка — тоже, а к продолжению
+        таблицы возвращаются на шаг по ссылке.
+        """
+        content = (FIXTURES / "environment.csv").read_bytes()
+        client.post(
+            reverse("userdata:upload"),
+            {"action": "upload", "file": SimpleUploadedFile("environment.csv", content)},
+        )
+        dataset = Dataset.objects.get()
+        response = client.get(reverse("userdata:file", args=[dataset.public_id]))
+        assert response["Location"] == reverse("userdata:table", args=[dataset.public_id])
+        assert _version(dataset).recipe["table"]
+        # Таблица выбрана — к шагу можно вернуться.
+        assert client.get(reverse("userdata:file", args=[dataset.public_id])).status_code == 200
+
+        first = (FIXTURES / "regions_population_part1.txt").read_text(encoding="utf-8")
+        client.post(reverse("userdata:upload"), {"action": "paste", "text": first})
+        pasted = Dataset.objects.latest("created_at")
+        skipped = client.get(reverse("userdata:file", args=[pasted.public_id]))
+        assert skipped["Location"] == reverse("userdata:table", args=[pasted.public_id])
+        assert client.get(reverse("userdata:file", args=[pasted.public_id])).status_code == 200
 
     def test_years_in_columns_with_nested_question(self, client: Client) -> None:
         dataset = _chosen(client, "crime_wide.csv", (FIXTURES / "crime_wide.csv").read_bytes())
@@ -94,7 +124,9 @@ class TestRecognitionPage:
         url = reverse("userdata:file", args=[dataset.public_id])
         client.post(url, {"action": "append", "text": second})
         client.post(url, {"action": "choose", "table": "", "encoding": ""})
-        text = client.get(reverse("userdata:table", args=[dataset.public_id])).text
+        table = reverse("userdata:table", args=[dataset.public_id])
+        assert client.get(table).status_code == 302
+        text = client.get(table).text
         assert "85 из 85" in text
         assert "2010–2023" in text
 
@@ -146,14 +178,35 @@ class TestAnswers:
             "Регион;Население;ВРП\nМосква;13;25\n"
             "Тверская область;1,2;0,5\nКурская область;1,1;0,6\n"
         )
-        dataset = _chosen(client, "показатели_2023.csv", rows.encode("utf-8"))
+        dataset = _chosen(client, "показатели.csv", rows.encode("utf-8"))
         url = reverse("userdata:table", args=[dataset.public_id])
         text = client.get(url).text
         assert "Годы в таблице не найдены" in text
-        assert 'value="2023"' in text
         client.post(url, {"year": "2023"})
         assert _version(dataset).recipe["year"] == 2023
         assert "Годы в таблице не найдены" not in client.get(url).text
+
+    def test_year_from_file_name_is_shown_not_asked(self, client: Client) -> None:
+        rows = (
+            "Регион;Население;ВРП\nМосква;13;25\n"
+            "Тверская область;1,2;0,5\nКурская область;1,1;0,6\n"
+        )
+        dataset = _chosen(client, "показатели_2023.csv", rows.encode("utf-8"))
+        url = reverse("userdata:table", args=[dataset.public_id])
+        # Спросить не о чем: шаг сам переходит к проверке, год там — с источником.
+        response = client.get(url)
+        assert response.status_code == 302
+        note = "Год 2023 взят из имени файла «показатели_2023»."
+        series_page = client.get(reverse("userdata:series", args=[dataset.public_id])).text
+        assert note in series_page
+        text = client.get(url).text
+        assert "Годы в таблице не найдены" not in text
+        assert note in text
+        # Подставленный год не становится ответом человека; исправленный — становится.
+        client.post(url, {"year": "2023", "year-auto": "2023"})
+        assert _version(dataset).recipe["year"] is None
+        client.post(url, {"year": "2022", "year-auto": "2023"})
+        assert _version(dataset).recipe["year"] == 2022
 
     def test_foreign_labels_and_choices_are_ignored(self, client: Client) -> None:
         dataset = _chosen(client, "environment.csv", (FIXTURES / "environment.csv").read_bytes())

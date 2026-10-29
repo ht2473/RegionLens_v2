@@ -56,11 +56,11 @@
     },
     "own-data": {
       "title": "Your own data",
-      "summary": "The laboratory brings a user’s table to the form “territory × year × indicator” and computes the same on it as on the site’s series.",
-      "formula": "per 100,000 inhabitants: <math display=\"block\"><mfrac><mi>x</mi><mi>P</mi></mfrac><mo>×</mo><mn>100,000</mn></math>",
-      "limitations": "Rows outside the directory are kept in the table but do not reach the map or the ranking.\nWith fewer than twenty regions, inequality and spatial analysis are not computed.\nTables of municipal districts, cities and federal districts are not parsed, and a table from Word or PDF is copied into the paste field.",
-      "body": "Territory labels are matched against the site’s directory, and the site asks about uncertain ones. Per-inhabitant and per-km² series are offered for regional sums. P is the average annual population. A recalculation is kept as a separate series marked “RegionLens calculation”. How each action works is explained next to it in the laboratory.",
-      "source": "5118348a4d45408cf53f23f68d9ffb0bcb71c7a4"
+      "summary": "Your own table is brought to the form “region × year × indicator”, and the site builds the same on it as on its own indicators.",
+      "formula": "per 100,000 inhabitants: <math display=\"block\"><mfrac><mi>x</mi><mi>P</mi></mfrac><mo>×</mo><mn>100,000</mn></math>\nshare of a part: <math display=\"block\"><msub><mi>s</mi><mi>j</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>x</mi><mi>j</mi></msub></mrow><mrow><munder><mo>∑</mo><mi>k</mi></munder><msub><mi>x</mi><mi>k</mi></msub></mrow></mfrac><mo>×</mo><mn>100</mn><mo>%</mo></math>\ncontribution of a region: <math display=\"block\"><mi>Δ</mi><msub><mi>x</mi><mi>i</mi></msub><mo>=</mo><msub><mi>x</mi><mrow><mi>i</mi><mo>,</mo><mi>t</mi></mrow></msub><mo>−</mo><msub><mi>x</mi><mrow><mi>i</mi><mo>,</mo><mi>s</mi></mrow></msub></math>\ngroup average: <math display=\"block\"><msub><mover><mi>x</mi><mo>¯</mo></mover><mi>G</mi></msub><mo>=</mo><mfrac><mrow><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>P</mi><mi>i</mi></msub><msub><mi>x</mi><mi>i</mi></msub></mrow><mrow><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>P</mi><mi>i</mi></msub></mrow></mfrac></math>\nsymbol radius: <math display=\"block\"><msub><mi>r</mi><mi>i</mi></msub><mo>=</mo><msub><mi>r</mi><mi>max</mi></msub><msqrt><mfrac><mrow><msub><mi>x</mi><mi>i</mi></msub></mrow><mrow><msub><mi>x</mi><mi>max</mi></msub></mrow></mfrac></msqrt></math>",
+      "limitations": "Contributions add up only for sums: for a relative value their total does not equal the change.\nA region without a value in one of the two years is left out of the change breakdown.\nWith fewer than twenty regions, inequality, convergence and neighbourhood of regions are not computed.",
+      "body": "Region labels are matched against the site’s directory, and the site asks about uncertain ones. P is the average annual population of the year. Structure is the shares of parts of one sum, adding up to 100% in a region. A region’s contribution is the difference between its values in the end and start years, and the contributions add up to the change in the total. For a group of regions a sum is added up, while a relative value is averaged with population weights. On a symbol map the circle area is proportional to the value. How each recalculation works is explained next to it in the “Indicator calculation” window.",
+      "source": "0b189e4a4c0ad164a37ea91537baf61904298639"
     },
     "map-classes": {
       "title": "Scale classes on the map",
@@ -163,8 +163,24 @@
       "summary": "The global Moran’s index shows whether neighbouring regions are similar, and the local indices (LISA) show where the clusters and outliers are.",
       "formula": "<math display=\"block\"><mi>I</mi><mo>=</mo><mfrac><mrow><mi>n</mi></mrow><mrow><munder><mo>∑</mo><mi>i</mi></munder><munder><mo>∑</mo><mi>j</mi></munder><msub><mi>w</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow></mfrac><mo>·</mo><mfrac><mrow><munder><mo>∑</mo><mi>i</mi></munder><munder><mo>∑</mo><mi>j</mi></munder><msub><mi>w</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><mover><mi>x</mi><mo>¯</mo></mover><mo>)</mo><mo>(</mo><msub><mi>x</mi><mi>j</mi></msub><mo>−</mo><mover><mi>x</mi><mo>¯</mo></mover><mo>)</mo></mrow><mrow><munder><mo>∑</mo><mi>i</mi></munder><msup><mrow><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><mover><mi>x</mi><mo>¯</mo></mover><mo>)</mo></mrow><mn>2</mn></msup></mrow></mfrac></math>",
       "limitations": "The conclusion depends on the neighbourhood scheme, and one that holds under all three is more reliable.\nThe global index describes the country as a whole, not a single region.",
-      "body": "Neighbours w are set by one of three schemes. By default it is a common border together with bridges and sea links. You can take only the land border or the five nearest regions by distance. Under the land scheme the Kaliningrad and Sakhalin oblasts have no neighbours and do not enter the calculation.\n\nSignificance is tested by permutations: the values are randomly reassigned to regions 999 times. The smallest attainable significance level is 0.001. Reopening gives the same result.",
-      "source": "8a25a2f9f9e11c475cd4bd6dedd9779ae2ca1245"
+      "body": "Neighbours w are set by one of three schemes. By default it is a common border together with bridges and sea links. You can take only the land border or the five nearest regions by distance. Under the land scheme the Kaliningrad and Sakhalin oblasts have no neighbours and do not enter the calculation.\n\nSignificance is tested by permutations: the values are randomly reassigned to regions. For the global index this is done 999 times, so the smallest level is written as “≤ 0.001”. For local indices it is done 9,999 times. A local index is tested for every region. Without a correction about four regions out of 85 turn out significant by chance. So the Benjamini–Hochberg correction applies by default. Reopening gives the same result.",
+      "source": "62948219f0c64ac69b195d00471a9558199af334"
+    },
+    "value-types": {
+      "title": "Value type and the limits of calculations",
+      "summary": "The value type decides which calculations and conclusions are valid for it.",
+      "formula": "",
+      "limitations": "The type is guessed from the name and the unit, and a wrong guess can be fixed in the indicator’s “Edit”.\nAn invalid calculation is not hidden: next to it the site says why it does not fit.",
+      "body": "A flow is a total for a period: housing completed in a year, deaths in a year. Flows of adjacent years add up. A stock is a total at a date: population on 1 January, deposits at the end of the year. Stocks at different dates do not add up. A relative value is a share, an average or a value per inhabitant. It is not summed and not divided by population. An index already shows the change against another period, so no growth rate is computed from it.\n\nA total depends on the size of the region. A large region has more people, more money and more events. So the gap, convergence, neighbourhood and correlation of a total are computed per inhabitant. The site builds that recalculation first.",
+      "source": "a84b3d322c96de2064f4052b125a57b85f731149"
+    },
+    "own-data-signs": {
+      "title": "Dashes, hidden values and zeros in your own tables",
+      "summary": "Source signs are read by their meaning, and suspicious zeros are shown before the build.",
+      "formula": "",
+      "limitations": "For an unfamiliar source the site asks what a dash means: in yearbooks the notes specify it.\nInput errors are not searched for by sharp jumps: on the corpus the rule mostly flagged real events.",
+      "body": "In Rosstat tables a dash “–” means “the phenomenon is absent”. The site puts a zero with this mark. An ellipsis “…” and the sign “x” mean “no data”, a missing value. The sign “K” means “hidden for confidentiality”. Such a value is taken into account in the bounds of inequality measures. The value “0.0” is below the unit of measurement. It is left out of growth rates and logarithms.\n\nA placeholder zero is a zero put in place of a missing value. Its signs are a zero between two ordinary years of a region, more than 30% zeros, a zero for all regions in a year. An ordinary year is not below the indicator’s median. The site shows such zeros before the build and offers to turn them into missing values.\n\nThe site does not treat a sharp jump between years as an error. On the 2,900 corpus tables the jump rule flagged 505 of 783 bulletin tables, almost all of them real events.",
+      "source": "30fdc020ece529d8e11b6fa25f7e7833fe8367a8"
     }
   },
   "GlossaryTerm": {
@@ -234,9 +250,9 @@
     "coefficient-of-variation": {
       "term": "Coefficient of variation",
       "short_definition": "The ratio of the standard deviation to the mean: the spread as a share of the average level.",
-      "definition": "The simplest measure of differences between regions. It is dimensionless and therefore comparable between indicators in different units. It is undefined at a zero or negative mean.",
+      "definition": "The simplest measure of differences between regions. It is dimensionless and therefore comparable between indicators in different units. It is undefined at a zero or negative mean. The standard deviation is the sample one, with the divisor n − 1.",
       "synonyms": "CV, coefficient of variation",
-      "source": "b9536ce42aa5842693e2811300d8ad7ca98854bc"
+      "source": "1df492249781eccefc1eaac32468bfcad0aa808d"
     },
     "decile-ratio": {
       "term": "Decile ratio",
@@ -268,10 +284,10 @@
     },
     "quantile": {
       "term": "Quantile",
-      "short_definition": "A value that divides ordered values in a given proportion.",
-      "definition": "Quartiles divide regions into four parts of equal size, deciles into ten. The median divides them in half. On the map there are five quantile classes by default.",
+      "short_definition": "A boundary below which a given share of ordered values lies.",
+      "definition": "Quartiles divide regions into four parts of equal size, deciles into ten. The median divides them in half. On the map there are five quantile classes by default, so each colour holds the same number of regions.",
       "synonyms": "quartile, decile, quintile, quantile",
-      "source": "1d122efa71206652bbfabd7ee6f6066a2609b8b4"
+      "source": "4ba5de66e0b1e0e2c562b6b2cab5e87af52713bb"
     },
     "median": {
       "term": "Median",
@@ -366,10 +382,10 @@
     },
     "series": {
       "term": "Series",
-      "short_definition": "A pair “indicator + breakdown”, the unit of analysis on the site.",
-      "definition": "One indicator is published in several breakdowns: “total”, “urban population”, “rural population”. Values of different breakdowns are not compared with each other. Besides the dataset series, RegionLens builds series from Bank of Russia and Federal Tax Service data.",
-      "synonyms": "time series, indicator breakdown",
-      "source": "8419094e9cd4f563bc0e627ad2194197563ed91e"
+      "short_definition": "Values of one indicator in one breakdown by region and year.",
+      "definition": "An indicator is published in several breakdowns: “total”, “urban population”, “rural population”. Each breakdown is a separate series, and their values are not compared with each other. In your own tables a series is called a part of an indicator.",
+      "synonyms": "time series, indicator breakdown, part of an indicator",
+      "source": "9eb44bf611e61647585ca6a72d6f10f78ea02618"
     },
     "edition": {
       "term": "Issue of a compendium",
@@ -507,9 +523,100 @@
     "map-class": {
       "term": "Scale class",
       "short_definition": "A range of values coloured the same on the map.",
-      "definition": "A region’s colour means the class its value fell into. The class boundaries and the method of division are shown in the legend. The same data look different with quantiles and equal intervals.",
+      "definition": "A region’s colour means the class its value fell into. The title above the legend says how the colours were divided, and the class boundaries are shown in it. The same colour means the same class, not the same value.",
       "synonyms": "choropleth class, scale grade",
-      "source": "752730a4257bda6ed1ff07f45fd027ddeb434feb"
+      "source": "1b115812ff1a069828f69af3c95198815e776db6"
+    },
+    "symbol-map": {
+      "term": "Symbol map",
+      "short_definition": "A map on which a region’s value is shown by the area of a circle.",
+      "definition": "Sums are shown this way: the number of people, roubles, cases. The circle area is proportional to the value, so a large region stands out at once. Relative values suit colour fill.",
+      "synonyms": "circle map, proportional symbols",
+      "source": "c86f860e0a5f7fe909e49c98f55bff59caeb359d"
+    },
+    "structure": {
+      "term": "Structure",
+      "short_definition": "Shares of the parts of one sum, adding up to 100% in each region.",
+      "definition": "Parts are, for example, deposits in roubles and in foreign currency. The share of a part equals its value divided by the sum of the region’s parts. Structure is computed only for sums in one unit.",
+      "synonyms": "composition, shares of parts",
+      "source": "874315ca0f5dc0e62ffd4299b7407911cf3d020a"
+    },
+    "change-contribution": {
+      "term": "Contribution to change",
+      "short_definition": "How much a region or a part added to the change in the total.",
+      "definition": "A contribution equals the difference between the values in the end and start years. The contributions add up to the change in the total. Contributions can be added up only for sums.",
+      "synonyms": "change decomposition, waterfall",
+      "source": "0ec8133ecfb464c03b7af8d33d342c0d575f5e8d"
+    },
+    "weighted-mean": {
+      "term": "Weighted mean",
+      "short_definition": "A mean in which each value has its own weight.",
+      "definition": "For a group of regions the weight is the population. A large region then affects the mean more than a small one. A simple mean would give every region an equal vote.",
+      "synonyms": "weighted average",
+      "source": "c40fb60876550c3bffb9c3035fa4a4eaea53f8ab"
+    },
+    "base-year-index": {
+      "term": "Base-year index",
+      "short_definition": "A year’s value divided by the base-year value and multiplied by 100.",
+      "definition": "The base year equals 100. A value of 120 means growth of 20% from the base year. This is how the course of an indicator is compared across regions with different levels.",
+      "synonyms": "base year = 100, fixed-base index",
+      "source": "ca100247d2cac59466e7852317b47299abfae8bc"
+    },
+    "average-annual-growth": {
+      "term": "Average annual growth rate",
+      "short_definition": "Steady yearly growth that would give the same change over the period.",
+      "definition": "The ratio of the last value to the first is raised to the power 1 / n, then one is subtracted. Here n is the number of years between them. The result is shown as a percentage per year.",
+      "synonyms": "compound annual growth rate, CAGR",
+      "source": "50df87425a43f8274ab601e67f8d1f24e1b0abe1"
+    },
+    "location-quotient": {
+      "term": "Location quotient",
+      "short_definition": "An industry’s share in the region’s total divided by the same share for Russia.",
+      "definition": "Above one, the industry is more present in the region than in the country. Below one, less. The quotient compares the composition of the economy, not its size.",
+      "synonyms": "specialisation coefficient, LQ",
+      "source": "c04dc9146072a778022ab08badd64c4aa63f7928"
+    },
+    "shift-share": {
+      "term": "Shift-share",
+      "short_definition": "A breakdown of the change in a region’s industries over a period into three parts.",
+      "definition": "The first part is growth as in Russia on average. The second is the effect of the region’s industry mix. The third is the regional shift: how much faster or slower the region grew than expected.",
+      "synonyms": "shift-share analysis, structural shift",
+      "source": "4978cd78b3102e1ea3ba599ab95258a075c618ac"
+    },
+    "flow": {
+      "term": "Flow",
+      "short_definition": "A total for a period: how much happened in a year, quarter or month.",
+      "definition": "Housing completed in a year, the number of deaths, budget revenue. Flows of adjacent periods add up to the flow for a longer period.",
+      "synonyms": "value for a period, interval indicator",
+      "source": "ec9090a0d671b45d8367e1c40643d081b5dc53d7"
+    },
+    "stock": {
+      "term": "Stock",
+      "short_definition": "A total at a date: how much there was at a given moment.",
+      "definition": "Population on 1 January, deposits at the end of the year. Stocks at different dates do not add up: the same people and money would be counted twice.",
+      "synonyms": "value at a date, point-in-time indicator",
+      "source": "2b7ba7b3523fe3757f0440c7eea3f430d2516f59"
+    },
+    "size-effect": {
+      "term": "Size effect",
+      "short_definition": "A region’s total grows with the number of its inhabitants.",
+      "definition": "That is why large regions lead on almost any total. To compare regions, the total is divided by population to get a value per inhabitant.",
+      "synonyms": "scale effect",
+      "source": "b9d1e5da4f42adaabb57d24242e70e54ca61c776"
+    },
+    "absent-phenomenon": {
+      "term": "Phenomenon absent",
+      "short_definition": "The value is zero in substance: there were no events.",
+      "definition": "Rosstat marks it with a dash “–”. It differs from a “no data” gap: the zero here is real and enters calculations.",
+      "synonyms": "dash",
+      "source": "e15e4af96e5c67293e1fdec598d8c6e59ac3f408"
+    },
+    "zero-stub": {
+      "term": "Placeholder zero",
+      "short_definition": "A zero put in a table in place of a missing value.",
+      "definition": "A false zero puts a region in last place and produces “growth from zero”. The site finds such zeros by their signs and offers to turn them into missing values.",
+      "synonyms": "false zero",
+      "source": "33f022b469918bebce7ae5b00889076aff417ff7"
     }
   }
 }

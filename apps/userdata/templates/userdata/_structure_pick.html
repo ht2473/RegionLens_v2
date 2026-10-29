@@ -1,0 +1,28 @@
+{% load i18n %}
+{% comment %}
+  Части структуры: суммы той же единицы из таблицы ряда; отмечены заранее разрезы показателя
+  или показатели с тем же началом названия. Карточка ставится обычной правкой поля.
+{% endcomment %}
+{% if candidates|length < 2 %}
+  <p>{% translate "Структуры нет: в таблице меньше двух сумм с одной единицей." %}</p>
+{% else %}
+  <form method="post" action="{% url 'userdata:study-edit' study.public_id %}" class="stack structure-pick">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add">
+    <input type="hidden" name="do" value="answer:structure">
+    <input type="hidden" name="series" value="{{ series }}">
+    <fieldset class="field structure-pick__parts">
+      <legend class="field__label">{% translate "Составляющие итога" %}</legend>
+      <p class="field__hint">{% translate "Отметьте суммы, которые вместе составляют целое. Итог вместе с его частями учтётся дважды." %}</p>
+      <div class="stack stack--tight">
+        {% for entry in candidates %}
+          <label class="checkbox">
+            <input type="checkbox" name="part" value="{{ entry.key }}"{% if entry.key in chosen %} checked{% endif %}>
+            <span>{{ entry.title }}{% if entry.detail %}, {{ entry.detail }}{% endif %} <span class="text-muted">· {{ entry.unit }}</span></span>
+          </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    <div><button class="button button--primary" type="submit">{% translate "Поставить на поле" %}</button></div>
+  </form>
+{% endif %}

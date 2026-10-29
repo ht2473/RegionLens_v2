@@ -91,7 +91,7 @@
   {% include "partials/_palette.html" %}
 
   {% if messages %}
-    <div class="toast-region" role="status" aria-live="polite">
+    <div class="toast-region" role="status" aria-live="polite" data-close-label="{% translate 'Закрыть уведомление' %}">
       {% for message in messages %}
         <div class="toast toast--{{ message.tags|default:'info' }}">{{ message }}</div>
       {% endfor %}

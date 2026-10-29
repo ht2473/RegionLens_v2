@@ -85,6 +85,14 @@ function enhanceFilters(root) {
     input.addEventListener("input", apply);
     // Кнопка очистки поля типа search события input не порождает во всех браузерах.
     input.addEventListener("search", apply);
+    // Отбор — только на странице: изменение поля не доходит до формы (окно расчёта
+    // пересчитывается при каждом её изменении), Enter не отправляет форму правки.
+    input.addEventListener("change", (event) => event.stopPropagation());
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && input.form?.method === "post") {
+        event.preventDefault();
+      }
+    });
     apply();
   });
 }

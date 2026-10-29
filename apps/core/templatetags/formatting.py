@@ -78,6 +78,22 @@ def p_level(value: Any, name: str = "") -> str:
 
 
 @register.filter
+def permutation_p(value: Any, permutations: Any = 999) -> str:
+    """
+    Значимость перестановочного теста: p меньше 1/(N + 1) не бывает, поэтому наименьшее
+    значение пишется «≤ 0,001» (999 перестановок), а не «0,001».
+    """
+    try:
+        floor = 1 / (int(permutations) + 1)
+        number = float(value)
+    except TypeError, ValueError:
+        return p_level(value)
+    if floor >= P_LEVEL_FLOOR and number <= floor * (1 + 1e-9):
+        return f"≤{NBSP}{ru_number(floor, 3)}"
+    return p_level(number)
+
+
+@register.filter
 def ru_delta(value: Any, digits: int | str | None = 1) -> str:
     """Отформатировать изменение показателя со знаком."""
     if value is None:
@@ -155,6 +171,7 @@ def quality_label(quality: Any) -> str:
         1: "нет данных в источнике",
         2: "значение скрыто источником",
         3: "неприменимо",
+        4: "явление отсутствует",
     }
     try:
         return labels.get(int(quality), "неизвестно")

@@ -8,7 +8,7 @@
     {% for title in card.titles %}<li class="line-legend__item" data-line="{{ forloop.counter }}">{{ title }}</li>{% endfor %}
   </ul>
   {% with option_id=card.prefix|add:"-lines" %}
-    <rl-chart class="chart study-card__chart" data-options="{{ option_id }}"
+    <rl-chart data-report-image class="chart study-card__chart" data-options="{{ option_id }}"
               data-image-title="{{ card.title }}" data-image-source="{{ card.source }}"></rl-chart>
     {{ card.chart|json_script:option_id }}
   {% endwith %}
@@ -27,7 +27,7 @@
     </div>
     {% if card.apart %}
       <div>
-        <h3 class="answer__label">{% translate "Места расходятся сильнее всего" %}</h3>
+        <h3 class="answer__label">{% translate "Наибольшие расхождения мест" %}</h3>
         <p class="study-card__muted">{% translate "место по первому показателю / по второму" %}</p>
         <ul class="answer-list answer-list--plain">
           {% for row in card.apart %}

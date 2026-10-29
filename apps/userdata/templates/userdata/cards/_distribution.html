@@ -2,7 +2,7 @@
 {# Распределение на карточке исследования: полоса точек в цветах шкалы карты. #}
 {% if strip_option %}
   {% with option_id=card.prefix|add:"-strip" %}
-    <rl-chart class="chart chart--strip study-card__chart" data-options="{{ option_id }}"
+    <rl-chart data-report-image class="chart chart--strip study-card__chart" data-options="{{ option_id }}"
               data-image-title="{{ card.title }}"
               data-image-subtitle="{% if year %}{{ year|stringformat:'d' }}{% endif %}{% if unit %} · {{ unit }}{% endif %}"
               data-image-source="{{ card.source }}"></rl-chart>

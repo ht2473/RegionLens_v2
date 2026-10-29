@@ -19,22 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-ДАННЫЕ
-
-Лицензия выше распространяется на исходный код RegionLens и не распространяется
-на данные.
-
-Набор данных «Социально-экономические показатели регионов России» подготовлен
-Федеральной службой государственной статистики (Росстат); обработка выполнена
-проектом «Если быть точным», 2026. Источник: https://tochno.st/datasets/regions_collection
-
-Данные распространяются на условиях Creative Commons Attribution (CC BY 4.0)
-и требуют указания авторства при любом использовании, включая производные
-материалы: выгрузки, диаграммы и отчёты, сформированные системой.
-
-Файл границ субъектов Российской Федерации подготовлен из набора Natural Earth
-(общественное достояние). Сведения об источнике и лицензии хранятся внутри
-самого файла static/geo/regions.geojson.

@@ -27,8 +27,9 @@ PYTHON_RE = re.compile(r"""(?:\bicon=|["']icon["']:\s*)["']([a-z-]+)["']""")
 QUERY_TARGET_RE = re.compile(r'QueryTarget\("[^"]+", "[^"]+", _\("[^"]+"\), "([a-z-]+)"\)')
 # Запасной значок, подставляемый шаблоном.
 DEFAULT_RE = re.compile(r"icon\|default:'([a-z-]+)'")
-# Словарь значков по коду (карточки-ответы исследования): ICONS = {"код": "значок", …}.
-ICONS_RE = re.compile(r"^ICONS\s*=\s*\{(?P<body>[^}]*)\}", re.MULTILINE)
+# Словарь значков по коду: ICONS = {"код": "значок", …} (карточки-ответы исследования),
+# RECOUNT_ICONS = {…} (пересчёты в окне «Что показать»).
+ICONS_RE = re.compile(r"^(?:[A-Z]+_)?ICONS\s*=\s*\{(?P<body>[^}]*)\}", re.MULTILINE)
 ICON_VALUE_RE = re.compile(r""":\s*["']([a-z-]+)["']""")
 
 

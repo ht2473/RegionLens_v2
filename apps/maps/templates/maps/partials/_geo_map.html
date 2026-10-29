@@ -10,7 +10,7 @@
     <defs>
       {# Штриховка «нет данных». #}
       <pattern id="{{ geo_map.no_data_pattern }}" width="10" height="10"
-               patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+               patternUnits="userSpaceOnUse" patternTransform="{{ geo_map.pattern_transform }}">
         <rect width="10" height="10" fill="var(--no-data-fill)"></rect>
         <line x1="0" y1="0" x2="0" y2="10"
               stroke="var(--no-data-stroke)" stroke-width="3.2"></line>
@@ -30,21 +30,24 @@
     <rect class="geo-map__backdrop" x="0" y="0"
           width="{{ geo_map.width }}" height="{{ geo_map.map_height }}" rx="8"></rect>
 
-    {# Внешняя граница страны — та же геометрия толстой линией под заливками. #}
-    <g class="geo-map__outline" fill="none" aria-hidden="true">
-      {% for region in geo_map.regions %}<use href="{{ region.reference }}"></use>{% endfor %}
-    </g>
+    {# zoom — приближение к субъектам со значениями, когда они у компактной части страны. #}
+    <g{% if geo_map.zoom %} transform="{{ geo_map.zoom }}"{% endif %}>
+      {# Внешняя граница страны — та же геометрия толстой линией под заливками. #}
+      <g class="geo-map__outline" fill="none" aria-hidden="true">
+        {% for region in geo_map.regions %}<use href="{{ region.reference }}"></use>{% endfor %}
+      </g>
 
-    <g class="geo-map__regions" fill-rule="evenodd">
-      {% for region in geo_map.regions %}
-        <a class="geo-map__region{% if region.selected %} is-selected{% endif %}"
-           href="{{ region.href }}" data-region="{{ region.code }}"
-           data-territory="{{ region.code }}"
-           data-class="{{ region.class_index }}">
-          <title>{{ region.title }}</title>
-          <use href="{{ region.reference }}" fill="{{ region.fill }}"></use>
-        </a>
-      {% endfor %}
+      <g class="geo-map__regions" fill-rule="evenodd">
+        {% for region in geo_map.regions %}
+          <a class="geo-map__region{% if region.selected %} is-selected{% endif %}"
+             href="{{ region.href }}" data-region="{{ region.code }}"
+             data-territory="{{ region.code }}"
+             data-class="{{ region.class_index }}">
+            <title>{{ region.title }}</title>
+            <use href="{{ region.reference }}" fill="{{ region.fill }}"></use>
+          </a>
+        {% endfor %}
+      </g>
     </g>
 
     {# --- Врезки ------------------------------------------------------------------- #}
@@ -80,6 +83,13 @@
               text-anchor="middle" aria-hidden="true">{{ inset.title }}</text>
       </g>
     {% endfor %}
+
+    {# --- Значки: площадь круга — значение; поверх карты и врезок, щелчок проходит к субъекту. #}
+    {% if geo_map.symbols %}
+      <g class="geo-map__symbols" aria-hidden="true">
+        {% for symbol in geo_map.symbols %}<circle class="geo-map__symbol{% if symbol.selected %} is-selected{% endif %}" cx="{{ symbol.x }}" cy="{{ symbol.y }}" r="{{ symbol.radius }}" data-territory="{{ symbol.code }}"></circle>{% endfor %}
+      </g>
+    {% endif %}
 
     {# --- Подписи выбранных субъектов; отодвинутая подпись соединена чертой ---------- #}
     {% if not plain %}{% for label in geo_map.labels %}

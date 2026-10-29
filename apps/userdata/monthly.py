@@ -21,8 +21,8 @@ from apps.core.charts import timeline_option
 from apps.core.templatetags.formatting import ru_number
 from apps.sources import periods
 
-from . import naming
-from .models import DatasetSeries, DatasetVersion
+from . import naming, semantics
+from .models import DatasetVersion
 
 # Вид периода → вид значения в fact_month и месяц, которым период заканчивается.
 LEVEL = "level"
@@ -128,7 +128,7 @@ def groups(version: DatasetVersion | None) -> list[Group]:
                 span=span,
                 precision=record.precision,
                 polarity=record.polarity,
-                is_sum=record.kind == DatasetSeries.Kind.SUM,
+                is_sum=semantics.is_additive(record.kind),
             ),
         )
     # Один период в году («январь–июль») — это обычный ряд по годам, не вид по месяцам.

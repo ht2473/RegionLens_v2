@@ -30,7 +30,17 @@ logger = logging.getLogger(__name__)
 AUTO = "auto"
 ASKED = "asked"
 # Части рецепта, которые новая версия получает как есть.
-CARRIED = ("territories", "nested", "indicators", "formulas", "seen", "masks")
+CARRIED = (
+    "territories",
+    "nested",
+    "repeats",
+    "indicators",
+    "formulas",
+    "seen",
+    "masks",
+    "dashes",
+    "zeros",
+)
 _DIGITS = re.compile(r"[\d_\-\s.]+")
 _SPACES = re.compile(r"\s+")
 
@@ -175,9 +185,11 @@ def questions(version: DatasetVersion, result: recognize.Recognition) -> list[st
         found.append(_("область с автономными округами, о которой ещё не спрашивали"))
     if result.needs_year:
         found.append(_("год значений"))
+    if result.needs_repeats:
+        found.append(_("регионы повторяются в нескольких строках"))
     if result.series > recognize.MAX_SERIES:
         found.append(
-            _("рядов получается %(count)s — больше %(limit)s")
+            _("показателей получается %(count)s — больше %(limit)s")
             % {"count": result.series, "limit": recognize.MAX_SERIES}
         )
     return found

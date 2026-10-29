@@ -4,8 +4,12 @@
 Строки читаются по форме и ролям распознавания с решениями человека; подписи территорий —
 по сопоставлению столбца с ответами. Большая таблица сначала сужается в DuckDB (нужные
 столбцы и отобранные значения разрезов), остальное — построчно. Коды-маски вместо чисел
-(9999, 8888…) становятся пропусками (``masks``). Итог — файл Parquet в каталоге версии
-и перечень рядов в отчёте: по перечню строится шаг «Показатели», из файла — сборка набора.
+(9999, 8888…) становятся пропусками (``masks``). Знаки вместо чисел дают признак значения:
+прочерк — «явление отсутствует» (ноль или пустое значение — решает сборка по типу величины),
+«К» и пропуск со сноской о конфиденциальности — «скрыто источником», «0,0» — ноль «меньше
+единицы измерения». Итог — файл Parquet в каталоге версии и перечень рядов в отчёте: по перечню
+строится шаг «Показатели», из файла — сборка набора; в отчёте — ещё знаки, нули, похожие
+на пропуски, и замечания о согласованности (``consistency``).
 """
 
 from __future__ import annotations
@@ -26,20 +30,34 @@ import pyarrow.parquet as pq
 from django.conf import settings
 from django.utils.translation import gettext as _
 
-from apps.catalog.constants import ValueQuality
+from apps.catalog.constants import ValueFlag, ValueQuality
 from apps.sources import periods
 
-from . import cells, jobs, masks, matching, naming, recognize, tables
+from . import cells, consistency, jobs, masks, matching, naming, recognize, tables
 from .ingest import IngestError, cell_text, iter_rows
 from .models import DatasetVersion
 
 logger = logging.getLogger(__name__)
 
 EXTRACT_FILE = "extract.parquet"
-# Редакция извлечения: меняется вместе с устройством файла и отчёта (2 — коды-маски).
-REVISION = 2
+# Редакция извлечения: меняется вместе с устройством файла и отчёта (2 — коды-маски,
+# 3 — знаки Росстата и признаки значений).
+REVISION = 3
 # Причина пропуска со словами о тайне — значение скрыто, а не отсутствует.
 _HIDDEN_REASONS = ("конфиденц", "скрыт", "confidential", "suppress", "hidden")
+# Сноска о тайне: «1) Данные не публикуются в целях обеспечения конфиденциальности…».
+_SECRET_NOTE = re.compile(r"^\s*(\d{1,2})\)\s*(.*)", re.DOTALL)
+_SECRET_WORDS = re.compile(r"конфиденц|не\s+публику|confidential", re.IGNORECASE)
+# Слова, по которым таблица — Росстата: прочерк у него — «явление отсутствует».
+_ROSSTAT = re.compile(
+    r"росстат|федеральн\w* служб\w* государственной статистики|rosstat|gks\.ru"
+    r"|явление отсутствует",
+    re.IGNORECASE,
+)
+# Знак вместо числа в отчёте по качеству значения.
+_MARKS = {ValueQuality.ABSENT: "absent", ValueQuality.HIDDEN: "hidden"}
+# Сколько первых строк таблицы просматривается в поисках слов об источнике.
+HEAD_ROWS = 60
 # Строк большой таблицы за одно обращение к DuckDB.
 BATCH_ROWS = 50_000
 
@@ -80,10 +98,28 @@ class Collector:
     years: list[int] = field(default_factory=list)
     values: list[float | None] = field(default_factory=list)
     qualities: list[int] = field(default_factory=list)
+    flags: list[int] = field(default_factory=list)
+    # Знаки вместо чисел: прочерки, скрытые источником, «0,0».
+    marks: Counter[str] = field(default_factory=Counter)
+    # Номера сносок о конфиденциальности: пропуск с такой сноской — скрыт источником.
+    secret_notes: frozenset[int] = frozenset()
     conflicts: int = 0
     text_cells: int = 0
     skipped: Counter[str] = field(default_factory=Counter)
     notes: dict[str, str] = field(default_factory=dict)
+
+    def quality(self, cell: cells.Cell, *, hidden: bool) -> ValueQuality:
+        """Качество значения по ячейке: число, скрыто, явление отсутствует, нет данных."""
+        if cell.status == cells.VALUE:
+            return ValueQuality.OBSERVED
+        secret = cell.status in {cells.MISSING, cells.ABSENT} and bool(
+            self.secret_notes.intersection(cell.notes)
+        )
+        if hidden or secret or cell.status == cells.HIDDEN:
+            return ValueQuality.HIDDEN
+        if cell.status == cells.ABSENT:
+            return ValueQuality.ABSENT
+        return ValueQuality.NO_DATA
 
     def add(
         self,
@@ -112,10 +148,8 @@ class Collector:
         value = cell.value if cell.status == cells.VALUE else None
         if cell.status == cells.TEXT:
             self.text_cells += 1
-        quality = ValueQuality.OBSERVED
-        if value is None:
-            hidden = hidden or cell.status == cells.HIDDEN
-            quality = ValueQuality.HIDDEN if hidden else ValueQuality.NO_DATA
+        quality = self.quality(cell, hidden=hidden)
+        flags = int(ValueFlag.BELOW_UNIT) if cell.below_unit else 0
         code, label = place
         where = (index, code or f"\0{label}", year)
         existing = self.seen.get(where)
@@ -125,6 +159,7 @@ class Collector:
                 # Строки дополняют друг друга: прочерк в одной, число в другой.
                 self.values[existing] = value
                 self.qualities[existing] = int(ValueQuality.OBSERVED)
+                self.flags[existing] = flags
             elif before is not None and value is not None and before != value:
                 self.conflicts += 1
             return
@@ -143,6 +178,10 @@ class Collector:
         self.years.append(year)
         self.values.append(value)
         self.qualities.append(int(quality))
+        self.flags.append(flags)
+        mark = _MARKS.get(quality) or ("below_unit" if flags else "")
+        if mark:
+            self.marks[mark] += 1
         if value is not None:
             info.values += 1
             info.years.add(year)
@@ -153,9 +192,14 @@ class Collector:
 # --- Вход -----------------------------------------------------------------------------------------
 
 
+# Ответы рецепта, которые применяет сборка, а не извлечение: описание показателей, смысл
+# прочерка, нули-пропуски.
+ANSWERS_AT_BUILD = frozenset({"indicators", "dashes", "zeros"})
+
+
 def recipe_digest(recipe: Mapping[str, Any]) -> str:
     """Отпечаток рецепта: извлечение устаревает, когда меняется описание таблицы."""
-    relevant = {key: value for key, value in recipe.items() if key not in {"indicators"}}
+    relevant = {key: value for key, value in recipe.items() if key not in ANSWERS_AT_BUILD}
     text = json.dumps(relevant, ensure_ascii=False, sort_keys=True, default=str)
     return hashlib.sha256(f"{REVISION}|{text}".encode()).hexdigest()[:16]
 
@@ -195,13 +239,30 @@ def extract(version: DatasetVersion) -> dict[str, Any]:
         )
     if result.series > recognize.MAX_SERIES:
         raise ExtractError(
-            _("Получается %(count)s рядов — больше %(limit)s. Выберите значения разрезов.")
+            _(
+                "Получается временных рядов: %(count)s, больше %(limit)s. "
+                "Выберите значения разрезов."
+            )
             % {"count": result.series, "limit": recognize.MAX_SERIES}
         )
     if result.form == recognize.INDICATORS and result.needs_year:
         raise ExtractError(_("Годы в таблице не найдены. Укажите год на шаге «Что в таблице»."))
+    if result.needs_repeats:
+        raise ExtractError(
+            _(
+                "Регионы повторяются в нескольких строках. "
+                "Ответьте на шаге «Что в таблице», что в этих строках."
+            )
+        )
+    if result.repeats is not None and result.repeats_answer == recognize.REPEATS_PLACES:
+        raise ExtractError(
+            _(
+                "На карте сайта только субъекты РФ. "
+                "Нужна таблица, где у каждого региона одна строка."
+            )
+        )
     places = _places(result)
-    collector = Collector(limit=value_limit(version))
+    collector = Collector(limit=value_limit(version), secret_notes=_secret_notes(result, loaded))
     reader = _Reader(version, result, places, collector, loaded)
     reader.run()
     _name_by_codes(collector)
@@ -210,12 +271,18 @@ def extract(version: DatasetVersion) -> dict[str, Any]:
         raise ExtractError(_("В таблице не нашлось ни одного значения по территориям."))
     if len(collector.infos) > recognize.MAX_SERIES:
         raise ExtractError(
-            _("Получается %(count)s рядов — больше %(limit)s. Выберите значения разрезов.")
+            _(
+                "Получается временных рядов: %(count)s, больше %(limit)s. "
+                "Выберите значения разрезов."
+            )
             % {"count": len(collector.infos), "limit": recognize.MAX_SERIES}
         )
     _write(collector, version.directory / EXTRACT_FILE)
     report = _report(version, result, collector, places)
     report["masks"] = masked
+    report["marks"] = dict(collector.marks)
+    report["rosstat"] = _is_rosstat(version, result, loaded.rows[:HEAD_ROWS])
+    report.update(consistency.review(collector))
     report["seconds"] = round(time.perf_counter() - started, 2)
     logger.info(
         "userdata: извлечена версия %s: рядов %s, значений %s, %s с",
@@ -273,6 +340,7 @@ def _apply_masks(collector: Collector, answer: list[str] | None) -> list[dict[st
             if value in codes:
                 collector.values[index] = None
                 collector.qualities[index] = int(ValueQuality.NO_DATA)
+                collector.flags[index] = 0
         _recount(collector)
     return [
         {
@@ -516,8 +584,13 @@ class _Reader:
         yield from self._duckdb_rows()
 
     def _duckdb_rows(self) -> Iterator[tuple[Any, ...]]:
-        """Большая таблица: в DuckDB остаются строки с отобранными значениями разрезов."""
+        """
+        Большая таблица: в DuckDB остаются строки с отобранными значениями разрезов — в порядке
+        файла. Иначе порядок показателей и «первое значение» у повтора менялись бы от разбора
+        к разбору.
+        """
         connection = tables.parse_connection(self.path)
+        connection.execute("SET preserve_insertion_order = true")
         try:
             names = tables.read_into(connection, self.path, self.table)
             conditions = []
@@ -592,7 +665,8 @@ class _Reader:
         if stamp:
             return int(stamp["year"]), str(stamp["period"]), str(stamp.get("group") or "")
         if self.result.form == recognize.INDICATORS and self.result.year:
-            return int(self.result.year), periods.ANNUAL.key, ""
+            # Период — из заголовка, подписи, листа или файла («I квартал»), иначе год.
+            return int(self.result.year), self.result.period or periods.ANNUAL.key, ""
         return None
 
     def _sheet_rows(
@@ -709,6 +783,7 @@ def _write(collector: Collector, path: Any) -> None:
             "year": pa.array(collector.years, pa.int16()),
             "value": pa.array(collector.values, pa.float64()),
             "quality": pa.array(collector.qualities, pa.int8()),
+            "flags": pa.array(collector.flags, pa.int8()),
         }
     )
     order = [
@@ -767,7 +842,32 @@ def _report(
         "outside": [[label, places.outside.get(label, "")] for label in outside_labels],
         "nested": nested_present,
         "title": result.title,
+        # Год взят из заголовка, подписи, листа или файла, а не из таблицы и не от человека.
+        "year_from": [result.year, result.period, result.year_from, result.year_text]
+        if result.year_auto
+        else [],
     }
+
+
+def _secret_notes(result: recognize.Recognition, loaded: tables.Loaded) -> frozenset[int]:
+    """Номера сносок о конфиденциальности: найденные распознаванием и в любой ячейке строк."""
+    texts = list(result.footnotes.items())
+    for row in loaded.rows:
+        for raw in row:
+            if isinstance(raw, str) and raw.lstrip()[:1].isdigit() and ")" in raw[:6]:
+                found = _SECRET_NOTE.match(raw)
+                if found is not None:
+                    texts.append((int(found.group(1)), found.group(2)))
+    return frozenset(number for number, text in texts if _SECRET_WORDS.search(text))
+
+
+def _is_rosstat(
+    version: DatasetVersion, result: recognize.Recognition, rows: list[list[Any]]
+) -> bool:
+    """Таблица Росстата: по имени файла, заголовку, сноскам и словам в начале таблицы."""
+    texts = [version.file_name or "", result.title or "", *result.footnotes.values()]
+    texts.extend(raw for row in rows for raw in row if isinstance(raw, str))
+    return any(_ROSSTAT.search(text) for text in texts)
 
 
 def _as_regions(codes: set[str]) -> set[str]:

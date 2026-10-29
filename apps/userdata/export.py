@@ -68,16 +68,31 @@ def layout(version: DatasetVersion) -> Layout:
 
 
 def count_rows(source: DataSource) -> int:
-    """Строк в выгрузке: наблюдения и строки вне справочника."""
+    """Строк в выгрузке: наблюдения, исключённые из расчётов и строки вне справочника."""
     connection = dataset_connection(source)
     row = connection.execute(
         "SELECT (SELECT count(*) FROM fact_observation) + (SELECT count(*) FROM user_outside)"
     ).fetchone()
-    return int(row[0]) if row else 0
+    found = int(row[0]) if row else 0
+    if has_excluded(connection):
+        excluded = connection.execute("SELECT count(*) FROM user_excluded").fetchone()
+        found += int(excluded[0]) if excluded else 0
+    return found
+
+
+def has_excluded(connection: Any) -> bool:
+    """Есть ли в файле сборки исключённые значения: у файлов до исключений этой таблицы нет."""
+    row = connection.execute(
+        "SELECT count(*) FROM information_schema.tables WHERE table_name = 'user_excluded'"
+    ).fetchone()
+    return bool(row and row[0])
 
 
 def rows(source: DataSource, plan: Layout) -> Iterator[list[Any]]:
-    """Строки выгрузки: сначала территории справочника, затем строки вне справочника."""
+    """
+    Строки выгрузки: территории справочника, исключённые из расчётов значения, затем строки
+    вне справочника.
+    """
     english = get_language() == "en"
     levels = {
         "country": gettext("страна"),
@@ -125,6 +140,32 @@ def rows(source: DataSource, plan: Layout) -> Iterator[list[Any]]:
                 value=value,
                 mark=_mark(quality, flags),
             )
+    if has_excluded(connection):
+        cursor = connection.execute(
+            """
+            SELECT x.series_key, t.name_ru, t.name_en, x.territory_code, t.okato, x.year,
+                   x.value, x.quality
+            FROM user_excluded AS x
+            JOIN dim_territory AS t USING (territory_code)
+            ORDER BY x.series_key, t.display_order, x.year
+            """
+        )
+        while batch := cursor.fetchmany(BATCH_ROWS):
+            for key, name_ru, name_en, code, okato, year, value, quality in batch:
+                record = plan.series.get(key)
+                if record is None:
+                    continue
+                yield _row(
+                    plan,
+                    record,
+                    territory=(name_en if english and name_en else name_ru),
+                    code=code,
+                    okato=okato or "",
+                    level=levels["region"],
+                    year=year,
+                    value=value,
+                    mark=_join(gettext("исключено из расчётов"), _mark(quality, 0)),
+                )
     cursor = connection.execute(
         "SELECT series_key, label, year, value, quality FROM user_outside "
         "ORDER BY series_key, label, year"
@@ -209,9 +250,15 @@ def _mark(quality: int, flags: int) -> str:
         parts.append(gettext("нет данных"))
     elif quality == ValueQuality.HIDDEN:
         parts.append(gettext("скрыто источником"))
+    elif quality == ValueQuality.ABSENT:
+        parts.append(gettext("явление отсутствует"))
     flag = ValueFlag(int(flags or 0))
+    if ValueFlag.ABSENT in flag:
+        parts.append(gettext("явление отсутствует"))
+    if ValueFlag.BELOW_UNIT in flag:
+        parts.append(gettext("меньше единицы измерения"))
     if ValueFlag.COMPUTED in flag:
-        parts.append(gettext("расчёт RegionLens"))
+        parts.append(gettext("вычислено"))
     if ValueFlag.FROZEN_DENOMINATOR in flag:
         parts.append(gettext("численность прошлого года"))
     return "; ".join(parts)

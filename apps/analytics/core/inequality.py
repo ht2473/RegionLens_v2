@@ -93,11 +93,17 @@ def weighted_mean(values: np.ndarray, weights: np.ndarray) -> float:
 
 
 def coefficient_of_variation(values: np.ndarray, weights: np.ndarray) -> float | None:
-    """Коэффициент вариации; при неположительном среднем не определён."""
+    """
+    Коэффициент вариации; при неположительном среднем не определён. Без весов σ —
+    выборочная (делитель n − 1), как в витрине статистик, в сигма-сближении и в функции
+    СТАНДОТКЛОН таблиц; со взвешиванием по населению — взвешенная дисперсия.
+    """
     mean = weighted_mean(values, weights)
     if mean <= 0:
         return None
     variance = float(np.sum(weights * (values - mean) ** 2) / np.sum(weights))
+    if values.size > 1 and np.ptp(weights) == 0:
+        variance *= values.size / (values.size - 1)
     return math.sqrt(variance) / mean
 
 

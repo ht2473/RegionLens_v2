@@ -60,6 +60,11 @@ def _series_source(series_key: str, year: int | str) -> tuple[str, str]:
     return gettext(settings.DATA_SOURCE_ORIGIN), _dataset_part()
 
 
+def series_publisher(series_key: str) -> str:
+    """Издатель значений ряда сайта: «Росстат», «Банк России» — для перечня источников."""
+    return _series_source(series_key, "")[0]
+
+
 def series_source(series_key: str, year: int | str = "") -> str:
     """Строка источника значений ряда — для подписи карточки исследования и картинки."""
     return _series_source(series_key, year)[1]

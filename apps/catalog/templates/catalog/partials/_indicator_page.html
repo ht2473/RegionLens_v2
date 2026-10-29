@@ -200,7 +200,7 @@
       </div>
       <div class="indicator-leaders indicator-leaders--plain">
         <div>
-          <h3 class="live-map__label">{% translate "Больше всего" %}</h3>
+          <h3 class="live-map__label">{% translate "Наибольшие значения" %}</h3>
           <ol class="leader-list">
             {% for row in fallback_top %}
               <li class="leader-list__item">
@@ -211,7 +211,7 @@
           </ol>
         </div>
         <div>
-          <h3 class="live-map__label">{% translate "Меньше всего" %}</h3>
+          <h3 class="live-map__label">{% translate "Наименьшие значения" %}</h3>
           <ol class="leader-list">
             {% for row in fallback_bottom %}
               <li class="leader-list__item">
@@ -421,7 +421,7 @@
     </div>
 
     <div class="indicator-data__deeper">
-      <h2 class="page-section__title">{% translate "Смотреть глубже" %}</h2>
+      <h2 class="page-section__title">{% translate "Инструменты анализа" %}</h2>
       <ul class="deep-links">
         {% for link in links %}
           <li>

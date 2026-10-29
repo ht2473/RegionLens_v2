@@ -2,7 +2,7 @@
 {# Кто вырос сильнее: регионы с наибольшим и наименьшим изменением между двумя годами, Россия и мой регион. #}
 <div class="answer__columns study-card__answer">
   <div>
-    <h3 class="answer__label">{% translate "Больше всего" %}</h3>
+    <h3 class="answer__label">{% translate "Наибольший рост" %}</h3>
     <ol class="answer-list">
       {% for row in card.top %}
         <li value="{{ row.place }}" data-territory="{{ row.code }}"><span>{{ row.name }}</span> <span class="numeric">{{ row.change }}</span></li>
@@ -10,7 +10,7 @@
     </ol>
   </div>
   <div>
-    <h3 class="answer__label">{% translate "Меньше всего" %}</h3>
+    <h3 class="answer__label">{% translate "Наименьший рост" %}</h3>
     <ol class="answer-list">
       {% for row in card.bottom %}
         <li value="{{ row.place }}" data-territory="{{ row.code }}"><span>{{ row.name }}</span> <span class="numeric">{{ row.change }}</span></li>

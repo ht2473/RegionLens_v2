@@ -1,7 +1,11 @@
 {% load i18n formatting userdata %}
-{# Карточка исследования фрагментом: заголовок, вид, источник и переход к виду целиком. #}
+{% comment %}
+  Карточка исследования фрагментом: заголовок, содержимое и переход на отдельную страницу.
+  Источник — не под карточкой, а одним перечнем под полем (и в подписи картинки).
+{% endcomment %}
 <div class="study-card__body">
   <header class="study-card__head">
+    {% if owner and card.settings %}{% include "userdata/cards/_settings.html" %}{% endif %}
     <p class="kicker study-card__kicker">
       <svg aria-hidden="true"><use href="#icon-{{ card.icon }}"></use></svg>
       {{ card.target_title }}{% if card.year and card.target != "compare" %} · <span class="numeric">{{ card.year|year }}</span>{% endif %}{% if card.unit %} · <span{% with lang=card.unit|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ card.unit }}</span>{% endif %}
@@ -12,16 +16,40 @@
               aria-label="{% blocktranslate trimmed with title=card.title|default:card.target_title %}Название карточки «{{ title }}» — изменить{% endblocktranslate %}">{{ card.title|default:card.target_title }}</button>{% else %}{{ card.title|default:card.target_title }}{% endif %}
     </h2>
     {% if card.block.note %}<p class="study-card__note"{% with lang=card.block.note|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ card.block.note }}</p>{% endif %}
+    {% if card.via_note %}<p class="study-card__note">{{ card.via_note }}</p>{% endif %}
   </header>
 
   {% include card.template %}
 
-  <footer class="study-card__foot">
-    {% if card.source %}<p class="study-card__source"{% with lang=card.source|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ card.source }}</p>{% endif %}
-    {% if card.open_url %}
-      <a class="study-card__open no-print" href="{{ card.open_url }}">
-        {% translate "Открыть вид" %}<svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+  {% if owner and card.next %}
+    {# «Дальше» — короткие пути к пунктам «Добавить карточку»; новая карточка — в конец поля, как из окна. #}
+    <div class="card-next no-print">
+      <span class="card-next__label">{% translate "Дальше" %}</span>
+      {% for step in card.next %}
+        {% if step.href %}
+          <a class="card-next__step" href="{{ step.href }}" hx-get="{{ step.href }}" hx-target="#study-sources"
+             hx-select="#study-sources" hx-swap="outerHTML" hx-push-url="true">{{ step.title }}</a>
+        {% else %}
+          <form method="post" action="{% url 'userdata:study-edit' study.public_id %}"
+                hx-post="{% url 'userdata:study-edit' study.public_id %}" hx-target="#study-cards"
+                hx-select=".study-cards > .is-new" hx-swap="beforeend" hx-push-url="false"
+                hx-select-oob="#study-sources,#study-meta,#study-empty,#study-toolbar,#study-toast,#study-sources-list">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            <input type="hidden" name="series" value="{{ step.series }}">
+            {% for part in step.parts %}<input type="hidden" name="part" value="{{ part }}">{% endfor %}
+            <button class="card-next__step" type="submit" name="do" value="{{ step.value }}">{{ step.title }}</button>
+          </form>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if card.open_url %}
+    <footer class="study-card__foot no-print">
+      <a class="study-card__open" href="{{ card.open_url }}">
+        {% translate "На отдельной странице" %}<svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
       </a>
-    {% endif %}
-  </footer>
+    </footer>
+  {% endif %}
 </div>

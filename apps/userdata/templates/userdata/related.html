@@ -15,7 +15,7 @@
 
   <header class="page-head">
     <p class="kicker"><span{% with lang=dataset.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>{{ dataset.title }}</span> · <span class="own-private">{% visibility dataset %}</span></p>
-    <h1 class="page-head__title">{% translate "С чем связан показатель" %}</h1>
+    <h1 class="page-head__title">{% translate "Связь с другими показателями" %}</h1>
     <p class="page-head__lead">
       {% blocktranslate trimmed %}
         Связь показателя таблицы с основными показателями сайта по регионам за один год:
@@ -46,7 +46,7 @@
         <div class="callout__title">{% translate "Сумма по региону" %}</div>
         <p>
           {% translate "Сумма связана со всем, что растёт вместе с численностью населения: связи повторяют размер регионов." %}
-          {% if per_capita %}<a href="{% url 'userdata:related' dataset.public_id %}?series={{ per_capita.key|urlencode }}">{% translate "Смотреть ряд на жителя" %}</a>{% endif %}
+          {% if per_capita %}<a href="{% url 'userdata:related' dataset.public_id %}?series={{ per_capita.key|urlencode }}">{% translate "Смотреть в пересчёте на жителя" %}</a>{% endif %}
         </p>
       </div>
     </div>

@@ -56,7 +56,7 @@
               </span>
             </th>
             {% for cell in row.cells %}
-              <td class="is-numeric{% if cell.year == year %} is-current{% endif %}">{% if cell.value is not None %}{{ cell.value|ru_number:precision }}{% else %}<span class="text-muted" title="{{ cell.note }}">—</span><span class="visually-hidden">{{ cell.note }}</span>{% endif %}</td>
+              <td class="is-numeric{% if cell.year == year %} is-current{% endif %}">{% if cell.value is not None %}{{ cell.value|ru_number:precision }}{% if cell.note %}<span class="text-muted" title="{{ cell.note }}" aria-hidden="true">*</span><span class="visually-hidden"> ({{ cell.note }})</span>{% endif %}{% else %}<span class="text-muted" title="{{ cell.note }}">—</span><span class="visually-hidden">{{ cell.note }}</span>{% endif %}</td>
             {% endfor %}
           </tr>
         {% endfor %}

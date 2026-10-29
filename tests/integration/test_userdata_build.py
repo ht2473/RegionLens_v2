@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
@@ -18,15 +19,16 @@ from urllib.parse import parse_qs, urlparse
 import duckdb
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 from openpyxl import load_workbook
 
-from apps.userdata import extract, indicators, jobs, scope
+from apps.userdata import extract, indicators, jobs, scope, semantics
 from apps.userdata.models import Dataset, DatasetVersion
 from apps.warehouse import queries
-from apps.warehouse.queries.sources import population_table
+from apps.warehouse.queries.sources import population_start_table, population_table
 from tests.support.userdata import FIXTURES, userdata_dir  # noqa: F401 — приспособление модуля
 from tests.support.userdata import build as _build
 from tests.support.userdata import built as _built
@@ -57,6 +59,9 @@ class TestSeriesStep:
         assert page.status_code == 200
         assert "Население в городах с высоким" in page.text
         assert 'name="indicator-1"' in page.text
+        # Проверка: сводка прочитанного плитками и как прочитаны столбцы.
+        assert "review-summary" in page.text and "2014–2022" in page.text
+        assert "Как прочитаны столбцы" in page.text and "→ <b>регион</b>" in page.text
         version = _version(dataset)
         assert extract.is_current(version)
         # 774 значения, из них 73 — код 8888 («в регионе не ведутся наблюдения»).
@@ -81,13 +86,22 @@ class TestSeriesStep:
         assert location.path == reverse("userdata:study", args=[study.public_id])
         key = parse_qs(location.query)["series"][0]
         assert key.startswith(f"u:{dataset.code}:")
-        (block,) = studies.blocks_of(study)
-        assert (block["target"], block["parameters"]["series"]) == ("map", key)
+        # Новое исследование открывается первыми карточками: карта, что заметно, рейтинг,
+        # линии по годам (лет больше одного), связь с официальными (регионов хватает).
+        blocks = studies.blocks_of(study)
+        assert [block.get("target") or block.get("question") for block in blocks] == [
+            "map",
+            "notable",
+            "rankings",
+            "compare",
+            "related",
+        ]
+        assert (blocks[0]["parameters"]["series"], blocks[1]["series"]) == (key, key)
         assert study.title == dataset.title
-        # Пересборка той же таблицы ведёт в то же исследование, без новой карточки.
+        # Пересборка той же таблицы ведёт в то же исследование, без новых карточек.
         again = _build(client, dataset)
         assert urlparse(again["Location"]).path == location.path
-        assert len(studies.blocks_of(Study.objects.get())) == 1
+        assert len(studies.blocks_of(Study.objects.get())) == len(blocks)
         version = _version(dataset)
         assert version.state == DatasetVersion.State.BUILT
         assert version.regions_count == 77
@@ -261,12 +275,12 @@ class TestSeriesStep:
         assert "В таблице федеральные округа, а не субъекты" in page.text
 
     def test_unit_hints(self) -> None:
-        assert indicators.guess_kind("Число умерших", "человек") == indicators.SUM
+        assert indicators.guess_kind("Число умерших", "человек") == semantics.FLOW
         assert indicators.guess_kind("Доля", "процент") == indicators.RELATIVE
         assert (
             indicators.guess_kind("Ожидаемая продолжительность жизни", "лет") == indicators.RELATIVE
         )
-        assert indicators.guess_kind("Валовой продукт", "млн руб.") == indicators.SUM
+        assert indicators.guess_kind("Валовой продукт", "млн руб.") in semantics.ADDITIVE
         assert indicators.guess_kind("Средняя заработная плата", "рублей") == indicators.RELATIVE
         assert indicators.guess_kind("Заболеваемость", "на 100 000 человек") == indicators.RELATIVE
         # Слова, похожие на признаки средней и доли, — у сумм (найдено первым взглядом).
@@ -276,36 +290,36 @@ class TestSeriesStep:
             ("Преступления в отношении иностранных граждан", "единиц"),
             ("Закуплено годовых курсов лечения", "годовых курсов"),
         ):
-            assert indicators.guess_kind(name, unit) == indicators.SUM, name
+            assert indicators.guess_kind(name, unit) in semantics.ADDITIVE, name
         assert indicators.guess_kind("Отношение доходов к прожиточному минимуму", "") == (
             indicators.RELATIVE
         )
         assert indicators.guess_kind("Ожидаемая продолжительность", "года") == indicators.RELATIVE
 
     def test_date_in_title_is_not_per_capita(self) -> None:
-        # «на 1 января» — дата, а не «на 1 жителя»: численность остаётся суммой.
+        # «на 1 января» — дата, а не «на 1 жителя»: значение на дату — запас.
         for name, unit in (
             ("Численность населения на 1 января", ""),
             ("Численность населения на 1 января 2024 года", "тыс. человек"),
             ("Задолженность по ипотечным кредитам на 01.01.2007", "млн руб."),
             ("Число организаций на 10-е марта", ""),
         ):
-            assert indicators.guess_kind(name, unit) == indicators.SUM, name
+            assert indicators.guess_kind(name, unit) == semantics.STOCK, name
             assert indicators.kind_is_clear(name, unit), name
         # Признак «на 100 жителей» рядом с датой по-прежнему узнаётся.
         assert (
             indicators.guess_kind("Врачи на 1 января", "на 10 000 человек населения")
             == indicators.RELATIVE
         )
-        # Дата без других признаков вид не подсказывает — его спросят.
-        assert not indicators.kind_is_clear("Ипотека на 1 января 2007 года", "")
+        # Дата сама подсказывает запас: значение на дату.
+        assert indicators.guess_kind("Ипотека на 1 января 2007 года", "") == semantics.STOCK
 
     def test_plain_rubles_are_per_person(self) -> None:
         # Рубли без разряда — сумма на человека (прожиточный минимум, размер доплаты).
         name = "Величина прожиточного минимума пенсионера"
         assert indicators.guess_kind(name, "руб.") == indicators.RELATIVE
         assert indicators.kind_is_clear(name, "руб.")
-        assert indicators.guess_kind("Объём кредитов", "млн руб.") == indicators.SUM
+        assert indicators.guess_kind("Объём кредитов", "млн руб.") in semantics.ADDITIVE
 
     def test_column_header_gives_name_and_unit(self) -> None:
         cases = (
@@ -385,6 +399,46 @@ class TestSeriesStep:
             "Численность лиц, которым установлена федеральная социальная доплата"
         ].unit == ("чел.")
 
+    @pytest.mark.parametrize(
+        ("answer", "refusal"),
+        [
+            ("", "Регионы повторяются в нескольких строках"),
+            ("places", "На карте сайта только субъекты РФ"),
+            ("first", ""),
+        ],
+    )
+    def test_towns_under_regions_are_asked(
+        self, client: Client, warehouse: Any, answer: str, refusal: str
+    ) -> None:
+        regions = [
+            "Белгородская область",
+            "Брянская область",
+            "Владимирская область",
+            "Воронежская область",
+            "Ивановская область",
+            "Калужская область",
+        ]
+        lines = ["Регион;Классификатор территорий муниципальных образований (ОКТМО);2023"]
+        for number, region in enumerate(regions):
+            lines.append(f"{region};{14 + number}616153000 Город {number}а;{100 + number}")
+            lines.append(f"{region};{14 + number}616156000 Город {number}б;{200 + number}")
+        dataset = _upload(client, "моногорода.csv", "\n".join(lines).encode("utf-8"))
+        page = client.get(reverse("userdata:table", args=[dataset.public_id]))
+        assert "Регионов с повторами: 6 из 6" in page.text
+        assert "Похоже, в строках города или районы" in page.text
+        _describe(client, dataset, {"repeats": answer} if answer else {})
+        if refusal:
+            page = client.get(reverse("userdata:series", args=[dataset.public_id]))
+            assert "Разобрать таблицу не удалось" in page.text
+            assert refusal in page.text
+            return
+        assert _build(client, dataset).status_code == 302
+        key = _key(dataset, _version(dataset).series.get())
+        with scope.reading_as(fingerprint=dataset.guest_key):
+            values = queries.series_values([key], ["RU-BEL"])
+        # Части таблицы одна под другой: на карте — первая.
+        assert values[key]["RU-BEL"] == {2023: 100.0}
+
     def test_extraction_failure_is_explained(self, client: Client, warehouse: Any) -> None:
         dataset = _upload(client, "environment.csv")
         # Человек снял роль у столбца регионов: таблицу не разобрать, и об этом сказано.
@@ -447,6 +501,56 @@ class TestBuild:
             # Рассчитано; после последнего года численности — знаменатель заморожен.
             assert flags & 2
             assert bool(flags & 4) == (year > last)
+
+    def test_stock_at_year_start_uses_start_population(
+        self, client: Client, warehouse: Any, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Запас на 1 января делится на численность на 1 января — оценку на конец прошлого года."""
+        monkeypatch.setattr(semantics, "starts_year", lambda name: True)
+        dataset = _built(client, kind=semantics.STOCK, per=("per100000",))
+        version = _version(dataset)
+        records = {record.derived: record for record in version.series.all()}
+        assert records[""].kind == semantics.STOCK
+        start = population_start_table()
+        assert start, "в синтетическом складе есть численность на конец года"
+        connection = duckdb.connect(str(version.data_path), read_only=True)
+        try:
+            base = dict(
+                connection.execute(
+                    "SELECT territory_code || ':' || year, value FROM fact_observation "
+                    "WHERE series_key = ? AND value IS NOT NULL",
+                    [_key(dataset, records[""])],
+                ).fetchall()
+            )
+            derived = connection.execute(
+                "SELECT territory_code, year, value, flags FROM fact_observation "
+                "WHERE series_key = ? AND territory_code = 'RU-TA'",
+                [_key(dataset, records["per100000"])],
+            ).fetchall()
+        finally:
+            connection.close()
+        assert derived
+        last = max(start["RU-TA"])
+        for code, year, value, flags in derived:
+            denominator = start[code][min(year, last)]
+            assert value == pytest.approx(base[f"{code}:{year}"] / denominator * 100_000)
+            assert bool(flags & 4) == (year > last)
+
+    def test_months_follow_type(self) -> None:
+        """Потоку месяцы складываются, запасу — берётся декабрь или среднее."""
+        item = indicators.Indicator(
+            name="Задолженность",
+            title="Задолженность",
+            unit="млн руб.",
+            kind="sum",
+            polarity="",
+            per=(),
+        )
+        item.periods = {f"month:{number}" for number in range(1, 13)}
+        item.kind = semantics.STOCK
+        assert "sum" not in item.month_methods
+        item.kind = semantics.FLOW
+        assert item.month_methods == ["sum"]
 
     def test_nested_alone_for_sums(self, client: Client, warehouse: Any) -> None:
         dataset = _upload(client, "crime_wide.csv")
@@ -540,6 +644,119 @@ class TestBuild:
         page = client.get(reverse("userdata:series", args=[dataset.public_id]))
         assert "Ждём очереди…" in page.text
         assert jobs.stage_state(_version(dataset), jobs.EXTRACT) == jobs.PENDING
+
+
+class _Finished:
+    """Процесс разбора, уже завершившийся с кодом ``code``."""
+
+    def __init__(self, code: int) -> None:
+        self.code = code
+
+    def poll(self) -> int:
+        return self.code
+
+
+@pytest.mark.django_db
+class TestWorker:
+    """
+    На стенде большие таблицы разбирает служба в своём контейнере: сайт кладёт заявку
+    в очередь, служба выполняет её, оборванный разбор сразу становится неудачей.
+    """
+
+    def _queued(self, client: Client, monkeypatch: pytest.MonkeyPatch, settings: Any) -> Any:
+        settings.USERDATA_JOB_WORKER = True
+        monkeypatch.setattr(jobs, "INLINE_TABLE_BYTES", 10)
+        dataset = _upload(client, "environment.csv")
+        _describe(client, dataset)
+        assert (
+            "Разбираем таблицу…"
+            in client.get(reverse("userdata:series", args=[dataset.public_id])).text
+        )
+        return _version(dataset)
+
+    def test_site_queues_and_worker_runs(
+        self, client: Client, warehouse: Any, monkeypatch: pytest.MonkeyPatch, settings: Any
+    ) -> None:
+        from apps.userdata.management.commands import userdata_worker
+
+        version = self._queued(client, monkeypatch, settings)
+        requests = list(jobs.queue_dir().glob(f"*{jobs.REQUEST}"))
+        assert len(requests) == 1
+        assert jobs.request_arguments(requests[0]) == [
+            "userdata_build",
+            str(version.pk),
+            jobs.EXTRACT,
+        ]
+        assert jobs.stage_state(version, jobs.EXTRACT) == jobs.RUNNING
+
+        def launch(arguments: list[str]) -> _Finished:
+            jobs.run(DatasetVersion.objects.get(pk=int(arguments[1])), arguments[2])
+            return _Finished(0)
+
+        monkeypatch.setattr(userdata_worker, "_launch", launch)
+        call_command("userdata_worker", "--once")
+        version.refresh_from_db()
+        assert jobs.stage_state(version, jobs.EXTRACT) == jobs.READY
+        assert not [path.name for path in jobs.queue_dir().iterdir() if path.name != "heartbeat"]
+
+    def test_killed_job_fails_at_once(
+        self, client: Client, warehouse: Any, monkeypatch: pytest.MonkeyPatch, settings: Any
+    ) -> None:
+        from apps.userdata.management.commands import userdata_worker
+
+        version = self._queued(client, monkeypatch, settings)
+        # Процесс убит нехваткой памяти, ничего не записав.
+        monkeypatch.setattr(userdata_worker, "_launch", lambda arguments: _Finished(-9))
+        call_command("userdata_worker", "--once")
+        version.refresh_from_db()
+        assert jobs.stage_state(version, jobs.EXTRACT) == jobs.FAILED
+        assert "Разбор прервался" in jobs.stage_error(version, jobs.EXTRACT)
+
+    def test_claimed_before_restart_fails(
+        self, client: Client, warehouse: Any, monkeypatch: pytest.MonkeyPatch, settings: Any
+    ) -> None:
+        version = self._queued(client, monkeypatch, settings)
+        # Служба остановлена посреди разбора: взятая заявка осталась.
+        for request in jobs.queue_dir().glob(f"*{jobs.REQUEST}"):
+            request.rename(request.with_suffix(jobs.CLAIMED))
+        call_command("userdata_worker", "--once")
+        version.refresh_from_db()
+        assert jobs.stage_state(version, jobs.EXTRACT) == jobs.FAILED
+        assert not list(jobs.queue_dir().glob(f"*{jobs.CLAIMED}"))
+
+    @pytest.mark.parametrize(
+        "arguments",
+        [
+            ["flush", "--noinput"],
+            ["userdata_build", "1", "drop"],
+            ["userdata_build", "1; rm", "build"],
+            ["userdata_summarize", "1", "extra"],
+            "userdata_summarize 1",
+        ],
+    )
+    def test_foreign_request_is_dropped(
+        self, monkeypatch: pytest.MonkeyPatch, settings: Any, arguments: Any
+    ) -> None:
+        from apps.userdata.management.commands import userdata_worker
+
+        launched: list[list[str]] = []
+        monkeypatch.setattr(
+            userdata_worker, "_launch", lambda items: launched.append(items) or _Finished(0)
+        )
+        folder = jobs.queue_dir()
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / f"1{jobs.REQUEST}").write_text(json.dumps(arguments), encoding="utf-8")
+        call_command("userdata_worker", "--once")
+        assert launched == []
+        assert not list(folder.glob(f"*{jobs.REQUEST}"))
+
+    def test_cleanup_keeps_queue(self, settings: Any) -> None:
+        from apps.userdata import services
+
+        folder = jobs.queue_dir()
+        folder.mkdir(parents=True, exist_ok=True)
+        services.prune()
+        assert folder.is_dir()
 
 
 @pytest.mark.django_db
@@ -682,6 +899,9 @@ class TestDatasetPage:
         )
         assert "Абсолютные величины" not in checks.text
         assert "Субъектов со значениями: 77 из 85." in checks.text
+        # Профиль качества: матрица «субъект × год» с подписями округов и состояний.
+        assert "quality-matrix" in checks.text and "ЦФО" in checks.text
+        assert 'class="is-present"' in checks.text and "есть значение" in checks.text
         bare = _built(client, kind=indicators.SUM, per=())
         warned = client.get(reverse("userdata:dataset", args=[bare.public_id]), {"tab": "checks"})
         assert "Абсолютные величины" in warned.text
@@ -751,13 +971,21 @@ class TestDatasetPage:
         assert Dataset.objects.filter(pk=dataset.pk).exists()
 
     def test_example(self, client: Client, warehouse: Any) -> None:
+        # Пример — вклады населения по регионам (Банк России): собирается без вопросов,
+        # все 85 субъектов; повторное нажатие открывает его же, без копии.
         response = client.post(reverse("userdata:example"))
         assert response.status_code == 302
         assert "/own-data/studies/" in response["Location"]
         dataset = Dataset.objects.get()
-        assert dataset.source_url == "https://tochno.st/datasets/environment"
-        assert _version(dataset).regions_count == 85
+        assert dataset.source_title == "Банк России"
+        version = _version(dataset)
+        assert version.regions_count == 85
+        assert (version.first_year, version.last_year) == (2020, 2026)
         assert client.get(response["Location"]).status_code == 200
+        again = client.post(reverse("userdata:example"))
+        assert again.status_code == 302
+        assert Dataset.objects.count() == 1
+        assert again["Location"].split("?")[0] == response["Location"].split("?")[0]
 
 
 @pytest.mark.django_db
@@ -784,6 +1012,41 @@ class TestAgencyExamples:
         assert response["Location"] == reverse("userdata:file", args=[dataset.public_id])
         assert dataset.title == f"Пример: {item.title}"
         assert dataset.source_url == item.source_url
+
+    def test_example_asks_what_its_note_says(self, client: Client, warehouse: Any) -> None:
+        """
+        Подпись «Мастер спросит» у каждого примера совпадает с вопросами мастера: области
+        с округами, год, единица, месяцы в год. Иначе подпись устаревает незаметно.
+        """
+        from apps.userdata.examples import examples
+
+        for item in examples():
+            Dataset.objects.all().delete()
+            client.post(reverse("userdata:example-file", args=[item.slug]))
+            dataset = Dataset.objects.get()
+            assert dataset.current_version is not None
+            best = next(
+                table
+                for table in dataset.current_version.report["inspection"]["tables"]
+                if table["best"]
+            )
+            client.post(
+                reverse("userdata:file", args=[dataset.public_id]),
+                {"action": "choose", "table": best["key"], "encoding": ""},
+            )
+            table = client.get(reverse("userdata:table", args=[dataset.public_id])).text
+            client.post(reverse("userdata:table", args=[dataset.public_id]), {"action": "next"})
+            series = client.get(reverse("userdata:series", args=[dataset.public_id])).text
+            asks = item.asks.casefold()
+            asked = {
+                "архангельск": "«архангельская область» в таблице — вместе" in table.casefold(),
+                "тюменск": "«тюменская область» в таблице — вместе" in table.casefold(),
+                "год значений": "Годы в таблице не найдены" in table,
+                "единица": "Единица не найдена — в чём значения?" in series,
+                "месяцы в год": "Только месяцы — свести в год?" in series,
+            }
+            for words, found in asked.items():
+                assert (words in asks) == found, (item.slug, words)
 
     def test_unfinished_example_is_continued(self, client: Client, warehouse: Any) -> None:
         url = reverse("userdata:example-file", args=["sfr-pension-supplement-2023"])
@@ -949,3 +1212,26 @@ class TestIndicatorCodes:
             "Пробы почв с превышением, % (Y331)",
             "Пробы почв с превышением, % (Y332)",
         ]
+
+
+@pytest.mark.django_db
+def test_equal_values_are_ranked_alphabetically(client: Client, warehouse: Any) -> None:
+    # Равные значения — одно место; порядок внутри — по алфавиту, а не как придётся.
+    from apps.warehouse.queries import ranking_table
+
+    lines = [
+        "Регион;2023",
+        "Тверская область;5",
+        "Москва;5",
+        "Курская область;5",
+        "Брянская область;3",
+    ]
+    dataset = _upload(client, "равные.csv", "\n".join(lines).encode("utf-8"))
+    _describe(client, dataset)
+    assert _build(client, dataset).status_code == 302
+    key = _key(dataset, _version(dataset).series.get(derived=""))
+    with scope.reading_as(fingerprint=dataset.guest_key):
+        rows = ranking_table(key, 2023)
+    names = [row["name_ru"] for row in rows]
+    assert names[:3] == ["Курская область", "Москва", "Тверская область"]
+    assert {row["rank_desc"] for row in rows[:3]} == {1}

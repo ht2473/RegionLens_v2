@@ -1,17 +1,37 @@
 {% load i18n formatting %}
 {# Легенда картограммы с гистограммой распределения и названным способом разбиения. #}
+{# У карты значками — круги образцовых значений в масштабе карты (--d — диаметр в единицах чертежа). #}
 
-{% if classification %}
+{% if symbol_legend %}
+  <div class="map-legend map-legend--symbols">
+    <div class="map-legend__header">
+      <span class="map-legend__title">{% translate "Площадь круга — значение" %}</span>
+      {% if subject.unit %}<span class="map-legend__unit">{{ subject.unit }}</span>{% endif %}
+    </div>
+    <ul class="symbol-key">
+      {% for item in symbol_legend %}
+        <li class="symbol-key__item">
+          <span class="symbol-key__circle" style="--d: {{ item.diameter }}" aria-hidden="true"></span>
+          <span class="symbol-key__value numeric">{{ item.label }}</span>
+        </li>
+      {% endfor %}
+      {% if no_data_count %}
+        <li class="symbol-key__item symbol-key__item--no-data">
+          <span class="map-legend__swatch map-legend__swatch--no-data" aria-hidden="true"></span>
+          <span class="symbol-key__value">{% translate "нет данных" %}: <span class="numeric">{{ no_data_count|ru_number:0 }}</span></span>
+        </li>
+      {% endif %}
+    </ul>
+  </div>
+{% elif classification %}
   <div class="map-legend">
     <div class="map-legend__header">
       <span class="map-legend__title">
         {% if compare_year %}
           {% translate "Изменение значения" %}
         {% else %}
-          {{ classification.method_label|capfirst }}
-          <span class="map-legend__term">({{ classification.method_term }})</span>
+          <span title="{% translate 'Способ разбиения' %}: {{ classification.method_label }}">{{ classification.legend_title }}</span>
         {% endif %}
-        · {% translate "классов" %}: {{ classification.class_count }}
       </span>
       {# Единица — из описания ряда: series.unit врёт у 642 рядов. #}
       {% if subject.unit %}
@@ -37,7 +57,7 @@
                   title="{% translate "Показать только этот класс" %}">
             <span class="map-legend__swatch" style="background-color: var({{ interval.colour }})"></span>
             <span class="map-legend__range numeric">
-              {{ interval.lower|ru_number }} — {{ interval.upper|ru_number }}
+              {% if interval.lower == interval.upper %}{{ interval.lower|ru_number }}{% else %}{{ interval.lower|ru_number }} — {{ interval.upper|ru_number }}{% endif %}
             </span>
             <span class="map-legend__count numeric"
                   title="{% translate "субъектов в классе" %}: {{ interval.count }}">

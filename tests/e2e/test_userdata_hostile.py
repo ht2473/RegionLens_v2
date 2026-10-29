@@ -157,7 +157,6 @@ def _study(client: Client, keys: list[str], site_key: str) -> Any:
         "change",
         "growth",
         "districts",
-        "heat",
         "spread",
         "neighbours",
         "related",

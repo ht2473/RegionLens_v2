@@ -1,4 +1,9 @@
-"""Мастер своих данных: «Файл» → «Что в таблице» → «Показатели»; черновик хранится в базе."""
+"""
+Мастер своих данных: «Файл» → «Что в таблице» → «Проверка»; черновик хранится в базе.
+
+Шаг «Файл» пропускается, когда в файле одна таблица, шаг «Что в таблице» — когда вопросов
+нет: человек сразу видит проверку — что прочитано, показатели и сборку.
+"""
 
 from __future__ import annotations
 
@@ -19,6 +24,7 @@ from apps.sources import periods
 
 from . import (
     access,
+    build,
     describe,
     extract,
     indicators,
@@ -27,6 +33,8 @@ from . import (
     matching,
     recognize,
     renew,
+    review,
+    semantics,
     services,
     tables,
 )
@@ -37,7 +45,7 @@ from .series import FEW_REGIONS
 STEPS: tuple[tuple[str, Promise], ...] = (
     ("file", _("Файл")),
     ("table", _("Что в таблице")),
-    ("series", _("Показатели")),
+    ("series", _("Проверка")),
 )
 
 
@@ -156,6 +164,32 @@ class FileStepView(DatasetStepMixin, TemplateView):
     template_name = "userdata/file_step.html"
     step = "file"
 
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        # В файле одна таблица и она читается — выбирать нечего: сразу дальше. Вставка —
+        # тоже (продолжение таблицы добавляют по ссылке со страницы проверки).
+        if not self.version.recipe.get("table") and "encoding" not in request.GET:
+            target = self._single_table(request)
+            if target:
+                return redirect(target)
+        return super().get(request, *args, **kwargs)
+
+    def _single_table(self, request: HttpRequest) -> str:
+        """Выбрать единственную таблицу файла; вернуть адрес следующего шага или пусто."""
+        try:
+            inspection = services.inspection_of(self.version)
+        except ingest.IngestError:
+            return ""
+        if len(inspection.tables) != 1 or _garbled(inspection):
+            return ""
+        try:
+            services.choose_table(self.version, inspection.tables[0].key, encoding="")
+        except ingest.IngestError:
+            return ""
+        if renew.is_automatic(self.version):
+            renew.transfer(self.version)
+            return renew.proceed(self.version, request.user)
+        return reverse("userdata:table", kwargs={"public_id": self.dataset.public_id})
+
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         encoding = self.request.GET.get("encoding", "")
@@ -172,9 +206,7 @@ class FileStepView(DatasetStepMixin, TemplateView):
             page_title=_("Файл: %(name)s") % {"name": self.version.file_name},
             inspection=inspection,
             selected=selected,
-            garbled=any(
-                "�" in cell for table in inspection.tables for row in table.sample for cell in row
-            ),
+            garbled=_garbled(inspection),
             is_text=self.version.file_kind != ingest.PASTE
             and any(table.encoding for table in inspection.tables),
             choose_form=kwargs.get("choose_form")
@@ -230,6 +262,8 @@ class TableStepView(DatasetStepMixin, TemplateView):
 
     template_name = "userdata/table_step.html"
     step = "table"
+    # Прочитанная таблица и распознавание: считаются в get один раз и для страницы.
+    recognized: tuple[tables.Loaded, recognize.Recognition] | None = None
 
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         if not self.version.recipe.get("table"):
@@ -243,6 +277,18 @@ class TableStepView(DatasetStepMixin, TemplateView):
             if target != request.path:
                 return redirect(target)
             self.version.refresh_from_db()
+        self.recognized = describe.load_and_recognize(self.version, request.user)
+        if (
+            not self.version.recipe.get("form")
+            and not renew.is_renewal(self.version)
+            and not questions_of(self.recognized[1])
+            and not warned(self.recognized[1])
+        ):
+            # Описание ещё не сохранено, спросить и предупредить не о чем: прочитанное
+            # сохраняется как есть, проверка — на следующем шаге; разметку можно поправить,
+            # вернувшись сюда.
+            describe.save_answers(self.version, self.recognized[1], {}, request.user)
+            return redirect("userdata:series", public_id=self.dataset.public_id)
         return super().get(request, *args, **kwargs)
 
     def get_waiting_context(self, state: str) -> dict[str, Any]:
@@ -256,7 +302,9 @@ class TableStepView(DatasetStepMixin, TemplateView):
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        loaded, result = describe.load_and_recognize(self.version, self.request.user)
+        loaded, result = self.recognized or describe.load_and_recognize(
+            self.version, self.request.user
+        )
         columns = [column for column in result.columns if column.distinct or column.header]
         # Столбцы с периодами широкой таблицы: первые — в таблице, остальные — под раскрытием,
         # их бывает по сорок с одной ролью.
@@ -273,20 +321,17 @@ class TableStepView(DatasetStepMixin, TemplateView):
         context.update(
             page_title=_("Что в таблице"),
             result=result,
+            year_note=describe.year_note(
+                result.year, result.period, result.year_from, result.year_text
+            )
+            if result.year_auto
+            else "",
             columns=shown,
             preview=_preview(loaded, result, shown),
             period_columns=hidden,
             last_period_column=hidden[-1] if hidden else None,
             role_choices=ROLE_CHOICES,
-            questions=sum(
-                (
-                    result.form == recognize.UNKNOWN,
-                    len(nested),
-                    result.needs_year,
-                    bool(unresolved),
-                    too_many,
-                )
-            ),
+            questions=questions_of(result),
             too_many=too_many,
             unresolved=unresolved,
             outside=describe.outside(result),
@@ -361,7 +406,7 @@ class SeriesStepView(DatasetStepMixin, TemplateView):
     def get_waiting_context(self, stage: str, state: str) -> dict[str, Any]:
         context = DatasetStepMixin.get_context_data(self)
         context.update(
-            page_title=_("Показатели"),
+            page_title=_("Проверка таблицы"),
             waiting=state,
             waiting_stage=stage,
             waiting_error=jobs.stage_error(self.version, stage),
@@ -376,13 +421,27 @@ class SeriesStepView(DatasetStepMixin, TemplateView):
         report = self.version.report.get("extract") or {}
         items = indicators.indicators_of(self.version)
         context.update(
-            page_title=_("Показатели"),
+            page_title=_("Проверка таблицы"),
+            summary=_review_summary(self.version, report, items),
+            data_review=review.review(self.dataset, self.version, report, items),
+            roles=_roles_read(self.version.recipe),
             indicators=items,
             asking=[item for item in items if item.questions],
             settled=[item for item in items if not item.questions],
+            # Во что влить показатель: другие показатели таблицы, сами никуда не влитые.
+            merge_choices=[(item.name, item.title) for item in items if not item.merge],
+            titles={item.name: item.title for item in items},
             report=report,
-            meta_form=kwargs.get("meta_form") or DatasetMetaForm(instance=self.dataset),
-            kinds=DatasetSeries.Kind.choices,
+            meta_form=kwargs.get("meta_form")
+            or DatasetMetaForm(
+                instance=self.dataset,
+                initial=services.suggested_title(self.dataset, self.version, items),
+            ),
+            kinds=[
+                (value, label, semantics.TYPE_HINTS[value])
+                for value, label in DatasetSeries.Kind.choices
+            ],
+            bases=semantics.BASE_CHOICES,
             polarities=DatasetSeries.Polarity.choices,
             build_error=jobs.stage_error(self.version, jobs.BUILD)
             if jobs.stage_state(self.version, jobs.BUILD) == jobs.FAILED
@@ -406,6 +465,7 @@ class SeriesStepView(DatasetStepMixin, TemplateView):
         if not meta_form.is_valid():
             return self.render_to_response(self.get_context_data(meta_form=meta_form))
         meta_form.save()
+        _save_data_answers(self.version, request)
         indicators.save(self.version, _indicator_answers(request))
         state = jobs.start(self.version, jobs.BUILD)
         if state == jobs.READY:
@@ -478,8 +538,11 @@ def first_view_url(version: DatasetVersion) -> str:
 
 
 def first_key(version: DatasetVersion) -> str | None:
-    """Первый ряд собранной таблицы; у суммы — её пересчёт на 100 000 жителей."""
-    records = list(version.series.order_by("order"))
+    """
+    Первый показатель собранной таблицы в числах человека: у показателя в разбивке — его итог
+    (сумма разбивки), иначе первый ряд со значениями; пересчёт на жителей — не первым.
+    """
+    records = [record for record in version.series.order_by("order") if record.values_count]
     if not records:
         return None
     first = records[0]
@@ -487,13 +550,24 @@ def first_key(version: DatasetVersion) -> str | None:
         (
             record
             for record in records
-            if record.base_code == first.code
-            and record.derived == DatasetSeries.Derived.PER_100000
-            and record.values_count
+            if record.indicator == first.indicator
+            and record.derived == DatasetSeries.Derived.SLICE_SUM
         ),
-        first,
+        next((record for record in records if not record.derived), first),
     )
     return f"u:{version.dataset.code}:{preferred.code}"
+
+
+def _save_data_answers(version: DatasetVersion, request: HttpRequest) -> None:
+    """Ответы о данных: что значит прочерк и у каких показателей нули — пропуски."""
+    recipe = dict(version.recipe)
+    if request.POST.get("dashes") in {build.DASHES_ABSENT, build.DASHES_MISSING}:
+        recipe["dashes"] = request.POST["dashes"]
+    if request.POST.get("zeros-asked"):
+        recipe["zeros"] = request.POST.getlist("zero")
+    if recipe != version.recipe:
+        version.recipe = recipe
+        version.save(update_fields=["recipe", "updated_at"])
 
 
 def _indicator_answers(request: HttpRequest) -> dict[str, dict[str, Any]]:
@@ -511,11 +585,15 @@ def _indicator_answers(request: HttpRequest) -> dict[str, dict[str, Any]]:
             "title": data.get(f"title-{number}", ""),
             "unit": data.get(f"unit-{number}", ""),
             "kind": data.get(f"kind-{number}", ""),
+            "base": data.get(f"base-{number}", ""),
             "polarity": data.get(f"polarity-{number}", ""),
             "breaks": data.get(f"breaks-{number}", ""),
             "break_note": data.get(f"break-note-{number}", ""),
             "fold_slices": data.getlist(f"fold-{number}"),
             "months": data.get(f"months-{number}", ""),
+            "hidden": data.get(f"hidden-{number}") == "1",
+            "scale": data.get(f"scale-{number}", "0"),
+            "merge": data.get(f"merge-{number}", ""),
         }
         if data.get(f"recounts-{number}"):
             answer["per"] = data.getlist(f"per-{number}")
@@ -562,6 +640,89 @@ FORM_TEXTS = {
 }
 
 
+# Подписей столбцов одной роли в сводке «Как прочитана таблица» — не больше.
+ROLE_HEADERS_SHOWN = 3
+
+
+def questions_of(result: recognize.Recognition) -> int:
+    """
+    Сколько вопросов на шаге «Что в таблице»: вид таблицы не понят, вложенные области,
+    год, повторы регионов, неузнанные подписи территорий, слишком много рядов.
+    """
+    nested = result.territories.nested if result.territories else []
+    return sum(
+        (
+            result.form == recognize.UNKNOWN,
+            len(nested),
+            result.needs_year,
+            result.needs_repeats,
+            bool(describe.unresolved(result)),
+            result.series > recognize.MAX_SERIES,
+        )
+    )
+
+
+def warned(result: recognize.Recognition) -> bool:
+    """
+    Шаг «Что в таблице» предупреждает о том, что стоит увидеть до сборки: районы вместо
+    субъектов, одна территория дважды, одинаковые подписи столбцов, разрез строками под
+    регионом.
+    """
+    return bool(result.municipal or result.duplicates or result.same_headers or result.row_parts)
+
+
+def _garbled(inspection: Any) -> bool:
+    """В образце таблиц есть знаки неверной кодировки."""
+    return any("�" in cell for table in inspection.tables for row in table.sample for cell in row)
+
+
+def _review_summary(
+    version: DatasetVersion, report: dict[str, Any], items: list[indicators.Indicator]
+) -> dict[str, Any]:
+    """Сводка проверки: регионов из всех, годы, показатели и ряды, как устроена таблица."""
+    from apps.sources.territories import region_codes
+
+    series = report.get("series") or []
+    years = [year for item in series for year in (item["first_year"], item["last_year"]) if year]
+    return {
+        "regions": max((item["regions"] for item in series), default=0),
+        "regions_total": len(region_codes()),
+        "first_year": min(years) if years else None,
+        "last_year": max(years) if years else None,
+        "indicators": len(items),
+        "series": len(series),
+        "with_unit": sum(1 for item in items if item.unit),
+        "form": FORM_TEXTS.get(report.get("form") or version.recipe.get("form", ""), ""),
+        "year_note": describe.year_note(*report["year_from"]) if report.get("year_from") else "",
+    }
+
+
+def _roles_read(recipe: dict[str, Any]) -> list[dict[str, Any]]:
+    """
+    Как прочитаны столбцы: роль словами и подписи её столбцов — первые и сколько ещё;
+    у широкой таблицы столбцов со значениями бывает по сорок.
+    """
+    labels = dict(ROLE_CHOICES)
+    grouped: dict[str, list[str]] = {}
+    roles = recipe.get("roles") or {}
+    headers = recipe.get("headers") or {}
+    for index in sorted(roles, key=int):
+        role = roles[index]
+        header = " ".join(str(headers.get(index) or "").split()) or str(
+            _("столбец %(number)s") % {"number": int(index) + 1}
+        )
+        grouped.setdefault(role, []).append(header)
+    return [
+        {
+            "role": labels.get(role, role),
+            "skipped": role == recognize.SKIP,
+            "headers": found[:ROLE_HEADERS_SHOWN],
+            "more": max(0, len(found) - ROLE_HEADERS_SHOWN),
+        }
+        for role, found in grouped.items()
+    ]
+
+
 def _preview(
     loaded: tables.Loaded, result: recognize.Recognition, columns: list[recognize.ColumnInfo]
 ) -> list[list[dict[str, str]]]:
@@ -600,7 +761,7 @@ def _resolved_regions(result: recognize.Recognition) -> int:
 
 
 def _answers(request: HttpRequest, result: recognize.Recognition) -> dict[str, Any]:
-    """Ответы формы шага: роли, год, разрезы, территории, вложенные области."""
+    """Ответы формы шага: роли, год, повторы регионов, разрезы, территории, вложенные области."""
     data = request.POST
     answers: dict[str, Any] = {
         "roles": {
@@ -608,8 +769,13 @@ def _answers(request: HttpRequest, result: recognize.Recognition) -> dict[str, A
             for key, value in data.items()
             if key.startswith("role-") and key.removeprefix("role-").isdigit()
         },
-        "year": data.get("year", "").strip() if data.get("year", "").strip().isdigit() else "",
+        # Год, подставленный из заголовка, листа или файла, и не исправленный — не ответ человека.
+        "year": data.get("year", "").strip()
+        if data.get("year", "").strip().isdigit()
+        and data.get("year", "").strip() != data.get("year-auto", "")
+        else "",
         "remember": data.get("remember") == "on",
+        "repeats": data.get("repeats", ""),
         "territories": {},
         "nested": {},
         "slices": {},
