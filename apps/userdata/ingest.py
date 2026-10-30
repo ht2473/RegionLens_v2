@@ -63,6 +63,9 @@ BOM = chr(0xFEFF)
 _OLE2 = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
 _ENCRYPTED_PACKAGE = "EncryptedPackage".encode("utf-16-le")
 _WORD_DOCUMENT = "WordDocument".encode("utf-16-le")
+# Потоки книги Excel (BIFF8 и BIFF5) в каталоге файла: книга с вложенным документом Word —
+# всё равно книга.
+_WORKBOOK_STREAMS = ("Workbook\x00".encode("utf-16-le"), "Book\x00".encode("utf-16-le"))
 _SKIPPED_NAMES = re.compile(r"(^|/)(__MACOSX/|\.DS_Store$|Thumbs\.db$|desktop\.ini$|\._)", re.I)
 _TABLE_SUFFIXES = {
     ".csv": CSV,
@@ -146,7 +149,7 @@ def sniff(head: bytes, name: str = "") -> str:
     if head.startswith(_OLE2):
         if _ENCRYPTED_PACKAGE in head:
             raise IngestError(_password_text(), "password")
-        if _WORD_DOCUMENT in head:
+        if _WORD_DOCUMENT in head and not any(stream in head for stream in _WORKBOOK_STREAMS):
             raise IngestError(_refusal_text("word"), "word")
         return XLS
     if head.startswith(b"PAR1"):
@@ -173,6 +176,24 @@ _REFUSED_SIGNATURES = (
     (b"\x1f\x8b", "gzip"),
     (b"{\\rtf", "word"),
 )
+
+
+def _contains(path: Path, needle: bytes) -> bool:
+    """Есть ли эти байты в файле: читается частями с перекрытием на длину искомого."""
+    tail = b""
+    with path.open("rb") as handle:
+        while chunk := handle.read(HEAD_BYTES):
+            if needle in tail + chunk:
+                return True
+            tail = chunk[-len(needle) :]
+    return False
+
+
+def _old_word(path: Path) -> bool:
+    """Документ Word старого вида (DOC): в каталоге файла поток документа, а потока книги нет."""
+    return _contains(path, _WORD_DOCUMENT) and not any(
+        _contains(path, stream) for stream in _WORKBOOK_STREAMS
+    )
 
 
 def zip_kind(bundle: zipfile.ZipFile) -> str:
@@ -283,6 +304,10 @@ def inspect(path: Path, file_name: str = "", *, encoding: str = "") -> Inspectio
     with path.open("rb") as handle:
         head = handle.read(HEAD_BYTES)
     kind = sniff(head, file_name or path.name)
+    if kind == XLS and _old_word(path):
+        # Каталог большого документа Word лежит дальше начала файла: без этой проверки
+        # старый .doc выглядел бы книгой Excel и получал отказ «не читается как таблица Excel».
+        raise IngestError(_refusal_text("word"), "word")
     if kind == ZIP:
         try:
             with zipfile.ZipFile(path) as bundle:

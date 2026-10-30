@@ -116,25 +116,39 @@ def _table_stream(
     text: bool = True,
     turned: bool = False,
     ruled: int | None = None,
+    rules: int | None = None,
     caption: str = "",
 ) -> str:
     """
     Таблица линиями: рамка каждой клетки и текст в ней (латиница — шрифт Helvetica).
     ``turned`` — подписи первой строки повёрнуты на 90° (строка выше); ``ruled`` — рамки
     только у стольких первых строк (шапка), остальные строки — текстом без линий;
-    ``caption`` — строка названия над таблицей.
+    ``rules`` — без рамок, только горизонтальные линейки над таблицей, под стольким
+    первыми строками (шапкой) и под таблицей, у каждой клетки своим отрезком (так пишет
+    Word таблицу без вертикальных границ); ``caption`` — строка названия над таблицей.
     """
     width, height, left = 110.0, 18.0, 50.0
     parts = ["0.5 w"]
     if caption:
         parts.append(_text(left, top + 8, caption))
+    columns = max(map(len, rows), default=0)
+
+    def rule(at: float) -> None:
+        for column in range(columns):
+            x = left + column * width
+            parts.append(f"{x:.1f} {at:.1f} m {x + width:.1f} {at:.1f} l S")
+
     y = top
+    if rules is not None:
+        rule(y)
     for row_index, row in enumerate(rows):
         row_height = 60.0 if turned and row_index == 0 else height
         y -= row_height
+        if rules is not None and row_index + 1 in {rules, len(rows)}:
+            rule(y)
         for column, value in enumerate(row):
             x = left + column * width
-            if ruled is None or row_index < ruled:
+            if rules is None and (ruled is None or row_index < ruled):
                 parts.append(f"{x:.1f} {y:.1f} {width:.1f} {row_height:.1f} re S")
             if text and value:
                 if turned and row_index == 0:
@@ -150,11 +164,12 @@ def pdf(
     text: bool = True,
     turned: bool = False,
     ruled: int | None = None,
+    rules: int | None = None,
     captions: Sequence[str] = (),
 ) -> bytes:
     """
-    PDF: на каждой странице — таблица линиями; без текста — как скан. ``turned``, ``ruled``
-    и ``captions`` (по странице) — см. ``_table_stream``.
+    PDF: на каждой странице — таблица линиями; без текста — как скан. ``turned``, ``ruled``,
+    ``rules`` и ``captions`` (по странице) — см. ``_table_stream``.
     """
     objects: list[str] = []
     page_ids = [3 + index * 2 for index in range(len(pages))]
@@ -164,7 +179,9 @@ def pdf(
     objects.append(f"<< /Type /Pages /Kids [{kids}] /Count {len(pages)} >>")
     for index, rows in enumerate(pages):
         caption = captions[index] if index < len(captions) else ""
-        stream = _table_stream(rows, text=text, turned=turned, ruled=ruled, caption=caption)
+        stream = _table_stream(
+            rows, text=text, turned=turned, ruled=ruled, rules=rules, caption=caption
+        )
         objects.append(
             f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] "
             f"/Resources << /Font << /F1 {font_id} 0 R >> >> /Contents {page_ids[index] + 1} 0 R >>"
