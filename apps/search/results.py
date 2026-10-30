@@ -12,8 +12,10 @@ from apps.search.index import (
     methodology_index,
     series_index,
 )
-from apps.search.parse import MIN_COVERAGE, MIN_SCORE, Reading
+from apps.search.parse import MIN_SCORE, Reading
 
+# Подборка «ближе всего» — не уверенный ответ: записи хватает половины слов запроса.
+MIN_COVERAGE = 0.5
 # Сколько записей в группе.
 FEATURED_LIMIT = 6
 CATALOG_LIMIT = 8

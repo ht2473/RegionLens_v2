@@ -20,6 +20,8 @@ class Column:
     title: str
     kind: str = COLUMN_TEXT
     width: int = 16
+    # Знаков после запятой в текстовых форматах; выгрузки таблиц хранят значение целиком.
+    decimals: int = 2
 
     @property
     def is_numeric(self) -> bool:
@@ -81,5 +83,5 @@ def format_value(value: Any, column: Column) -> str:
     if column.kind == COLUMN_PERCENT:
         return f"{float(value) * 100:.1f} %"
     if column.kind == COLUMN_NUMBER:
-        return f"{float(value):,.2f}".replace(",", " ").replace(".", ",")
+        return f"{float(value):,.{column.decimals}f}".replace(",", " ").replace(".", ",")
     return str(value)

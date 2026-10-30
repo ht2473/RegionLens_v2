@@ -307,7 +307,8 @@ def similar_official(title: str) -> list[Any]:
     вопросом: хотя бы половина значимых слов названия и оценка не случайная.
     """
     from apps.search.index import series_index
-    from apps.search.parse import MIN_COVERAGE, MIN_SCORE
+    from apps.search.parse import MIN_SCORE
+    from apps.search.results import MIN_COVERAGE
     from apps.search.text import stems
     from apps.warehouse.queries import featured_set
 

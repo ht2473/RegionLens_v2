@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-29 21:52+0000\n"
+"POT-Creation-Date: 2026-10-30 19:36+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1173,25 +1173,50 @@ msgstr "weak"
 msgid "практически отсутствует"
 msgstr "practically absent"
 
-#: apps/analytics/core/normalization.py:18
+#: apps/analytics/core/inequality.py:30
+msgid "показатель принимает отрицательные значения"
+msgstr "the indicator takes negative values"
+
+#: apps/analytics/core/inequality.py:31
+#: apps/analytics/core/normalization.py:167
+msgid "показатель принимает нулевые или отрицательные значения"
+msgstr "the indicator takes zero or negative values"
+
+#: apps/analytics/core/normalization.py:19
 msgid "линейное растяжение размаха"
 msgstr "linear rescaling of the range"
 
-#: apps/analytics/core/normalization.py:19
+#: apps/analytics/core/normalization.py:20
 msgid "стандартизация (z-оценка)"
 msgstr "standardisation (z-score)"
 
-#: apps/analytics/core/normalization.py:20
+#: apps/analytics/core/normalization.py:21
 msgid "робастная (медиана и квартили)"
 msgstr "robust (median and quartiles)"
 
-#: apps/analytics/core/normalization.py:21
+#: apps/analytics/core/normalization.py:22
 msgid "ранговая"
 msgstr "rank"
 
-#: apps/analytics/core/normalization.py:22
+#: apps/analytics/core/normalization.py:23
 msgid "логарифмическая"
 msgstr "logarithmic"
+
+#: apps/analytics/core/normalization.py:157
+msgid "учитывается только порядок территорий"
+msgstr "only the order of territories is used"
+
+#: apps/analytics/core/normalization.py:109
+msgid "все территории имеют одинаковое значение"
+msgstr "all territories have the same value"
+
+#: apps/analytics/core/normalization.py:126
+msgid "разброс значений равен нулю"
+msgstr "the values do not vary"
+
+#: apps/analytics/core/normalization.py:134
+msgid "значений за пределами трёх стандартных отклонений: %(count)s"
+msgstr "values beyond three standard deviations: %(count)s"
 
 #: apps/analytics/core/regression.py:140
 #: apps/analytics/templates/analytics/partials/_correlation_results.html:170
@@ -1230,25 +1255,57 @@ msgstr "high among low"
 msgid "низкий среди высоких"
 msgstr "low among high"
 
-#: apps/analytics/core/weighting.py:13
+#: apps/analytics/core/weighting.py:14
 msgid "равные"
 msgstr "equal"
 
-#: apps/analytics/core/weighting.py:14
+#: apps/analytics/core/weighting.py:15
 msgid "экспертные"
 msgstr "expert"
 
-#: apps/analytics/core/weighting.py:15
+#: apps/analytics/core/weighting.py:16
 msgid "энтропийные"
 msgstr "entropy"
 
-#: apps/analytics/core/weighting.py:16
+#: apps/analytics/core/weighting.py:17
 msgid "CRITIC"
 msgstr "CRITIC"
 
-#: apps/analytics/core/weighting.py:17
+#: apps/analytics/core/weighting.py:18
 msgid "по нагрузкам главных компонент"
 msgstr "by principal component loadings"
+
+#: apps/analytics/core/weighting.py:74
+msgid "данных недостаточно для расчёта весов по структуре набора: веса равные"
+msgstr "not enough data to derive weights from the indicator set: equal weights used"
+
+#: apps/analytics/core/weighting.py:57
+msgid "показатели не выбраны"
+msgstr "no indicators selected"
+
+#: apps/analytics/core/weighting.py:88
+msgid "все заданные веса нулевые: применены равные"
+msgstr "all the weights given are zero: equal weights used"
+
+#: apps/analytics/core/weighting.py:107
+msgid "показатели не различают территории: применены равные веса"
+msgstr "the indicators do not separate territories: equal weights used"
+
+#: apps/analytics/core/weighting.py:126
+msgid "разброс показателей нулевой: применены равные веса"
+msgstr "the indicators do not vary: equal weights used"
+
+#: apps/analytics/core/weighting.py:166
+msgid "нагрузки компонент вырождены: применены равные веса"
+msgstr "the component loadings are degenerate: equal weights used"
+
+#: apps/analytics/core/weighting.py:174
+msgid "использовано компонент: %(kept)s; объяснённая доля разброса: %(share)s"
+msgstr "components used: %(kept)s; share of variance explained: %(share)s"
+
+#: apps/analytics/core/weighting.py:145
+msgid "структуру связей определить не удалось: применены равные веса"
+msgstr "the structure of links could not be determined: equal weights used"
 
 #: apps/analytics/selectors.py:49
 msgid "постоянный: только субъекты со значениями во всех годах"
@@ -3211,7 +3268,7 @@ msgstr "year of the ranking; the latest available by default"
 msgid "desc или asc"
 msgstr "desc or asc"
 
-#: apps/api/serializers.py:231
+#: apps/api/serializers.py:232
 msgid "Интерфейс отдаёт только открытые данные сайта; ряды своих таблиц в нём недоступны."
 msgstr "The API serves only the site’s open data; series from your own tables are not available in it."
 
@@ -3280,66 +3337,66 @@ msgstr "No ranking has been calculated for this series"
 msgid "Нет рейтинга за этот год. Доступны: %s"
 msgstr "There is no ranking for this year. Available: %s"
 
-#: apps/catalog/constants.py:71
+#: apps/catalog/constants.py:72
 msgid "Изменение методологии наблюдения"
 msgstr "Change in observation methodology"
 
-#: apps/catalog/constants.py:72
+#: apps/catalog/constants.py:73
 msgid "Смена классификатора"
 msgstr "Change of classifier"
 
-#: apps/catalog/constants.py:73
+#: apps/catalog/constants.py:74
 msgid "Изменение состава территории"
 msgstr "Change in territorial composition"
 
-#: apps/catalog/constants.py:74
+#: apps/catalog/constants.py:75
 msgid "Изменение круга наблюдаемых объектов"
 msgstr "Change in the scope of observation"
 
-#: apps/catalog/constants.py:75
+#: apps/catalog/constants.py:76
 msgid "Начало статистического наблюдения"
 msgstr "Start of statistical observation"
 
-#: apps/catalog/constants.py:76
+#: apps/catalog/constants.py:77
 msgid "Изменение базы сопоставимых цен"
 msgstr "Change of the constant-price base"
 
-#: apps/catalog/constants.py:77
+#: apps/catalog/constants.py:78
 msgid "Смена источника данных"
 msgstr "Change of data source"
 
-#: apps/catalog/constants.py:102
+#: apps/catalog/constants.py:103
 msgid "Абсолютная величина"
 msgstr "Absolute quantity"
 
-#: apps/catalog/constants.py:103
+#: apps/catalog/constants.py:104
 msgid "Денежная величина"
 msgstr "Monetary quantity"
 
-#: apps/catalog/constants.py:104
+#: apps/catalog/constants.py:105
 msgid "Доля или процент"
 msgstr "Share or percentage"
 
-#: apps/catalog/constants.py:105
+#: apps/catalog/constants.py:106
 msgid "Индекс или темп изменения"
 msgstr "Index or rate of change"
 
-#: apps/catalog/constants.py:106
+#: apps/catalog/constants.py:107
 msgid "Относительный показатель на численность"
 msgstr "Rate per population"
 
-#: apps/catalog/constants.py:107
+#: apps/catalog/constants.py:108
 msgid "Натуральная величина"
 msgstr "Physical quantity"
 
-#: apps/catalog/constants.py:108
+#: apps/catalog/constants.py:109
 msgid "Не определена"
 msgstr "Not determined"
 
 #: apps/catalog/indicator.py:232
 #: apps/catalog/passport.py:201
 #: apps/core/showcase.py:567
-#: apps/userdata/answers.py:378
+#: apps/userdata/answers.py:387
 msgid "%(points)s п. п."
 msgstr "%(points)s pp"
 
@@ -3977,7 +4034,7 @@ msgid "выпусков изданий"
 msgstr "editions of publications"
 
 #: apps/catalog/templates/catalog/dataset.html:54
-#: apps/userdata/views.py:615
+#: apps/userdata/views.py:622
 msgid "период"
 msgstr "period"
 
@@ -5053,7 +5110,7 @@ msgstr "All indicators"
 #: apps/catalog/views/series.py:264
 #: apps/core/navigation.py:58
 #: apps/surface/panels.py:82
-#: apps/userdata/lab.py:1086
+#: apps/userdata/lab.py:1087
 msgid "Динамика"
 msgstr "Dynamics"
 
@@ -5300,7 +5357,11 @@ msgstr "phenomenon absent"
 msgid "меньше единицы измерения"
 msgstr "less than the unit of measurement"
 
-#: apps/catalog/value_notes.py:30
+#: apps/catalog/value_notes.py:22
+msgid "ошибка набора исправлена по сборнику Росстата"
+msgstr "dataset error corrected from the Rosstat yearbook"
+
+#: apps/catalog/value_notes.py:31
 msgid "значение неизвестно"
 msgstr "the value is unknown"
 
@@ -5324,7 +5385,7 @@ msgstr "No district"
 #: apps/core/navigation.py:53
 #: apps/maps/templates/maps/partials/_view.html:7
 #: apps/surface/panels.py:67
-#: apps/userdata/lab.py:538
+#: apps/userdata/lab.py:539
 msgid "Карта"
 msgstr "Map"
 
@@ -5339,8 +5400,8 @@ msgstr "The course of the value in selected regions next to the country"
 #: apps/catalog/views/series.py:270
 #: apps/core/navigation.py:63
 #: apps/surface/panels.py:98
-#: apps/userdata/lab.py:1083
-#: apps/userdata/lab.py:555
+#: apps/userdata/lab.py:1084
+#: apps/userdata/lab.py:556
 msgid "Рейтинг"
 msgstr "Ranking"
 
@@ -5351,7 +5412,7 @@ msgstr "All regions by rank and who moved up or down"
 #: apps/catalog/views/series.py:276
 #: apps/core/navigation.py:68
 #: apps/surface/panels.py:113
-#: apps/userdata/lab.py:562
+#: apps/userdata/lab.py:563
 #: apps/userdata/pages.py:49
 msgid "Распределение"
 msgstr "Distribution"
@@ -5364,7 +5425,7 @@ msgstr "How the regions' values lie on the scale"
 #: apps/core/navigation.py:73
 #: apps/surface/panels.py:127
 #: apps/userdata/export.py:209
-#: apps/userdata/ingest.py:480
+#: apps/userdata/ingest.py:490
 msgid "Таблица"
 msgstr "Table"
 
@@ -5412,7 +5473,7 @@ msgid "к базовому году"
 msgstr "rebased"
 
 #: apps/compare/panel.py:208
-#: apps/userdata/answers.py:1373
+#: apps/userdata/answers.py:1382
 msgid "%(year)s = 100"
 msgstr "%(year)s = 100"
 
@@ -10187,7 +10248,7 @@ msgid "Вклад в изменение"
 msgstr "Contribution to change"
 
 #: apps/userdata/answers.py:68
-#: apps/userdata/lab.py:696
+#: apps/userdata/lab.py:697
 #: apps/userdata/templates/userdata/study.html:325
 #: apps/userdata/templates/userdata/study_group.html:17
 msgid "Группа регионов"
@@ -10201,26 +10262,26 @@ msgstr "Two indicators together"
 msgid "Сравнение двух показателей"
 msgstr "Two indicators compared"
 
-#: apps/userdata/answers.py:339
+#: apps/userdata/answers.py:348
 msgid "в процентных пунктах"
 msgstr "in percentage points"
 
-#: apps/userdata/answers.py:340
+#: apps/userdata/answers.py:349
 #: apps/userdata/operations.py:104
 msgid "в процентах"
 msgstr "in per cent"
 
-#: apps/userdata/answers.py:341
+#: apps/userdata/answers.py:350
 msgid "разностью значений"
 msgstr "as a difference of values"
 
-#: apps/userdata/answers.py:523
+#: apps/userdata/answers.py:532
 msgid "Россия (сумма регионов)"
 msgstr "Russia (sum of regions)"
 
 #: apps/userdata/answers.py:125
-#: apps/userdata/answers.py:836
-#: apps/userdata/answers.py:930
+#: apps/userdata/answers.py:845
+#: apps/userdata/answers.py:939
 msgid "За этот год значений по регионам нет."
 msgstr "There are no regional values for this year."
 
@@ -10233,90 +10294,90 @@ msgstr "No ranking has been calculated for this year."
 msgid "Значений по годам нет."
 msgstr "There are no values by year."
 
-#: apps/userdata/answers.py:280
+#: apps/userdata/answers.py:289
 msgid "Мой регион не выбран: его выбирают в шапке сайта."
 msgstr "My region is not chosen: choose it in the site header."
 
-#: apps/userdata/answers.py:284
+#: apps/userdata/answers.py:293
 msgid "За этот год значения по моему региону нет."
 msgstr "There is no value for my region in this year."
 
-#: apps/userdata/answers.py:396
-#: apps/userdata/answers.py:581
+#: apps/userdata/answers.py:405
+#: apps/userdata/answers.py:590
 msgid "Для изменения нужны хотя бы два года."
 msgstr "A change needs at least two years."
 
-#: apps/userdata/answers.py:404
-#: apps/userdata/answers.py:669
+#: apps/userdata/answers.py:413
+#: apps/userdata/answers.py:678
 msgid "Значений в обоих годах слишком мало для сравнения."
 msgstr "Too few values in both years to compare."
 
-#: apps/userdata/answers.py:467
+#: apps/userdata/answers.py:476
 msgid "Часть структуры удалена из таблицы."
 msgstr "A part of the structure was removed from the table."
 
-#: apps/userdata/answers.py:504
+#: apps/userdata/answers.py:513
 #: apps/userdata/studies.py:274
 msgid "Для структуры нужны хотя бы две части."
 msgstr "A structure needs at least two parts."
 
-#: apps/userdata/answers.py:511
+#: apps/userdata/answers.py:520
 msgid "У частей есть отрицательные значения — долей у них нет."
 msgstr "Some parts have negative values, so they have no shares."
 
-#: apps/userdata/answers.py:513
+#: apps/userdata/answers.py:522
 msgid "За этот год значений всех частей по регионам слишком мало."
 msgstr "Too few regions have values of all parts for this year."
 
-#: apps/userdata/answers.py:573
+#: apps/userdata/answers.py:582
 msgid "Вклады регионов складываются только у сумм. У относительной величины смотрите «Темпы роста по регионам»."
 msgstr "Regional contributions add up only for totals. For a relative value, see “Growth rates by region”."
 
-#: apps/userdata/answers.py:676
+#: apps/userdata/answers.py:685
 msgid "остальные регионы (%(count)s)"
 msgstr "other regions (%(count)s)"
 
-#: apps/userdata/answers.py:692
+#: apps/userdata/answers.py:701
 msgid "Значений всех частей в обоих годах слишком мало для сравнения."
 msgstr "Too few regions have values of all parts in both years to compare."
 
-#: apps/userdata/answers.py:705
+#: apps/userdata/answers.py:714
 msgid "остальные части (%(count)s)"
 msgstr "other parts (%(count)s)"
 
-#: apps/userdata/answers.py:730
+#: apps/userdata/answers.py:739
 msgid "Группа регионов удалена."
 msgstr "The region group was deleted."
 
-#: apps/userdata/answers.py:741
+#: apps/userdata/answers.py:750
 msgid "У регионов группы нет значений этого показателя."
 msgstr "The regions of the group have no values of this indicator."
 
-#: apps/userdata/answers.py:876
+#: apps/userdata/answers.py:885
 msgid "За этот год значений по округам нет."
 msgstr "There are no values by federal district in this year."
 
-#: apps/userdata/answers.py:984
+#: apps/userdata/answers.py:993
 msgid "Для малых графиков нужны хотя бы два года."
 msgstr "Small multiples need at least two years."
 
-#: apps/userdata/answers.py:993
+#: apps/userdata/answers.py:1002
 msgid "За эти годы значений по регионам нет."
 msgstr "There are no regional values for these years."
 
-#: apps/userdata/answers.py:1102
+#: apps/userdata/answers.py:1111
 msgid "Индекс не рассчитать: значения регионов одинаковы."
 msgstr "The index cannot be calculated: the regions’ values are equal."
 
-#: apps/userdata/answers.py:1299
+#: apps/userdata/answers.py:1308
 msgid "У показателей нет общего года."
 msgstr "The indicators have no year in common."
 
-#: apps/userdata/answers.py:1311
+#: apps/userdata/answers.py:1320
 msgid "Пар значений слишком мало для оценки связи."
 msgstr "There are too few pairs of values to estimate a relationship."
 
-#: apps/userdata/answers.py:1316
+#: apps/userdata/answers.py:1325
 msgid "Связь не рассчитать: у одного из показателей значения одинаковы."
 msgstr "The relationship cannot be calculated: one of the indicators has equal values."
 
@@ -10324,39 +10385,39 @@ msgstr "The relationship cannot be calculated: one of the indicators has equal v
 msgid "Нужны значения хотя бы по %(count)s регионам, есть по %(found)s."
 msgstr "Values for at least %(count)s regions are needed; there are %(found)s."
 
-#: apps/userdata/answers.py:480
+#: apps/userdata/answers.py:489
 msgid "%(first)s и %(second)s"
 msgstr "%(first)s and %(second)s"
 
-#: apps/userdata/answers.py:482
+#: apps/userdata/answers.py:491
 msgid "%(first)s и другие (%(count)s)"
 msgstr "%(first)s and others (%(count)s)"
 
-#: apps/userdata/answers.py:528
+#: apps/userdata/answers.py:537
 msgid "прочие"
 msgstr "other"
 
-#: apps/userdata/answers.py:1150
+#: apps/userdata/answers.py:1159
 msgid "Нужно не меньше %(count)s лет между первым и последним годом."
 msgstr "At least %(count)s years are needed between the first and the last year."
 
-#: apps/userdata/answers.py:1174
+#: apps/userdata/answers.py:1183
 msgid "Нужны положительные значения хотя бы по %(count)s регионам каждый год."
 msgstr "Positive values for at least %(count)s regions are needed in every year."
 
-#: apps/userdata/answers.py:1244
+#: apps/userdata/answers.py:1253
 msgid "%(title)s — своя таблица"
 msgstr "%(title)s — own table"
 
-#: apps/userdata/answers.py:1246
+#: apps/userdata/answers.py:1255
 msgid "%(title)s — данные сайта"
 msgstr "%(title)s — site data"
 
-#: apps/userdata/answers.py:755
+#: apps/userdata/answers.py:764
 msgid "доля группы в сумме регионов"
 msgstr "group share of the regional total"
 
-#: apps/userdata/answers.py:768
+#: apps/userdata/answers.py:777
 msgid "остальные регионы"
 msgstr "other regions"
 
@@ -10563,11 +10624,11 @@ msgstr "not in the reference list"
 msgid "исключено из расчётов"
 msgstr "excluded from calculations"
 
-#: apps/userdata/extract.py:899
+#: apps/userdata/extract.py:902
 msgid "Разобрать таблицу не удалось. Мы получили сообщение об ошибке; сам файл не пересылался."
 msgstr "The table could not be parsed. We have received an error report; the file itself was not sent."
 
-#: apps/userdata/extract.py:764
+#: apps/userdata/extract.py:767
 msgid "Получается временных рядов: %(count)s, больше %(limit)s. Отметьте лишние столбцы как «пропустить» на шаге «Что в таблице»."
 msgstr "Time series to be created: %(count)s, more than %(limit)s. Mark the columns you do not need as “skip” at the “What is in the table” step."
 
@@ -10595,7 +10656,7 @@ msgstr "The site map shows only constituent entities of Russia. You need a table
 msgid "В таблице не нашлось ни одного значения по территориям."
 msgstr "The table contains no values by territory."
 
-#: apps/userdata/extract.py:757
+#: apps/userdata/extract.py:760
 #: apps/userdata/templates/userdata/table_step.html:227
 msgid "Получается временных рядов: %(count)s, больше %(limit)s. Выберите значения разрезов."
 msgstr "Time series to be created: %(count)s, more than %(limit)s. Choose breakdown values."
@@ -10679,7 +10740,7 @@ msgid "По этой формуле не получилось ни одного 
 msgstr "This formula produced no values: the indicators have no years and regions in common."
 
 #: apps/userdata/formula_store.py:316
-#: apps/userdata/lab.py:985
+#: apps/userdata/lab.py:986
 msgid "Таблица ещё не собрана."
 msgstr "The table has not been built yet."
 
@@ -10945,83 +11006,83 @@ msgstr "The group contains all regions, so there is nothing to compare it with."
 msgid "Групп уже %(count)s — это предел. Удалите ненужные."
 msgstr "You already have %(count)s groups, which is the limit. Delete the ones you no longer need."
 
-#: apps/userdata/ingest.py:750
+#: apps/userdata/ingest.py:760
 msgid "Файл защищён паролем. Снимите защиту в Excel и загрузите снова."
 msgstr "The file is password-protected. Remove the protection in Excel and upload it again."
 
-#: apps/userdata/ingest.py:761
+#: apps/userdata/ingest.py:771
 msgid "Подходят CSV, TXT, XLSX, XLS, ODS, Parquet, DOCX, PDF и ZIP с ними."
 msgstr "CSV, TXT, XLSX, XLS, ODS, Parquet, DOCX, PDF and ZIP archives with them are accepted."
 
-#: apps/userdata/ingest.py:754
+#: apps/userdata/ingest.py:764
 msgid "Таблица «%(name)s» в распакованном виде больше %(limit)s МБ. Оставьте в ней только нужные показатели или годы."
 msgstr "Unpacked, the table “%(name)s” is larger than %(limit)s MB. Keep only the indicators or years you need."
 
-#: apps/userdata/ingest.py:763
+#: apps/userdata/ingest.py:773
 msgid "Документ этого вида не читается. Сохраните его в Word как DOCX или скопируйте таблицу и вставьте её в поле «Вставить таблицу»."
 msgstr "A document of this kind cannot be read. Save it in Word as DOCX, or copy the table and paste it into the “Paste a table” field."
 
-#: apps/userdata/ingest.py:768
+#: apps/userdata/ingest.py:778
 msgid "Архивы RAR и 7z не принимаются. Распакуйте архив и загрузите таблицу или ZIP."
 msgstr "RAR and 7z archives are not accepted. Unpack the archive and upload the table or a ZIP."
 
-#: apps/userdata/ingest.py:769
+#: apps/userdata/ingest.py:779
 msgid "Сжатые файлы GZIP не принимаются. Распакуйте файл или загрузите архив ZIP."
 msgstr "GZIP files are not accepted. Unpack the file or upload a ZIP archive."
 
-#: apps/userdata/ingest.py:326
+#: apps/userdata/ingest.py:336
 msgid "В файле нет таблиц."
 msgstr "The file contains no tables."
 
-#: apps/userdata/ingest.py:392
+#: apps/userdata/ingest.py:402
 msgid "В архиве нет таблиц, только описание в PDF."
 msgstr "The archive contains no tables, only a description in PDF."
 
-#: apps/userdata/ingest.py:408
+#: apps/userdata/ingest.py:418
 msgid "В архиве есть файлы с путями вне архива. Такой архив не принимается."
 msgstr "The archive contains files with paths outside the archive. Such an archive is not accepted."
 
-#: apps/userdata/ingest.py:415
+#: apps/userdata/ingest.py:425
 msgid "В архиве больше %(count)s файлов. Загрузите архив только с нужными таблицами."
 msgstr "The archive has more than %(count)s files. Upload an archive with only the tables you need."
 
-#: apps/userdata/ingest.py:570
+#: apps/userdata/ingest.py:580
 msgid "Листы книги «%(name)s» сжаты слишком сильно. Такой файл не принимается."
 msgstr "The sheets of the workbook “%(name)s” are compressed too strongly. Such a file is not accepted."
 
-#: apps/userdata/ingest.py:582
+#: apps/userdata/ingest.py:592
 msgid "Файл Parquet повреждён."
 msgstr "The Parquet file is damaged."
 
-#: apps/userdata/ingest.py:767
+#: apps/userdata/ingest.py:777
 msgid "Это изображение, а не таблица."
 msgstr "This is an image, not a table."
 
-#: apps/userdata/ingest.py:770
+#: apps/userdata/ingest.py:780
 msgid "Это не таблица."
 msgstr "This is not a table."
 
-#: apps/userdata/ingest.py:771
+#: apps/userdata/ingest.py:781
 msgid "В архиве нет таблиц."
 msgstr "The archive contains no tables."
 
-#: apps/userdata/ingest.py:312
+#: apps/userdata/ingest.py:322
 msgid "Архив повреждён."
 msgstr "The archive is damaged."
 
-#: apps/userdata/ingest.py:425
+#: apps/userdata/ingest.py:435
 msgid "Файл «%(name)s» в архиве сжат слишком сильно. Такой архив не принимается."
 msgstr "The file “%(name)s” in the archive is compressed too strongly. Such an archive is not accepted."
 
-#: apps/userdata/ingest.py:438
+#: apps/userdata/ingest.py:448
 msgid "В архиве нет файла «%(name)s»."
 msgstr "The archive has no file “%(name)s”."
 
-#: apps/userdata/ingest.py:523
+#: apps/userdata/ingest.py:533
 msgid "Файл «%(name)s» не читается как таблица Excel."
 msgstr "The file “%(name)s” cannot be read as an Excel table."
 
-#: apps/userdata/ingest.py:559
+#: apps/userdata/ingest.py:569
 msgid "Файл «%(name)s» повреждён."
 msgstr "The file “%(name)s” is damaged."
 
@@ -11050,256 +11111,256 @@ msgstr "What part of the total each region has"
 msgid "Насколько значение выросло за год"
 msgstr "How much the value grew over the year"
 
-#: apps/userdata/lab.py:804
+#: apps/userdata/lab.py:805
 #: apps/userdata/templates/userdata/index.html:172
 msgid "Расчёты"
 msgstr "Calculations"
 
-#: apps/userdata/lab.py:806
+#: apps/userdata/lab.py:807
 msgid "Все расчёты и формула"
 msgstr "All calculations and a formula"
 
-#: apps/userdata/lab.py:882
+#: apps/userdata/lab.py:883
 #: apps/userdata/studies.py:284
 msgid "Такой карточки нет."
 msgstr "There is no such card."
 
-#: apps/userdata/lab.py:928
+#: apps/userdata/lab.py:929
 msgid "Такого набора нет."
 msgstr "There is no such set."
 
-#: apps/userdata/lab.py:1115
-#: apps/userdata/lab.py:1119
+#: apps/userdata/lab.py:1116
+#: apps/userdata/lab.py:1120
 #: apps/userdata/operations.py:30
 #: apps/userdata/operations.py:480
 msgid "На жителя"
 msgstr "Per resident"
 
-#: apps/userdata/lab.py:1256
+#: apps/userdata/lab.py:1257
 msgid "Таблица «%(table)s» собрана: карта, рейтинг и первые выводы — в новом исследовании."
 msgstr "The table “%(table)s” is built: its map, ranking and first findings are in a new study."
 
-#: apps/userdata/lab.py:1258
+#: apps/userdata/lab.py:1259
 msgid "Таблица «%(table)s» собрана, её карта добавлена в исследование «%(study)s»."
 msgstr "The table “%(table)s” is built, its map has been added to the study “%(study)s”."
 
-#: apps/userdata/lab.py:504
+#: apps/userdata/lab.py:505
 msgid "Визуализация"
 msgstr "Visualisation"
 
-#: apps/userdata/lab.py:506
+#: apps/userdata/lab.py:507
 #: apps/userdata/operations.py:33
 msgid "Сравнение"
 msgstr "Comparison"
 
-#: apps/userdata/lab.py:524
+#: apps/userdata/lab.py:525
 msgid "считается по значению на км²"
 msgstr "calculated from the value per km²"
 
-#: apps/userdata/lab.py:524
+#: apps/userdata/lab.py:525
 msgid "считается по значению на жителя"
 msgstr "calculated from the value per resident"
 
-#: apps/userdata/lab.py:527
+#: apps/userdata/lab.py:528
 msgid "сначала посчитает значение на км² — оно встанет в таблицу"
 msgstr "first calculates the value per km² — it is added to the table"
 
-#: apps/userdata/lab.py:529
+#: apps/userdata/lab.py:530
 msgid "сначала посчитает значение на жителя — оно встанет в таблицу"
 msgstr "first calculates the value per resident — it is added to the table"
 
-#: apps/userdata/lab.py:592
+#: apps/userdata/lab.py:593
 msgid "Профиль показателя"
 msgstr "Indicator profile"
 
-#: apps/userdata/lab.py:701
+#: apps/userdata/lab.py:702
 msgid "Итог вашей группы и остальных регионов по годам"
 msgstr "Total of your group and of the other regions by year"
 
-#: apps/userdata/lab.py:748
+#: apps/userdata/lab.py:749
 msgid "Выбрать второй показатель"
 msgstr "Choose a second indicator"
 
-#: apps/userdata/lab.py:810
+#: apps/userdata/lab.py:811
 msgid "Доля, темп роста, базовый год, Россия = 100 и своя формула"
 msgstr "Share, growth rate, base year, Russia = 100 and your own formula"
 
-#: apps/userdata/lab.py:923
+#: apps/userdata/lab.py:924
 #: apps/userdata/templates/userdata/_calc_series.html:52
 msgid "Такого показателя нет."
 msgstr "There is no such indicator."
 
-#: apps/userdata/lab.py:980
+#: apps/userdata/lab.py:981
 msgid "Такого пересчёта нет."
 msgstr "There is no such calculation."
 
-#: apps/userdata/lab.py:988
+#: apps/userdata/lab.py:989
 msgid "Пересчитывается исходный показатель таблицы."
 msgstr "The original indicator of the table is recalculated."
 
-#: apps/userdata/lab.py:993
+#: apps/userdata/lab.py:994
 msgid "Таблицу нужно разобрать заново: откройте её шаг «Показатели»."
 msgstr "The table has to be parsed again: open its “Indicators” step."
 
-#: apps/userdata/lab.py:996
+#: apps/userdata/lab.py:997
 msgid "Таблица не пересобрана. Причина — на её шаге «Показатели»."
 msgstr "The table was not rebuilt. The reason is on its “Indicators” step."
 
-#: apps/userdata/lab.py:1013
+#: apps/userdata/lab.py:1014
 msgid "Этот пересчёт показателю не подходит."
 msgstr "This calculation does not suit the indicator."
 
-#: apps/userdata/lab.py:1031
+#: apps/userdata/lab.py:1032
 msgid "Показателя нет в описании таблицы."
 msgstr "The indicator is not in the table description."
 
-#: apps/userdata/lab.py:1084
+#: apps/userdata/lab.py:1085
 msgid "Сравнить с официальным"
 msgstr "Compare with official"
 
-#: apps/userdata/lab.py:1144
+#: apps/userdata/lab.py:1145
 msgid "Почему изменилась сумма"
 msgstr "Why the total changed"
 
-#: apps/userdata/lab.py:552
+#: apps/userdata/lab.py:553
 msgid "Как менялось значение у отмеченных регионов и по России"
 msgstr "How the value changed in the marked regions and across Russia"
 
-#: apps/userdata/lab.py:559
+#: apps/userdata/lab.py:560
 msgid "Все регионы по порядку: место и значение"
 msgstr "All regions in order: place and value"
 
-#: apps/userdata/lab.py:566
+#: apps/userdata/lab.py:567
 msgid "Как разбросаны значения и где большинство регионов"
 msgstr "How the values spread and where most regions are"
 
-#: apps/userdata/lab.py:573
+#: apps/userdata/lab.py:574
 msgid "Значения регионов по годам числами"
 msgstr "Region values by year as numbers"
 
-#: apps/userdata/lab.py:580
+#: apps/userdata/lab.py:581
 msgid "Ход по годам у каждого региона, по федеральным округам"
 msgstr "The course by year for each region, by federal district"
 
-#: apps/userdata/lab.py:588
+#: apps/userdata/lab.py:589
 msgid "Доли частей в каждом регионе — столбцы по 100 %"
 msgstr "Shares of the parts in each region, 100% bars"
 
-#: apps/userdata/lab.py:596
+#: apps/userdata/lab.py:597
 msgid "Набор: карта, сводка, рейтинг, динамика, распределение, округа"
 msgstr "A set: map, summary, ranking, trend, distribution, districts"
 
-#: apps/userdata/lab.py:608
+#: apps/userdata/lab.py:609
 msgid "Наибольшее и наименьшее значение и сколько регионов выросло"
 msgstr "The highest and lowest values and how many regions grew"
 
-#: apps/userdata/lab.py:615
+#: apps/userdata/lab.py:616
 msgid "Три первых и три последних региона"
 msgstr "The top three and bottom three regions"
 
-#: apps/userdata/lab.py:622
+#: apps/userdata/lab.py:623
 msgid "Место вашего региона среди всех и в своём округе"
 msgstr "Your region’s place among all and within its district"
 
-#: apps/userdata/lab.py:629
+#: apps/userdata/lab.py:630
 msgid "Значение по России и изменение за последние годы"
 msgstr "The value for Russia and its change in recent years"
 
-#: apps/userdata/lab.py:636
+#: apps/userdata/lab.py:637
 msgid "Регионы с наибольшим и наименьшим изменением"
 msgstr "Regions with the largest and smallest change"
 
-#: apps/userdata/lab.py:643
+#: apps/userdata/lab.py:644
 msgid "Сколько добавил или убавил каждый регион"
 msgstr "How much each region added or took away"
 
-#: apps/userdata/lab.py:651
+#: apps/userdata/lab.py:652
 msgid "Значение каждого федерального округа и его доля"
 msgstr "The value of each federal district and its share"
 
-#: apps/userdata/lab.py:658
+#: apps/userdata/lab.py:659
 msgid "Во сколько раз верхние регионы опережают нижние и как менялся разрыв"
 msgstr "How many times the top regions exceed the bottom ones and how the gap changed"
 
-#: apps/userdata/lab.py:666
+#: apps/userdata/lab.py:667
 msgid "Сокращается ли разброс и растут ли быстрее отстающие регионы"
 msgstr "Whether the spread narrows and lagging regions grow faster"
 
-#: apps/userdata/lab.py:674
+#: apps/userdata/lab.py:675
 msgid "Есть ли на карте сгущения высоких и низких значений"
 msgstr "Whether high and low values cluster on the map"
 
-#: apps/userdata/lab.py:682
+#: apps/userdata/lab.py:683
 msgid "Показатели сайта, сильнее всего связанные с вашим"
 msgstr "Site indicators most closely related to yours"
 
-#: apps/userdata/lab.py:718
+#: apps/userdata/lab.py:719
 msgid "Связь и облако точек"
 msgstr "Relationship and scatter plot"
 
-#: apps/userdata/lab.py:726
+#: apps/userdata/lab.py:727
 msgid "Сравнить два показателя — несколько карточек"
 msgstr "Compare two indicators: several cards"
 
-#: apps/userdata/lab.py:736
+#: apps/userdata/lab.py:737
 msgid "Сравнить с «%(title)s»"
 msgstr "Compare with “%(title)s”"
 
-#: apps/userdata/lab.py:751
+#: apps/userdata/lab.py:752
 msgid "Свой или сайта — из панели «Данные»"
 msgstr "Your own or the site’s, from the “Data” panel"
 
-#: apps/userdata/lab.py:813
+#: apps/userdata/lab.py:814
 msgid "расчёты делаются из своих таблиц"
 msgstr "calculations are made from your own tables"
 
-#: apps/userdata/lab.py:904
+#: apps/userdata/lab.py:905
 #: apps/userdata/studies.py:281
 msgid "Выберите группу регионов."
 msgstr "Choose a region group."
 
-#: apps/userdata/lab.py:911
+#: apps/userdata/lab.py:912
 #: apps/userdata/studies.py:276
 msgid "Для вкладов составляющих нужны хотя бы две части."
 msgstr "Contributions of components need at least two parts."
 
-#: apps/userdata/lab.py:542
+#: apps/userdata/lab.py:543
 msgid "Значения регионов на карте; у сумм — кругами по величине"
 msgstr "Region values on the map, with sums as circles by size"
 
-#: apps/userdata/lab.py:544
+#: apps/userdata/lab.py:545
 msgid "Значения регионов на карте цветом"
 msgstr "Region values on the map in colour"
 
-#: apps/userdata/lab.py:699
+#: apps/userdata/lab.py:700
 msgid "группы — в исследовании"
 msgstr "groups are available in a study"
 
-#: apps/userdata/lab.py:711
+#: apps/userdata/lab.py:712
 msgid "Сравнение с «%(title)s»"
 msgstr "Comparison with “%(title)s”"
 
-#: apps/userdata/lab.py:715
+#: apps/userdata/lab.py:716
 msgid "Оба показателя по годам и где места регионов расходятся"
 msgstr "Both indicators by year and where the regions’ places differ"
 
-#: apps/userdata/lab.py:722
+#: apps/userdata/lab.py:723
 msgid "Насколько регионы с высоким одним показателем высоки и по другому"
 msgstr "How far regions high on one indicator are high on the other"
 
-#: apps/userdata/lab.py:730
+#: apps/userdata/lab.py:731
 msgid "Сравнение, связь и карта каждого показателя"
 msgstr "Comparison, relationship and a map of each indicator"
 
-#: apps/userdata/lab.py:739
+#: apps/userdata/lab.py:740
 msgid "Официальный показатель сайта"
 msgstr "Official site indicator"
 
-#: apps/userdata/lab.py:741
+#: apps/userdata/lab.py:742
 msgid "Показатель с этого поля"
 msgstr "Indicator from this board"
 
-#: apps/userdata/lab.py:836
+#: apps/userdata/lab.py:837
 msgid "Уже посчитано — карта встанет на поле"
 msgstr "Already computed: the map will be placed on the board"
 
@@ -11436,12 +11497,12 @@ msgid "по полугодиям"
 msgstr "by half-year"
 
 #: apps/userdata/monthly.py:143
-#: apps/userdata/views.py:630
+#: apps/userdata/views.py:637
 msgid "с начала года"
 msgstr "year to date"
 
 #: apps/userdata/monthly.py:145
-#: apps/userdata/views.py:632
+#: apps/userdata/views.py:639
 msgid "на начало месяца"
 msgstr "at the start of the month"
 
@@ -12345,7 +12406,7 @@ msgstr "Find an indicator in all tables"
 
 #: apps/userdata/templates/userdata/_column_role.html:5
 #: apps/userdata/templates/userdata/table_step.html:284
-#: apps/userdata/views.py:712
+#: apps/userdata/views.py:719
 msgid "столбец %(number)s"
 msgstr "column %(number)s"
 
@@ -12520,7 +12581,7 @@ msgid "без значений"
 msgstr "no values"
 
 #: apps/userdata/templates/userdata/_dataset_data.html:87
-#: apps/userdata/templates/userdata/_indicator_field.html:93
+#: apps/userdata/templates/userdata/_indicator_field.html:95
 msgid "Смена методики"
 msgstr "Change of methodology"
 
@@ -12739,97 +12800,97 @@ msgstr "no, a separate indicator"
 msgid "Одно и то же под разными названиями — например, после переименования в источнике. Значения этого показателя дополнят выбранный. Где есть оба значения, остаётся значение выбранного. Описание — у выбранного."
 msgstr "The same thing under different names, for example after a renaming in the source. Values of this indicator will complement the chosen one. Where both values exist, the chosen one’s value remains. The description is the chosen one’s."
 
-#: apps/userdata/templates/userdata/_indicator_field.html:48
+#: apps/userdata/templates/userdata/_indicator_field.html:50
 msgid "Скрыть: не показывать этот показатель"
 msgstr "Hide: do not show this indicator"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:49
+#: apps/userdata/templates/userdata/_indicator_field.html:51
 msgid "Показатель остаётся в файле, его можно вернуть, сняв отметку."
 msgstr "The indicator stays in the file; untick the box to bring it back."
 
-#: apps/userdata/templates/userdata/_indicator_field.html:54
+#: apps/userdata/templates/userdata/_indicator_field.html:56
 msgid "Что это за величина?"
 msgstr "What kind of value is this?"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:54
+#: apps/userdata/templates/userdata/_indicator_field.html:56
 msgid "Что это за величина"
 msgstr "What kind of value is this"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:63
+#: apps/userdata/templates/userdata/_indicator_field.html:65
 msgid "Чтобы сравнивать регионы, делить на"
 msgstr "To compare regions, divide by"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:67
+#: apps/userdata/templates/userdata/_indicator_field.html:69
 msgid "Сумма по региону показывает его размер. Посты наблюдения, ООПТ и другие объекты территории на жителей не делят."
 msgstr "A regional total shows the size of the region. Monitoring posts, protected areas and other features of the territory are not divided by residents."
 
-#: apps/userdata/templates/userdata/_indicator_field.html:72
+#: apps/userdata/templates/userdata/_indicator_field.html:74
 msgid "Только месяцы — свести в год?"
 msgstr "Months only: fold them into a year?"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:72
+#: apps/userdata/templates/userdata/_indicator_field.html:74
 msgid "Месяцы — в год"
 msgstr "Months into a year"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:74
+#: apps/userdata/templates/userdata/_indicator_field.html:76
 msgid "не сворачивать"
 msgstr "do not fold"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:76
+#: apps/userdata/templates/userdata/_indicator_field.html:78
 msgid "сложить 12 месяцев (значения за месяц)"
 msgstr "add up 12 months (values for the month)"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:76
+#: apps/userdata/templates/userdata/_indicator_field.html:78
 msgid "среднее за месяц"
 msgstr "monthly average"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:76
+#: apps/userdata/templates/userdata/_indicator_field.html:78
 msgid "декабрь (значения на конец месяца)"
 msgstr "December (values at the end of the month)"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:76
+#: apps/userdata/templates/userdata/_indicator_field.html:78
 msgid "январь–декабрь из итогов с начала года"
 msgstr "January–December from year-to-date totals"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:79
+#: apps/userdata/templates/userdata/_indicator_field.html:81
 msgid "Значения за месяц складываются, на конец месяца — берётся декабрь, у долей и средних — среднее за месяц. Год без всех месяцев остаётся пустым."
 msgstr "Monthly values are added up; for end-of-month values December is taken; for shares and averages, the monthly average. A year without all months stays empty."
 
-#: apps/userdata/templates/userdata/_indicator_field.html:84
+#: apps/userdata/templates/userdata/_indicator_field.html:86
 #: apps/userdata/templates/userdata/formula.html:171
 msgid "Как оценивать рост"
 msgstr "How to judge growth"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:94
+#: apps/userdata/templates/userdata/_indicator_field.html:96
 msgid "С какого года значения считаются по-другому"
 msgstr "From which year values are calculated differently"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:96
+#: apps/userdata/templates/userdata/_indicator_field.html:98
 #: apps/userdata/templates/userdata/_versions.html:55
 msgid "Что изменилось"
 msgstr "What changed"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:98
+#: apps/userdata/templates/userdata/_indicator_field.html:100
 msgid "Несколько лет — через запятую. Динамика и инструменты анализа покажут разрыв и предложат сравнивать годы по одной методике."
 msgstr "Several years are separated by commas. Dynamics and the analysis tools will show the break and offer to compare years under one methodology."
 
-#: apps/userdata/templates/userdata/_indicator_field.html:103
+#: apps/userdata/templates/userdata/_indicator_field.html:105
 msgid "Сложить значения разреза"
 msgstr "Add up the values of a breakdown"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:107
+#: apps/userdata/templates/userdata/_indicator_field.html:109
 msgid "Сумма по всем отобранным значениям разреза — например, по всем возрастам, если итога в таблице нет. Итог («Всего», «Оба пола») в сумму не входит. Только для сумм."
 msgstr "The sum over all selected values of the breakdown — for example, over all ages if the table has no total. A total (“Total”, “Both sexes”) is not included. Sums only."
 
-#: apps/userdata/templates/userdata/_indicator_field.html:112
+#: apps/userdata/templates/userdata/_indicator_field.html:114
 msgid "Пересчёты"
 msgstr "Recalculations"
 
-#: apps/userdata/templates/userdata/_indicator_field.html:120
+#: apps/userdata/templates/userdata/_indicator_field.html:122
 msgid "Снимите отметку, чтобы убрать пересчёт. Новые пересчёты — в исследовании: нажмите на показатель, раздел «Расчёты»."
 msgstr "Clear the tick to remove the recalculation. New recalculations are in a study: click the indicator, section “Calculations”."
 
-#: apps/userdata/templates/userdata/_indicator_field.html:120
+#: apps/userdata/templates/userdata/_indicator_field.html:122
 msgid "Пересчёты — в исследовании: нажмите на показатель, раздел «Расчёты»."
 msgstr "Recalculations are in a study: click the indicator, section “Calculations”."
 
@@ -14010,13 +14071,13 @@ msgstr "Table layout"
 #: apps/userdata/templates/userdata/index.html:230
 #: apps/userdata/templates/userdata/index.html:239
 #: apps/userdata/templates/userdata/index.html:248
-#: apps/userdata/views.py:612
+#: apps/userdata/views.py:619
 msgid "регион"
 msgstr "region"
 
 #: apps/userdata/templates/userdata/index.html:221
 #: apps/userdata/templates/userdata/table_step.html:278
-#: apps/userdata/views.py:620
+#: apps/userdata/views.py:627
 msgid "значение"
 msgstr "value"
 
@@ -14930,79 +14991,79 @@ msgstr "The file has several tables: choose the one used in the previous version
 msgid "Таблица снова в версии %(number)s."
 msgstr "The table is back at version %(number)s."
 
-#: apps/userdata/views.py:626
+#: apps/userdata/views.py:633
 msgid "годы"
 msgstr "years"
 
-#: apps/userdata/views.py:627
+#: apps/userdata/views.py:634
 msgid "месяцы"
 msgstr "months"
 
-#: apps/userdata/views.py:628
+#: apps/userdata/views.py:635
 msgid "кварталы"
 msgstr "quarters"
 
-#: apps/userdata/views.py:629
+#: apps/userdata/views.py:636
 msgid "полугодия"
 msgstr "half-years"
 
-#: apps/userdata/views.py:631
+#: apps/userdata/views.py:638
 msgid "скользящие месяцы"
 msgstr "rolling months"
 
-#: apps/userdata/views.py:635
+#: apps/userdata/views.py:642
 msgid "Длинная таблица: регион, период и значение — в своих столбцах."
 msgstr "A long table: region, period and value in their own columns."
 
-#: apps/userdata/views.py:636
+#: apps/userdata/views.py:643
 msgid "Годы или периоды — в столбцах, регионы — в строках."
 msgstr "Years or periods in columns, regions in rows."
 
-#: apps/userdata/views.py:637
+#: apps/userdata/views.py:644
 msgid "Показатели — в столбцах, регионы — в строках; года в таблице нет."
 msgstr "Indicators in columns, regions in rows; the table has no year."
 
-#: apps/userdata/views.py:638
+#: apps/userdata/views.py:645
 msgid "Регионы — в столбцах, годы — в строках."
 msgstr "Regions in columns, years in rows."
 
-#: apps/userdata/views.py:639
+#: apps/userdata/views.py:646
 msgid "Регионы в таблице не найдены."
 msgstr "No regions were found in the table."
 
-#: apps/userdata/views.py:613
+#: apps/userdata/views.py:620
 msgid "код региона"
 msgstr "region code"
 
-#: apps/userdata/views.py:614
+#: apps/userdata/views.py:621
 msgid "уровень территории"
 msgstr "territory level"
 
-#: apps/userdata/views.py:616
+#: apps/userdata/views.py:623
 msgid "показатель"
 msgstr "indicator"
 
-#: apps/userdata/views.py:617
+#: apps/userdata/views.py:624
 msgid "код показателя"
 msgstr "indicator code"
 
-#: apps/userdata/views.py:618
+#: apps/userdata/views.py:625
 msgid "единица"
 msgstr "unit"
 
-#: apps/userdata/views.py:619
+#: apps/userdata/views.py:626
 msgid "разрез"
 msgstr "breakdown"
 
-#: apps/userdata/views.py:621
+#: apps/userdata/views.py:628
 msgid "причина пропуска"
 msgstr "reason for a missing value"
 
-#: apps/userdata/views.py:622
+#: apps/userdata/views.py:629
 msgid "примечание"
 msgstr "note"
 
-#: apps/userdata/views.py:623
+#: apps/userdata/views.py:630
 msgid "пропустить"
 msgstr "skip"
 

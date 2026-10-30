@@ -26,6 +26,8 @@ BENCHMARK = Path(__file__).resolve().parents[1] / "fixtures" / "search" / "bench
 # Второе мерило — формулировки, которых нет в первом: правки разбора не подгоняются
 # под один набор.
 BLIND = BENCHMARK.with_name("blind.json")
+# Классы ошибок замера 0.9.2: каждая формулировка проверяется отдельно.
+CLASSES = json.loads(BENCHMARK.with_name("classes.json").read_text(encoding="utf-8"))["queries"]
 # Пороги этапа 2 плана: нужный ряд в первых трёх и верный вид ответа.
 SERIES_SHARE = 0.90
 KIND_SHARE = 0.85
@@ -71,6 +73,27 @@ class TestBenchmark:
         kind_hits = sum(_kind_found(row, parse(row["q"])) for row in rows)
         assert series_hits / len(with_series) >= SERIES_SHARE
         assert kind_hits / len(rows) >= KIND_SHARE
+
+
+class TestErrorClasses:
+    """Классы ошибок замера 0.9.2: посторонний предмет, опечатка, слово степени, место."""
+
+    @pytest.mark.parametrize("row", CLASSES, ids=[row["q"] for row in CLASSES])
+    def test_query(self, row: dict[str, Any]) -> None:
+        """Разбор совпал с ожидаемым во всём, что указано у формулировки."""
+        reading = parse(row["q"])
+        if "series" in row:
+            assert list(reading.series[:1]) == row["series"]
+        for key in row.get("not_series", []):
+            assert key not in reading.series
+        if "kind" in row:
+            assert reading.kind == row["kind"]
+        if "regions" in row:
+            assert reading.codes == row["regions"]
+        if "year" in row:
+            assert reading.year == row["year"]
+        if "composite" in row:
+            assert reading.composite == row["composite"]
 
 
 class TestParse:

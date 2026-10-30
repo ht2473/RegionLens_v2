@@ -7,10 +7,18 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field, replace
+from functools import lru_cache
 
-from apps.search.index import Hit, glossary_index, methodology_index, series_index
+from apps.search.index import (
+    SERIES_FIELDS,
+    TYPO_WEIGHT,
+    Hit,
+    glossary_index,
+    methodology_index,
+    series_index,
+)
 from apps.search.places import Place, find_places
-from apps.search.text import STOP_WORDS, normalize, stem, words
+from apps.search.text import STOP_WORDS, normalize, one_typo, stem, words
 
 # Виды ответа.
 RANK = "rank"
@@ -23,9 +31,10 @@ DEFINE = "define"
 METHOD = "method"
 NONE = "none"
 
-# Наименьшая доля содержательных слов запроса, нашедшихся в показателе, и его оценка.
-MIN_COVERAGE = 0.5
+# Наименьшая оценка показателя.
 MIN_SCORE = 1.0
+# Служебное слово с опечаткой («регоинов») узнаётся от этой длины.
+STOP_TYPO_MIN = 6
 # Сколько показателей предлагать на выбор («понято как … или …»).
 ALTERNATIVES = 3
 # Два показателя связи, два места сравнения.
@@ -45,23 +54,26 @@ _DEFINE = re.compile(
 _RELATION = re.compile(r"\b(?:связ|завис|корреляц|влия|relat|correlat|depend|affect)\w*")
 _TREND = re.compile(
     r"\bкак\s+(?:\w+\s+)?(?:менял|изменял|изменил|поменял|рос|росл|растут|падал|снижал|увеличивал|сокращал)\w*"
-    r"|\bдинамик\w*|\bизменени\w*|\bтренд\w*|\bпо\s+годам\b|\bза\s+\d+\s+(?:лет|год\w*)"
+    r"|\bдинамик\w*|\bизменени\w*|\bтренд\w*|\bпо\s+годам\b|\bза\s+\d{1,2}\s+(?:лет|год\w*)"
     r"|\bhow\s+(?:has|have|did)\b.*\b(?:chang|grow|grew|fall|fell|evolv)\w*|\btrends?\b"
     r"|\bover\s+time\b|\bchanged\b"
 )
 _YEAR = re.compile(r"\b(19[89]\d|20[0-4]\d)\b")
-_SPAN = re.compile(r"\bза\s+\d+\s+(?:лет|год\w*)|\b\d+\s+(?:years?)\b")
+# Срок в годах — «за 10 лет»; «за 2023 год» — это год, а не срок.
+_SPAN = re.compile(r"\bза\s+\d{1,2}\s+(?:лет|год\w*)|\b\d{1,2}\s+(?:years?)\b")
 # Отрезок лет — «с 2015 по 2023», «2015–2023», «from 2015 to 2023»: вопрос о динамике,
 # год ответа — конец отрезка.
 _RANGE = re.compile(
     r"\b(?:с|from)\s+(19[89]\d|20[0-4]\d)\s+(?:по|до|to)\s+(19[89]\d|20[0-4]\d)\b"
     r"|\b(19[89]\d|20[0-4]\d)\s*[–—-]\s*(19[89]\d|20[0-4]\d)\b"
 )
-# Вопрос без одного показателя: «где лучше жить», «качество жизни» — ответа одним рядом нет,
-# есть интегральный индекс из нескольких.
+# Вопрос без одного показателя: «где лучше жить», «качество жизни», «уровень жизни» — ответа
+# одним рядом нет, есть интегральный индекс из нескольких.
 _COMPOSITE = re.compile(
     r"\bлучше\s+(?:всего\s+)?жить\b|\bкачеств\w*\s+жизн\w*|\bлучш\w+\s+регион\w*"
+    r"|\bуров\w*\s+жизн\w*|\bблагосостояни\w*|\bблагополучи\w*"
     r"|\bbest\s+(?:place|region)s?\s+to\s+live\b|\bquality\s+of\s+life\b"
+    r"|\bstandards?\s+of\s+living\b|\bliving\s+standards?\b"
 )
 # Общие слова: сами по себе показателя не называют — «средняя пенсия» не про средний бизнес,
 # «количество туристов» не про уловленные вещества. Основы — как у ``text.stem``.
@@ -78,8 +90,38 @@ GENERIC = frozenset(
         "статистик",
         # «сколько стоит» — не про стоимость набора товаров.
         "сто",
+        "общ",
     }
 )
+# Слова, которые сами показателя не называют, но и опустить их нельзя: «Единый реестр» — не
+# «Единая Россия», а площадь бывает жилая, посевная, застройки.
+QUALIFIERS = frozenset({"един", "площад"})
+# Слова о виде ответа, а не о показателе: «таблица», «росстат», «официальные данные». Остальные
+# содержательные слова запроса должны найтись в показателе — иначе вопрос не о нём:
+# «плотность населения» не о численности, «пособие по безработице» не об уровне безработицы,
+# «население Китая» не о регионах России.
+NOISE = GENERIC | frozenset(
+    stem(word)
+    for word in (
+        "таблица",
+        "росстат",
+        "официальные",
+        "список",
+        "сайт",
+        "информация",
+        "сведения",
+        "table",
+        "rosstat",
+        "official",
+        "list",
+        "data",
+        "statistics",
+    )
+)
+# Окончание ключа ряда без разреза.
+WHOLE_SERIES = ":00"
+# Сколько рядов полного перечня смотреть: непригодные к сравнению не должны вытеснять пригодные.
+CATALOG_POOL = 30
 # Наименьшая оценка ряда полного перечня: совпадение одним названием раздела ниже.
 CATALOG_MIN_SCORE = 5.0
 
@@ -96,7 +138,14 @@ _MARKER_WORD = re.compile(
     r"has|have|did|grow|grew|fall|fell|evolv\w*|кто|"
     # «На каком месте», «какое место», «позиция», «рейтинг» — о месте региона, не о показателе
     # («места в детских садах» — во множественном числе — остаются словами показателя).
-    r"место|месте|местом|позици\w*|рейтинг\w*|топ|rank\w*|position)$"
+    r"место|месте|местом|позици\w*|рейтинг\w*|топ|rank\w*|position|"
+    # Степень: «самая высокая зарплата», «крупнейшие», «лидеры» — рейтинг покажет обе стороны.
+    # «Дорогой» и «дешёвый» остаются словами показателя: так спрашивают о ценах.
+    r"(?:больш|крупн|маленьк|высок|низк|лучш|худш)[аеиоуыя]?[а-я]?[а-я]?|"
+    r"крупнейш\w*|наибольш\w*|наименьш\w*|лидер\w*|аутсайдер\w*|антирейтинг\w*|"
+    r"быстр\w*|медленн\w*|растет|растут|падает|падают|снижается|снижаются|"
+    r"high|higher|low|lower|big|bigger|biggest|large|larger|largest|small|smaller|smallest|"
+    r"best|worst|leaders?)$"
 )
 # Связки, делящие запрос о связи на два показателя.
 _CONNECTORS = frozenset({"и", "с", "со", "от", "между", "and", "with", "to", "vs", "против"})
@@ -138,10 +187,12 @@ def parse(query: str) -> Reading:
     hits = _series_hits(content)
     found = _confident(hits, content)
     catalog = False
-    if not found and not _COMPOSITE.search(text):
-        # Основной набор молчит — уверенное совпадение в полном перечне рядов.
-        found = _catalog_series(content)
-        catalog = bool(found)
+    if (not found or _only_official_title(found[0], content)) and not _COMPOSITE.search(text):
+        # Основной набор молчит или совпал только длинным официальным названием, где слова
+        # запроса второстепенны, — смотрим полный перечень, где название ряда главное.
+        closer = _catalog_series(content, skip=found)
+        if closer:
+            found, catalog = closer, True
     span = _RANGE.search(text)
     year = _YEAR.search(text)
     reading = Reading(
@@ -159,6 +210,16 @@ def parse(query: str) -> Reading:
     return _special(reading, text, tokens, stemmed, positions) or _plain(reading, text)
 
 
+@lru_cache(maxsize=4096)
+def _stop_word(token: str) -> bool:
+    """Служебное слово, в том числе с одной опечаткой: «регоинов», «боьлше»."""
+    if token in STOP_WORDS:
+        return True
+    return len(token) >= STOP_TYPO_MIN and any(
+        one_typo(token, word) for word in STOP_WORDS if len(word) >= STOP_TYPO_MIN
+    )
+
+
 def _content_positions(text: str, tokens: list[str], places: tuple[Place, ...]) -> list[int]:
     """Номера содержательных слов: без мест, служебных слов, признаков и чисел."""
     taken = {index for place in places for index in range(place.start, place.end)}
@@ -167,7 +228,7 @@ def _content_positions(text: str, tokens: list[str], places: tuple[Place, ...]) 
         index
         for index, token in enumerate(tokens)
         if index not in taken
-        and token not in STOP_WORDS
+        and not _stop_word(token)
         and token not in span
         and not token.isdigit()
         and not _MARKER_WORD.match(token)
@@ -180,7 +241,10 @@ def _special(
     """Вопросы по признаку в тексте: «почему», методика, термин, связь показателей."""
     content = reading.content
     if _WHY.search(text):
-        return replace(reading, why=True)
+        # Причин в данных нет: показывается ближайшее, полного совпадения слов не нужно.
+        hits = [hit for hit in _series_hits(content) if hit.matched - NOISE]
+        nearest = (hits[0].key,) if hits and hits[0].score >= MIN_SCORE else ()
+        return replace(reading, why=True, series=reading.series or nearest)
     if _COMPOSITE.search(text):
         return replace(reading, composite=True, series=(), alternatives=(), catalog=False)
     if _METHOD.search(text):
@@ -188,7 +252,11 @@ def _special(
         if target:
             return replace(reading, kind=METHOD, target=target, series=(), alternatives=())
     if _DEFINE.search(text):
-        target = _best(glossary_index().search(list(content)), content)
+        # «Что такое коэффициент корреляции»: слово связи здесь — часть термина.
+        terms = content + tuple(
+            stemmed[index] for index, token in enumerate(tokens) if _RELATION.match(token)
+        )
+        target = _best(glossary_index().search(list(terms)), terms)
         if target:
             return replace(reading, kind=DEFINE, target=target, series=(), alternatives=())
     if _RELATION.search(text):
@@ -254,29 +322,38 @@ def _series_hits(content: tuple[str, ...]) -> list[Hit]:
 
 def _confident(hits: list[Hit], content: tuple[str, ...]) -> tuple[str, ...]:
     """
-    Первый показатель, если он покрывает запрос достаточно, оценён не случайно и совпал
-    не одними общими словами.
+    Лучший показатель, в котором нашлись все содержательные слова запроса (кроме слов о виде
+    ответа), оценённый не случайно и совпавший не одними общими словами.
     """
-    if not hits or not content:
+    needed = set(content) - NOISE
+    if not hits or not needed:
         return ()
-    top = hits[0]
-    coverage = len(top.matched) / len(set(content))
-    if coverage >= MIN_COVERAGE and top.score >= MIN_SCORE and set(top.matched) - GENERIC:
-        return (top.key,)
+    for hit in hits:
+        # Опечатка снижает оценку на свой вес: на уверенность это не влияет.
+        if hit.score < MIN_SCORE * TYPO_WEIGHT:
+            break
+        if needed <= hit.matched and hit.matched - GENERIC - QUALIFIERS:
+            return (hit.key,)
     return ()
 
 
-def _catalog_series(content: tuple[str, ...]) -> tuple[str, ...]:
+def _only_official_title(key: str, content: tuple[str, ...]) -> bool:
+    """Все слова запроса нашлись только в полном названии ряда, не в кратком и не в синонимах."""
+    weights = series_index().weights.get(key, {})
+    return all(weights.get(word, 0.0) < SERIES_FIELDS["question"] for word in content)
+
+
+def _catalog_series(content: tuple[str, ...], skip: tuple[str, ...] = ()) -> tuple[str, ...]:
     """
     Ряд полного перечня, когда основной набор не нашёлся: только пригодный к сравнению
-    регионов и совпавший не одними общими словами.
+    регионов и совпавший не одними общими словами. ``skip`` — ряды, которые уже нашлись.
     """
     from apps.catalog.models import Series
     from apps.search.index import catalog_index
 
     if not content:
         return ()
-    hits = catalog_index().search(list(content), ALTERNATIVES * 2)
+    hits = catalog_index().search(list(content), CATALOG_POOL)
     ready = set(
         Series.objects.filter(
             key__in=[hit.key for hit in hits], is_analysis_ready=True
@@ -284,8 +361,16 @@ def _catalog_series(content: tuple[str, ...]) -> tuple[str, ...]:
     )
     # Совпадение одним названием раздела («Культура, отдых и туризм») оценивается низко —
     # библиотеки не ответ на «туризм».
-    strong = [hit for hit in hits if hit.key in ready and hit.score >= CATALOG_MIN_SCORE]
-    return _confident(strong, content)
+    strong = [
+        hit
+        for hit in hits
+        if hit.key in ready and hit.key not in skip and hit.score >= CATALOG_MIN_SCORE
+    ]
+    # Разрез показателя («Прочие выплаты») не отвечает на одно слово: «выплаты» — не он.
+    return _confident(
+        [hit for hit in strong if hit.key.endswith(WHOLE_SERIES) or len(hit.matched) >= PAIR],
+        content,
+    )
 
 
 def _best(hits: list[Hit], content: tuple[str, ...], *, strict: bool = False) -> str:

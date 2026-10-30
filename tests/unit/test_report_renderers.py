@@ -93,6 +93,12 @@ class TestDocumentModel:
         """
         assert format_value(value, Column("k", "K", kind)) == expected
 
+    def test_precision_of_the_indicator(self) -> None:
+        """Документ печатает значение с точностью показателя, без лишних нулей."""
+        assert format_value(2060.57, Column("k", "K", COLUMN_NUMBER, decimals=0)) == "2 061"
+        assert format_value(14250822.0, Column("k", "K", COLUMN_NUMBER, decimals=0)) == "14 250 822"
+        assert format_value(1500.71, Column("k", "K", COLUMN_NUMBER, decimals=1)) == "1 500,7"
+
 
 class TestRenderers:
     """Вывод отчёта в файлы."""

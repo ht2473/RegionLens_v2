@@ -283,6 +283,10 @@ class Pipeline:
                 "Выпусков: {releases}, связей рядов: {links} (условных {conditional}), "
                 "версий значений: {vintages}".format(**release_statistics)
             )
+        corrections = self._step("corrections", lambda: facts.apply_corrections(connection)).detail
+        self._report(
+            "Поправки к набору: применено {applied}, устарело {stale}".format(**corrections)
+        )
         self._step("ranks_editions", lambda: facts.rank_editions(connection))
         self._report("Ряды Банка России и ФНС, помесячный слой")
         source_statistics = self._step("source_series", lambda: _source_series(connection)).detail

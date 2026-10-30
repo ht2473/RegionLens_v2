@@ -32,6 +32,7 @@ FLAG_NAMES: dict[ValueFlag, str] = {
     ValueFlag.FROZEN_DENOMINATOR: "frozen_denominator",
     ValueFlag.ABSENT: "absent",
     ValueFlag.BELOW_UNIT: "below_unit",
+    ValueFlag.CORRECTED: "corrected",
 }
 # Источник значений набора «Если быть точным».
 DATASET_SOURCE = "dataset"

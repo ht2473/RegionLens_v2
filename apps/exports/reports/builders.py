@@ -13,7 +13,8 @@ from django.conf import settings
 from django.utils import timezone, translation
 
 from apps.catalog.constants import ValueFlag
-from apps.catalog.models import Territory
+from apps.catalog.indicator import describe_series
+from apps.catalog.models import Series, Territory
 from apps.catalog.passport import Position, build_passport
 from apps.catalog.provenance import origin_of_year, release_phrase, source_title
 from apps.catalog.status import series_status
@@ -90,7 +91,10 @@ def build_series_report(parameters: dict[str, Any], *, max_rows: int) -> ReportD
     regions = region_directory()[:max_rows]
 
     columns = [Column("territory", "Субъект Российской Федерации", COLUMN_TEXT, width=42)]
-    columns += [Column(str(year), str(year), COLUMN_NUMBER, width=12) for year in years]
+    decimals = _decimals(series_key)
+    columns += [
+        Column(str(year), str(year), COLUMN_NUMBER, width=12, decimals=decimals) for year in years
+    ]
 
     rows: list[dict[str, Any]] = []
     filled = 0
@@ -331,7 +335,7 @@ def build_ranking_report(parameters: dict[str, Any], *, max_rows: int) -> Report
         Column("rank", "Место", COLUMN_INTEGER, width=8),
         Column("territory", "Субъект", COLUMN_TEXT, width=40),
         Column("district", "Федеральный округ", COLUMN_TEXT, width=28),
-        Column("value", "Значение", COLUMN_NUMBER, width=16),
+        Column("value", "Значение", COLUMN_NUMBER, width=16, decimals=_decimals(series_key)),
         Column("ratio", "К среднему по стране", COLUMN_NUMBER, width=16),
         Column("change", "Изменение места", COLUMN_INTEGER, width=14),
     ]
@@ -398,6 +402,14 @@ def build_ranking_report(parameters: dict[str, Any], *, max_rows: int) -> Report
 
 # История мест в выгрузке — те же годы, что на графике и в столбце таблицы.
 RANKING_HISTORY_YEARS = 10
+# Точность значения, когда ряда нет в каталоге.
+DEFAULT_DECIMALS = 2
+
+
+def _decimals(series_key: str) -> int:
+    """Точность показателя, как на страницах сайта: документ не печатает лишних знаков."""
+    series = Series.objects.select_related("indicator").filter(key=series_key).first()
+    return describe_series(series).precision if series else DEFAULT_DECIMALS
 
 
 def _ranking_ascending(series_key: str, parameters: dict[str, Any]) -> bool:

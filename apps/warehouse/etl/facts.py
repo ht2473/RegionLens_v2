@@ -3,19 +3,25 @@
 
 Заглушки источника становятся ``NULL`` с признаком качества; из версий побеждает самое
 позднее непропущенное значение (правило источника); значение по России приводится
-к единице территорий, иначе оно в тысячу раз меньше суммы регионов.
+к единице территорий, иначе оно в тысячу раз меньше суммы регионов. Доказанные ошибки
+набора исправляются по файлу поправок до выбора значения.
 """
 
 from __future__ import annotations
 
+import json
 import logging
 
 import duckdb
+from django.conf import settings
 
-from apps.catalog.constants import SENTINEL_HIDDEN, SENTINEL_NO_DATA, ValueQuality
+from apps.catalog.constants import SENTINEL_HIDDEN, SENTINEL_NO_DATA, ValueFlag, ValueQuality
 from apps.warehouse.duckdb_client import require_row
 
 logger = logging.getLogger(__name__)
+
+# Поправки к исходному набору в справочниках проекта.
+CORRECTIONS_FILE = "source_corrections.json"
 
 
 def load_vintages(connection: duckdb.DuckDBPyConnection) -> int:
@@ -71,6 +77,42 @@ def load_vintages(connection: duckdb.DuckDBPyConnection) -> int:
     )[0]
     logger.info("Загружено версий наблюдений: %d", count)
     return count
+
+
+def apply_corrections(connection: duckdb.DuckDBPyConnection) -> dict[str, int]:
+    """
+    Исправить доказанные ошибки исходного набора в версиях наблюдений.
+
+    Меняется только версия с записанным ошибочным значением: другие версии того же года целы,
+    а поправка, значение которой поставщик исправил сам, устаревает и попадает в отчёт сборки.
+    """
+    path = settings.REFERENCE_DIR / CORRECTIONS_FILE
+    items = json.loads(path.read_bytes().decode("utf-8"))["corrections"]
+    stale = []
+    for item in items:
+        changed = connection.execute(
+            """
+            UPDATE fact_vintage
+            SET value = ?, quality = ?, flags = flags | ?
+            WHERE series_key = ? AND territory_code = ? AND year = ?
+              AND value IS NOT DISTINCT FROM ?
+            RETURNING 1
+            """,
+            [
+                item["value"],
+                int(ValueQuality.OBSERVED),
+                int(ValueFlag.CORRECTED),
+                item["series"],
+                item["territory"],
+                item["year"],
+                item["was"],
+            ],
+        ).fetchall()
+        if not changed:
+            stale.append(f"{item['series']} {item['territory']} {item['year']}")
+    if stale:
+        logger.warning("Поправки без ошибочного значения в наборе: %s", ", ".join(stale))
+    return {"applied": len(items) - len(stale), "stale": len(stale)}
 
 
 def rank_editions(connection: duckdb.DuckDBPyConnection) -> int:
