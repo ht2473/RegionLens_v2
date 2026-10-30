@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import csv
 import io
+import re
 from typing import Any
 
 import pytest
@@ -113,6 +114,21 @@ class TestIndicators:
         assert (record.first_year, record.last_year) == (2011, 2022)
         page = client.get(reverse("userdata:series", args=[merged.public_id]))
         assert f"влит в «{TOTAL}»" in page.text
+
+    def test_many_indicators_keep_merge_without_list(
+        self, client: Client, warehouse: Any, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        Список вливания — у таблиц до 100 показателей: в каждом показателе он перечисляет все
+        остальные. У таблицы больше списка нет, а выбранное вливание уходит скрытым полем.
+        """
+        from apps.userdata import views
+
+        merged = _built(client, _renamed_halves(), **{"merge-2": TOTAL})
+        monkeypatch.setattr(views, "MERGE_CHOICES_MAX", 1)
+        page = client.get(reverse("userdata:series", args=[merged.public_id]))
+        assert 'id="merge-' not in page.text
+        assert re.search(rf'type="hidden" name="merge-\d+" value="{TOTAL}"', page.text)
 
     def test_merge_without_chains_or_into_itself(self, client: Client, warehouse: Any) -> None:
         dataset = _built(client, _renamed_halves(), **{"merge-1": RENAMED, "merge-2": TOTAL})

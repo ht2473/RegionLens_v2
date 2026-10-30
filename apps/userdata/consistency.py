@@ -216,6 +216,11 @@ def country_sums(frame: pd.DataFrame, names: list[str]) -> list[dict[str, Any]]:
     return _by_indicator(found.values())
 
 
+def regions_total(values: dict[str, float]) -> tuple[float | None, int]:
+    """Сумма значений субъектов за год и их число (области с округами — без двойного счёта)."""
+    return _subjects_sum(values, _subjects())
+
+
 def _subjects_sum(values: dict[str, float], subjects: set[str]) -> tuple[float | None, int]:
     """Сумма и число субъектов; у области без округов — итог с округами за их вычетом."""
     total = sum(value for code, value in values.items() if code in subjects)

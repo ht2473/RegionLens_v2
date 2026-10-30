@@ -238,6 +238,11 @@
           </fieldset>
         {% endfor %}
       </details>
+    {% elif too_many %}
+      <details class="question-card question-card--ask" open>
+        <summary class="question-card__title">{% translate "Показателей слишком много" %}</summary>
+        <p class="field__error">{% blocktranslate trimmed with count=result.series|ru_number:0 limit=max_series|ru_number:0 %}Получается временных рядов: {{ count }}, больше {{ limit }}. Отметьте лишние столбцы как «пропустить» в таблице выше.{% endblocktranslate %}</p>
+      </details>
     {% endif %}
 
     {% if result.row_parts %}

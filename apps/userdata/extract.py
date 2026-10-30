@@ -237,14 +237,8 @@ def extract(version: DatasetVersion) -> dict[str, Any]:
         raise ExtractError(
             _("Столбец с регионами не найден. Отметьте его на шаге «Что в таблице».")
         )
-    if result.series > recognize.MAX_SERIES:
-        raise ExtractError(
-            _(
-                "Получается временных рядов: %(count)s, больше %(limit)s. "
-                "Выберите значения разрезов."
-            )
-            % {"count": result.series, "limit": recognize.MAX_SERIES}
-        )
+    if result.too_many:
+        raise ExtractError(_too_many_text(result, result.series))
     if result.form == recognize.INDICATORS and result.needs_year:
         raise ExtractError(_("Годы в таблице не найдены. Укажите год на шаге «Что в таблице»."))
     if result.needs_repeats:
@@ -269,14 +263,8 @@ def extract(version: DatasetVersion) -> dict[str, Any]:
     masked = _apply_masks(collector, version.recipe.get("masks"))
     if not collector.infos:
         raise ExtractError(_("В таблице не нашлось ни одного значения по территориям."))
-    if len(collector.infos) > recognize.MAX_SERIES:
-        raise ExtractError(
-            _(
-                "Получается временных рядов: %(count)s, больше %(limit)s. "
-                "Выберите значения разрезов."
-            )
-            % {"count": len(collector.infos), "limit": recognize.MAX_SERIES}
-        )
+    if len(collector.infos) > result.series_limit:
+        raise ExtractError(_too_many_text(result, len(collector.infos)))
     _write(collector, version.directory / EXTRACT_FILE)
     report = _report(version, result, collector, places)
     report["masks"] = masked
@@ -640,7 +628,10 @@ class _Reader:
                 year, period, group = found
                 column_unit = unit
                 if result.form == recognize.INDICATORS:
-                    indicator, column_unit = header_unit(_without_year(column.header), unit)
+                    # У столбца с годом в шапке («Безработные | 2026») показатель — без года:
+                    # столбцы одного показателя за разные годы — один ряд.
+                    named = group or column.header
+                    indicator, column_unit = header_unit(_without_year(named), unit)
                     indicator = indicator or self.title
                     extra: tuple[tuple[str, str], ...] = ()
                 else:
@@ -756,6 +747,29 @@ def header_unit(header: str, unit: str = "") -> tuple[str, str]:
         if head_unit:
             return f"{name} | {rest}", unit or head_unit
     return header, unit
+
+
+def _too_many_text(result: recognize.Recognition, count: int) -> str:
+    """
+    Рядов больше предела: с разрезами — отобрать их значения, без них (и у таблицы из частей
+    в строках) — отметить лишние столбцы.
+    """
+    values = {"count": count, "limit": result.series_limit}
+    if result.slices:
+        return (
+            _(
+                "Получается временных рядов: %(count)s, больше %(limit)s. "
+                "Выберите значения разрезов."
+            )
+            % values
+        )
+    return (
+        _(
+            "Получается временных рядов: %(count)s, больше %(limit)s. Отметьте лишние столбцы "
+            "как «пропустить» на шаге «Что в таблице»."
+        )
+        % values
+    )
 
 
 def _without_year(header: str) -> str:

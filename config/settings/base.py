@@ -38,7 +38,7 @@ if _env_file.exists():
 
 PROJECT_NAME = "RegionLens"
 PROJECT_TAGLINE = "Анализ и визуализация социально-экономических показателей регионов России"
-PROJECT_VERSION = "0.9.0"
+PROJECT_VERSION = "0.9.1"
 PROJECT_AUTHOR = "Кузьмин Евгений Олегович"
 PROJECT_AUTHOR_SHORT = "Кузьмин Е. О."
 PROJECT_AUTHOR_EN = "Evgeny Kuzmin"
@@ -303,7 +303,9 @@ STORAGES = {
 # Файл набора больше порога пишется на диск, а не в память.
 DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024  # 20 МБ
 FILE_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024
-DATA_UPLOAD_MAX_NUMBER_FIELDS = 5000  # конструктор индексов передаёт много полей
+# Конструктор индексов передаёт много полей, шаг «Показатели» своих данных — до 16 на показатель
+# (показателей до recognize.MAX_COLUMN_SERIES).
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 40_000
 
 # ---------------------------------------------------------------------------------------
 # Кэш

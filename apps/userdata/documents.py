@@ -22,6 +22,7 @@ PDF — таблицы страниц (pdfplumber, по линиям табли�
 from __future__ import annotations
 
 import bisect
+import itertools
 import json
 import re
 import statistics
@@ -269,23 +270,13 @@ def pdf_tables(path: Path, name: str = "") -> list[DocumentTable]:
                     "pdf_time",
                 )
             texts += bool(page.chars)
-            found_here = page.find_tables()
-            # Рамки подписей внутри большой таблицы pdfplumber находит отдельными таблицами.
-            outer = [
-                table
-                for table in found_here
-                if not any(other is not table and _inside(table, other) for other in found_here)
-            ]
             first_here = True
-            for table in outer:
-                below = [item.bbox[1] for item in outer if item.bbox[1] > table.bbox[3]]
-                cells = _cells(page, table)
-                rows = _unruled_body(page, table, cells, min(below, default=page.height)) or cells
-                rows = [row for row in rows if any(row)]
+            for bbox, found_rows in _page_tables(page):
+                rows = [row for row in found_rows if any(row)]
                 if len(rows) < MIN_ROWS or max(map(len, rows), default=0) < MIN_COLUMNS:
                     continue
                 previous = found[-1] if found else None
-                caption = _caption(page, table.bbox)
+                caption = _caption(page, bbox)
                 if (
                     previous is not None
                     and first_here
@@ -315,6 +306,29 @@ def pdf_tables(path: Path, name: str = "") -> list[DocumentTable]:
     return found
 
 
+def _page_tables(page: Any) -> list[tuple[tuple[float, float, float, float], list[list[str]]]]:
+    """
+    Таблицы страницы сверху вниз: рамка и строки. По линиям таблицы; нет ни одной — по
+    горизонтальным линейкам без вертикальных (так верстают письма территориальных органов).
+    """
+    found_here = page.find_tables()
+    # Рамки подписей внутри большой таблицы pdfplumber находит отдельными таблицами.
+    outer = [
+        table
+        for table in found_here
+        if not any(other is not table and _inside(table, other) for other in found_here)
+    ]
+    if not outer:
+        return _rule_tables(page)
+    tables = []
+    for table in outer:
+        below = [item.bbox[1] for item in outer if item.bbox[1] > table.bbox[3]]
+        cells = _cells(page, table)
+        rows = _unruled_body(page, table, cells, min(below, default=page.height)) or cells
+        tables.append((table.bbox, rows))
+    return tables
+
+
 def _continues_page(
     previous: DocumentTable, previous_caption: str, caption: str, rows: list[list[str]]
 ) -> bool:
@@ -322,11 +336,19 @@ def _continues_page(
     Первая таблица страницы — продолжение последней таблицы прошлой: столбцов столько же,
     а своего названия нет, оно «Продолжение…», или название и шапка те же. Таблица с другим
     названием — другая, даже той же ширины (так идут «Свиньи» и «Молоко» в сборнике Росстата).
+    Без названия, но со своей, другой шапкой — тоже другая (так на слайдах идут
+    «Животноводство» и «Растениеводство»); повторённая шапка или сразу строки значений —
+    продолжение. Подпись без значений («в том числе:», перенос названия субъекта) — строка
+    таблицы, а не шапка.
     """
     if len(previous.rows[0]) != len(rows[0]):
         return False
-    if not caption or caption.casefold().startswith(("продолжение", "окончание")):
+    if caption.casefold().startswith(("продолжение", "окончание")):
         return True
+    if not caption:
+        known = {_key(row) for row in previous.rows[:10]}
+        head = itertools.takewhile(lambda row: not _has_values(row), rows)
+        return all(_key(row) in known or _numbering(row) or not any(row[1:]) for row in head)
     return caption == previous_caption and _key(previous.rows[0]) == _key(rows[0])
 
 
@@ -341,6 +363,10 @@ def _caption(page: object, bbox: tuple[float, float, float, float]) -> str:
     except ValueError:
         return ""
     caption = " ".join(lines[-1].split()) if lines else ""
+    # Строка значений над таблицей — конец прошлой таблицы, а не название.
+    values = [item for item in caption.split() if _is_number(item) and item not in YEAR_WORDS]
+    if len(values) > 1:
+        return ""
     return caption if len(caption) <= CAPTION_LENGTH else ""
 
 
@@ -352,10 +378,13 @@ TURNED_MIN = 3
 LINE_TOLERANCE = 3
 # Строки без линий кончаются на пустой полосе выше стольких высот строки.
 GAP_LINES = 2.5
+# Слово в строке текста, если перекрывает её по высоте на такую долю.
+LINE_OVERLAP = 0.5
 # Число в клетке: «97,1», «-35,7», «1 856», «12%».
 _NUMBER = re.compile(r"[-–−+]?\d[\d\s]*(?:[.,]\d+)?\s*%?")
 # Число из этих — год в шапке, а не значение.
 _YEARS = range(1900, 2101)
+YEAR_WORDS = frozenset(str(year) for year in _YEARS)
 
 
 def _inside(table: Any, other: Any) -> bool:
@@ -436,6 +465,15 @@ def _has_values(row: list[str]) -> bool:
     )
 
 
+def _numbering(row: list[str]) -> bool:
+    """Нумерация столбцов под шапкой формы: «1 2 3 …» после клетки подписей."""
+    numbers = [cell.replace(" ", "") for cell in row[1:] if cell.strip()]
+    if len(numbers) < MIN_COLUMNS or not all(item.isdigit() for item in numbers):
+        return False
+    first = int(numbers[0])
+    return [int(item) for item in numbers] == list(range(first, first + len(numbers)))
+
+
 def _unruled_body(
     page: Any, table: Any, cells: list[list[str]], limit: float
 ) -> list[list[str]] | None:
@@ -477,19 +515,19 @@ def _unruled_body(
 
 
 def _lines_below(
-    page: Any, left: float, right: float, bottom: float, limit: float
+    page: Any, left: float, right: float, bottom: float, limit: float, **options: float
 ) -> list[list[dict[str, Any]]]:
-    """Строки слов под шапкой в её ширину — до пустой полосы выше нескольких строк."""
+    """
+    Строки слов под шапкой в её ширину — до пустой полосы выше нескольких строк. Слово
+    под шапкой — серединой по высоте: строка шапки, лежащая на её нижней линии, — не строка
+    таблицы (обрезка страницы подрезала бы рамку слова, и она попала бы в обе части).
+    """
     if limit - bottom < 1:
         return []
-    words = [
-        word
-        for word in _crop(page, (0, bottom, page.width, limit)).extract_words()
-        if word["x1"] > left and word["x0"] < right
-    ]
+    words = _band_words(page.extract_words(**options), left, right, bottom, limit)
     lines: list[list[dict[str, Any]]] = []
     for word in sorted(words, key=lambda item: (item["top"], item["x0"])):
-        if lines and abs(word["top"] - lines[-1][0]["top"]) <= LINE_TOLERANCE:
+        if lines and _same_line(word, lines[-1]):
             lines[-1].append(word)
         else:
             lines.append([word])
@@ -504,6 +542,17 @@ def _lines_below(
         kept.append(line)
         edge = max(word["bottom"] for word in line)
     return kept
+
+
+def _same_line(word: dict[str, Any], line: list[dict[str, Any]]) -> bool:
+    """
+    Слово в той же строке текста: по высоте перекрывает строку хотя бы на половину меньшей
+    высоты. Числа бывают набраны мельче подписи и стоят ниже её верха на несколько пунктов.
+    """
+    top = min(item["top"] for item in line)
+    bottom = max(item["bottom"] for item in line)
+    overlap = min(bottom, word["bottom"]) - max(top, word["top"])
+    return overlap >= LINE_OVERLAP * min(word["bottom"] - word["top"], bottom - top)
 
 
 def _placed(line: list[dict[str, Any]], bounds: list[float]) -> list[str]:
@@ -555,3 +604,246 @@ def _continues_label(before: str, after: str, quick_match: Any) -> bool:
 def _glued(before: str, after: str) -> str:
     """Перенос со знаком «-» в конце — без пробела, иначе — через пробел."""
     return f"{before}{after}" if before.endswith("-") else f"{before} {after}"
+
+
+# --- PDF: таблица из одних горизонтальных линеек ----------------------------------------------
+
+# Линейка таблицы — горизонтальная линия не короче этой доли ширины страницы.
+RULE_SHARE = 0.5
+# Отрезки одной линейки сходятся встык с таким зазором (пунктов).
+RULE_GAP = 2
+# Полоса шапки между линейками — не выше этого (пунктов).
+HEADER_BAND = 150
+# Граница столбца в промежутке между словами (с таким запасом, пунктов) делит надпись.
+STRADDLE = 2
+# Слова одной надписи разделены промежутком меньше этой доли высоты строки (пробел).
+PHRASE_GAP = 0.45
+# Буквы одного слова — ближе этого (пунктов): письма Word в PDF часто без знаков пробела.
+WORD_GAP = 1.5
+
+
+@dataclass(slots=True)
+class _Rule:
+    """Горизонтальная линейка: высота, края и стыки отрезков — границы столбцов."""
+
+    top: float
+    x0: float
+    x1: float
+    joints: list[float]
+
+
+def _rules(page: Any) -> list[_Rule]:
+    """
+    Горизонтальные линейки страницы сверху вниз. Word рисует границу каждой клетки
+    отдельным отрезком: отрезки одной высоты, сомкнутые встык, — одна линейка, а стыки —
+    невидимые вертикальные границы столбцов. Тонкий прямоугольник даёт два края рядом.
+    """
+    edges = sorted(page.horizontal_edges, key=lambda item: (item["top"], item["x0"]))
+    groups: list[list[dict[str, Any]]] = []
+    for edge in edges:
+        if groups and edge["top"] - groups[-1][0]["top"] <= 1:
+            groups[-1].append(edge)
+        else:
+            groups.append([edge])
+    rules = []
+    for group in groups:
+        chain: _Rule | None = None
+        for edge in sorted(group, key=lambda item: item["x0"]):
+            if chain is not None and edge["x0"] <= chain.x1 + RULE_GAP:
+                if abs(edge["x0"] - chain.x1) <= RULE_GAP:
+                    chain.joints.append(edge["x0"])
+                chain.x1 = max(chain.x1, edge["x1"])
+                continue
+            if chain is not None:
+                rules.append(chain)
+            chain = _Rule(edge["top"], edge["x0"], edge["x1"], [])
+        if chain is not None:
+            rules.append(chain)
+    return [rule for rule in rules if rule.x1 - rule.x0 >= RULE_SHARE * page.width]
+
+
+def _rule_tables(page: Any) -> list[tuple[tuple[float, float, float, float], list[list[str]]]]:
+    """
+    Таблицы, размеченные одними горизонтальными линейками (верх, линейки шапки, низ), без
+    вертикальных линий: pdfplumber их не видит. Тело — строки текста под линейкой, под
+    которой идут значения; столбцы — по стыкам отрезков линеек таблицы; шапка — полосы
+    между линейками над телом. Шапка кончается на прошлой таблице, на полосе без текста
+    или со значениями. Столбцы без текста во всей таблице отбрасываются.
+    """
+    rules = _rules(page)
+    if not rules:
+        return []
+    words = page.extract_words(x_tolerance=WORD_GAP)
+    tables = []
+    taken = -1  # последняя линейка, уже вошедшая в таблицу
+    for index, rule in enumerate(rules):
+        if index <= taken:
+            continue
+        limit = rules[index + 1].top if index + 1 < len(rules) else page.height
+        lines = _lines_below(page, rule.x0, rule.x1, rule.top, limit, x_tolerance=WORD_GAP)
+        bounds = _rule_bounds(rule, [rule])
+        placed = [_placed(line, bounds) for line in lines]
+        if len(bounds) - 1 < MIN_COLUMNS or sum(map(_has_values, placed)) < MIN_ROWS:
+            continue
+        start = index
+        while start - 1 > taken and _header_band(words, rules[start - 1], rules[start], rule):
+            start -= 1
+        bounds = _rule_bounds(rule, rules[start : index + 1])
+        header = [
+            row
+            for number in range(start, index)
+            for row in _header_rows(words, rules[number].top, rules[number + 1].top, bounds)
+        ]
+        body = _joined([_placed(line, bounds) for line in lines])
+        bottom = max(word["bottom"] for line in lines for word in line)
+        height = max(word["bottom"] - word["top"] for line in lines for word in line)
+        tables.append(((rule.x0, rules[start].top, rule.x1, bottom), _filled([*header, *body])))
+        # Линейка сразу под телом — нижняя граница этой таблицы, а не верх следующей.
+        taken = index + 1 if limit - bottom <= GAP_LINES * height else index
+    return tables
+
+
+def _rule_bounds(rule: _Rule, rules: list[_Rule]) -> list[float]:
+    """Границы столбцов: края линейки над телом и стыки линеек таблицы внутри неё."""
+    joints = sorted(
+        joint
+        for item in rules
+        for joint in item.joints
+        if rule.x0 + LINE_TOLERANCE < joint < rule.x1 - LINE_TOLERANCE
+    )
+    bounds = [rule.x0]
+    for joint in joints:
+        if joint - bounds[-1] > LINE_TOLERANCE:
+            bounds.append(joint)
+    return [*bounds, rule.x1]
+
+
+def _band_words(
+    words: list[dict[str, Any]], left: float, right: float, top: float, bottom: float
+) -> list[dict[str, Any]]:
+    """
+    Слова полосы: в ширине таблицы, середина по высоте — внутри полосы. Слова берутся со
+    всей страницы: обрезка страницы подрезала бы рамку слова на линейке, и строка попала
+    бы в обе полосы.
+    """
+    return [
+        word
+        for word in words
+        if word["x1"] > left
+        and word["x0"] < right
+        and top <= (word["top"] + word["bottom"]) / 2 < bottom
+    ]
+
+
+def _header_band(words: list[dict[str, Any]], upper: _Rule, lower: _Rule, rule: _Rule) -> bool:
+    """Полоса между линейками — шапка: в ширине таблицы, невысокая, с текстом без значений."""
+    if lower.top - upper.top > HEADER_BAND:
+        return False
+    if upper.x0 < rule.x0 - LINE_TOLERANCE or upper.x1 > rule.x1 + LINE_TOLERANCE:
+        return False
+    band = _band_words(words, rule.x0, rule.x1, upper.top, lower.top)
+    return bool(band) and not _band_values(band)
+
+
+def _band_values(words: list[dict[str, Any]]) -> bool:
+    """В полосе строка значений: два числа и больше в одной строке, кроме годов."""
+    lines: dict[int, int] = {}
+    for word in words:
+        text = word["text"]
+        if _is_number(text) and not (text.isdigit() and int(text) in _YEARS):
+            key = round(word["top"] / LINE_TOLERANCE)
+            lines[key] = lines.get(key, 0) + 1
+    return any(count > 1 for count in lines.values())
+
+
+def _header_rows(
+    words: list[dict[str, Any]], top: float, bottom: float, bounds: list[float]
+) -> list[list[str]]:
+    """
+    Строки шапки из полосы между линейками. Слова через пробел — одна надпись, пока граница
+    столбца не попала в промежуток между ними; надпись над несколькими столбцами (граница
+    проходит сквозь слово) — в первом из них, остальные пустые, как у объединённой клетки
+    Word. Под такой надписью в той же полосе бывают подписи столбцов («млн рублей», «в % к
+    …»): надпись со строками над ней — верхняя строка шапки, подписи — нижняя.
+    """
+    lines: list[list[dict[str, Any]]] = []
+    band = _band_words(words, bounds[0], bounds[-1], top, bottom)
+    for word in sorted(band, key=lambda item: (item["top"], item["x0"])):
+        if lines and _same_line(word, lines[-1]):
+            lines[-1].append(word)
+        else:
+            lines.append([word])
+    pieces = [_pieces(line, bounds) for line in lines]
+    covered = _covered(pieces)
+    upper: list[list[str]] = [[] for _ in range(len(bounds) - 1)]
+    lower: list[list[str]] = [[] for _ in range(len(bounds) - 1)]
+    for number, line in enumerate(pieces):
+        for first, _last, text in line:
+            cover = covered.get(first)
+            if cover is None:
+                # Подпись столбца без общей надписи — сверху, как клетка, объединённая по высоте.
+                upper[first].append(text)
+            elif number < cover[1]:
+                upper[cover[0]].append(text)
+            else:
+                lower[first].append(text)
+    rows = [[" ".join(parts) for parts in cells] for cells in (upper, lower)]
+    return [row for row in rows if any(row)]
+
+
+def _covered(pieces: list[list[tuple[int, int, str]]]) -> dict[int, tuple[int, int]]:
+    """
+    Столбцы под надписью над несколькими столбцами: её первый столбец и строка, с которой
+    под ней идут подписи столбцов (в строке начинается надпись не в первом её столбце).
+    """
+    covered: dict[int, tuple[int, int]] = {}
+    for number, line in enumerate(pieces):
+        for first, last, _text in line:
+            if last == first:
+                continue
+            end = next(
+                (
+                    later
+                    for later in range(number + 1, len(pieces))
+                    if any(first < start <= last for start, _end, _text in pieces[later])
+                ),
+                len(pieces),
+            )
+            for column in range(first, last + 1):
+                if column not in covered or end > covered[column][1]:
+                    covered[column] = (first, end)
+    return covered
+
+
+def _pieces(line: list[dict[str, Any]], bounds: list[float]) -> list[tuple[int, int, str]]:
+    """Надписи строки шапки: первый и последний столбец (по краям слов) и текст."""
+    pieces: list[list[dict[str, Any]]] = []
+    for word in sorted(line, key=lambda item: item["x0"]):
+        if pieces:
+            last = pieces[-1][-1]
+            apart = any(
+                last["x1"] - STRADDLE <= bound <= word["x0"] + STRADDLE for bound in bounds[1:-1]
+            )
+            if not apart and word["x0"] - last["x1"] < PHRASE_GAP * (word["bottom"] - word["top"]):
+                pieces[-1].append(word)
+                continue
+        pieces.append([word])
+    found = []
+    for piece in pieces:
+        head, tail = piece[0], piece[-1]
+        first = min(head["x0"] + STRADDLE, (head["x0"] + head["x1"]) / 2)
+        last = max(tail["x1"] - STRADDLE, (tail["x0"] + tail["x1"]) / 2)
+        text = " ".join(word["text"] for word in piece)
+        found.append((_column(bounds, first), _column(bounds, last), text))
+    return found
+
+
+def _column(bounds: list[float], x: float) -> int:
+    return min(max(bisect.bisect(bounds, x) - 1, 0), len(bounds) - 2)
+
+
+def _filled(rows: list[list[str]]) -> list[list[str]]:
+    """Без столбцов, пустых во всей таблице."""
+    width = max(map(len, rows), default=0)
+    keep = [index for index in range(width) if any(index < len(row) and row[index] for row in rows)]
+    return [[row[index] if index < len(row) else "" for index in keep] for row in rows]

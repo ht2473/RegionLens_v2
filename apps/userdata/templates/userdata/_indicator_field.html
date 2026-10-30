@@ -42,6 +42,8 @@
       </select>
       <span class="field__hint" id="merge-hint-{{ number }}">{% translate "Одно и то же под разными названиями — например, после переименования в источнике. Значения этого показателя дополнят выбранный. Где есть оба значения, остаётся значение выбранного. Описание — у выбранного." %}</span>
     </div>
+  {% elif item.merge %}
+    <input type="hidden" name="merge-{{ number }}" value="{{ item.merge }}">
   {% endif %}
 {% elif name == "hidden" %}
   <div class="field">

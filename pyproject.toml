@@ -1,6 +1,6 @@
 [project]
 name = "regionlens"
-version = "0.9.0"
+version = "0.9.1"
 description = "RegionLens — веб-приложение для анализа и визуализации социально-экономических показателей регионов РФ"
 readme = "README.md"
 requires-python = ">=3.14,<3.15"

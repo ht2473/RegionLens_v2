@@ -187,10 +187,10 @@ def questions(version: DatasetVersion, result: recognize.Recognition) -> list[st
         found.append(_("год значений"))
     if result.needs_repeats:
         found.append(_("регионы повторяются в нескольких строках"))
-    if result.series > recognize.MAX_SERIES:
+    if result.too_many:
         found.append(
             _("показателей получается %(count)s — больше %(limit)s")
-            % {"count": result.series, "limit": recognize.MAX_SERIES}
+            % {"count": result.series, "limit": result.series_limit}
         )
     return found
 
