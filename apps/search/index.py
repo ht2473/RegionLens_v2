@@ -7,7 +7,6 @@
 
 from __future__ import annotations
 
-import difflib
 import heapq
 import json
 import math
@@ -18,7 +17,7 @@ from typing import Any
 
 from django.conf import settings
 
-from apps.search.text import same_stem, stems
+from apps.search.text import one_typo, same_stem, stems, swapped_stems
 
 # Параметры BM25: насыщение частоты и поправка на длину документа.
 K1 = 1.2
@@ -27,8 +26,8 @@ B = 0.3
 # Вес совпадения по началу основы и с опечаткой относительно точного.
 PREFIX_WEIGHT = 0.8
 TYPO_WEIGHT = 0.6
-# Порог сходства основ для опечатки и наименьшая длина исправляемой основы.
-TYPO_CUTOFF = 0.8
+# Наименьшая длина исправляемой основы и сколько исправлений одного слова пробовать.
+TYPO_LIMIT = 2
 TYPO_MIN_LENGTH = 5
 
 # Веса полей показателя.
@@ -68,11 +67,6 @@ class Index:
         self.prior[key] = prior
         self.frequency.update(counts.keys())
 
-    @property
-    def vocabulary(self) -> list[str]:
-        """Основы указателя."""
-        return list(self.frequency)
-
     def expand(self, token: str) -> list[tuple[str, float]]:
         """Основы указателя для слова запроса с весом совпадения."""
         if token in self.frequency:
@@ -80,8 +74,11 @@ class Index:
         near = [(other, PREFIX_WEIGHT) for other in self.frequency if same_stem(token, other)]
         if near or len(token) < TYPO_MIN_LENGTH or token.isdigit():
             return near
-        close = difflib.get_close_matches(token, self.vocabulary, n=2, cutoff=TYPO_CUTOFF)
-        return [(other, TYPO_WEIGHT) for other in close]
+        # Одна опечатка, не «похожее слово»: «доставка» не «ставка», «гороскоп» не «городской».
+        fixed = swapped_stems(token)
+        close = [other for other in self.frequency if other in fixed or one_typo(token, other)]
+        close.sort(key=lambda other: -self.frequency[other])
+        return [(other, TYPO_WEIGHT) for other in close[:TYPO_LIMIT]]
 
     def search(self, tokens: list[str], limit: int = 10) -> list[Hit]:
         """Документы по убыванию оценки; без единого совпадения — пусто."""
