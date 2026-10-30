@@ -558,6 +558,7 @@ erDiagram
 | `data/reference/territories.json` | Справочник территорий |
 | `data/reference/geography.json` | Координаты центров и площади |
 | `data/reference/featured_series.json` | Основной набор: 69 рядов в 12 темах (см. ниже) |
+| `data/reference/source_corrections.json` | Поправки к исходному набору: доказанные ошибки, значение из набора, верное значение, источник и причина |
 | `data/reference/series_status.json` | Состояние публикации рядов у источника (см. ниже) |
 | `data/raw/data_regions_collection_102_v20260313.parquet` | Исходный набор — вход конвейера |
 | `data/reference/source_links.json` | Связи рядов с показателями внешних источников: способ и допуск сверки (раздел 5) |
