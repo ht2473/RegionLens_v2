@@ -38,7 +38,7 @@ if _env_file.exists():
 
 PROJECT_NAME = "RegionLens"
 PROJECT_TAGLINE = "Анализ и визуализация социально-экономических показателей регионов России"
-PROJECT_VERSION = "0.9.0"
+PROJECT_VERSION = "0.9.1"
 PROJECT_AUTHOR = "Кузьмин Евгений Олегович"
 PROJECT_AUTHOR_SHORT = "Кузьмин Е. О."
 PROJECT_AUTHOR_EN = "Evgeny Kuzmin"
