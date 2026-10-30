@@ -317,7 +317,7 @@ class TableStepView(DatasetStepMixin, TemplateView):
         shown = [column for column in columns if column not in hidden]
         unresolved = describe.unresolved(result)
         nested = result.territories.nested if result.territories else []
-        too_many = result.series > recognize.MAX_SERIES
+        too_many = result.too_many
         context.update(
             page_title=_("Что в таблице"),
             result=result,
@@ -339,7 +339,7 @@ class TableStepView(DatasetStepMixin, TemplateView):
             nested=nested,
             resolved_regions=_resolved_regions(result),
             table=jobs.table_of(self.version),
-            max_series=recognize.MAX_SERIES,
+            max_series=result.series_limit,
             repeated={number - 1 for item in result.same_headers for number in item["columns"]},
             form_text=FORM_TEXTS.get(result.form, ""),
             period_kinds=[
@@ -429,7 +429,11 @@ class SeriesStepView(DatasetStepMixin, TemplateView):
             asking=[item for item in items if item.questions],
             settled=[item for item in items if not item.questions],
             # Во что влить показатель: другие показатели таблицы, сами никуда не влитые.
-            merge_choices=[(item.name, item.title) for item in items if not item.merge],
+            merge_choices=(
+                [(item.name, item.title) for item in items if not item.merge]
+                if len(items) <= MERGE_CHOICES_MAX
+                else []
+            ),
             titles={item.name: item.title for item in items},
             report=report,
             meta_form=kwargs.get("meta_form")
@@ -607,6 +611,9 @@ PERIOD_COLUMNS_ALL = 6
 PERIOD_COLUMNS_SHOWN = 3
 # Строк образца под шапкой.
 PREVIEW_ROWS = 8
+# Список «Тот же показатель, что…» — у таблицы до стольких показателей: в каждом показателе
+# он перечисляет все остальные, у сотен столбцов страница весила бы десятки мегабайт.
+MERGE_CHOICES_MAX = 100
 
 ROLE_CHOICES = (
     (recognize.TERRITORY, _("регион")),
@@ -657,7 +664,7 @@ def questions_of(result: recognize.Recognition) -> int:
             result.needs_year,
             result.needs_repeats,
             bool(describe.unresolved(result)),
-            result.series > recognize.MAX_SERIES,
+            result.too_many,
         )
     )
 
