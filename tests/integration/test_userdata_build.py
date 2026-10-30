@@ -1235,3 +1235,23 @@ def test_equal_values_are_ranked_alphabetically(client: Client, warehouse: Any) 
     names = [row["name_ru"] for row in rows]
     assert names[:3] == ["Курская область", "Москва", "Тверская область"]
     assert {row["rank_desc"] for row in rows[:3]} == {1}
+
+
+def test_years_in_some_columns_keep_every_indicator(client: Client, warehouse: Any) -> None:
+    # Сводка территориального органа: зарплата и цены без года в шапке, безработные —
+    # столбцами «2026» и «2025». Собираются все показатели; безработные — один ряд за два года.
+    lines = [
+        ";Зарплата;;Индекс цен, %;Безработные, тыс. человек;",
+        ";рублей;в % к июлю 2025;;2026;2025",
+        "Тверская область;85 348;104,3;103,9;2,0;1,8",
+        "Москва;104 344;106,5;104,3;2,4;2,4",
+        "Курская область;102 947;109,8;103,8;4,5;4,6",
+        "Брянская область;85 640;99,3;105,2;3,1;3,1",
+    ]
+    dataset = _upload(client, "сводка.csv", "\n".join(lines).encode("utf-8"))
+    _describe(client, dataset, {"year": "2026"})
+    assert _build(client, dataset).status_code == 302
+    records = {record.indicator: record for record in _version(dataset).series.filter(derived="")}
+    assert len(records) == 4, list(records)
+    unemployed = next(record for name, record in records.items() if name.startswith("Безработные"))
+    assert (unemployed.first_year, unemployed.last_year) == (2025, 2026)

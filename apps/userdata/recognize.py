@@ -77,6 +77,9 @@ NUMERIC_SHARE = 0.8
 PERIOD_SHARE = 0.9
 # Рядов в наборе не больше этого; больше — отбор значений разрезов.
 MAX_SERIES = 500
+# У таблицы без разрезов ряды — её же столбцы показателей (открытые данные Минкультуры —
+# до 600 столбцов): предел выше, сверх него — отметить лишние столбцы «пропустить».
+MAX_COLUMN_SERIES = 2000
 # Регион в нескольких строках с разными числами у половины регионов, но не меньше чем у пяти:
 # в строках города или районы, или таблица из частей одна под другой. Спрашивается, что это.
 # На корпусе 28.10.2026 между 20 и 79 % повторов не было ни одной таблицы.
@@ -156,6 +159,8 @@ _PART_OF_YEAR = re.compile(
     r"сентябр|октябр|ноябр|декабр|\bна\s+1\s",
     re.IGNORECASE,
 )
+# Справочный столбец («Справочно на 1 июля 2023 г.») — не показатель таблицы.
+_REFERENCE = re.compile(r"справочн", re.IGNORECASE)
 # Имя файла открытых данных (методические рекомендации, версии 3.0 и 4.0):
 # «7708234640-healthregions-2021_data-20220624T1406-structure-20220624T1406.csv» — ИНН
 # издателя, код набора и даты версий набора и структуры. Год данных в нём не записан: даты —
@@ -261,6 +266,15 @@ class Recognition:
         return [column for column in self.columns if column.role == role]
 
     @property
+    def series_limit(self) -> int:
+        """Предел рядов: с разрезами — отбор их значений, без разрезов — столбцы таблицы."""
+        return MAX_SERIES if self.slices or self.row_parts else MAX_COLUMN_SERIES
+
+    @property
+    def too_many(self) -> bool:
+        return self.series > self.series_limit
+
+    @property
     def value_columns(self) -> list[ColumnInfo]:
         return self.role_of(VALUE)
 
@@ -323,7 +337,7 @@ def recognize(
     _apply_overrides(result, recipe)
     if result.form == INDICATORS:
         result.year = recipe.get("year") or None
-        _context_year(result, table, file_name, rows)
+        _context_year(result, table, file_name)
     if result.form in {WIDE, INDICATORS} and loaded.complete:
         if not _subtitle_rows(result, rows):
             _sheet_rows(result, rows)
@@ -669,6 +683,10 @@ def _hint(header: str) -> str | None:
 def _guess_form_and_roles(result: Recognition) -> None:
     columns = result.columns
     stamped = _header_periods(result)
+    if stamped and _mostly_unstamped(result, stamped):
+        # Показатели в столбцах, год в шапке — у части из них: такой столбец сохраняет свой
+        # год, остальные получают год таблицы. Годами в столбцах таблица потеряла бы их.
+        stamped = []
     period_columns = [
         column
         for column in columns
@@ -700,6 +718,57 @@ def _guess_form_and_roles(result: Recognition) -> None:
         result.indicators = _wide_indicators(result)
     elif result.form == INDICATORS:
         _years_in_names(result)
+
+
+def _mostly_unstamped(result: Recognition, stamped: list[ColumnInfo]) -> bool:
+    """
+    Годы в шапке — под названием показателя («Безработные | 2026 | 2025» — один показатель
+    за два года), а числовых столбцов без разобранного года больше, чем таких показателей:
+    «Заработная плата в июне 2026 | рублей», «Индекс цен в июле 2026» (сводка территориального
+    органа). Годы над всей таблицей («2024 | 2025 | 2025 в % к 2024») — годы в столбцах, как
+    были. Не в счёт столбцы без названия, коды, справочные, части года без года («I полугодие
+    2026 г. | Справочно | I квартал» в сборниках Росстата по округам) и с годом не из годов
+    таблицы («Налоговый потенциал … на 2027 год» рядом с «2023 г.» у Минфина): такой столбец
+    получил бы год таблицы, а не свой.
+    """
+    groups = {str((column.stamp or {}).get("group") or "") for column in stamped}
+    if "" in groups:
+        return False
+    years = {int((column.stamp or {})["year"]) for column in stamped}
+    others = [
+        column
+        for column in result.columns
+        if column.role != TERRITORY
+        and column.stamp is None
+        and column.numeric >= 0.5  # noqa: PLR2004
+        and column.codes < 0.5  # noqa: PLR2004 — коды ОКТМО и ОКАТО не показатели
+        and not _small_integers(column)
+        and _names_indicator(column.header, years)
+    ]
+    # Столбцы, у которых шапки разнятся только годом («Налоговый потенциал … на 2025 год»,
+    # «… на 2026 год»), — ряд одного показателя по годам, а не показатели без года: год
+    # таблицы у них был бы чужим.
+    unyeared = Counter(" ".join(_YEAR_NUMBER.sub(" ", column.header).split()) for column in others)
+    others = [
+        column
+        for column in others
+        if unyeared[" ".join(_YEAR_NUMBER.sub(" ", column.header).split())] == 1
+    ]
+    return len(others) > len(groups)
+
+
+def _names_indicator(header: str, years: set[int]) -> bool:
+    """
+    Шапка без разобранного года называет показатель: не пустая, не справочная, не часть года
+    без года, а годы в ней — из годов таблицы.
+    """
+    last = header.rsplit(" | ", maxsplit=1)[-1]
+    if not header.strip() or _REFERENCE.search(header):
+        return False
+    if _PART_OF_YEAR.search(last) and not _YEAR_NUMBER.search(last):
+        return False
+    named = {int(re.sub(r"\D", "", found)[:4]) for found in _YEAR_NUMBER.findall(header)}
+    return named <= years
 
 
 def _one_value_column(numeric: list[ColumnInfo]) -> None:
@@ -752,13 +821,19 @@ def _has_period_cells(result: Recognition) -> bool:
 
 
 def _column_stamp(header: str) -> dict[str, Any] | None:
-    """Год, период и группа из текстов шапки столбца: «2016 год | январь», «year2011»."""
+    """
+    Год, период и группа из текстов шапки столбца: «2016 год | январь», «year2011». Текст
+    сразу после «к», «против», «от» — база сравнения, а не период: «В % к | июню 2025 г.».
+    """
     year: int | None = None
     period: Period | None = None
     notes: list[int] = []
     group: list[str] = []
+    previous = ""
     for text in header.split(" | "):
-        found = periods.stamp(text) or periods.stamp(_strip_note(text))
+        compared = bool(_COMPARED.search(previous))
+        previous = text
+        found = None if compared else periods.stamp(text) or periods.stamp(_strip_note(text))
         if found is not None and (found.year is not None or period is None):
             if found.year is not None and year is None:
                 year = found.year
@@ -1175,23 +1250,17 @@ def _check_values(result: Recognition, loaded: Loaded) -> None:
     result.text_cells = texts.most_common(10)
 
 
-def _context_year(
-    result: Recognition, table: TableInfo, file_name: str, rows: list[list[Any]]
-) -> None:
+def _context_year(result: Recognition, table: TableInfo, file_name: str) -> None:
     """
     Год и период таблицы «показатели в столбцах» без столбца с годом: из столбцов с годом,
     заголовка, шапки, подписи таблицы в документе, имени листа, имени файла — по порядку.
     Ответа человека нет — год подставляется сам (``year_auto``) и виден с источником на
     шагах. Год только из столбцов или имени файла при части года в шапке («I полугодие»,
     «январь–сентябрь») не подставляется: период не угадать — спрашивается, как раньше.
+    Шапка читается по столбцам, как человек: «В % к | I кварталу 2025 г.» — база сравнения;
+    по строкам «к» и «I кварталу 2025» разошлись бы и база сошла бы за год таблицы.
     """
-    header = " | ".join(
-        text
-        for index in result.header_rows
-        if index < len(rows)
-        for text in (cell_text(cell).strip() for cell in rows[index])
-        if text
-    )
+    header = " | ".join(column.header for column in result.columns if column.header)
     named = Counter(column.stamp["year"] for column in result.value_columns if column.stamp)
     found: tuple[Stamp, str, str] | None = None
     if named:
