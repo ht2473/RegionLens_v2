@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
 # Доступные способы назначения весов и их подписи.
@@ -53,7 +54,7 @@ def build_weights(
     """
     columns = matrix.shape[1] if matrix.ndim == MATRIX_DIMENSIONS else 0
     if columns == 0:
-        return Weights(method=method, values=[], note="показатели не выбраны")
+        return Weights(method=method, values=[], note=gettext("показатели не выбраны"))
 
     if method == "expert" and expert:
         return _expert(expert, columns)
@@ -70,7 +71,7 @@ def build_weights(
 
     note = ""
     if method in ("entropy", "critic", "pca") and unusable:
-        note = "данных недостаточно для расчёта весов по структуре набора: веса равные"
+        note = gettext("данных недостаточно для расчёта весов по структуре набора: веса равные")
     return Weights(method="equal", values=[1 / columns] * columns, note=note)
 
 
@@ -84,7 +85,7 @@ def _expert(expert: list[float], columns: int) -> Weights:
         return Weights(
             method="equal",
             values=[1 / columns] * columns,
-            note="все заданные веса нулевые: применены равные",
+            note=gettext("все заданные веса нулевые: применены равные"),
         )
     return Weights(method="expert", values=[value / total for value in values])
 
@@ -103,7 +104,7 @@ def _entropy(matrix: np.ndarray) -> Weights:
         return Weights(
             method="equal",
             values=[1 / matrix.shape[1]] * matrix.shape[1],
-            note="показатели не различают территории: применены равные веса",
+            note=gettext("показатели не различают территории: применены равные веса"),
         )
     return Weights(method="entropy", values=[float(value / total) for value in diversity])
 
@@ -122,7 +123,7 @@ def _critic(matrix: np.ndarray) -> Weights:
         return Weights(
             method="equal",
             values=[1 / matrix.shape[1]] * matrix.shape[1],
-            note="разброс показателей нулевой: применены равные веса",
+            note=gettext("разброс показателей нулевой: применены равные веса"),
         )
     return Weights(method="critic", values=[float(value / total) for value in information])
 
@@ -141,7 +142,7 @@ def _principal_components(matrix: np.ndarray) -> Weights:
         return Weights(
             method="equal",
             values=[1 / matrix.shape[1]] * matrix.shape[1],
-            note="структуру связей определить не удалось: применены равные веса",
+            note=gettext("структуру связей определить не удалось: применены равные веса"),
         )
 
     order = np.argsort(eigenvalues)[::-1]
@@ -162,7 +163,7 @@ def _principal_components(matrix: np.ndarray) -> Weights:
         return Weights(
             method="equal",
             values=[1 / matrix.shape[1]] * matrix.shape[1],
-            note="нагрузки компонент вырождены: применены равные веса",
+            note=gettext("нагрузки компонент вырождены: применены равные веса"),
         )
 
     kept = int(np.count_nonzero(keep))
@@ -170,5 +171,6 @@ def _principal_components(matrix: np.ndarray) -> Weights:
     return Weights(
         method="pca",
         values=[float(value / total) for value in contribution],
-        note=f"использовано компонент: {kept}; объяснённая доля разброса: {explained:.0%}",
+        note=gettext("использовано компонент: %(kept)s; объяснённая доля разброса: %(share)s")
+        % {"kept": kept, "share": f"{explained:.0%}"},
     )

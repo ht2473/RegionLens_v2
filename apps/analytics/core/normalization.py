@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
 # Доступные способы приведения и их подписи.
@@ -102,7 +103,11 @@ def _min_max(values: np.ndarray) -> tuple[np.ndarray, int, str]:
     """Линейно растянуть размах значений на шкалу показа."""
     low, high = float(np.min(values)), float(np.max(values))
     if math.isclose(low, high):
-        return np.full_like(values, SCALE_MIDDLE), 0, "все территории имеют одинаковое значение"
+        return (
+            np.full_like(values, SCALE_MIDDLE),
+            0,
+            gettext("все территории имеют одинаковое значение"),
+        )
     return (values - low) / (high - low) * SCALE_MAX, 0, ""
 
 
@@ -118,7 +123,7 @@ def _standard(values: np.ndarray, *, robust: bool) -> tuple[np.ndarray, int, str
         spread = float(np.std(values, ddof=1))
 
     if spread <= 0:
-        return np.full_like(values, SCALE_MIDDLE), 0, "разброс значений равен нулю"
+        return np.full_like(values, SCALE_MIDDLE), 0, gettext("разброс значений равен нулю")
 
     scores = (values - centre) / spread
     clipped = int(np.count_nonzero(np.abs(scores) > SCALE_DEVIATIONS))
@@ -126,7 +131,9 @@ def _standard(values: np.ndarray, *, robust: bool) -> tuple[np.ndarray, int, str
 
     note = ""
     if clipped:
-        note = f"значений за пределами трёх стандартных отклонений: {clipped}"
+        note = gettext("значений за пределами трёх стандартных отклонений: %(count)s") % {
+            "count": clipped
+        }
     return SCALE_MIDDLE + scores / SCALE_DEVIATIONS * SCALE_MIDDLE, clipped, note
 
 
@@ -144,7 +151,11 @@ def _rank(values: np.ndarray) -> tuple[np.ndarray, int, str]:
 
     if values.size == 1:
         return np.full_like(values, SCALE_MIDDLE), 0, ""
-    return ranks / (values.size - 1) * SCALE_MAX, 0, "учитывается только порядок территорий"
+    return (
+        ranks / (values.size - 1) * SCALE_MAX,
+        0,
+        gettext("учитывается только порядок территорий"),
+    )
 
 
 def _logarithmic(values: np.ndarray) -> tuple[np.ndarray, int, str]:
@@ -153,6 +164,6 @@ def _logarithmic(values: np.ndarray) -> tuple[np.ndarray, int, str]:
         return (
             np.full_like(values, SCALE_MIDDLE),
             0,
-            "показатель принимает нулевые или отрицательные значения",
+            gettext("показатель принимает нулевые или отрицательные значения"),
         )
     return _min_max(np.log(values))

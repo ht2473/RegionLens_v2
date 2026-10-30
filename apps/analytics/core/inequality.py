@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
+from django.utils.translation import gettext_lazy as _
 from scipy.optimize import minimize_scalar
 
 # Параметр неприятия неравенства Аткинсона по умолчанию — умеренный.
@@ -26,8 +27,8 @@ MIN_GROUP_SIZE = 2
 MAX_CURVE_POINTS = 200
 
 # Пояснения к отказу в расчёте меры.
-NOTE_NEGATIVE = "показатель принимает отрицательные значения"
-NOTE_NON_POSITIVE = "показатель принимает нулевые или отрицательные значения"
+NOTE_NEGATIVE = _("показатель принимает отрицательные значения")
+NOTE_NON_POSITIVE = _("показатель принимает нулевые или отрицательные значения")
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,7 +37,7 @@ class Measure:
 
     code: str
     value: float | None
-    note: str = ""
+    note: Any = ""
 
     @property
     def is_available(self) -> bool:
