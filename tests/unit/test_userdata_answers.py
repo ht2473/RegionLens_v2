@@ -133,3 +133,29 @@ def test_per_person_order(unit: str, middle: float | None, factor: float, expect
     found_factor, found_unit = build.per_person(unit, middle)
     assert found_factor == pytest.approx(factor)
     assert found_unit == expected
+
+
+def test_country_change_from_regions_sum(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Строки России в таблице нет (вклады Банка России): у суммы ход по России — сумма
+    # регионов в годы, где значения есть не меньше чем у 80 субъектов, по общему для них
+    # составу; доли не складываются.
+    from apps.sources import territories
+    from apps.userdata import consistency, operations
+    from apps.warehouse import queries
+
+    codes = [f"R{number}" for number in range(89)]
+    values = {code: {2024: 1.0, 2025: 2.0} for code in codes[:85]}
+    values["R0"] = {2023: 5.0, 2024: 1.0, 2025: 2.0}  # в 2023 году — один регион
+    # Четыре субъекта — только в последнем году: сумма от их появления не растёт.
+    values.update({code: {2025: 100.0} for code in codes[85:]})
+    monkeypatch.setattr(territories, "region_codes", lambda: codes)
+    monkeypatch.setattr(consistency, "_subjects", lambda: set(codes))
+    monkeypatch.setattr(queries, "series_values", lambda keys, wanted: {keys[0]: values})
+    monkeypatch.setattr(operations, "info_of", lambda key: SimpleNamespace(type="stock"))
+    assert answers._regions_total("u:a:b", 2025) == [
+        {"year": 2024, "value": 85.0},
+        {"year": 2025, "value": 170.0},
+    ]
+    assert answers._regions_total("u:a:b", 2024) == [{"year": 2024, "value": 85.0}]
+    monkeypatch.setattr(operations, "info_of", lambda key: SimpleNamespace(type="relative"))
+    assert answers._regions_total("u:a:b", 2025) == []

@@ -8,6 +8,9 @@
   {% include "search/answers/_spark.html" with spark=card.spark %}
 </div>
 <p class="answer__meta">
+  {% if card.summed %}
+    <span>{% translate "Сумма по регионам: строки России в таблице нет" %}</span>
+  {% endif %}
   {% if card.change %}
     <span>
       {% blocktranslate trimmed with since=card.since change=card.change %}С {{ since }} года — {{ change }}{% endblocktranslate %}

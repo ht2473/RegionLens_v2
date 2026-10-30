@@ -201,6 +201,12 @@ def change(asked: Asked) -> dict[str, Any]:
         if rows:
             wanted = code
             break
+    summed = False
+    if not rows and not state.codes:
+        # Строки России в таблице нет: у суммы ход по России — сумма регионов.
+        rows = _regions_total(state.series.key, state.year)
+        if rows:
+            wanted, summed = COUNTRY_CODE, True
     if not rows:
         raise NoAnswerError(_("Значений по годам нет."))
     last = rows[-1]
@@ -216,6 +222,7 @@ def change(asked: Asked) -> dict[str, Any]:
         "year": last_year,
         "territory": Territory.objects.filter(code=wanted).first(),
         "is_country": wanted == COUNTRY_CODE,
+        "summed": summed,
         "code": wanted,
         "value": ru_number(last["value"], subject.item.precision),
         "change": shift,
@@ -224,6 +231,41 @@ def change(asked: Asked) -> dict[str, Any]:
         "spark": sparkline_path([row["value"] for row in rows]),
         "open_url": _url("compare:index", **query),
     }
+
+
+def _regions_total(key: str, until: int) -> list[dict[str, Any]]:
+    """
+    Сумма регионов по годам вместо строки России, которой в таблице нет: только у сумм (поток,
+    запас) и в годы, где значения есть не меньше чем у 80 субъектов. Состав субъектов — общий
+    для этих лет: иначе сумма росла бы от одного появления новых субъектов в таблице. Доли
+    и средние не складываются — у них ответа нет.
+    """
+    from apps.sources.territories import region_codes
+    from apps.warehouse.queries import series_values
+
+    from . import consistency, operations, semantics
+
+    info = operations.info_of(key)
+    if info is None or not semantics.is_additive(info.type):
+        return []
+    by_year: dict[int, dict[str, float]] = {}
+    for code, years in series_values([key], list(region_codes())).get(key, {}).items():
+        for year, value in years.items():
+            if year <= until:
+                by_year.setdefault(year, {})[code] = value
+    full = [
+        set(values)
+        for values in by_year.values()
+        if consistency.regions_total(values)[1] >= consistency.SUM_REGIONS
+    ]
+    common = set.intersection(*full) if full else set()
+    rows = []
+    for year in sorted(by_year):
+        values = {code: value for code, value in by_year[year].items() if code in common}
+        total, count = consistency.regions_total(values)
+        if total is not None and count >= consistency.SUM_REGIONS:
+            rows.append({"year": year, "value": total})
+    return rows
 
 
 # --- Мой регион -----------------------------------------------------------------------------
