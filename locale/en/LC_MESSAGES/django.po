@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-30 19:05+0000\n"
+"POT-Creation-Date: 2026-10-30 19:36+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1173,25 +1173,50 @@ msgstr "weak"
 msgid "практически отсутствует"
 msgstr "practically absent"
 
-#: apps/analytics/core/normalization.py:18
+#: apps/analytics/core/inequality.py:30
+msgid "показатель принимает отрицательные значения"
+msgstr "the indicator takes negative values"
+
+#: apps/analytics/core/inequality.py:31
+#: apps/analytics/core/normalization.py:167
+msgid "показатель принимает нулевые или отрицательные значения"
+msgstr "the indicator takes zero or negative values"
+
+#: apps/analytics/core/normalization.py:19
 msgid "линейное растяжение размаха"
 msgstr "linear rescaling of the range"
 
-#: apps/analytics/core/normalization.py:19
+#: apps/analytics/core/normalization.py:20
 msgid "стандартизация (z-оценка)"
 msgstr "standardisation (z-score)"
 
-#: apps/analytics/core/normalization.py:20
+#: apps/analytics/core/normalization.py:21
 msgid "робастная (медиана и квартили)"
 msgstr "robust (median and quartiles)"
 
-#: apps/analytics/core/normalization.py:21
+#: apps/analytics/core/normalization.py:22
 msgid "ранговая"
 msgstr "rank"
 
-#: apps/analytics/core/normalization.py:22
+#: apps/analytics/core/normalization.py:23
 msgid "логарифмическая"
 msgstr "logarithmic"
+
+#: apps/analytics/core/normalization.py:157
+msgid "учитывается только порядок территорий"
+msgstr "only the order of territories is used"
+
+#: apps/analytics/core/normalization.py:109
+msgid "все территории имеют одинаковое значение"
+msgstr "all territories have the same value"
+
+#: apps/analytics/core/normalization.py:126
+msgid "разброс значений равен нулю"
+msgstr "the values do not vary"
+
+#: apps/analytics/core/normalization.py:134
+msgid "значений за пределами трёх стандартных отклонений: %(count)s"
+msgstr "values beyond three standard deviations: %(count)s"
 
 #: apps/analytics/core/regression.py:140
 #: apps/analytics/templates/analytics/partials/_correlation_results.html:170
@@ -1230,25 +1255,57 @@ msgstr "high among low"
 msgid "низкий среди высоких"
 msgstr "low among high"
 
-#: apps/analytics/core/weighting.py:13
+#: apps/analytics/core/weighting.py:14
 msgid "равные"
 msgstr "equal"
 
-#: apps/analytics/core/weighting.py:14
+#: apps/analytics/core/weighting.py:15
 msgid "экспертные"
 msgstr "expert"
 
-#: apps/analytics/core/weighting.py:15
+#: apps/analytics/core/weighting.py:16
 msgid "энтропийные"
 msgstr "entropy"
 
-#: apps/analytics/core/weighting.py:16
+#: apps/analytics/core/weighting.py:17
 msgid "CRITIC"
 msgstr "CRITIC"
 
-#: apps/analytics/core/weighting.py:17
+#: apps/analytics/core/weighting.py:18
 msgid "по нагрузкам главных компонент"
 msgstr "by principal component loadings"
+
+#: apps/analytics/core/weighting.py:74
+msgid "данных недостаточно для расчёта весов по структуре набора: веса равные"
+msgstr "not enough data to derive weights from the indicator set: equal weights used"
+
+#: apps/analytics/core/weighting.py:57
+msgid "показатели не выбраны"
+msgstr "no indicators selected"
+
+#: apps/analytics/core/weighting.py:88
+msgid "все заданные веса нулевые: применены равные"
+msgstr "all the weights given are zero: equal weights used"
+
+#: apps/analytics/core/weighting.py:107
+msgid "показатели не различают территории: применены равные веса"
+msgstr "the indicators do not separate territories: equal weights used"
+
+#: apps/analytics/core/weighting.py:126
+msgid "разброс показателей нулевой: применены равные веса"
+msgstr "the indicators do not vary: equal weights used"
+
+#: apps/analytics/core/weighting.py:166
+msgid "нагрузки компонент вырождены: применены равные веса"
+msgstr "the component loadings are degenerate: equal weights used"
+
+#: apps/analytics/core/weighting.py:174
+msgid "использовано компонент: %(kept)s; объяснённая доля разброса: %(share)s"
+msgstr "components used: %(kept)s; share of variance explained: %(share)s"
+
+#: apps/analytics/core/weighting.py:145
+msgid "структуру связей определить не удалось: применены равные веса"
+msgstr "the structure of links could not be determined: equal weights used"
 
 #: apps/analytics/selectors.py:49
 msgid "постоянный: только субъекты со значениями во всех годах"
