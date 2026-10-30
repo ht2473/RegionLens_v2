@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 21:24+0000\n"
+"POT-Creation-Date: 2026-10-29 21:52+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -3339,7 +3339,7 @@ msgstr "Not determined"
 #: apps/catalog/indicator.py:232
 #: apps/catalog/passport.py:201
 #: apps/core/showcase.py:567
-#: apps/userdata/answers.py:345
+#: apps/userdata/answers.py:378
 msgid "%(points)s п. п."
 msgstr "%(points)s pp"
 
@@ -5364,7 +5364,7 @@ msgstr "How the regions' values lie on the scale"
 #: apps/core/navigation.py:73
 #: apps/surface/panels.py:127
 #: apps/userdata/export.py:209
-#: apps/userdata/ingest.py:465
+#: apps/userdata/ingest.py:480
 msgid "Таблица"
 msgstr "Table"
 
@@ -5412,7 +5412,7 @@ msgid "к базовому году"
 msgstr "rebased"
 
 #: apps/compare/panel.py:208
-#: apps/userdata/answers.py:1340
+#: apps/userdata/answers.py:1373
 msgid "%(year)s = 100"
 msgstr "%(year)s = 100"
 
@@ -9563,7 +9563,7 @@ msgid "изменение — с оговоркой."
 msgstr "the change comes with a caveat."
 
 #: apps/search/templates/search/answers/_trend.html:13
-#: apps/userdata/templates/userdata/cards/_change.html:13
+#: apps/userdata/templates/userdata/cards/_change.html:16
 #: apps/userdata/templates/userdata/cards/_mine.html:21
 msgid "С %(since)s года — %(change)s"
 msgstr "Since %(since)s: %(change)s"
@@ -10201,26 +10201,26 @@ msgstr "Two indicators together"
 msgid "Сравнение двух показателей"
 msgstr "Two indicators compared"
 
-#: apps/userdata/answers.py:306
+#: apps/userdata/answers.py:339
 msgid "в процентных пунктах"
 msgstr "in percentage points"
 
-#: apps/userdata/answers.py:307
+#: apps/userdata/answers.py:340
 #: apps/userdata/operations.py:104
 msgid "в процентах"
 msgstr "in per cent"
 
-#: apps/userdata/answers.py:308
+#: apps/userdata/answers.py:341
 msgid "разностью значений"
 msgstr "as a difference of values"
 
-#: apps/userdata/answers.py:490
+#: apps/userdata/answers.py:523
 msgid "Россия (сумма регионов)"
 msgstr "Russia (sum of regions)"
 
 #: apps/userdata/answers.py:125
-#: apps/userdata/answers.py:803
-#: apps/userdata/answers.py:897
+#: apps/userdata/answers.py:836
+#: apps/userdata/answers.py:930
 msgid "За этот год значений по регионам нет."
 msgstr "There are no regional values for this year."
 
@@ -10229,94 +10229,94 @@ msgstr "There are no regional values for this year."
 msgid "Рейтинг за этот год не рассчитан."
 msgstr "No ranking has been calculated for this year."
 
-#: apps/userdata/answers.py:205
+#: apps/userdata/answers.py:211
 msgid "Значений по годам нет."
 msgstr "There are no values by year."
 
-#: apps/userdata/answers.py:247
+#: apps/userdata/answers.py:280
 msgid "Мой регион не выбран: его выбирают в шапке сайта."
 msgstr "My region is not chosen: choose it in the site header."
 
-#: apps/userdata/answers.py:251
+#: apps/userdata/answers.py:284
 msgid "За этот год значения по моему региону нет."
 msgstr "There is no value for my region in this year."
 
-#: apps/userdata/answers.py:363
-#: apps/userdata/answers.py:548
+#: apps/userdata/answers.py:396
+#: apps/userdata/answers.py:581
 msgid "Для изменения нужны хотя бы два года."
 msgstr "A change needs at least two years."
 
-#: apps/userdata/answers.py:371
-#: apps/userdata/answers.py:636
+#: apps/userdata/answers.py:404
+#: apps/userdata/answers.py:669
 msgid "Значений в обоих годах слишком мало для сравнения."
 msgstr "Too few values in both years to compare."
 
-#: apps/userdata/answers.py:434
+#: apps/userdata/answers.py:467
 msgid "Часть структуры удалена из таблицы."
 msgstr "A part of the structure was removed from the table."
 
-#: apps/userdata/answers.py:471
+#: apps/userdata/answers.py:504
 #: apps/userdata/studies.py:274
 msgid "Для структуры нужны хотя бы две части."
 msgstr "A structure needs at least two parts."
 
-#: apps/userdata/answers.py:478
+#: apps/userdata/answers.py:511
 msgid "У частей есть отрицательные значения — долей у них нет."
 msgstr "Some parts have negative values, so they have no shares."
 
-#: apps/userdata/answers.py:480
+#: apps/userdata/answers.py:513
 msgid "За этот год значений всех частей по регионам слишком мало."
 msgstr "Too few regions have values of all parts for this year."
 
-#: apps/userdata/answers.py:540
+#: apps/userdata/answers.py:573
 msgid "Вклады регионов складываются только у сумм. У относительной величины смотрите «Темпы роста по регионам»."
 msgstr "Regional contributions add up only for totals. For a relative value, see “Growth rates by region”."
 
-#: apps/userdata/answers.py:643
+#: apps/userdata/answers.py:676
 msgid "остальные регионы (%(count)s)"
 msgstr "other regions (%(count)s)"
 
-#: apps/userdata/answers.py:659
+#: apps/userdata/answers.py:692
 msgid "Значений всех частей в обоих годах слишком мало для сравнения."
 msgstr "Too few regions have values of all parts in both years to compare."
 
-#: apps/userdata/answers.py:672
+#: apps/userdata/answers.py:705
 msgid "остальные части (%(count)s)"
 msgstr "other parts (%(count)s)"
 
-#: apps/userdata/answers.py:697
+#: apps/userdata/answers.py:730
 msgid "Группа регионов удалена."
 msgstr "The region group was deleted."
 
-#: apps/userdata/answers.py:708
+#: apps/userdata/answers.py:741
 msgid "У регионов группы нет значений этого показателя."
 msgstr "The regions of the group have no values of this indicator."
 
-#: apps/userdata/answers.py:843
+#: apps/userdata/answers.py:876
 msgid "За этот год значений по округам нет."
 msgstr "There are no values by federal district in this year."
 
-#: apps/userdata/answers.py:951
+#: apps/userdata/answers.py:984
 msgid "Для малых графиков нужны хотя бы два года."
 msgstr "Small multiples need at least two years."
 
-#: apps/userdata/answers.py:960
+#: apps/userdata/answers.py:993
 msgid "За эти годы значений по регионам нет."
 msgstr "There are no regional values for these years."
 
-#: apps/userdata/answers.py:1069
+#: apps/userdata/answers.py:1102
 msgid "Индекс не рассчитать: значения регионов одинаковы."
 msgstr "The index cannot be calculated: the regions’ values are equal."
 
-#: apps/userdata/answers.py:1266
+#: apps/userdata/answers.py:1299
 msgid "У показателей нет общего года."
 msgstr "The indicators have no year in common."
 
-#: apps/userdata/answers.py:1278
+#: apps/userdata/answers.py:1311
 msgid "Пар значений слишком мало для оценки связи."
 msgstr "There are too few pairs of values to estimate a relationship."
 
-#: apps/userdata/answers.py:1283
+#: apps/userdata/answers.py:1316
 msgid "Связь не рассчитать: у одного из показателей значения одинаковы."
 msgstr "The relationship cannot be calculated: one of the indicators has equal values."
 
@@ -10324,39 +10324,39 @@ msgstr "The relationship cannot be calculated: one of the indicators has equal v
 msgid "Нужны значения хотя бы по %(count)s регионам, есть по %(found)s."
 msgstr "Values for at least %(count)s regions are needed; there are %(found)s."
 
-#: apps/userdata/answers.py:447
+#: apps/userdata/answers.py:480
 msgid "%(first)s и %(second)s"
 msgstr "%(first)s and %(second)s"
 
-#: apps/userdata/answers.py:449
+#: apps/userdata/answers.py:482
 msgid "%(first)s и другие (%(count)s)"
 msgstr "%(first)s and others (%(count)s)"
 
-#: apps/userdata/answers.py:495
+#: apps/userdata/answers.py:528
 msgid "прочие"
 msgstr "other"
 
-#: apps/userdata/answers.py:1117
+#: apps/userdata/answers.py:1150
 msgid "Нужно не меньше %(count)s лет между первым и последним годом."
 msgstr "At least %(count)s years are needed between the first and the last year."
 
-#: apps/userdata/answers.py:1141
+#: apps/userdata/answers.py:1174
 msgid "Нужны положительные значения хотя бы по %(count)s регионам каждый год."
 msgstr "Positive values for at least %(count)s regions are needed in every year."
 
-#: apps/userdata/answers.py:1211
+#: apps/userdata/answers.py:1244
 msgid "%(title)s — своя таблица"
 msgstr "%(title)s — own table"
 
-#: apps/userdata/answers.py:1213
+#: apps/userdata/answers.py:1246
 msgid "%(title)s — данные сайта"
 msgstr "%(title)s — site data"
 
-#: apps/userdata/answers.py:722
+#: apps/userdata/answers.py:755
 msgid "доля группы в сумме регионов"
 msgstr "group share of the regional total"
 
-#: apps/userdata/answers.py:735
+#: apps/userdata/answers.py:768
 msgid "остальные регионы"
 msgstr "other regions"
 
@@ -10368,57 +10368,57 @@ msgstr "This gives %(count)s recalculations and folds — more than %(limit)s. S
 msgid "Нет значений показателей: %(names)s."
 msgstr "No values for indicators: %(names)s."
 
-#: apps/userdata/calc_views.py:175
+#: apps/userdata/calc_views.py:176
 #: apps/userdata/templates/userdata/calc.html:17
 #: apps/userdata/templates/userdata/study.html:299
 msgid "Расчёт показателя"
 msgstr "Indicator calculation"
 
-#: apps/userdata/calc_views.py:438
+#: apps/userdata/calc_views.py:439
 msgid "Первый год периода должен быть раньше последнего."
 msgstr "The first year of the period must be earlier than the last."
 
-#: apps/userdata/calc_views.py:180
+#: apps/userdata/calc_views.py:181
 msgid "Этот расчёт не подходит показателю: %(reason)s."
 msgstr "This calculation does not suit the indicator: %(reason)s."
 
-#: apps/userdata/calc_views.py:189
+#: apps/userdata/calc_views.py:190
 msgid "Проверок слишком много подряд — подождите минуту."
 msgstr "Too many checks in a row — wait a minute."
 
-#: apps/userdata/calc_views.py:219
+#: apps/userdata/calc_views.py:220
 msgid "Покрытие итога"
 msgstr "Coverage of the total"
 
-#: apps/userdata/calc_views.py:234
+#: apps/userdata/calc_views.py:235
 msgid "Отмеченные части покрывают около %(share)s %% итога. Доли считаются от итога, поэтому индекс выйдет неточным. Отметьте все части итога."
 msgstr "The selected parts cover about %(share)s %% of the total. Shares are taken of the total, so the index will be inaccurate. Select all parts of the total."
 
-#: apps/userdata/calc_views.py:239
+#: apps/userdata/calc_views.py:240
 msgid "Отмеченные части в сумме больше итога: около %(share)s %%. Похоже, среди них есть части частей, строки «в том числе»."
 msgstr "The selected parts add up to more than the total: about %(share)s %%. Some of them seem to be parts of parts, “of which” rows."
 
-#: apps/userdata/calc_views.py:286
+#: apps/userdata/calc_views.py:287
 msgid "Новый показатель сохраняется в свою таблицу — загрузите её."
 msgstr "A new indicator is saved to your own table — upload a table first."
 
-#: apps/userdata/calc_views.py:298
+#: apps/userdata/calc_views.py:299
 msgid "Новый показатель"
 msgstr "New indicator"
 
-#: apps/userdata/calc_views.py:271
+#: apps/userdata/calc_views.py:272
 msgid "Показатели сайта на поле"
 msgstr "Site indicators on the board"
 
-#: apps/userdata/calc_views.py:419
+#: apps/userdata/calc_views.py:420
 msgid "Выберите показатель «%(label)s»."
 msgstr "Choose an indicator for “%(label)s”."
 
-#: apps/userdata/calc_views.py:429
+#: apps/userdata/calc_views.py:430
 msgid "Отметьте хотя бы две составляющие."
 msgstr "Select at least two components."
 
-#: apps/userdata/calc_views.py:433
+#: apps/userdata/calc_views.py:434
 msgid "Выберите «%(label)s»."
 msgstr "Choose “%(label)s”."
 
@@ -10454,45 +10454,45 @@ msgstr "from the sheet name “%(text)s”"
 msgid "из имени файла «%(text)s»"
 msgstr "from the file name “%(text)s”"
 
-#: apps/userdata/documents.py:102
-#: apps/userdata/documents.py:106
-#: apps/userdata/documents.py:111
+#: apps/userdata/documents.py:103
+#: apps/userdata/documents.py:107
+#: apps/userdata/documents.py:112
 msgid "Документ «%(name)s» повреждён."
 msgstr "The document “%(name)s” is damaged."
 
-#: apps/userdata/documents.py:309
+#: apps/userdata/documents.py:300
 msgid "Это скан: в PDF нет текстового слоя, таблицу из него не прочитать. Нужен PDF, сохранённый из Word или Excel, или сама таблица."
 msgstr "This is a scan: the PDF has no text layer, so the table cannot be read from it. Use a PDF saved from Word or Excel, or the table itself."
 
-#: apps/userdata/documents.py:243
+#: apps/userdata/documents.py:244
 msgid "PDF защищён паролем. Снимите защиту и загрузите снова."
 msgstr "The PDF is password-protected. Remove the protection and upload it again."
 
-#: apps/userdata/documents.py:245
+#: apps/userdata/documents.py:246
 msgid "PDF «%(name)s» повреждён."
 msgstr "The PDF “%(name)s” is damaged."
 
-#: apps/userdata/documents.py:249
+#: apps/userdata/documents.py:250
 msgid "В PDF больше %(limit)s страниц. Сохраните страницы с нужной таблицей отдельным файлом и загрузите его."
 msgstr "The PDF has more than %(limit)s pages. Save the pages with the table you need as a separate file and upload it."
 
-#: apps/userdata/documents.py:265
+#: apps/userdata/documents.py:266
 msgid "PDF читается слишком долго. Сохраните страницы с нужной таблицей отдельным файлом и загрузите его."
 msgstr "The PDF takes too long to read. Save the pages with the table you need as a separate file and upload it."
 
-#: apps/userdata/documents.py:90
+#: apps/userdata/documents.py:91
 msgid "Документ «%(name)s» слишком большой."
 msgstr "The document “%(name)s” is too large."
 
-#: apps/userdata/documents.py:95
+#: apps/userdata/documents.py:96
 msgid "Документ «%(name)s» сжат слишком сильно. Такой файл не принимается."
 msgstr "The document “%(name)s” is compressed too strongly. Such a file is not accepted."
 
-#: apps/userdata/documents.py:298
+#: apps/userdata/documents.py:289
 msgid "Таблица %(number)s, стр. %(page)s"
 msgstr "Table %(number)s, p. %(page)s"
 
-#: apps/userdata/documents.py:127
+#: apps/userdata/documents.py:128
 msgid "Таблица %(number)s"
 msgstr "Table %(number)s"
 
@@ -10563,9 +10563,13 @@ msgstr "not in the reference list"
 msgid "исключено из расчётов"
 msgstr "excluded from calculations"
 
-#: apps/userdata/extract.py:888
+#: apps/userdata/extract.py:899
 msgid "Разобрать таблицу не удалось. Мы получили сообщение об ошибке; сам файл не пересылался."
 msgstr "The table could not be parsed. We have received an error report; the file itself was not sent."
+
+#: apps/userdata/extract.py:764
+msgid "Получается временных рядов: %(count)s, больше %(limit)s. Отметьте лишние столбцы как «пропустить» на шаге «Что в таблице»."
+msgstr "Time series to be created: %(count)s, more than %(limit)s. Mark the columns you do not need as “skip” at the “What is in the table” step."
 
 #: apps/userdata/extract.py:231
 msgid "В таблице федеральные округа, а не субъекты. Карта и анализ работают по субъектам РФ."
@@ -10575,37 +10579,36 @@ msgstr "The table lists federal districts, not regions. The map and analysis wor
 msgid "Столбец с регионами не найден. Отметьте его на шаге «Что в таблице»."
 msgstr "No column with regions was found. Mark it at the “What is in the table” step."
 
-#: apps/userdata/extract.py:249
+#: apps/userdata/extract.py:243
 msgid "Годы в таблице не найдены. Укажите год на шаге «Что в таблице»."
 msgstr "No years were found in the table. Enter the year at the “What is in the table” step."
 
-#: apps/userdata/extract.py:252
+#: apps/userdata/extract.py:246
 msgid "Регионы повторяются в нескольких строках. Ответьте на шаге «Что в таблице», что в этих строках."
 msgstr "Regions repeat in several rows. Say what these rows are at the “What is in the table” step."
 
-#: apps/userdata/extract.py:259
+#: apps/userdata/extract.py:253
 msgid "На карте сайта только субъекты РФ. Нужна таблица, где у каждого региона одна строка."
 msgstr "The site map shows only constituent entities of Russia. You need a table with one row per region."
 
-#: apps/userdata/extract.py:271
+#: apps/userdata/extract.py:265
 msgid "В таблице не нашлось ни одного значения по территориям."
 msgstr "The table contains no values by territory."
 
-#: apps/userdata/extract.py:242
-#: apps/userdata/extract.py:274
+#: apps/userdata/extract.py:757
 #: apps/userdata/templates/userdata/table_step.html:227
 msgid "Получается временных рядов: %(count)s, больше %(limit)s. Выберите значения разрезов."
 msgstr "Time series to be created: %(count)s, more than %(limit)s. Choose breakdown values."
 
-#: apps/userdata/extract.py:522
+#: apps/userdata/extract.py:510
 msgid "Столбец значений не найден. Отметьте его на шаге «Что в таблице»."
 msgstr "No value column was found. Mark it at the “What is in the table” step."
 
-#: apps/userdata/extract.py:526
+#: apps/userdata/extract.py:514
 msgid "Столбец с годами не найден. Отметьте его на шаге «Что в таблице»."
 msgstr "No column with years was found. Mark it at the “What is in the table” step."
 
-#: apps/userdata/extract.py:618
+#: apps/userdata/extract.py:606
 msgid "Столбцы значений не найдены. Отметьте их на шаге «Что в таблице»."
 msgstr "No value columns were found. Mark them at the “What is in the table” step."
 
@@ -10942,83 +10945,83 @@ msgstr "The group contains all regions, so there is nothing to compare it with."
 msgid "Групп уже %(count)s — это предел. Удалите ненужные."
 msgstr "You already have %(count)s groups, which is the limit. Delete the ones you no longer need."
 
-#: apps/userdata/ingest.py:735
+#: apps/userdata/ingest.py:750
 msgid "Файл защищён паролем. Снимите защиту в Excel и загрузите снова."
 msgstr "The file is password-protected. Remove the protection in Excel and upload it again."
 
-#: apps/userdata/ingest.py:746
+#: apps/userdata/ingest.py:761
 msgid "Подходят CSV, TXT, XLSX, XLS, ODS, Parquet, DOCX, PDF и ZIP с ними."
 msgstr "CSV, TXT, XLSX, XLS, ODS, Parquet, DOCX, PDF and ZIP archives with them are accepted."
 
-#: apps/userdata/ingest.py:739
+#: apps/userdata/ingest.py:754
 msgid "Таблица «%(name)s» в распакованном виде больше %(limit)s МБ. Оставьте в ней только нужные показатели или годы."
 msgstr "Unpacked, the table “%(name)s” is larger than %(limit)s MB. Keep only the indicators or years you need."
 
-#: apps/userdata/ingest.py:748
+#: apps/userdata/ingest.py:763
 msgid "Документ этого вида не читается. Сохраните его в Word как DOCX или скопируйте таблицу и вставьте её в поле «Вставить таблицу»."
 msgstr "A document of this kind cannot be read. Save it in Word as DOCX, or copy the table and paste it into the “Paste a table” field."
 
-#: apps/userdata/ingest.py:753
+#: apps/userdata/ingest.py:768
 msgid "Архивы RAR и 7z не принимаются. Распакуйте архив и загрузите таблицу или ZIP."
 msgstr "RAR and 7z archives are not accepted. Unpack the archive and upload the table or a ZIP."
 
-#: apps/userdata/ingest.py:754
+#: apps/userdata/ingest.py:769
 msgid "Сжатые файлы GZIP не принимаются. Распакуйте файл или загрузите архив ZIP."
 msgstr "GZIP files are not accepted. Unpack the file or upload a ZIP archive."
 
-#: apps/userdata/ingest.py:311
+#: apps/userdata/ingest.py:326
 msgid "В файле нет таблиц."
 msgstr "The file contains no tables."
 
-#: apps/userdata/ingest.py:377
+#: apps/userdata/ingest.py:392
 msgid "В архиве нет таблиц, только описание в PDF."
 msgstr "The archive contains no tables, only a description in PDF."
 
-#: apps/userdata/ingest.py:393
+#: apps/userdata/ingest.py:408
 msgid "В архиве есть файлы с путями вне архива. Такой архив не принимается."
 msgstr "The archive contains files with paths outside the archive. Such an archive is not accepted."
 
-#: apps/userdata/ingest.py:400
+#: apps/userdata/ingest.py:415
 msgid "В архиве больше %(count)s файлов. Загрузите архив только с нужными таблицами."
 msgstr "The archive has more than %(count)s files. Upload an archive with only the tables you need."
 
-#: apps/userdata/ingest.py:555
+#: apps/userdata/ingest.py:570
 msgid "Листы книги «%(name)s» сжаты слишком сильно. Такой файл не принимается."
 msgstr "The sheets of the workbook “%(name)s” are compressed too strongly. Such a file is not accepted."
 
-#: apps/userdata/ingest.py:567
+#: apps/userdata/ingest.py:582
 msgid "Файл Parquet повреждён."
 msgstr "The Parquet file is damaged."
 
-#: apps/userdata/ingest.py:752
+#: apps/userdata/ingest.py:767
 msgid "Это изображение, а не таблица."
 msgstr "This is an image, not a table."
 
-#: apps/userdata/ingest.py:755
+#: apps/userdata/ingest.py:770
 msgid "Это не таблица."
 msgstr "This is not a table."
 
-#: apps/userdata/ingest.py:756
+#: apps/userdata/ingest.py:771
 msgid "В архиве нет таблиц."
 msgstr "The archive contains no tables."
 
-#: apps/userdata/ingest.py:297
+#: apps/userdata/ingest.py:312
 msgid "Архив повреждён."
 msgstr "The archive is damaged."
 
-#: apps/userdata/ingest.py:410
+#: apps/userdata/ingest.py:425
 msgid "Файл «%(name)s» в архиве сжат слишком сильно. Такой архив не принимается."
 msgstr "The file “%(name)s” in the archive is compressed too strongly. Such an archive is not accepted."
 
-#: apps/userdata/ingest.py:423
+#: apps/userdata/ingest.py:438
 msgid "В архиве нет файла «%(name)s»."
 msgstr "The archive has no file “%(name)s”."
 
-#: apps/userdata/ingest.py:508
+#: apps/userdata/ingest.py:523
 msgid "Файл «%(name)s» не читается как таблица Excel."
 msgstr "The file “%(name)s” cannot be read as an Excel table."
 
-#: apps/userdata/ingest.py:544
+#: apps/userdata/ingest.py:559
 msgid "Файл «%(name)s» повреждён."
 msgstr "The file “%(name)s” is damaged."
 
@@ -12341,7 +12344,7 @@ msgid "Найти показатель во всех таблицах"
 msgstr "Find an indicator in all tables"
 
 #: apps/userdata/templates/userdata/_column_role.html:5
-#: apps/userdata/templates/userdata/table_step.html:279
+#: apps/userdata/templates/userdata/table_step.html:284
 #: apps/userdata/views.py:712
 msgid "столбец %(number)s"
 msgstr "column %(number)s"
@@ -13236,7 +13239,11 @@ msgstr "On a separate page"
 msgid "Название карточки «%(title)s» — изменить"
 msgstr "Card title “%(title)s” — edit"
 
-#: apps/userdata/templates/userdata/cards/_change.html:16
+#: apps/userdata/templates/userdata/cards/_change.html:12
+msgid "Сумма по регионам: строки России в таблице нет"
+msgstr "Sum of the regions: the table has no row for Russia"
+
+#: apps/userdata/templates/userdata/cards/_change.html:19
 msgid "Пять лет назад значения нет"
 msgstr "There is no value five years earlier"
 
@@ -14008,7 +14015,7 @@ msgid "регион"
 msgstr "region"
 
 #: apps/userdata/templates/userdata/index.html:221
-#: apps/userdata/templates/userdata/table_step.html:273
+#: apps/userdata/templates/userdata/table_step.html:278
 #: apps/userdata/views.py:620
 msgid "значение"
 msgstr "value"
@@ -14665,31 +14672,35 @@ msgstr "Breakdowns: too many indicators"
 msgid "Разрезы: отбор значений"
 msgstr "Breakdowns: choice of values"
 
-#: apps/userdata/templates/userdata/table_step.html:245
+#: apps/userdata/templates/userdata/table_step.html:243
+msgid "Показателей слишком много"
+msgstr "Too many indicators"
+
+#: apps/userdata/templates/userdata/table_step.html:250
 msgid "Разрез строками под регионом"
 msgstr "Breakdown in rows under each region"
 
-#: apps/userdata/templates/userdata/table_step.html:246
+#: apps/userdata/templates/userdata/table_step.html:251
 msgid "Под каждым регионом идут строки с числами. Каждая такая строка станет отдельным показателем."
 msgstr "Under each region there are rows with numbers. Each such row becomes a separate indicator."
 
-#: apps/userdata/templates/userdata/table_step.html:258
+#: apps/userdata/templates/userdata/table_step.html:263
 msgid "Таблица с ролями столбцов — прокрутка"
 msgstr "Table with column roles, scrollable"
 
-#: apps/userdata/templates/userdata/table_step.html:260
+#: apps/userdata/templates/userdata/table_step.html:265
 msgid "Первые строки таблицы и роли столбцов"
 msgstr "First rows of the table and column roles"
 
-#: apps/userdata/templates/userdata/table_step.html:320
+#: apps/userdata/templates/userdata/table_step.html:325
 msgid "Дальше: показатели"
 msgstr "Next: indicators"
 
-#: apps/userdata/templates/userdata/table_step.html:321
+#: apps/userdata/templates/userdata/table_step.html:326
 msgid "Сохранить описание"
 msgstr "Save the description"
 
-#: apps/userdata/templates/userdata/table_step.html:322
+#: apps/userdata/templates/userdata/table_step.html:327
 msgid "Назад к файлу"
 msgstr "Back to the file"
 
@@ -14697,7 +14708,7 @@ msgstr "Back to the file"
 msgid "Как узнаются регионы"
 msgstr "How regions are recognised"
 
-#: apps/userdata/templates/userdata/table_step.html:266
+#: apps/userdata/templates/userdata/table_step.html:271
 msgid "без названия"
 msgstr "untitled"
 
@@ -14753,15 +14764,19 @@ msgstr "“%(header)s”: columns %(columns)s."
 msgid "Ячеек не с числами: %(count)s. Они сохранятся как пропуски:"
 msgstr "Cells without numbers: %(count)s. They will be kept as missing values:"
 
-#: apps/userdata/templates/userdata/table_step.html:266
+#: apps/userdata/templates/userdata/table_step.html:244
+msgid "Получается временных рядов: %(count)s, больше %(limit)s. Отметьте лишние столбцы как «пропустить» в таблице выше."
+msgstr "Time series to be created: %(count)s, more than %(limit)s. Mark the columns you do not need as “skip” in the table above."
+
+#: apps/userdata/templates/userdata/table_step.html:271
 msgid "Роль столбца «%(header)s»"
 msgstr "Role of the column “%(header)s”"
 
-#: apps/userdata/templates/userdata/table_step.html:284
+#: apps/userdata/templates/userdata/table_step.html:289
 msgid "ещё столбцов с периодами: %(count)s"
 msgstr "more columns with periods: %(count)s"
 
-#: apps/userdata/templates/userdata/table_step.html:306
+#: apps/userdata/templates/userdata/table_step.html:311
 msgid "Ещё столбцы с периодами: %(count)s (от «%(first)s» до «%(last)s»)"
 msgstr "More columns with periods: %(count)s (from “%(first)s” to “%(last)s”)"
 
