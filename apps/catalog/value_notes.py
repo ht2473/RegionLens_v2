@@ -15,10 +15,11 @@ QUALITY_LABELS: dict[int, Any] = {
     ValueQuality.NOT_APPLICABLE: _("неприменимо"),
     ValueQuality.ABSENT: _("явление отсутствует"),
 }
-# Пометки значений своих таблиц: ноль из прочерка и «0,0» источника.
+# Пометки значений: ноль из прочерка и «0,0» своих таблиц, поправка к исходному набору.
 FLAG_LABELS: dict[ValueFlag, Any] = {
     ValueFlag.ABSENT: _("явление отсутствует"),
     ValueFlag.BELOW_UNIT: _("меньше единицы измерения"),
+    ValueFlag.CORRECTED: _("ошибка набора исправлена по сборнику Росстата"),
 }
 
 
