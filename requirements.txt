@@ -460,9 +460,9 @@ python-calamine==0.8.2 \
     --hash=sha256:dd903b60575bf8ec45c5797a64d1960e46cafe0d5ae479131d739aba6f094775 \
     --hash=sha256:f57c2cfc7854fac87fb0c8e4fba5eb25184f75f7bf340847deac6726d2c3b601
     # via regionlens
-python-dateutil==2.9.0.post0 \
-    --hash=sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3 \
-    --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
+python-dateutil==3.0.0 \
+    --hash=sha256:3c79630202e4152c6add678446984236efe4f57e84d8e892aab0637bab82e9fd \
+    --hash=sha256:7ebcb3c29a92f3ceafe79a7a48a5c45677e9e004bbeec5742ac0bbb00560b7a2
     # via pandas
 python-slugify==9.1.2 \
     --hash=sha256:a470dafd2ad79672606cc0d1a5fcaf7a2ccf8f358073ff29b5b93c2bd7e288d6 \
