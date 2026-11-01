@@ -8,7 +8,7 @@
 # =====================================================================================
 
 # --- Этап 1: зависимости --------------------------------------------------------------
-FROM python:3.14-slim-trixie AS builder
+FROM python:3.15-slim-trixie AS builder
 
 # uv — из официального образа; зависимости ставятся по uv.lock.
 COPY --from=ghcr.io/astral-sh/uv:0.11.15 /uv /uvx /bin/
@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev --extra production
 
 # --- Этап 2: рабочий образ ------------------------------------------------------------
-FROM python:3.14-slim-trixie AS runtime
+FROM python:3.15-slim-trixie AS runtime
 
 # Библиотеки времени выполнения:
 #   libpq5     — клиент PostgreSQL для psycopg;
