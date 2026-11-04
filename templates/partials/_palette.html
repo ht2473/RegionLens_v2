@@ -11,6 +11,8 @@
     {# Подпись — атрибутом aria-label: видимая отняла бы место. #}
     <input type="search" class="palette__input" autofocus
            name="q" autocomplete="off" spellcheck="false"
+           role="combobox" aria-autocomplete="list" aria-expanded="true"
+           aria-controls="palette-results"
            aria-label="{% translate 'Регион, показатель или вопрос' %}"
            placeholder="{% translate 'Регион, показатель или вопрос' %}"
            hx-get="{% url 'search:suggest' %}"
