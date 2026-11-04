@@ -121,7 +121,7 @@
         <div class="field">
           <label class="field__label" for="{{ append_form.text.id_for_label }}">{% translate "Следующая часть таблицы" %}</label>
           {{ append_form.text }}
-          {% for error in append_form.text.errors %}<span class="field__error">{{ error }}</span>{% endfor %}
+          {% if append_form.text.errors %}<span class="field__errors" id="{{ append_form.text.auto_id }}_error">{% for error in append_form.text.errors %}<span class="field__error">{{ error }}</span>{% endfor %}</span>{% endif %}
         </div>
         {{ append_form.markup }}
         <div class="form-sheet__actions">

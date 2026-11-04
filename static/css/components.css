@@ -1016,6 +1016,13 @@ a.leader-list__name:hover {
   color: var(--negative);
 }
 
+/* Ошибки поля одним блоком: на него ссылается aria-describedby поля. */
+.field__errors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
 .input,
 .select,
 .textarea {

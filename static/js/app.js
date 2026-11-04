@@ -43,6 +43,7 @@ const BEHAVIOURS = {
   dataset: ["[data-dataset-browser]", () => import("./ui/dataset.js")],
   formula: ["#formula-form", () => import("./ui/formula.js")],
   inplace: ["[data-inplace-url]", () => import("./ui/inplace.js")],
+  invalid: ["[aria-invalid='true']", () => import("./ui/invalid.js")],
   more: ["[data-more-toggle]", () => import("./ui/more.js")],
   print: ["[data-print]", () => import("./ui/print.js")],
   report: ["form[data-report]", () => import("./ui/report.js")],
