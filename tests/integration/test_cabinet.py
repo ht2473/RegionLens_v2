@@ -21,6 +21,8 @@ from apps.accounts.cabinet import settings_url
 from apps.accounts.constants import (
     CODE_ATTEMPTS_PER_LOGIN,
     PASSWORD_CHECK_PER_USER,
+    PENDING_LOGIN_EXTENSIONS,
+    PENDING_LOGIN_SECONDS,
     REGISTER_PER_IP,
     RESET_PER_EMAIL,
     ROLE_ADMIN,
@@ -144,6 +146,74 @@ class TestTwoFactorLogin:
         )
         response = client.post(reverse("accounts:login-code"), {"code": current_code()})
         assert response.url == target
+
+
+class TestCodeStepTimeLimit:
+    """Срок ввода кода продлевается по просьбе (WCAG 2.2.1)."""
+
+    EXTEND = {"action": "extend"}
+    JSON = {"HTTP_ACCEPT": "application/json"}
+
+    @staticmethod
+    def age_pending(client: Client, seconds: float) -> None:
+        """Сдвинуть начало ожидания кода в прошлое."""
+        session = client.session
+        pending = session["accounts:pending-login"]
+        pending["since"] -= seconds
+        session["accounts:pending-login"] = pending
+        session.save()
+
+    def test_page_carries_the_timer(self, client: Client, make_user: Any) -> None:
+        """Страница кода получает остаток срока для предупреждения."""
+        user = make_user(email="coded@example.com", two_factor=True)
+        client.post(reverse("accounts:login"), {"username": user.email, "password": TEST_PASSWORD})
+        response = client.get(reverse("accounts:login-code"))
+        assert 0 < response.context["timer"]["seconds"] <= PENDING_LOGIN_SECONDS
+        assert b"data-login-timer" in response.content
+
+    def test_extension_restarts_the_count(self, client: Client, make_user: Any) -> None:
+        """Продление отсчитывает срок заново: код, введённый позже исходного срока, принят."""
+        user = make_user(email="coded@example.com", two_factor=True)
+        client.post(reverse("accounts:login"), {"username": user.email, "password": TEST_PASSWORD})
+        self.age_pending(client, PENDING_LOGIN_SECONDS - 30)
+
+        answer = client.post(reverse("accounts:login-code"), self.EXTEND, **self.JSON).json()
+        assert answer["seconds"] > PENDING_LOGIN_SECONDS - 5
+        assert answer["extensions"] == PENDING_LOGIN_EXTENSIONS - 1
+
+        self.age_pending(client, 60)
+        client.post(reverse("accounts:login-code"), {"code": current_code()})
+        assert logged_in(client)
+
+    def test_extensions_are_limited(self, client: Client, make_user: Any) -> None:
+        """Продлений не больше предела: дальше срок не растёт."""
+        user = make_user(email="coded@example.com", two_factor=True)
+        client.post(reverse("accounts:login"), {"username": user.email, "password": TEST_PASSWORD})
+        for _ in range(PENDING_LOGIN_EXTENSIONS):
+            client.post(reverse("accounts:login-code"), self.EXTEND, **self.JSON)
+        self.age_pending(client, 100)
+
+        answer = client.post(reverse("accounts:login-code"), self.EXTEND, **self.JSON).json()
+        assert answer["extensions"] == 0
+        assert answer["seconds"] <= PENDING_LOGIN_SECONDS - 100
+
+    def test_extension_without_script_reloads_the_page(
+        self, client: Client, make_user: Any
+    ) -> None:
+        """Без сценариев продление — обычная отправка формы и та же страница."""
+        user = make_user(email="coded@example.com", two_factor=True)
+        client.post(reverse("accounts:login"), {"username": user.email, "password": TEST_PASSWORD})
+        response = client.post(reverse("accounts:login-code"), self.EXTEND)
+        assert response.status_code == 302
+        assert response.url == reverse("accounts:login-code")
+
+    def test_expired_wait_is_not_extended(self, client: Client, make_user: Any) -> None:
+        """Истёкшее ожидание не продлевается: вход начинается заново."""
+        user = make_user(email="coded@example.com", two_factor=True)
+        client.post(reverse("accounts:login"), {"username": user.email, "password": TEST_PASSWORD})
+        self.age_pending(client, PENDING_LOGIN_SECONDS + 1)
+        response = client.post(reverse("accounts:login-code"), self.EXTEND)
+        assert response.url == reverse("accounts:login")
 
 
 class TestTwoFactorSettings:

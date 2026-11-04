@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.signals import user_login_failed
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.http.response import HttpResponseBase
 from django.shortcuts import redirect, resolve_url
 from django.urls import reverse_lazy
@@ -26,7 +26,9 @@ from ..cabinet import CABINET_SECTIONS, CabinetViewMixin, settings_url
 from ..constants import (
     CODE_ATTEMPTS_PER_LOGIN,
     CODE_PER_IP,
+    PENDING_LOGIN_EXTENSIONS,
     PENDING_LOGIN_SECONDS,
+    PENDING_LOGIN_WARNING,
     REGISTER_PER_EMAIL,
     REGISTER_PER_IP,
     RESET_PER_EMAIL,
@@ -130,7 +132,42 @@ class LoginCodeView(BreadcrumbMixin, FormView):
         context["page_title"] = _("Код входа")
         context["account_email"] = self.account.email if self.account else ""
         context["reverify"] = self.pending is None
+        context["timer"] = self._timer()
         return context
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Продление ожидания — отдельное действие формы; остальное — проверка кода."""
+        if request.POST.get("action") == "extend":
+            return self._extend()
+        return super().post(request, *args, **kwargs)
+
+    def _timer(self) -> dict[str, int] | None:
+        """Остаток времени на ввод кода и число оставшихся продлений; без ожидания — нет."""
+        if self.pending is None:
+            return None
+        passed = time.time() - self.pending.get("since", 0)
+        return {
+            "seconds": max(0, int(PENDING_LOGIN_SECONDS - passed)),
+            "warning": PENDING_LOGIN_WARNING,
+            "extensions": PENDING_LOGIN_EXTENSIONS - self.pending.get("extensions", 0),
+        }
+
+    def _extend(self) -> HttpResponse:
+        """
+        Продлить ожидание кода (WCAG 2.2.1): отсчёт заново, не больше десяти раз подряд.
+
+        Сценарий страницы ждёт ответа JSON и оставляет набранные цифры; без сценариев
+        форма отправляется обычным образом и страница открывается заново.
+        """
+        request = self.request
+        pending = self.pending
+        if pending is not None and pending.get("extensions", 0) < PENDING_LOGIN_EXTENSIONS:
+            pending["since"] = time.time()
+            pending["extensions"] = pending.get("extensions", 0) + 1
+            request.session[PENDING_LOGIN_SESSION_KEY] = pending
+        if "application/json" in request.headers.get("Accept", ""):
+            return JsonResponse(self._timer() or {})
+        return redirect(request.get_full_path())
 
     def form_valid(self, form: CodeForm) -> HttpResponse:
         """Проверить код и завершить вход."""

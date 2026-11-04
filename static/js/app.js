@@ -44,6 +44,7 @@ const BEHAVIOURS = {
   formula: ["#formula-form", () => import("./ui/formula.js")],
   inplace: ["[data-inplace-url]", () => import("./ui/inplace.js")],
   invalid: ["[aria-invalid='true']", () => import("./ui/invalid.js")],
+  loginTimer: ["[data-login-timer]", () => import("./ui/login-timer.js")],
   more: ["[data-more-toggle]", () => import("./ui/more.js")],
   print: ["[data-print]", () => import("./ui/print.js")],
   report: ["form[data-report]", () => import("./ui/report.js")],

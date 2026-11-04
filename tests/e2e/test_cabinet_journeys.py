@@ -76,7 +76,8 @@ class TestSignIn:
         assert "/login/code/" in page.url
         # Код включения уже принят: следующий шаг — в пределах допуска часов.
         page.fill("input[name='code']", totp.code_at(secret, step + 1))
-        page.locator("main button[type='submit']").click()
+        # Рядом с формой кода — скрытая форма продления срока: отправить именно код.
+        page.locator("main form:has(input[name='code']) button[type='submit']").click()
         page.wait_for_load_state("networkidle")
         assert page.url.endswith("/ru/cabinet/")
 

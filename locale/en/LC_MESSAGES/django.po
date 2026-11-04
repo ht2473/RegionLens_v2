@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-30 19:36+0000\n"
+"POT-Creation-Date: 2026-11-04 01:25+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -58,7 +58,7 @@ msgstr "Profile, sign-in and security, personal data"
 
 #: apps/accounts/cabinet.py:104
 #: apps/accounts/cabinet.py:106
-#: apps/accounts/views/auth.py:263
+#: apps/accounts/views/auth.py:300
 #: apps/accounts/views/security.py:135
 #: apps/core/navigation.py:232
 msgid "Личный кабинет"
@@ -289,8 +289,8 @@ msgstr "Too many failed sign-in attempts. Try again in an hour or recover the pa
 
 #: apps/accounts/templates/accounts/login.html:13
 #: apps/accounts/templates/accounts/settings.html:259
-#: apps/accounts/views/auth.py:60
-#: apps/accounts/views/auth.py:65
+#: apps/accounts/views/auth.py:62
+#: apps/accounts/views/auth.py:67
 msgid "Вход"
 msgstr "Sign-in"
 
@@ -351,16 +351,29 @@ msgid "Каталог показателей, карта, рейтинги, ан
 msgstr "The indicator catalogue, map, rankings, analysis and downloads are open without signing in. An account is needed to save things."
 
 #: apps/accounts/templates/accounts/login_code.html:12
-#: apps/accounts/views/auth.py:130
-#: apps/accounts/views/auth.py:98
+#: apps/accounts/views/auth.py:100
+#: apps/accounts/views/auth.py:132
 msgid "Код входа"
 msgstr "Sign-in code"
 
-#: apps/accounts/templates/accounts/login_code.html:40
+#: apps/accounts/templates/accounts/login_code.html:46
+msgid "Время на ввод кода скоро выйдет — потом придётся снова ввести пароль."
+msgstr "Time to enter the code is almost up — after that you will need to enter your password again."
+
+#: apps/accounts/templates/accounts/login_code.html:49
+msgid "Время на ввод кода вышло."
+msgstr "Time to enter the code is up."
+
+#: apps/accounts/templates/accounts/login_code.html:50
+#: apps/accounts/templates/accounts/login_code.html:64
 msgid "Войти заново"
 msgstr "Sign in again"
 
-#: apps/accounts/templates/accounts/login_code.html:41
+#: apps/accounts/templates/accounts/login_code.html:56
+msgid "Продлить на 10 минут"
+msgstr "Extend by 10 minutes"
+
+#: apps/accounts/templates/accounts/login_code.html:65
 msgid "Нет телефона и резервных кодов"
 msgstr "No phone and no backup codes"
 
@@ -420,9 +433,9 @@ msgstr "The link works once: it stops working after the password is changed. If 
 
 #: apps/accounts/templates/accounts/mail/password_reset_subject.txt:1
 #: apps/accounts/templates/accounts/password_reset.html:12
-#: apps/accounts/views/auth.py:293
-#: apps/accounts/views/auth.py:298
-#: apps/accounts/views/auth.py:328
+#: apps/accounts/views/auth.py:330
+#: apps/accounts/views/auth.py:335
+#: apps/accounts/views/auth.py:365
 msgid "Восстановление пароля"
 msgstr "Password recovery"
 
@@ -517,8 +530,8 @@ msgid "Главная и кабинет будут открываться с э�
 msgstr "The home page and the personal account will start with this region"
 
 #: apps/accounts/templates/accounts/password_change.html:6
-#: apps/accounts/views/auth.py:265
-#: apps/accounts/views/auth.py:271
+#: apps/accounts/views/auth.py:302
+#: apps/accounts/views/auth.py:308
 msgid "Смена пароля"
 msgstr "Change of password"
 
@@ -553,7 +566,7 @@ msgid "Укажите адрес электронной почты, на кот�
 msgstr "Enter the email address the account is registered to. If the address is registered on the site, a link for setting a new password will be sent to it."
 
 #: apps/accounts/templates/accounts/password_reset_complete.html:11
-#: apps/accounts/views/auth.py:356
+#: apps/accounts/views/auth.py:393
 msgid "Пароль изменён"
 msgstr "Password changed"
 
@@ -562,8 +575,8 @@ msgid "Теперь можно войти с новым паролем."
 msgstr "You can now sign in with the new password."
 
 #: apps/accounts/templates/accounts/password_reset_confirm.html:13
-#: apps/accounts/views/auth.py:340
-#: apps/accounts/views/auth.py:345
+#: apps/accounts/views/auth.py:377
+#: apps/accounts/views/auth.py:382
 msgid "Новый пароль"
 msgstr "New password"
 
@@ -608,8 +621,8 @@ msgid "Каждый код входит один раз вместо шести 
 msgstr "Each code works once instead of the six digits from the app. They will not be shown again: write them down or store them in a password manager."
 
 #: apps/accounts/templates/accounts/register.html:13
-#: apps/accounts/views/auth.py:206
-#: apps/accounts/views/auth.py:211
+#: apps/accounts/views/auth.py:243
+#: apps/accounts/views/auth.py:248
 #: apps/dashboard/templates/dashboard/user_detail.html:107
 #: apps/dashboard/templates/dashboard/user_list.html:66
 msgid "Регистрация"
@@ -917,36 +930,36 @@ msgstr "Open the authenticator app and scan the QR code. If you cannot scan it, 
 msgid "После включения сайт покажет резервные коды — сохраните их: без телефона войти можно будет только по ним. Сеансы на других устройствах завершатся."
 msgstr "After it is turned on, the site shows backup codes. Save them: without the phone, they are the only way to sign in. Sessions on other devices will end."
 
-#: apps/accounts/views/auth.py:178
+#: apps/accounts/views/auth.py:215
 #: apps/accounts/views/security.py:165
 msgid "Код не подошёл. Проверьте время на телефоне и введите новый код."
 msgstr "The code did not match. Check the time on your phone and enter a new code."
 
-#: apps/accounts/views/auth.py:240
+#: apps/accounts/views/auth.py:277
 msgid "Учётная запись создана"
 msgstr "Account created"
 
-#: apps/accounts/views/auth.py:278
+#: apps/accounts/views/auth.py:315
 msgid "Пароль изменён. Сеансы на других устройствах завершены."
 msgstr "Password changed. Sessions on other devices have been ended."
 
-#: apps/accounts/views/auth.py:141
+#: apps/accounts/views/auth.py:178
 msgid "Слишком много попыток ввода кода. Попробуйте через час."
 msgstr "Too many code attempts. Try again in an hour."
 
-#: apps/accounts/views/auth.py:231
+#: apps/accounts/views/auth.py:268
 msgid "Слишком много регистраций подряд. Попробуйте через час."
 msgstr "Too many registrations in a row. Try again in an hour."
 
-#: apps/accounts/views/auth.py:309
+#: apps/accounts/views/auth.py:346
 msgid "Слишком много запросов восстановления. Попробуйте через час."
 msgstr "Too many reset requests. Try again in an hour."
 
-#: apps/accounts/views/auth.py:156
+#: apps/accounts/views/auth.py:193
 msgid "Вход по резервному коду; осталось кодов: %(count)d. Новые выпускаются в «Настройках» кабинета."
 msgstr "Signed in with a backup code; codes left: %(count)d. New ones are issued in the account Settings."
 
-#: apps/accounts/views/auth.py:174
+#: apps/accounts/views/auth.py:211
 msgid "Слишком много неверных кодов. Войдите заново."
 msgstr "Too many wrong codes. Sign in again."
 
@@ -9560,8 +9573,8 @@ msgstr "Term"
 #: apps/search/templates/search/_field.html:12
 #: apps/search/templates/search/_field.html:14
 #: apps/search/templates/search/_suggest.html:5
-#: templates/partials/_palette.html:14
-#: templates/partials/_palette.html:15
+#: templates/partials/_palette.html:16
+#: templates/partials/_palette.html:17
 msgid "Регион, показатель или вопрос"
 msgstr "Region, indicator or question"
 
@@ -9574,7 +9587,7 @@ msgid "Например:"
 msgstr "For example:"
 
 #: apps/search/templates/search/_suggest.html:7
-#: templates/partials/_palette.html:24
+#: templates/partials/_palette.html:26
 msgid "Например: где самые высокие зарплаты, безработица в Татарстане, что такое медиана."
 msgstr "For example: where are wages highest, unemployment in Tatarstan, what is a median."
 
@@ -12007,35 +12020,35 @@ msgstr "Between ordinary years: %(count)s, for example %(region)s: %(before)s �
 msgid "Ноль у всех регионов: %(years)s."
 msgstr "Zero in every region: %(years)s."
 
-#: apps/userdata/semantics.py:413
+#: apps/userdata/semantics.py:418
 msgid "только для сумм по регионам"
 msgstr "only for sums across regions"
 
-#: apps/userdata/semantics.py:414
+#: apps/userdata/semantics.py:419
 msgid "только для относительных величин"
 msgstr "relative quantities only"
 
-#: apps/userdata/semantics.py:415
+#: apps/userdata/semantics.py:420
 msgid "у индекса не считается: он уже показывает изменение к другому периоду"
 msgstr "not calculated for an index: it already shows change against another period"
 
-#: apps/userdata/semantics.py:416
+#: apps/userdata/semantics.py:421
 msgid "разрыв и сближение меряют по уровням, а не по темпам"
 msgstr "gaps and convergence are measured on levels, not on growth rates"
 
-#: apps/userdata/semantics.py:417
+#: apps/userdata/semantics.py:422
 msgid "вклады регионов складываются только у сумм: у относительной величины смотрите «Темпы роста по регионам»"
 msgstr "regional contributions add up only for totals: for a relative value see “Growth rates by region”"
 
-#: apps/userdata/semantics.py:421
+#: apps/userdata/semantics.py:426
 msgid "доли считаются у сумм"
 msgstr "shares are computed for totals"
 
-#: apps/userdata/semantics.py:422
+#: apps/userdata/semantics.py:427
 msgid "темп от темпа не считается"
 msgstr "a rate of a rate is not calculated"
 
-#: apps/userdata/semantics.py:423
+#: apps/userdata/semantics.py:428
 msgid "у суммы это доля в значении по России: смотрите «Долю»"
 msgstr "for a total this is the share of the Russia value: see “Share”"
 
@@ -12059,7 +12072,7 @@ msgstr "Does not add up: %, average wage, per 100,000 residents"
 msgid "% к прошлому году, к декабрю, «2020 = 100»"
 msgstr "% of the previous year, of December, “2020 = 100”"
 
-#: apps/userdata/semantics.py:535
+#: apps/userdata/semantics.py:540
 msgid "значения не зависят от числа жителей: на жителей не пересчитываются"
 msgstr "the values do not depend on the number of residents: they are not recalculated per resident"
 
@@ -12075,75 +12088,75 @@ msgstr "area"
 msgid "не делить"
 msgstr "do not divide"
 
-#: apps/userdata/semantics.py:534
+#: apps/userdata/semantics.py:539
 msgid "основа сравнения — площадь: пересчитайте на км²"
 msgstr "the comparison base is area: recalculate per km²"
 
-#: apps/userdata/semantics.py:557
+#: apps/userdata/semantics.py:562
 msgid "для суммы считается по значению на жителя: сначала пересчитайте на жителя"
 msgstr "for a total this is calculated on the per-resident value: recalculate per resident first"
 
-#: apps/userdata/semantics.py:571
+#: apps/userdata/semantics.py:576
 msgid "мой регион не выбран — выберите его в шапке сайта"
 msgstr "my region is not chosen: choose it in the site header"
 
-#: apps/userdata/semantics.py:573
+#: apps/userdata/semantics.py:578
 msgid "нужны две суммы в одной единице: части показателя или показатели таблицы"
 msgstr "two sums in one unit are needed: parts of an indicator or indicators of the table"
 
-#: apps/userdata/semantics.py:603
+#: apps/userdata/semantics.py:608
 msgid "Части и слагаемые — только суммы: доли, средние и индексы не складываются."
 msgstr "Parts and terms must be totals: shares, averages and indices cannot be added."
 
-#: apps/userdata/semantics.py:606
+#: apps/userdata/semantics.py:611
 msgid "Среди частей — значения за период и на дату: их нельзя складывать."
 msgstr "The parts include values for a period and at a date: they cannot be added."
 
-#: apps/userdata/semantics.py:608
+#: apps/userdata/semantics.py:613
 msgid "Части и слагаемые — в одной единице: приведите их к одной."
 msgstr "Parts and terms must be in one unit: bring them to the same unit."
 
-#: apps/userdata/semantics.py:505
+#: apps/userdata/semantics.py:510
 msgid "в таблице только значение по России, регионов нет"
 msgstr "the table has only the value for Russia, no regions"
 
-#: apps/userdata/semantics.py:507
+#: apps/userdata/semantics.py:512
 msgid "структура — для своих таблиц"
 msgstr "structure is for your own tables"
 
-#: apps/userdata/semantics.py:515
+#: apps/userdata/semantics.py:520
 msgid "только для показателей в рублях"
 msgstr "indicators in roubles only"
 
-#: apps/userdata/semantics.py:517
+#: apps/userdata/semantics.py:522
 msgid "только для рублей в месяц на человека"
 msgstr "only for roubles per month per person"
 
-#: apps/userdata/semantics.py:542
+#: apps/userdata/semantics.py:547
 msgid "у показателя нет основы для сравнения регионов: значения показывают размер"
 msgstr "the indicator has no base for comparing regions: the values show size"
 
-#: apps/userdata/semantics.py:548
+#: apps/userdata/semantics.py:553
 msgid "для суммы считается по значению на км²: сначала пересчитайте на км²"
 msgstr "for a total this is calculated on the per-km² value: recalculate per km² first"
 
-#: apps/userdata/semantics.py:553
+#: apps/userdata/semantics.py:558
 msgid "для суммы считается по значению на жителя: выберите такой показатель сайта"
 msgstr "for a total this is calculated on the per-resident value: choose such an indicator on the site"
 
-#: apps/userdata/semantics.py:566
+#: apps/userdata/semantics.py:571
 msgid "у показателя один год"
 msgstr "the indicator has a single year"
 
-#: apps/userdata/semantics.py:567
+#: apps/userdata/semantics.py:572
 msgid "нужно лет не меньше: %(count)s"
 msgstr "needs at least %(count)s years"
 
-#: apps/userdata/semantics.py:569
+#: apps/userdata/semantics.py:574
 msgid "нужны значения хотя бы по %(count)s регионам"
 msgstr "values for at least %(count)s regions are needed"
 
-#: apps/userdata/semantics.py:546
+#: apps/userdata/semantics.py:551
 msgid "для суммы считается по значению на км²"
 msgstr "for a total this is calculated on the per-km² value"
 
@@ -15736,19 +15749,19 @@ msgstr "Recently opened"
 msgid "Быстрый переход"
 msgstr "Quick jump"
 
-#: templates/partials/_palette.html:29
+#: templates/partials/_palette.html:31
 msgid "Поиск…"
 msgstr "Searching…"
 
-#: templates/partials/_palette.html:30
+#: templates/partials/_palette.html:32
 msgid "выбор"
 msgstr "select"
 
-#: templates/partials/_palette.html:31
+#: templates/partials/_palette.html:33
 msgid "перейти"
 msgstr "go"
 
-#: templates/partials/_palette.html:32
+#: templates/partials/_palette.html:34
 msgid "закрыть"
 msgstr "close"
 
