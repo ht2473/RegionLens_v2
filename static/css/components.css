@@ -236,10 +236,6 @@
   font-size: var(--text-xs);
   color: var(--text-secondary);
   line-height: var(--leading-snug);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 /* Единица переносится под число, если не помещается рядом; само число не разрывается. */
@@ -356,6 +352,12 @@
   font-weight: var(--weight-semibold);
   line-height: var(--leading-snug);
   color: var(--text-muted);
+}
+
+/* Поле нажатия 24 px (WCAG 2.5.8); отрицательный отступ оставляет плитку прежней. */
+a.stat-tile__title {
+  padding-block: var(--space-1);
+  margin-block: calc(-1 * var(--space-1));
 }
 
 a.stat-tile__title:hover {
@@ -491,6 +493,11 @@ a.stat-tile__title:hover {
   font-weight: var(--weight-semibold);
   line-height: var(--leading-snug);
   color: var(--text-primary);
+}
+
+/* Цель нажатия не ниже 24 px (WCAG 2.5.8): поле ссылки растёт, строка — нет. */
+a.leader-list__name {
+  padding-block: 0.125rem;
 }
 
 a.leader-list__name:hover {
@@ -908,8 +915,9 @@ a.leader-list__name:hover {
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 1.25rem;
-  height: 1.25rem;
+  /* 24 px — наименьшая цель нажатия (WCAG 2.5.8). */
+  width: 1.5rem;
+  height: 1.5rem;
   padding: 0;
   background: none;
   border: 1px solid var(--border-strong);
@@ -951,7 +959,8 @@ a.leader-list__name:hover {
 
 .term__name {
   display: inline;
-  padding: 0;
+  /* Поле нажатия не ниже 24 px (WCAG 2.5.8); строку текста не раздвигает. */
+  padding: 0.125rem 0;
   background: none;
   border: 0;
   border-bottom: 1px dotted currentcolor;
@@ -1013,7 +1022,7 @@ a.leader-list__name:hover {
   width: 100%;
   padding: var(--space-2) var(--space-3);
   background-color: var(--surface-raised);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-size: var(--text-sm);
@@ -1115,7 +1124,7 @@ a.leader-list__name:hover {
   height: 2.5rem;
   padding: 0 var(--space-3);
   background-color: var(--surface-raised);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
   color: var(--text-muted);
   transition: border-color var(--duration-fast) var(--ease-out);
@@ -1278,6 +1287,9 @@ a.leader-list__name:hover {
 /* Обойма прокручивается вбок, у края — тень: два градиента прокручиваются с содержимым
    (background-attachment: local) и закрывают два неподвижных, пока содержимое у края. */
 .data-table-wrapper {
+  /* Скрытые подписи ячеек (.visually-hidden) отсчитываются от обёртки и прокручиваются
+     вместе с таблицей: иначе они стоят за её правым краем и раздвигают страницу. */
+  position: relative;
   overflow-x: auto;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
@@ -1395,6 +1407,12 @@ a.leader-list__name:hover {
 /* Действие в строке («Показать на диаграмме») — одной строкой. */
 .data-table td.data-table__action {
   white-space: nowrap;
+}
+
+/* Ссылка-название в строке: поле нажатия до 24 px (WCAG 2.5.8) без роста строки. */
+.data-table__name a,
+.sources-table__title a {
+  padding-block: 0.3125rem;
 }
 
 /* Ячейка значения со столбиком: число, справа — доля наибольшего значения. */
@@ -1879,7 +1897,7 @@ a.leader-list__name:hover {
   height: var(--control-height);
   padding: 0 var(--space-4);
   background-color: var(--surface-raised);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-pill);
   color: var(--text-muted);
   font-size: var(--text-base);
@@ -1922,7 +1940,7 @@ a.leader-list__name:hover {
   height: 3.5rem;
   padding: 0 var(--space-5);
   background-color: var(--surface-raised);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-pill);
   color: var(--text-muted);
   transition: border-color var(--duration-fast) var(--ease-out);
@@ -2142,11 +2160,16 @@ a.leader-list__name:hover {
 }
 
 /* Отступ заголовка раздела после перехода: --toc-offset ставит сценарий оглавления
-   по настоящей высоте полосы (static/js/ui/toc.js); без сценариев — расчётный. */
+   по настоящей высоте полосы (static/js/ui/toc.js); без сценариев — расчётный. Шапку и
+   строку пути уже учитывает scroll-padding-top страницы (base.css), здесь — остаток. */
 .toc-target {
-  scroll-margin-top: var(
-    --toc-offset,
-    calc(var(--header-height) + var(--breadcrumbs-height) + var(--space-16) + var(--space-6))
+  scroll-margin-top: calc(
+    var(
+        --toc-offset,
+        calc(var(--header-height) + var(--breadcrumbs-height) + var(--space-16) + var(--space-6))
+      ) -
+      var(--table-head-top, calc(var(--header-height) + var(--breadcrumbs-height))) -
+      var(--space-4)
   );
 }
 
@@ -3504,7 +3527,7 @@ rl-combobox:defined > select {
   min-height: 34px;
   padding: var(--space-2) var(--space-3);
   background-color: var(--surface-raised);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
   font-size: var(--text-sm);
   color: var(--text-primary);

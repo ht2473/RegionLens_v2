@@ -280,6 +280,8 @@ button.main-nav__link {
 }
 
 .breadcrumbs__link {
+  /* Поле нажатия не ниже 24 px (WCAG 2.5.8); полоса пути выше, она не растёт. */
+  padding-block: var(--space-1);
   color: var(--text-secondary);
 }
 
@@ -548,6 +550,7 @@ button.main-nav__link {
 .filter-rail__reset {
   display: inline-flex;
   align-items: center;
+  min-height: 24px;
   gap: var(--space-2);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
@@ -636,10 +639,12 @@ button.main-nav__link {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
 }
 
+/* Поле нажатия 24 px (WCAG 2.5.8) вместо промежутка между пунктами: шаг списка прежний. */
 .app-footer__list a {
+  display: inline-block;
+  padding-block: var(--space-1);
   color: var(--text-secondary);
 }
 

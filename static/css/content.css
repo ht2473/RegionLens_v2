@@ -129,7 +129,6 @@
   padding-top: var(--space-6);
   border-top: 1px solid var(--border-subtle);
   /* Смещение цели якоря под закреплённую шапку. */
-  scroll-margin-top: calc(var(--header-height) + var(--breadcrumbs-height) + var(--space-4));
 }
 
 .methodology__section + .methodology__section {
@@ -299,6 +298,7 @@
 .methodology__tool {
   display: inline-flex;
   align-items: center;
+  min-height: 24px;
   gap: var(--space-1);
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
@@ -375,7 +375,6 @@ a.glossary__letter:hover {
   grid-template-columns: 4rem minmax(0, 1fr);
   gap: var(--space-4);
   margin-bottom: var(--space-12);
-  scroll-margin-top: calc(var(--header-height) + var(--breadcrumbs-height) + var(--space-4));
 }
 
 .glossary__group-letter {
@@ -397,7 +396,6 @@ a.glossary__letter:hover {
   gap: var(--space-2) var(--space-8);
   padding: var(--space-5) 0;
   border-bottom: 1px solid var(--border-subtle);
-  scroll-margin-top: calc(var(--header-height) + var(--breadcrumbs-height) + var(--space-4));
 }
 
 /* Термин — цель перехода по якорю — отмечен линейкой. */
@@ -614,7 +612,6 @@ a.glossary__letter:hover {
 }
 
 .about__section[id] {
-  scroll-margin-top: calc(var(--header-height) + var(--breadcrumbs-height) + var(--space-4));
 }
 
 .terms__sources {

@@ -20,6 +20,8 @@
 
   --border-subtle: light-dark(#e7dfd2, #3a342b);
   --border-strong: light-dark(#d5c9b6, #4a4238);
+  /* Рамка поля ввода: только по ней видно, где поле, — контраст 3 : 1 к поверхности (WCAG 1.4.11). */
+  --border-control: light-dark(#8f8372, #807463);
   --border-accent: light-dark(#a8751a, #e7b65c);
 
   --text-primary: light-dark(#2a2724, #f0eae0);
@@ -62,13 +64,15 @@
 
   /* --- Цвета данных -------------------------------------------------------------------
      Последовательная шкала от песочного к зелёному, светлота монотонно убывает; нижняя
-     ступень отодвинута от подложки карты. Проверяется tests/unit/test_palette.py. */
-  --scale-seq-1: light-dark(#e4d292, #2d3125);
-  --scale-seq-2: light-dark(#c9c36d, #35432f);
-  --scale-seq-3: light-dark(#99b95f, #395939);
-  --scale-seq-4: light-dark(#60b054, #416f4f);
-  --scale-seq-5: light-dark(#34a160, #478466);
-  --scale-seq-6: light-dark(#138f67, #529e80);
+     ступень отодвинута от подложки карты. В тёмной теме светлота растёт, нижняя ступень —
+     тёмный песок: у самого тёмного края оттенок не различается, и от подложки и «нет данных»
+     её отделяет только светлота. Проверяется tests/unit/test_palette.py. */
+  --scale-seq-1: light-dark(#e4d292, #483f22);
+  --scale-seq-2: light-dark(#c9c36d, #4f5027);
+  --scale-seq-3: light-dark(#99b95f, #516438);
+  --scale-seq-4: light-dark(#60b054, #507851);
+  --scale-seq-5: light-dark(#34a160, #568c6d);
+  --scale-seq-6: light-dark(#138f67, #63a187);
   --scale-seq-7: light-dark(#077e63, #77b6a1);
 
   /* Расходящаяся шкала для отклонений от среднего и темпов изменения: ниже — тёплый
