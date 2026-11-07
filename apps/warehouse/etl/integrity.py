@@ -2,7 +2,9 @@
 Ряды, на которые ссылаются справочники проекта и сохранённое пользователями.
 
 После сборки сверяется, что все они есть в складе: иначе смена ключей рядов в новой
-версии набора прошла бы молча — показатель паспорта остался бы без данных.
+версии набора прошла бы молча — показатель паспорта остался бы без данных. Ряды Банка
+России и ФНС появляются в складе с первым собранным выпуском источника: пока выпусков
+нет (первый запуск стенда), они ждут сбора, а не пропали.
 """
 
 from __future__ import annotations
@@ -88,8 +90,22 @@ def user_references() -> dict[str, Counter[str]]:
     return {"saved": saved, "favorite": favorites}
 
 
+def awaiting_collection() -> set[str]:
+    """Ряды источников, у которых ещё нет ни одного собранного выпуска."""
+    from apps.sources import parsed
+    from apps.sources.registry import registry
+
+    series = registry().series
+    empty = {source for source in {item.source for item in series} if not parsed.releases(source)}
+    return {item.key for item in series if item.source in empty}
+
+
 def missing_series(known: set[str]) -> list[MissingSeries]:
-    """Ссылки на ряды, которых нет среди ``known``: сначала справочники проекта."""
+    """
+    Ссылки на ряды, которых нет среди ``known``: сначала справочники проекта. Ряды источников
+    без единого собранного выпуска не в счёт: они появятся с первым сбором.
+    """
+    known = known | awaiting_collection()
     missing = [
         MissingSeries(origin, key, label)
         for origin, keys in project_references().items()

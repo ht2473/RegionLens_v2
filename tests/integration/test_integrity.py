@@ -45,6 +45,40 @@ def test_missing_project_series(db: None) -> None:
     assert integrity.MissingSeries("featured", key, featured[key]) in missing
 
 
+def _source_series(source: str) -> str:
+    """Ключ ряда источника из справочника, на который ссылаются справочники проекта."""
+    from apps.sources.registry import registry
+
+    referenced = all_project_keys()
+    return next(
+        item.key for item in registry().series if item.source == source and item.key in referenced
+    )
+
+
+def test_source_series_wait_for_first_collection(db: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    Ряды источника без единого собранного выпуска не пропали, а ждут сбора.
+
+    На новом стенде архива выпусков ещё нет: письмо о «сменившихся ключах» после первой
+    сборки было бы ложной тревогой.
+    """
+    from apps.sources import parsed
+
+    key = _source_series("cbr")
+    monkeypatch.setattr(parsed, "releases", lambda source=None: [])
+    assert integrity.missing_series(all_project_keys() - {key}) == []
+
+
+def test_source_series_missing_after_collection(db: None, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Выпуски источника собраны, а ряда в складе нет — это пропажа."""
+    from apps.sources import parsed
+
+    key = _source_series("cbr")
+    monkeypatch.setattr(parsed, "releases", lambda source=None: [("выпуск", Path("x"))])
+    missing = integrity.missing_series(all_project_keys() - {key})
+    assert key in {item.key for item in missing}
+
+
 def test_missing_saved_series(make_user: Any) -> None:
     """Сохранённые виды с исчезнувшим рядом считаются по числу записей."""
     user = make_user()
