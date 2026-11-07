@@ -2,7 +2,7 @@
 Свои данные целиком в браузере: выбор файла → сразу «Проверка» (одна таблица и вопросов
 нет — шаги «Файл» и «Что в таблице» проходятся сами) → исследование с первыми карточками →
 карта на холсте → страница таблицы; на 1440 и 390 точках, по-английски; разметка каждого
-шага, и пропущенных, — под аудитом доступности.
+шага, и пропущенных, — под аудитом доступности и размера целей нажатия.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from typing import Any
 import pytest
 from playwright.sync_api import Browser, Page, expect
 
-from tests.e2e.test_accessibility import AUDIT_SCRIPT
+from tests.e2e.test_accessibility import AUDIT_SCRIPT, TARGET_SCRIPT
 from tests.e2e.test_responsive import OVERFLOW_SCRIPT
 
 pytestmark = [pytest.mark.e2e, pytest.mark.django_db(transaction=True)]
@@ -40,6 +40,7 @@ def _walk(page: Page, base: str, language: str = "ru") -> list[str]:
     def audit() -> None:
         page.wait_for_load_state("networkidle")
         problems.extend(f"{page.url}: {item}" for item in page.evaluate(AUDIT_SCRIPT))
+        problems.extend(f"{page.url}: {item}" for item in page.evaluate(TARGET_SCRIPT))
         overflow = page.evaluate(OVERFLOW_SCRIPT)
         if overflow["overflow"] > 0:
             problems.append(f"{page.url}: переполнение {overflow}")
@@ -158,6 +159,7 @@ def _analysis(page: Page, base: str) -> list[str]:
     def audit() -> None:
         page.wait_for_load_state("networkidle")
         problems.extend(f"{page.url}: {item}" for item in page.evaluate(AUDIT_SCRIPT))
+        problems.extend(f"{page.url}: {item}" for item in page.evaluate(TARGET_SCRIPT))
         overflow = page.evaluate(OVERFLOW_SCRIPT)
         if overflow["overflow"] > 0:
             problems.append(f"{page.url}: переполнение {overflow}")

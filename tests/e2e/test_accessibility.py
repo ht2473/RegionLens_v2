@@ -72,6 +72,9 @@ AUDIT_SCRIPT = r"""() => {
     // Имя может быть задано и ссылкой на другие элементы разметки: так подписан
     // выбор ряда, где имя складывается из подписи поля и выбранного значения.
     document.querySelectorAll('button, a').forEach(el => {
+        // Дубль ссылки, спрятанный от программы чтения и от клавиатуры (миниатюра плитки):
+        // его не объявляют, имя ему не нужно.
+        if (el.closest('[aria-hidden="true"]') && el.tabIndex < 0) return;
         const text = (el.textContent || '').trim();
         const aria = el.getAttribute('aria-label') || el.getAttribute('title');
         const referenced = (el.getAttribute('aria-labelledby') || '')
@@ -247,6 +250,10 @@ SIGNED_IN_PAGES = (
     "accounts:settings",
     "accounts:profile",
     "accounts:data",
+    "workspace:saved",
+    "feedback:mine",
+    "userdata:index",
+    "userdata:groups",
     "dashboard:index",
     "dashboard:user-list",
     "dashboard:data",
@@ -274,6 +281,8 @@ REFLOW_SCRIPT = r"""() => {
         if (![style.overflowX, style.overflowY].includes('hidden')) return;
         if (style.textOverflow === 'ellipsis' || !el.textContent.trim()) return;
         if (el.closest('.visually-hidden, [hidden], svg, math, .htmx-indicator')) return;
+        // Подпись для программы чтения, спрятанная тем же приёмом, что .visually-hidden.
+        if (style.clipPath === 'inset(50%)') return;
         if (el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 2) {
             const name = el.tagName.toLowerCase() + '.' + (el.classList[0] || '');
             problems.push('срезан текст: ' + name);
@@ -302,18 +311,19 @@ OBSCURED_SCRIPT = r"""() => {
 class TestTargetSize:
     """Размер целей нажатия (WCAG 2.5.8)."""
 
-    @pytest.mark.parametrize("width", [1440, 390])
+    @pytest.mark.parametrize(("width", "language"), [(1440, "ru"), (390, "ru"), (390, "en")])
     def test_targets_are_large_or_spaced(
-        self, page: Page, site: Any, warehouse_committed: Any, width: int
+        self, page: Page, site: Any, warehouse_committed: Any, width: int, language: str
     ) -> None:
         """
         На всех публичных страницах цель не меньше 24 px или отстоит от соседних.
 
         Склад наполнен: ссылки-названия в строках таблиц — самые частые мелкие цели.
+        Английские подписи длиннее русских и на узком экране переносятся иначе.
         """
         page.set_viewport_size({"width": width, "height": 900})
         failures: list[str] = []
-        for path in (reverse(name) for name in PAGES):
+        for path in (reverse(name).replace("/ru/", f"/{language}/", 1) for name in PAGES):
             page.goto(f"{site.url}{path}")
             page.wait_for_load_state("networkidle")
             failures.extend(f"{path}: {problem}" for problem in page.evaluate(TARGET_SCRIPT))
@@ -321,7 +331,7 @@ class TestTargetSize:
         assert not failures, "мелкие цели:\n  " + "\n  ".join(failures)
 
     def test_signed_in_pages_too(self, page: Page, site: Any, administrator: Any) -> None:
-        """Кабинет и панель управления — те же требования к целям."""
+        """Кабинет и панель управления — те же требования к разметке и целям."""
         client = login_with_code(Client(), administrator)
         page.context.add_cookies(
             [
@@ -341,6 +351,9 @@ class TestTargetSize:
                 page.wait_for_load_state("networkidle")
                 failures.extend(
                     f"{width} {path}: {problem}" for problem in page.evaluate(TARGET_SCRIPT)
+                )
+                failures.extend(
+                    f"{width} {path}: {problem}" for problem in page.evaluate(AUDIT_SCRIPT)
                 )
 
         assert not failures, "мелкие цели:\n  " + "\n  ".join(failures)
