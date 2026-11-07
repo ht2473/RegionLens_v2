@@ -95,7 +95,7 @@ def summarize(path: Path, table: ingest.TableInfo) -> dict[str, Any]:
     connection = parse_connection(path)
     try:
         columns = read_into(connection, path, table)
-        quoted = [f'"{name}"' for name in columns]
+        quoted = [identifier(name) for name in columns]
         approximate = ", ".join(f"approx_count_distinct({name})" for name in quoted)
         counts = connection.execute(f"SELECT count(*), {approximate} FROM t").fetchone()  # noqa: S608
         assert counts is not None
@@ -105,8 +105,9 @@ def summarize(path: Path, table: ingest.TableInfo) -> dict[str, Any]:
             distinct[str(index)] = int(counts[index + 1])
             if counts[index + 1] <= DISTINCT_LIMIT * 1.1:
                 rows = connection.execute(
-                    f"SELECT CAST({name} AS VARCHAR) AS v, count(*) FROM t "  # noqa: S608
-                    f"WHERE {name} IS NOT NULL GROUP BY v ORDER BY v"
+                    # По номеру выражения: столбец «v» в файле перекрыл бы имя «v».
+                    f"SELECT CAST({name} AS VARCHAR), count(*) FROM t "  # noqa: S608
+                    f"WHERE {name} IS NOT NULL GROUP BY 1 ORDER BY 1"
                 ).fetchall()
                 if len(rows) <= DISTINCT_LIMIT:
                     values[str(index)] = {str(value).strip(): int(count) for value, count in rows}
@@ -134,12 +135,23 @@ def parse_connection(path: Path) -> duckdb.DuckDBPyConnection:
     return connection
 
 
+def identifier(name: str) -> str:
+    """
+    Имя столбца в запросе DuckDB. Имена столбцов Parquet приходят из файла пользователя:
+    кавычка внутри имени удваивается, иначе остаток имени читался бы как часть запроса.
+    """
+    return '"' + name.replace('"', '""') + '"'
+
+
 def read_into(
     connection: duckdb.DuckDBPyConnection, path: Path, table: ingest.TableInfo
 ) -> list[str]:
     """
     Прочитать таблицу в таблицу ``t`` соединения: CSV — текстом без шапки, Parquet — как есть.
     Возвращает имена столбцов ``t``.
+
+    После чтения соединение теряет доступ к файлам и сети, а его настройки запираются, как
+    у соединения формул: дальше оно работает только с ``t``.
     """
     if table.kind == ingest.PARQUET:
         connection.execute("CREATE TABLE t AS SELECT * FROM read_parquet(?)", [str(path)])
@@ -154,6 +166,8 @@ def read_into(
         except duckdb.Error:
             # Перевод строки внутри кавычек параллельный разбор не принимает.
             connection.execute(reader + ", parallel = false)", arguments)
+    connection.execute("SET enable_external_access = false")
+    connection.execute("SET lock_configuration = true")
     return [row[0] for row in connection.execute("DESCRIBE t").fetchall()]
 
 
