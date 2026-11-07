@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-04 01:25+0000\n"
+"POT-Creation-Date: 2026-11-07 21:46+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -27,6 +27,7 @@ msgstr "My region, what is new for your saved items and recently opened views"
 
 #: apps/accounts/cabinet.py:44
 #: apps/accounts/templates/accounts/settings.html:239
+#: apps/workspace/templates/workspace/saved.html:22
 #: templates/partials/_header.html:152
 msgid "Сохранённое"
 msgstr "Saved"
@@ -65,7 +66,7 @@ msgid "Личный кабинет"
 msgstr "Personal account"
 
 #: apps/accounts/constants.py:51
-#: apps/dashboard/templates/dashboard/user_list.html:62
+#: apps/dashboard/templates/dashboard/user_list.html:63
 msgid "Пользователь"
 msgstr "User"
 
@@ -103,7 +104,7 @@ msgid "Не короче десяти знаков; пароль не долже
 msgstr "At least ten characters; the password must not match the email address"
 
 #: apps/accounts/forms.py:157
-#: apps/accounts/forms.py:331
+#: apps/accounts/forms.py:344
 msgid "Адрес электронной почты"
 msgstr "Email address"
 
@@ -120,13 +121,13 @@ msgstr "The account is disabled"
 msgid "не выбран"
 msgstr "not selected"
 
-#: apps/accounts/forms.py:261
-#: apps/accounts/forms.py:282
-#: apps/accounts/forms.py:315
+#: apps/accounts/forms.py:266
+#: apps/accounts/forms.py:289
+#: apps/accounts/forms.py:326
 msgid "Текущий пароль"
 msgstr "Current password"
 
-#: apps/accounts/forms.py:308
+#: apps/accounts/forms.py:319
 msgid "Шесть цифр, которые показывает приложение"
 msgstr "The six digits shown by the app"
 
@@ -160,11 +161,11 @@ msgstr "terms of use"
 msgid "Слишком много неверных паролей. Попробуйте через час."
 msgstr "Too many wrong passwords. Try again in an hour."
 
-#: apps/accounts/forms.py:257
+#: apps/accounts/forms.py:262
 msgid "Новый адрес"
 msgstr "New address"
 
-#: apps/accounts/forms.py:295
+#: apps/accounts/forms.py:306
 msgid "Я понимаю, что сохранённое будет удалено без возможности вернуть"
 msgstr "I understand that my saved items will be deleted permanently"
 
@@ -184,16 +185,16 @@ msgstr "An account with this address is already registered"
 msgid "Пароли не совпадают"
 msgstr "The passwords do not match"
 
-#: apps/accounts/forms.py:273
+#: apps/accounts/forms.py:280
 msgid "Это нынешний адрес учётной записи"
 msgstr "This is the current address of the account"
 
-#: apps/accounts/forms.py:275
+#: apps/accounts/forms.py:282
 #: apps/accounts/security.py:201
 msgid "Этот адрес уже занят другой учётной записью"
 msgstr "This address is already used by another account"
 
-#: apps/accounts/forms.py:247
+#: apps/accounts/forms.py:252
 msgid "Пароль не подходит"
 msgstr "The password is incorrect"
 
@@ -624,7 +625,7 @@ msgstr "Each code works once instead of the six digits from the app. They will n
 #: apps/accounts/views/auth.py:243
 #: apps/accounts/views/auth.py:248
 #: apps/dashboard/templates/dashboard/user_detail.html:107
-#: apps/dashboard/templates/dashboard/user_list.html:66
+#: apps/dashboard/templates/dashboard/user_list.html:67
 msgid "Регистрация"
 msgstr "Registration"
 
@@ -689,7 +690,7 @@ msgstr "Save"
 #: apps/accounts/templates/accounts/settings.html:39
 #: apps/dashboard/forms.py:22
 #: apps/dashboard/templates/dashboard/user_detail.html:49
-#: apps/dashboard/templates/dashboard/user_list.html:63
+#: apps/dashboard/templates/dashboard/user_list.html:64
 msgid "Роли"
 msgstr "Roles"
 
@@ -708,7 +709,7 @@ msgstr "Last sign-in"
 
 #: apps/accounts/templates/accounts/settings.html:77
 #: apps/dashboard/templates/dashboard/user_detail.html:115
-#: apps/dashboard/templates/dashboard/user_list.html:65
+#: apps/dashboard/templates/dashboard/user_list.html:66
 msgid "Последняя активность"
 msgstr "Last activity"
 
@@ -841,7 +842,7 @@ msgid "Это последняя учётная запись администр�
 msgstr "This is the last administrator account: make someone else an administrator first."
 
 #: apps/accounts/templates/accounts/settings.html:341
-#: apps/dashboard/templates/dashboard/content.html:116
+#: apps/dashboard/templates/dashboard/content.html:117
 #: apps/dashboard/templates/dashboard/content_confirm_delete.html:35
 #: apps/userdata/templates/userdata/groups.html:40
 #: apps/userdata/templates/userdata/index.html:142
@@ -1692,7 +1693,7 @@ msgstr "Composition"
 #: apps/analytics/templates/analytics/partials/_inequality_results.html:224
 #: apps/analytics/templates/analytics/partials/_inequality_results.html:268
 #: apps/analytics/templates/analytics/partials/_inequality_results.html:352
-#: apps/dashboard/templates/dashboard/release.html:56
+#: apps/dashboard/templates/dashboard/release.html:57
 msgid "Субъектов"
 msgstr "Regions"
 
@@ -2373,7 +2374,7 @@ msgid "Субъектов со скрытым источником значен�
 msgstr "Constituent entities whose value is withheld by the source"
 
 #: apps/analytics/templates/analytics/partials/_inequality_results.html:359
-#: apps/dashboard/templates/dashboard/release.html:58
+#: apps/dashboard/templates/dashboard/release.html:59
 msgid "Скрыто"
 msgstr "Withheld"
 
@@ -2423,7 +2424,7 @@ msgstr "The value in different editions"
 
 #: apps/analytics/templates/analytics/partials/_revision_trace.html:19
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:536
-#: apps/dashboard/templates/dashboard/sources.html:185
+#: apps/dashboard/templates/dashboard/sources.html:189
 msgid "Выпуск"
 msgstr "Release"
 
@@ -2555,8 +2556,8 @@ msgstr "Section"
 #: apps/analytics/templates/analytics/partials/_revisions_results.html:122
 #: apps/analytics/templates/analytics/partials/_revisions_results.html:158
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:537
-#: apps/dashboard/templates/dashboard/data.html:184
-#: apps/dashboard/templates/dashboard/data.html:243
+#: apps/dashboard/templates/dashboard/data.html:187
+#: apps/dashboard/templates/dashboard/data.html:247
 msgid "Наблюдений"
 msgstr "Observations"
 
@@ -2597,7 +2598,7 @@ msgstr "Territories"
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:321
 #: apps/catalog/templates/catalog/partials/_series_results.html:37
 #: apps/catalog/templates/catalog/sources.html:169
-#: apps/dashboard/templates/dashboard/release.html:55
+#: apps/dashboard/templates/dashboard/release.html:56
 msgid "Годы"
 msgstr "Years"
 
@@ -3181,7 +3182,7 @@ msgstr "The monthly layer: wages, prices and unemployment from Rosstat’s bulle
 #: apps/content/forms.py:46
 #: apps/dashboard/navigation.py:62
 #: apps/dashboard/templates/dashboard/sources.html:20
-#: apps/dashboard/views/sources.py:106
+#: apps/dashboard/templates/dashboard/sources.html:24
 msgid "Источники"
 msgstr "References"
 
@@ -4078,15 +4079,15 @@ msgstr "Licence"
 #: apps/catalog/templates/catalog/dataset.html:79
 #: apps/catalog/templates/catalog/sources.html:38
 #: apps/dashboard/templates/dashboard/_candidate_report.html:18
-#: apps/dashboard/templates/dashboard/data.html:182
-#: apps/dashboard/templates/dashboard/data.html:85
+#: apps/dashboard/templates/dashboard/data.html:185
+#: apps/dashboard/templates/dashboard/data.html:86
 msgid "Версия"
 msgstr "Version"
 
 #: apps/catalog/templates/catalog/dataset.html:82
 #: apps/dashboard/templates/dashboard/content_confirm_delete.html:25
 #: apps/dashboard/templates/dashboard/release.html:28
-#: apps/dashboard/templates/dashboard/visits.html:160
+#: apps/dashboard/templates/dashboard/visits.html:162
 msgid "Адрес"
 msgstr "Address"
 
@@ -4326,9 +4327,9 @@ msgstr "Full ranking of %(count)s regions"
 
 #: apps/catalog/templates/catalog/partials/_indicator_month.html:8
 #: apps/dashboard/templates/dashboard/visits.html:102
+#: apps/dashboard/templates/dashboard/visits.html:106
 #: apps/userdata/month_views.py:40
 #: apps/userdata/month_views.py:67
-#: apps/userdata/templates/userdata/_dataset_data.html:147
 msgid "По месяцам"
 msgstr "By month"
 
@@ -4564,18 +4565,18 @@ msgid "Территория"
 msgstr "Territory"
 
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:497
-#: apps/dashboard/templates/dashboard/sources.html:29
+#: apps/dashboard/templates/dashboard/sources.html:30
 msgid "Выпусков"
 msgstr "Editions"
 
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:498
-#: apps/dashboard/templates/dashboard/_candidate_report.html:75
+#: apps/dashboard/templates/dashboard/_candidate_report.html:76
 #: apps/userdata/templates/userdata/version.html:107
 msgid "Было"
 msgstr "Was"
 
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:499
-#: apps/dashboard/templates/dashboard/_candidate_report.html:76
+#: apps/dashboard/templates/dashboard/_candidate_report.html:77
 #: apps/userdata/templates/userdata/version.html:108
 msgid "Стало"
 msgstr "Became"
@@ -4739,7 +4740,7 @@ msgid "Что сейчас"
 msgstr "What now"
 
 #: apps/catalog/templates/catalog/partials/_series_results.html:11
-#: apps/dashboard/templates/dashboard/content.html:62
+#: apps/dashboard/templates/dashboard/content.html:63
 msgid "Порядок"
 msgstr "Order"
 
@@ -4797,9 +4798,9 @@ msgid "ограниченно"
 msgstr "limited"
 
 #: apps/catalog/templates/catalog/partials/_series_results.html:104
-#: apps/dashboard/templates/dashboard/quality.html:90
-#: apps/dashboard/templates/dashboard/ticket_list.html:102
-#: apps/dashboard/templates/dashboard/user_list.html:102
+#: apps/dashboard/templates/dashboard/quality.html:91
+#: apps/dashboard/templates/dashboard/ticket_list.html:103
+#: apps/dashboard/templates/dashboard/user_list.html:103
 #: apps/feedback/templates/feedback/my_tickets.html:50
 msgid "Постраничная навигация"
 msgstr "Pagination"
@@ -4958,10 +4959,10 @@ msgid "Условия"
 msgstr "Terms"
 
 #: apps/catalog/templates/catalog/sources.html:40
-#: apps/dashboard/templates/dashboard/data.html:187
-#: apps/dashboard/templates/dashboard/data.html:241
+#: apps/dashboard/templates/dashboard/data.html:190
+#: apps/dashboard/templates/dashboard/data.html:245
 #: apps/dashboard/templates/dashboard/etl_run.html:58
-#: apps/dashboard/templates/dashboard/sources.html:188
+#: apps/dashboard/templates/dashboard/sources.html:192
 msgid "Состояние"
 msgstr "Status"
 
@@ -4970,7 +4971,7 @@ msgid "выпуск завершён в 2025 году"
 msgstr "publication ended in 2025"
 
 #: apps/catalog/templates/catalog/sources.html:54
-#: apps/dashboard/templates/dashboard/sources.html:28
+#: apps/dashboard/templates/dashboard/sources.html:29
 msgid "Последний выпуск"
 msgstr "Latest release"
 
@@ -5008,12 +5009,12 @@ msgid "новая редакция"
 msgstr "new edition"
 
 #: apps/catalog/templates/catalog/sources.html:121
-#: apps/dashboard/templates/dashboard/sources.html:140
+#: apps/dashboard/templates/dashboard/sources.html:143
 msgid "условная"
 msgstr "conditional"
 
 #: apps/catalog/templates/catalog/sources.html:123
-#: apps/dashboard/templates/dashboard/sources.html:144
+#: apps/dashboard/templates/dashboard/sources.html:147
 msgid "полная"
 msgstr "full"
 
@@ -6003,8 +6004,8 @@ msgid "Анализ и визуализация социально-эконом�
 msgstr "Analysis and visualisation of the socio-economic indicators of the Russian regions"
 
 #: apps/core/context_processors.py:17
-msgid "Приложение для анализа и визуализации социально-экономических показателей регионов РФ"
-msgstr "An application for the analysis and visualisation of socio-economic indicators of the regions of the Russian Federation"
+msgid "Веб-приложение для анализа и визуализации социально-экономических показателей регионов РФ"
+msgstr "A web application for the analysis and visualisation of socio-economic indicators of the regions of the Russian Federation"
 
 #: apps/core/context_processors.py:18
 #: apps/core/structured_data.py:118
@@ -7402,6 +7403,7 @@ msgid "Вышла новая версия набора данных: %(version)s
 msgstr "A new version of the dataset is out: %(version)s"
 
 #: apps/dashboard/templates/dashboard/_candidate_report.html:7
+#: apps/dashboard/templates/dashboard/_candidate_report.html:73
 msgid "Что изменится, если принять версию"
 msgstr "What changes if the version is accepted"
 
@@ -7414,8 +7416,8 @@ msgid "отклонена"
 msgstr "rejected"
 
 #: apps/dashboard/templates/dashboard/_candidate_report.html:26
-#: apps/dashboard/templates/dashboard/release.html:57
-#: apps/dashboard/templates/dashboard/sources.html:189
+#: apps/dashboard/templates/dashboard/release.html:58
+#: apps/dashboard/templates/dashboard/sources.html:193
 msgid "Значений"
 msgstr "Values"
 
@@ -7452,43 +7454,43 @@ msgstr "Methodological notes"
 msgid "Переименованные ряды"
 msgstr "Renamed series"
 
-#: apps/dashboard/templates/dashboard/_candidate_report.html:94
+#: apps/dashboard/templates/dashboard/_candidate_report.html:95
 msgid "Исчезнувшие ряды"
 msgstr "Removed series"
 
-#: apps/dashboard/templates/dashboard/_candidate_report.html:105
+#: apps/dashboard/templates/dashboard/_candidate_report.html:106
 msgid "Новые ряды"
 msgstr "New series"
 
-#: apps/dashboard/templates/dashboard/_candidate_report.html:116
+#: apps/dashboard/templates/dashboard/_candidate_report.html:117
 msgid "Больше всего изменённых значений"
 msgstr "Most changed values"
 
-#: apps/dashboard/templates/dashboard/_candidate_report.html:127
+#: apps/dashboard/templates/dashboard/_candidate_report.html:128
 msgid "Сменилась единица измерения"
 msgstr "Unit of measurement changed"
 
-#: apps/dashboard/templates/dashboard/_candidate_report.html:138
+#: apps/dashboard/templates/dashboard/_candidate_report.html:139
 msgid "Изменившиеся связи с выпусками источников"
 msgstr "Changed links to source releases"
 
-#: apps/dashboard/templates/dashboard/_candidate_report.html:149
+#: apps/dashboard/templates/dashboard/_candidate_report.html:150
 msgid "Новые методические примечания"
 msgstr "New methodological notes"
 
-#: apps/dashboard/templates/dashboard/_candidate_report.html:154
+#: apps/dashboard/templates/dashboard/_candidate_report.html:155
 msgid "разрыв"
 msgstr "break"
 
-#: apps/dashboard/templates/dashboard/_candidate_report.html:161
+#: apps/dashboard/templates/dashboard/_candidate_report.html:162
 msgid "Рабочего склада нет: сравнивать не с чем."
 msgstr "There is no working warehouse, so there is nothing to compare with."
 
-#: apps/dashboard/templates/dashboard/_candidate_report.html:169
+#: apps/dashboard/templates/dashboard/_candidate_report.html:170
 msgid "Принять и собрать рабочий склад"
 msgstr "Accept and build the working warehouse"
 
-#: apps/dashboard/templates/dashboard/_candidate_report.html:173
+#: apps/dashboard/templates/dashboard/_candidate_report.html:174
 msgid "Отклонить"
 msgstr "Reject"
 
@@ -7516,15 +7518,15 @@ msgstr "changed: %(count)s"
 msgid "новых: %(count)s, из них отмечают разрыв: %(breaks)s"
 msgstr "new: %(count)s, of which mark a break: %(breaks)s"
 
-#: apps/dashboard/templates/dashboard/_candidate_report.html:179
+#: apps/dashboard/templates/dashboard/_candidate_report.html:180
 msgid "Принята: %(user)s, %(moment)s."
 msgstr "Accepted by %(user)s, %(moment)s."
 
-#: apps/dashboard/templates/dashboard/_candidate_report.html:184
+#: apps/dashboard/templates/dashboard/_candidate_report.html:185
 msgid "Сборка рабочего склада — запуск № %(pk)s"
 msgstr "Working warehouse build — run No. %(pk)s"
 
-#: apps/dashboard/templates/dashboard/_candidate_report.html:188
+#: apps/dashboard/templates/dashboard/_candidate_report.html:189
 msgid "Отклонена: %(user)s, %(moment)s."
 msgstr "Rejected by %(user)s, %(moment)s."
 
@@ -7572,7 +7574,15 @@ msgstr "terms / methodology"
 msgid "Виды содержимого"
 msgstr "Kinds of content"
 
-#: apps/dashboard/templates/dashboard/content.html:59
+#: apps/dashboard/templates/dashboard/content.html:57
+msgid "Разделы методики"
+msgstr "Methodology sections"
+
+#: apps/dashboard/templates/dashboard/content.html:57
+msgid "Термины глоссария"
+msgstr "Glossary terms"
+
+#: apps/dashboard/templates/dashboard/content.html:60
 #: apps/userdata/templates/userdata/_calc_panel.html:138
 #: apps/userdata/templates/userdata/_indicator_field.html:9
 #: apps/userdata/templates/userdata/_study_card_menu.html:68
@@ -7580,42 +7590,42 @@ msgstr "Kinds of content"
 msgid "Название"
 msgstr "Title"
 
-#: apps/dashboard/templates/dashboard/content.html:61
+#: apps/dashboard/templates/dashboard/content.html:62
 msgid "Блок"
 msgstr "Block"
 
-#: apps/dashboard/templates/dashboard/content.html:64
+#: apps/dashboard/templates/dashboard/content.html:65
 msgid "Показывается"
 msgstr "Shown"
 
-#: apps/dashboard/templates/dashboard/content.html:65
+#: apps/dashboard/templates/dashboard/content.html:66
 msgid "Языки"
 msgstr "Languages"
 
-#: apps/dashboard/templates/dashboard/content.html:85
+#: apps/dashboard/templates/dashboard/content.html:86
 msgid "да"
 msgstr "yes"
 
-#: apps/dashboard/templates/dashboard/content.html:87
+#: apps/dashboard/templates/dashboard/content.html:88
 #: apps/userdata/templates/userdata/cards/_settings.html:125
 msgid "нет"
 msgstr "no"
 
-#: apps/dashboard/templates/dashboard/content.html:97
+#: apps/dashboard/templates/dashboard/content.html:98
 msgid "нет en"
 msgstr "no en"
 
-#: apps/dashboard/templates/dashboard/content.html:106
-#: apps/dashboard/templates/dashboard/content.html:111
-#: apps/dashboard/templates/dashboard/data.html:214
+#: apps/dashboard/templates/dashboard/content.html:107
+#: apps/dashboard/templates/dashboard/content.html:112
+#: apps/dashboard/templates/dashboard/data.html:217
 msgid "Править"
 msgstr "Edit"
 
-#: apps/dashboard/templates/dashboard/content.html:129
+#: apps/dashboard/templates/dashboard/content.html:130
 msgid "Записей нет"
 msgstr "No entries"
 
-#: apps/dashboard/templates/dashboard/content.html:131
+#: apps/dashboard/templates/dashboard/content.html:132
 msgid "Начальное наполнение: python manage.py seed_content"
 msgstr "Initial seeding: python manage.py seed_content"
 
@@ -7672,6 +7682,7 @@ msgid "Сохранить версию «%(lang)s»"
 msgstr "Save the “%(lang)s” version"
 
 #: apps/dashboard/templates/dashboard/data.html:16
+#: apps/dashboard/templates/dashboard/quality.html:55
 #: apps/dashboard/views/data.py:277
 #: apps/dashboard/views/data.py:283
 msgid "Замечания проверок"
@@ -7726,119 +7737,124 @@ msgid "Файл"
 msgstr "File"
 
 #: apps/dashboard/templates/dashboard/data.html:79
+#: apps/dashboard/templates/dashboard/data.html:83
 msgid "Проверенные версии ждут решения"
 msgstr "Checked versions awaiting a decision"
 
-#: apps/dashboard/templates/dashboard/data.html:86
+#: apps/dashboard/templates/dashboard/data.html:87
 msgid "Проверена"
 msgstr "Checked"
 
-#: apps/dashboard/templates/dashboard/data.html:87
+#: apps/dashboard/templates/dashboard/data.html:88
 msgid "Откуда"
 msgstr "Origin"
 
-#: apps/dashboard/templates/dashboard/data.html:97
+#: apps/dashboard/templates/dashboard/data.html:98
 msgid "загружена в панели"
 msgstr "uploaded in the panel"
 
-#: apps/dashboard/templates/dashboard/data.html:97
+#: apps/dashboard/templates/dashboard/data.html:98
 msgid "скачана при сборе"
 msgstr "downloaded during collection"
 
-#: apps/dashboard/templates/dashboard/data.html:101
+#: apps/dashboard/templates/dashboard/data.html:102
 msgid "Отчёт и решение"
 msgstr "Report and decision"
 
-#: apps/dashboard/templates/dashboard/data.html:114
+#: apps/dashboard/templates/dashboard/data.html:115
 msgid "Новый выпуск набора"
 msgstr "New dataset release"
 
-#: apps/dashboard/templates/dashboard/data.html:121
+#: apps/dashboard/templates/dashboard/data.html:122
 msgid "Сборка склада уже идёт"
 msgstr "A warehouse build is already running"
 
-#: apps/dashboard/templates/dashboard/data.html:150
+#: apps/dashboard/templates/dashboard/data.html:151
 msgid "Загрузить и проверить"
 msgstr "Upload and check"
 
-#: apps/dashboard/templates/dashboard/data.html:155
-#: apps/dashboard/templates/dashboard/sources.html:88
+#: apps/dashboard/templates/dashboard/data.html:156
+#: apps/dashboard/templates/dashboard/data.html:159
+#: apps/dashboard/templates/dashboard/sources.html:89
+#: apps/dashboard/templates/dashboard/sources.html:92
 msgid "Команды для обслуживания вручную, на стенде"
 msgstr "Commands for manual maintenance on the server"
 
-#: apps/dashboard/templates/dashboard/data.html:174
+#: apps/dashboard/templates/dashboard/data.html:176
+#: apps/dashboard/templates/dashboard/data.html:182
 msgid "Версии набора данных"
 msgstr "Dataset versions"
 
-#: apps/dashboard/templates/dashboard/data.html:183
+#: apps/dashboard/templates/dashboard/data.html:186
 msgid "Опубликована"
 msgstr "Published"
 
-#: apps/dashboard/templates/dashboard/data.html:185
+#: apps/dashboard/templates/dashboard/data.html:188
 #: apps/dashboard/templates/dashboard/index.html:105
 #: apps/dashboard/views/data.py:161
 #: apps/userdata/export.py:55
 msgid "Период"
 msgstr "Period"
 
-#: apps/dashboard/templates/dashboard/data.html:186
+#: apps/dashboard/templates/dashboard/data.html:189
 msgid "Загрузок"
 msgstr "Downloads"
 
-#: apps/dashboard/templates/dashboard/data.html:206
-#: apps/dashboard/templates/dashboard/user_list.html:88
+#: apps/dashboard/templates/dashboard/data.html:209
+#: apps/dashboard/templates/dashboard/user_list.html:89
 msgid "действует"
 msgstr "active"
 
-#: apps/dashboard/templates/dashboard/data.html:208
+#: apps/dashboard/templates/dashboard/data.html:211
 msgid "прежняя"
 msgstr "previous"
 
-#: apps/dashboard/templates/dashboard/data.html:224
+#: apps/dashboard/templates/dashboard/data.html:227
 msgid "Версии не зарегистрированы: сборка склада ещё не выполнялась."
 msgstr "No versions are registered: the warehouse has not been built yet."
 
-#: apps/dashboard/templates/dashboard/data.html:231
+#: apps/dashboard/templates/dashboard/data.html:234
+#: apps/dashboard/templates/dashboard/data.html:240
 msgid "История запусков загрузки"
 msgstr "Data loading history"
 
-#: apps/dashboard/templates/dashboard/data.html:239
+#: apps/dashboard/templates/dashboard/data.html:243
 msgid "Начало"
 msgstr "Start"
 
-#: apps/dashboard/templates/dashboard/data.html:240
+#: apps/dashboard/templates/dashboard/data.html:244
 msgid "Режим"
 msgstr "Mode"
 
-#: apps/dashboard/templates/dashboard/data.html:242
+#: apps/dashboard/templates/dashboard/data.html:246
 #: apps/dashboard/templates/dashboard/etl_run.html:68
 msgid "Длительность"
 msgstr "Duration"
 
-#: apps/dashboard/templates/dashboard/data.html:244
+#: apps/dashboard/templates/dashboard/data.html:248
 msgid "Разрывов"
 msgstr "Breaks"
 
-#: apps/dashboard/templates/dashboard/data.html:245
+#: apps/dashboard/templates/dashboard/data.html:249
 #: apps/dashboard/templates/dashboard/etl_run.html:92
 msgid "Запустил"
 msgstr "Started by"
 
-#: apps/dashboard/templates/dashboard/data.html:266
+#: apps/dashboard/templates/dashboard/data.html:270
 #: apps/dashboard/templates/dashboard/etl_run.html:70
 msgid "с"
 msgstr "from"
 
-#: apps/dashboard/templates/dashboard/data.html:271
+#: apps/dashboard/templates/dashboard/data.html:275
 #: apps/dashboard/templates/dashboard/etl_run.html:94
 msgid "командная строка"
 msgstr "command line"
 
-#: apps/dashboard/templates/dashboard/data.html:275
+#: apps/dashboard/templates/dashboard/data.html:279
 msgid "Журнал"
 msgstr "Log"
 
-#: apps/dashboard/templates/dashboard/data.html:284
+#: apps/dashboard/templates/dashboard/data.html:288
 msgid "Запусков не зафиксировано."
 msgstr "No runs are recorded."
 
@@ -7846,15 +7862,15 @@ msgstr "No runs are recorded."
 msgid "Какая версия набора действует, когда выполнялась сборка склада и чем она закончилась."
 msgstr "Which version of the set is in force, when the warehouse was built and how the build ended."
 
-#: apps/dashboard/templates/dashboard/data.html:124
+#: apps/dashboard/templates/dashboard/data.html:125
 msgid "Ход сборки — запуск № %(pk)s"
 msgstr "Build progress — run no. %(pk)s"
 
-#: apps/dashboard/templates/dashboard/data.html:132
+#: apps/dashboard/templates/dashboard/data.html:133
 msgid "Файл проверяется по составу атрибутов и собирается рядом с рабочим складом — около минуты. Затем показывается отчёт о том, что изменится: ряды, значения, единицы, связи с выпусками источников, новые методические примечания. Рабочий склад собирается из новой версии, только когда вы её примете."
 msgstr "The file is checked for its attributes and built next to the working warehouse, which takes about a minute. A report then shows what will change: series, values, units, links to source releases and new methodological notes. The working warehouse is built from the new version only once you accept it."
 
-#: apps/dashboard/templates/dashboard/data.html:140
+#: apps/dashboard/templates/dashboard/data.html:141
 msgid "Новую версию на странице набора «Если быть точным» ежедневный сбор источников находит, скачивает и проверяет сам; о готовой проверке приходит письмо."
 msgstr "The daily source collection finds a new version on the “Esli byt tochnym” dataset page, downloads and checks it by itself; an email arrives when the check is ready."
 
@@ -7924,23 +7940,24 @@ msgid "записей"
 msgstr "records"
 
 #: apps/dashboard/templates/dashboard/etl_run.html:158
+#: apps/dashboard/templates/dashboard/etl_run.html:166
 msgid "Замечания, найденные этим запуском"
 msgstr "Findings from this run"
 
-#: apps/dashboard/templates/dashboard/etl_run.html:168
+#: apps/dashboard/templates/dashboard/etl_run.html:169
 #: apps/dashboard/templates/dashboard/quality.html:30
-#: apps/dashboard/templates/dashboard/quality.html:57
+#: apps/dashboard/templates/dashboard/quality.html:58
 #: apps/userdata/export.py:53
 msgid "Уровень"
 msgstr "Severity"
 
-#: apps/dashboard/templates/dashboard/etl_run.html:169
-#: apps/dashboard/templates/dashboard/quality.html:58
+#: apps/dashboard/templates/dashboard/etl_run.html:170
+#: apps/dashboard/templates/dashboard/quality.html:59
 msgid "Тип"
 msgstr "Type"
 
-#: apps/dashboard/templates/dashboard/etl_run.html:170
-#: apps/dashboard/templates/dashboard/quality.html:59
+#: apps/dashboard/templates/dashboard/etl_run.html:171
+#: apps/dashboard/templates/dashboard/quality.html:60
 #: apps/userdata/forms.py:112
 #: apps/userdata/templates/userdata/study.html:147
 msgid "Описание"
@@ -8081,17 +8098,17 @@ msgstr "Check type"
 msgid "Применить"
 msgstr "Apply"
 
-#: apps/dashboard/templates/dashboard/quality.html:60
-#: apps/dashboard/templates/dashboard/sources.html:121
+#: apps/dashboard/templates/dashboard/quality.html:61
+#: apps/dashboard/templates/dashboard/sources.html:124
 #: apps/userdata/templates/userdata/version.html:104
 msgid "Ряд"
 msgstr "Series"
 
-#: apps/dashboard/templates/dashboard/quality.html:108
+#: apps/dashboard/templates/dashboard/quality.html:109
 msgid "Замечаний нет"
 msgstr "No findings"
 
-#: apps/dashboard/templates/dashboard/quality.html:110
+#: apps/dashboard/templates/dashboard/quality.html:111
 msgid "Проверки выполняются при сборке склада: python manage.py etl_build --full"
 msgstr "The checks are run when the warehouse is built: python manage.py etl_build --full"
 
@@ -8099,7 +8116,7 @@ msgstr "The checks are run when the warehouse is built: python manage.py etl_bui
 msgid "Проверки выполняются после каждой сборки склада; здесь — замечания последней. Однотипные замечания обычно объясняются одной причиной — сменой методики источника."
 msgstr "Checks run after every warehouse build; these are the latest build's findings. Findings of one kind usually share a single cause — a change in the source's methodology."
 
-#: apps/dashboard/templates/dashboard/quality.html:101
+#: apps/dashboard/templates/dashboard/quality.html:102
 msgid "Всего замечаний: %(total)s"
 msgstr "Findings in total: %(total)s"
 
@@ -8108,12 +8125,12 @@ msgid "Выпуск не разобран — склад остался преж
 msgstr "The release was not parsed; the warehouse stays as it was"
 
 #: apps/dashboard/templates/dashboard/release.html:30
-#: apps/dashboard/templates/dashboard/sources.html:186
+#: apps/dashboard/templates/dashboard/sources.html:190
 msgid "Опубликован"
 msgstr "Published"
 
 #: apps/dashboard/templates/dashboard/release.html:32
-#: apps/dashboard/templates/dashboard/sources.html:183
+#: apps/dashboard/templates/dashboard/sources.html:187
 #: apps/sources/models.py:86
 msgid "Получен"
 msgstr "Received"
@@ -8128,26 +8145,27 @@ msgid "Разобран"
 msgstr "Parsed"
 
 #: apps/dashboard/templates/dashboard/release.html:46
+#: apps/dashboard/templates/dashboard/release.html:51
 msgid "Разбор по таблицам"
 msgstr "Parsing by table"
 
-#: apps/dashboard/templates/dashboard/release.html:54
+#: apps/dashboard/templates/dashboard/release.html:55
 msgid "Таблица и лист"
 msgstr "Table and sheet"
 
-#: apps/dashboard/templates/dashboard/release.html:59
+#: apps/dashboard/templates/dashboard/release.html:60
 msgid "Предварительные годы"
 msgstr "Preliminary years"
 
-#: apps/dashboard/templates/dashboard/release.html:60
+#: apps/dashboard/templates/dashboard/release.html:61
 msgid "Не распознано"
 msgstr "Not recognised"
 
-#: apps/dashboard/templates/dashboard/release.html:88
+#: apps/dashboard/templates/dashboard/release.html:89
 msgid "Изменения к прежнему выпуску"
 msgstr "Changes against the previous release"
 
-#: apps/dashboard/templates/dashboard/release.html:96
+#: apps/dashboard/templates/dashboard/release.html:97
 msgid "Прежнего разобранного выпуска этого источника нет."
 msgstr "There is no earlier parsed release of this source."
 
@@ -8161,32 +8179,36 @@ msgstr "parser version %(version)s"
 msgid "значений: %(count)s"
 msgstr "values: %(count)s"
 
-#: apps/dashboard/templates/dashboard/release.html:92
+#: apps/dashboard/templates/dashboard/release.html:93
 msgid "Против выпуска %(previous)s изменено значений: %(count)s."
 msgstr "Values changed against release %(previous)s: %(count)s."
 
-#: apps/dashboard/templates/dashboard/release.html:102
+#: apps/dashboard/templates/dashboard/release.html:103
 msgid "последний период — %(period)s"
 msgstr "latest period — %(period)s"
 
-#: apps/dashboard/templates/dashboard/search.html:25
+#: apps/dashboard/templates/dashboard/search.html:23
+msgid "Запросы без ответа"
+msgstr "Queries without an answer"
+
+#: apps/dashboard/templates/dashboard/search.html:26
 msgid "Запрос"
 msgstr "Query"
 
-#: apps/dashboard/templates/dashboard/search.html:26
+#: apps/dashboard/templates/dashboard/search.html:27
 #: templates/partials/_header.html:90
 msgid "Язык"
 msgstr "Language"
 
-#: apps/dashboard/templates/dashboard/search.html:27
+#: apps/dashboard/templates/dashboard/search.html:28
 msgid "Раз"
 msgstr "Times"
 
-#: apps/dashboard/templates/dashboard/search.html:28
+#: apps/dashboard/templates/dashboard/search.html:29
 msgid "Последний"
 msgstr "Last"
 
-#: apps/dashboard/templates/dashboard/search.html:47
+#: apps/dashboard/templates/dashboard/search.html:48
 msgid "Запросов без ответа нет"
 msgstr "No unanswered queries"
 
@@ -8198,81 +8220,83 @@ msgstr "Queries the search found no answer to over the last %(days)s days, kept 
 msgid "Всего записей: %(total)s."
 msgstr "Records in total: %(total)s."
 
-#: apps/dashboard/templates/dashboard/sources.html:27
+#: apps/dashboard/templates/dashboard/sources.html:28
 msgid "Последняя проверка"
 msgstr "Last check"
 
-#: apps/dashboard/templates/dashboard/sources.html:41
+#: apps/dashboard/templates/dashboard/sources.html:42
 msgid "страница"
 msgstr "page"
 
-#: apps/dashboard/templates/dashboard/sources.html:46
+#: apps/dashboard/templates/dashboard/sources.html:47
 msgid "идёт сбор"
 msgstr "collecting"
 
-#: apps/dashboard/templates/dashboard/sources.html:53
+#: apps/dashboard/templates/dashboard/sources.html:54
 msgid "не проверялся"
 msgstr "not checked"
 
-#: apps/dashboard/templates/dashboard/sources.html:77
+#: apps/dashboard/templates/dashboard/sources.html:78
 msgid "Собрать сейчас"
 msgstr "Collect now"
 
-#: apps/dashboard/templates/dashboard/sources.html:107
+#: apps/dashboard/templates/dashboard/sources.html:109
+#: apps/dashboard/templates/dashboard/sources.html:121
 msgid "Сшивка рядов с набором"
 msgstr "Splicing series with the dataset"
 
-#: apps/dashboard/templates/dashboard/sources.html:122
+#: apps/dashboard/templates/dashboard/sources.html:125
 #: apps/userdata/templates/userdata/_related_table.html:10
 msgid "Связь"
 msgstr "Splice"
 
-#: apps/dashboard/templates/dashboard/sources.html:123
+#: apps/dashboard/templates/dashboard/sources.html:126
 msgid "Годы из источника"
 msgstr "Years from the source"
 
-#: apps/dashboard/templates/dashboard/sources.html:124
+#: apps/dashboard/templates/dashboard/sources.html:127
 msgid "Сверка"
 msgstr "Check"
 
-#: apps/dashboard/templates/dashboard/sources.html:125
+#: apps/dashboard/templates/dashboard/sources.html:128
 msgid "В допуске"
 msgstr "Within tolerance"
 
-#: apps/dashboard/templates/dashboard/sources.html:126
+#: apps/dashboard/templates/dashboard/sources.html:129
 msgid "Наибольшее расхождение"
 msgstr "Largest difference"
 
-#: apps/dashboard/templates/dashboard/sources.html:127
+#: apps/dashboard/templates/dashboard/sources.html:130
 msgid "Уточнено значений набора"
 msgstr "Dataset values revised"
 
-#: apps/dashboard/templates/dashboard/sources.html:142
+#: apps/dashboard/templates/dashboard/sources.html:145
 msgid "редакция"
 msgstr "edition"
 
-#: apps/dashboard/templates/dashboard/sources.html:158
+#: apps/dashboard/templates/dashboard/sources.html:161
 msgid "п."
 msgstr "pts"
 
-#: apps/dashboard/templates/dashboard/sources.html:170
+#: apps/dashboard/templates/dashboard/sources.html:173
 msgid "Склад собран без выпусков источников."
 msgstr "The warehouse was built without source releases."
 
-#: apps/dashboard/templates/dashboard/sources.html:176
+#: apps/dashboard/templates/dashboard/sources.html:179
+#: apps/dashboard/templates/dashboard/sources.html:184
 msgid "Журнал выпусков"
 msgstr "Release log"
 
-#: apps/dashboard/templates/dashboard/sources.html:187
+#: apps/dashboard/templates/dashboard/sources.html:191
 #: apps/dashboard/views/data.py:154
 msgid "Размер"
 msgstr "Size"
 
-#: apps/dashboard/templates/dashboard/sources.html:217
+#: apps/dashboard/templates/dashboard/sources.html:221
 msgid "Подробно"
 msgstr "Details"
 
-#: apps/dashboard/templates/dashboard/sources.html:226
+#: apps/dashboard/templates/dashboard/sources.html:230
 msgid "Выпусков ещё не получено."
 msgstr "No releases received yet."
 
@@ -8280,16 +8304,16 @@ msgstr "No releases received yet."
 msgid "Откуда продолжаются ряды набора и берутся ряды Банка России и ФНС: когда проверялся каждый источник, какие выпуски получены и разобраны и насколько значения изданий Росстата совпадают с набором за общие годы."
 msgstr "Where the dataset series continue from and where the Bank of Russia and Federal Tax Service series come from: when each source was checked, which releases were received and parsed, and how the values of Rosstat publications match the dataset over shared years."
 
-#: apps/dashboard/templates/dashboard/sources.html:67
+#: apps/dashboard/templates/dashboard/sources.html:68
 msgid "не разобрано: %(count)s"
 msgstr "not parsed: %(count)s"
 
-#: apps/dashboard/templates/dashboard/sources.html:111
+#: apps/dashboard/templates/dashboard/sources.html:113
 msgid "Сверка — по трём общим годам перед последним годом набора. Связь условная, если в допуске меньше 90 %% пар «регион × год»: ряд продолжается, но на стыке стоит разрыв. Редакция — выпуск заменяет значения набора как более поздняя публикация того же ряда."
 msgstr "The check uses the three shared years before the dataset’s last year. The splice is conditional if fewer than 90%% of region-year pairs are within the tolerance: the series continues, but a break stands at the junction. An edition means the release replaces the dataset’s values as a later publication of the same series."
 
 #: apps/dashboard/templates/dashboard/ticket_detail.html:27
-#: apps/dashboard/templates/dashboard/ticket_list.html:76
+#: apps/dashboard/templates/dashboard/ticket_list.html:77
 #: apps/feedback/templates/feedback/feedback_form.html:26
 #: apps/feedback/templates/feedback/feedback_sent.html:28
 msgid "Обращение"
@@ -8340,7 +8364,7 @@ msgid "Прежних обращений с этого адреса"
 msgstr "Earlier enquiries from this address"
 
 #: apps/dashboard/templates/dashboard/ticket_detail.html:149
-#: apps/dashboard/templates/dashboard/ticket_list.html:79
+#: apps/dashboard/templates/dashboard/ticket_list.html:80
 msgid "Поступило"
 msgstr "Received"
 
@@ -8394,7 +8418,7 @@ msgid "Все"
 msgstr "All"
 
 #: apps/dashboard/templates/dashboard/ticket_list.html:52
-#: apps/dashboard/templates/dashboard/ticket_list.html:77
+#: apps/dashboard/templates/dashboard/ticket_list.html:78
 #: apps/feedback/forms.py:33
 #: apps/feedback/templates/feedback/feedback_sent.html:37
 msgid "Тема"
@@ -8414,11 +8438,11 @@ msgstr "Title, text or sender’s address"
 msgid "Найти"
 msgstr "Find"
 
-#: apps/dashboard/templates/dashboard/ticket_list.html:120
+#: apps/dashboard/templates/dashboard/ticket_list.html:121
 msgid "Обращений нет"
 msgstr "No requests"
 
-#: apps/dashboard/templates/dashboard/ticket_list.html:122
+#: apps/dashboard/templates/dashboard/ticket_list.html:123
 msgid "Форма обратной связи доступна посетителям по адресу /feedback/."
 msgstr "The feedback form is available to visitors at /feedback/."
 
@@ -8426,8 +8450,8 @@ msgstr "The feedback form is available to visitors at /feedback/."
 msgid "Ответ уходит письмом на адрес отправителя. Среднее время до ответа считается только по тем обращениям, на которые ответили."
 msgstr "The reply is emailed to the sender. Average time to reply counts only enquiries that were answered."
 
-#: apps/dashboard/templates/dashboard/ticket_list.html:113
-#: apps/dashboard/templates/dashboard/user_list.html:113
+#: apps/dashboard/templates/dashboard/ticket_list.html:114
+#: apps/dashboard/templates/dashboard/user_list.html:114
 msgid "Всего: %(total)s"
 msgstr "In total: %(total)s"
 
@@ -8529,23 +8553,27 @@ msgstr "Reset"
 msgid "от всех"
 msgstr "of all"
 
-#: apps/dashboard/templates/dashboard/user_list.html:81
+#: apps/dashboard/templates/dashboard/user_list.html:60
+msgid "Пользователи"
+msgstr "Users"
+
+#: apps/dashboard/templates/dashboard/user_list.html:82
 msgid "Вход с одноразовым кодом включён"
 msgstr "Sign-in with a one-time code is on"
 
-#: apps/dashboard/templates/dashboard/user_list.html:81
+#: apps/dashboard/templates/dashboard/user_list.html:82
 msgid "код"
 msgstr "code"
 
-#: apps/dashboard/templates/dashboard/user_list.html:86
+#: apps/dashboard/templates/dashboard/user_list.html:87
 msgid "заблокирован"
 msgstr "blocked"
 
-#: apps/dashboard/templates/dashboard/user_list.html:120
+#: apps/dashboard/templates/dashboard/user_list.html:121
 msgid "Учётных записей не найдено"
 msgstr "No accounts found"
 
-#: apps/dashboard/templates/dashboard/user_list.html:121
+#: apps/dashboard/templates/dashboard/user_list.html:122
 msgid "Измените условия поиска или сбросьте фильтры."
 msgstr "Change the search conditions or reset the filters."
 
@@ -8589,64 +8617,67 @@ msgstr "listed below"
 msgid "Посетители по дням"
 msgstr "Visitors by day"
 
-#: apps/dashboard/templates/dashboard/visits.html:108
+#: apps/dashboard/templates/dashboard/visits.html:109
 msgid "Месяц"
 msgstr "Month"
 
-#: apps/dashboard/templates/dashboard/visits.html:109
-#: apps/dashboard/templates/dashboard/visits.html:162
+#: apps/dashboard/templates/dashboard/visits.html:110
+#: apps/dashboard/templates/dashboard/visits.html:164
 #: apps/dashboard/views/visits.py:46
 msgid "Посетители"
 msgstr "Visitors"
 
-#: apps/dashboard/templates/dashboard/visits.html:110
-#: apps/dashboard/templates/dashboard/visits.html:161
+#: apps/dashboard/templates/dashboard/visits.html:111
+#: apps/dashboard/templates/dashboard/visits.html:163
 msgid "Запросы"
 msgstr "Requests"
 
-#: apps/dashboard/templates/dashboard/visits.html:128
+#: apps/dashboard/templates/dashboard/visits.html:129
 msgid "Разделы сайта"
 msgstr "Site sections"
 
-#: apps/dashboard/templates/dashboard/visits.html:132
+#: apps/dashboard/templates/dashboard/visits.html:133
 msgid "Русская версия"
 msgstr "Russian version"
 
-#: apps/dashboard/templates/dashboard/visits.html:136
+#: apps/dashboard/templates/dashboard/visits.html:137
 msgid "Английская версия"
 msgstr "English version"
 
-#: apps/dashboard/templates/dashboard/visits.html:144
+#: apps/dashboard/templates/dashboard/visits.html:145
 msgid "Прочие адреса"
 msgstr "Other addresses"
 
-#: apps/dashboard/templates/dashboard/visits.html:148
+#: apps/dashboard/templates/dashboard/visits.html:149
 msgid "Запросов страниц без статики, за всё время."
 msgstr "Page requests without static files, of all time."
 
-#: apps/dashboard/templates/dashboard/visits.html:154
+#: apps/dashboard/templates/dashboard/visits.html:155
+#: apps/dashboard/templates/dashboard/visits.html:159
 #: apps/search/templates/search/_suggest.html:50
 #: apps/search/templates/search/results.html:130
 msgid "Страницы"
 msgstr "Pages"
 
-#: apps/dashboard/templates/dashboard/visits.html:173
+#: apps/dashboard/templates/dashboard/visits.html:175
 msgid "Запросов страниц нет"
 msgstr "No page requests"
 
-#: apps/dashboard/templates/dashboard/visits.html:183
+#: apps/dashboard/templates/dashboard/visits.html:185
+#: apps/dashboard/templates/dashboard/visits.html:189
 msgid "Переходы с других сайтов"
 msgstr "Referrals from other sites"
 
-#: apps/dashboard/templates/dashboard/visits.html:194
+#: apps/dashboard/templates/dashboard/visits.html:197
 msgid "Переходов не было"
 msgstr "No referrals"
 
-#: apps/dashboard/templates/dashboard/visits.html:203
+#: apps/dashboard/templates/dashboard/visits.html:206
+#: apps/dashboard/templates/dashboard/visits.html:210
 msgid "Не найдено (404)"
 msgstr "Not found (404)"
 
-#: apps/dashboard/templates/dashboard/visits.html:214
+#: apps/dashboard/templates/dashboard/visits.html:218
 msgid "Таких запросов не было"
 msgstr "No such requests"
 
@@ -10637,11 +10668,11 @@ msgstr "not in the reference list"
 msgid "исключено из расчётов"
 msgstr "excluded from calculations"
 
-#: apps/userdata/extract.py:902
+#: apps/userdata/extract.py:903
 msgid "Разобрать таблицу не удалось. Мы получили сообщение об ошибке; сам файл не пересылался."
 msgstr "The table could not be parsed. We have received an error report; the file itself was not sent."
 
-#: apps/userdata/extract.py:767
+#: apps/userdata/extract.py:768
 msgid "Получается временных рядов: %(count)s, больше %(limit)s. Отметьте лишние столбцы как «пропустить» на шаге «Что в таблице»."
 msgstr "Time series to be created: %(count)s, more than %(limit)s. Mark the columns you do not need as “skip” at the “What is in the table” step."
 
@@ -10669,7 +10700,7 @@ msgstr "The site map shows only constituent entities of Russia. You need a table
 msgid "В таблице не нашлось ни одного значения по территориям."
 msgstr "The table contains no values by territory."
 
-#: apps/userdata/extract.py:760
+#: apps/userdata/extract.py:761
 #: apps/userdata/templates/userdata/table_step.html:227
 msgid "Получается временных рядов: %(count)s, больше %(limit)s. Выберите значения разрезов."
 msgstr "Time series to be created: %(count)s, more than %(limit)s. Choose breakdown values."
@@ -10682,7 +10713,7 @@ msgstr "No value column was found. Mark it at the “What is in the table” ste
 msgid "Столбец с годами не найден. Отметьте его на шаге «Что в таблице»."
 msgstr "No column with years was found. Mark it at the “What is in the table” step."
 
-#: apps/userdata/extract.py:606
+#: apps/userdata/extract.py:607
 msgid "Столбцы значений не найдены. Отметьте их на шаге «Что в таблице»."
 msgstr "No value columns were found. Mark them at the “What is in the table” step."
 
@@ -15421,19 +15452,19 @@ msgstr "default parameters"
 msgid "Параметры меняются на странице расчёта: настройте её и сохраните вид заново."
 msgstr "Parameters are changed on the calculation page: set it up and save the view again."
 
-#: apps/workspace/templates/workspace/saved.html:21
+#: apps/workspace/templates/workspace/saved.html:23
 msgid "Отбор по виду"
 msgstr "Filter by kind"
 
-#: apps/workspace/templates/workspace/saved.html:23
+#: apps/workspace/templates/workspace/saved.html:25
 msgid "Всё"
 msgstr "All"
 
-#: apps/workspace/templates/workspace/saved.html:51
+#: apps/workspace/templates/workspace/saved.html:53
 msgid "Сохранённого пока нет"
 msgstr "Nothing saved yet"
 
-#: apps/workspace/templates/workspace/saved.html:62
+#: apps/workspace/templates/workspace/saved.html:64
 msgid "Исследовать на карте"
 msgstr "Explore on the map"
 
@@ -15441,11 +15472,11 @@ msgstr "Explore on the map"
 msgid "«%(title)s» убран из Сохранённого."
 msgstr "“%(title)s” removed from Saved."
 
-#: apps/workspace/templates/workspace/saved.html:40
+#: apps/workspace/templates/workspace/saved.html:42
 msgid "Сравниваются первые %(limit)s сохранённых регионов."
 msgstr "The first %(limit)s saved regions are compared."
 
-#: apps/workspace/templates/workspace/saved.html:53
+#: apps/workspace/templates/workspace/saved.html:55
 msgid "Кнопка «Сохранить» есть в паспорте региона, на странице показателя, на карте, в рейтинге и в инструментах анализа. Сохранённый вид вернёт вас к тому же расчёту, но выполненному на актуальных данных."
 msgstr "The “Save” button is on the region profile, the indicator page, the map, the ranking and the analysis tools. A saved view brings you back to the same calculation, run on current data."
 

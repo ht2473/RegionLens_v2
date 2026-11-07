@@ -45,7 +45,7 @@ PROJECT_AUTHOR_EN = "Evgeny Kuzmin"
 PROJECT_AUTHOR_STUDENT_ID = "ГМФИТД0401/25-вос"
 PROJECT_AUTHOR_EMAIL = "lord10000297@gmail.com"
 PROJECT_THESIS_TITLE = (
-    "Приложение для анализа и визуализации социально-экономических показателей регионов РФ"
+    "Веб-приложение для анализа и визуализации социально-экономических показателей регионов РФ"
 )
 PROJECT_REPOSITORY_URL = "https://github.com/ht2473/RegionLens_v2"
 
