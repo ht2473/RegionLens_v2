@@ -68,8 +68,10 @@ COPY --chown=regionlens:regionlens . .
 RUN sed -i 's/\r$//' /app/docker/entrypoint.sh /app/scripts/*.sh
 
 # Каталоги записи приложения: в compose это тома, но нужны и при запуске без томов.
+# Пустой том получает владельца точки подключения в образе: каталога нет — том
+# достаётся root, и приложение без прав root не может в него писать.
 RUN mkdir -p /app/data/warehouse /app/data/uploads /app/data/archive /app/data/sources \
-        /app/data/visits /app/data/tmp /app/staticfiles /app/logs/caddy \
+        /app/data/visits /app/data/userdata /app/data/tmp /app/staticfiles /app/logs/caddy \
     && chown -R regionlens:regionlens /app/data /app/staticfiles /app/logs
 
 USER regionlens
