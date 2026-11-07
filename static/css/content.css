@@ -80,8 +80,10 @@
   border-left: 2px solid var(--border-strong);
 }
 
+/* Пункт оглавления — цель нажатия не ниже 24 px (WCAG 2.5.8). */
 .methodology__toc-list a {
   display: block;
+  min-height: 24px;
   padding: 2px 0 2px var(--space-2);
   font-size: var(--text-sm);
   color: var(--text-secondary);
@@ -674,6 +676,7 @@ a.glossary__letter:hover {
 
 .terms__toc-list a {
   display: block;
+  min-height: 24px;
   padding: 2px 0;
   font-size: var(--text-sm);
   line-height: var(--leading-snug);

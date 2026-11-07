@@ -1149,6 +1149,8 @@ a.leader-list__name:hover {
 }
 
 .filter-field input {
+  /* Во всю высоту рамки: цель нажатия — поле, а не одна строка текста (WCAG 2.5.8). */
+  align-self: stretch;
   width: 100%;
   min-width: 0;
   padding: 0;
@@ -1416,8 +1418,8 @@ a.leader-list__name:hover {
   white-space: nowrap;
 }
 
-/* Ссылка-название в строке: поле нажатия до 24 px (WCAG 2.5.8) без роста строки. */
-.data-table__name a,
+/* Ссылка в строке таблицы: поле нажатия до 24 px (WCAG 2.5.8) без роста строки. */
+.data-table tbody :is(td, th) a,
 .sources-table__title a {
   padding-block: 0.3125rem;
 }
