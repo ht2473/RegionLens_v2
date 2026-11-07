@@ -80,6 +80,7 @@
       </div>
       <div class="admin-table-wrapper">
         <table class="admin-table">
+          <caption class="visually-hidden">{% translate "Проверенные версии ждут решения" %}</caption>
           <thead>
             <tr>
               <th scope="col">{% translate "Версия" %}</th>
@@ -155,10 +156,11 @@
       <summary>{% translate "Команды для обслуживания вручную, на стенде" %}</summary>
       <div class="admin-table-wrapper" style="margin-top: var(--space-3)">
         <table class="admin-table">
+          <caption class="visually-hidden">{% translate "Команды для обслуживания вручную, на стенде" %}</caption>
           <tbody>
             {% for item in commands %}
               <tr>
-                <td style="width: 30%">{{ item.title }}</td>
+                <th scope="row" style="width: 30%">{{ item.title }}</th>
                 <td><code>{{ item.command }}</code></td>
                 <td class="text-muted">{{ item.hint }}</td>
               </tr>
@@ -177,6 +179,7 @@
     {% if versions %}
       <div class="admin-table-wrapper">
         <table class="admin-table">
+          <caption class="visually-hidden">{% translate "Версии набора данных" %}</caption>
           <thead>
             <tr>
               <th scope="col">{% translate "Версия" %}</th>
@@ -234,6 +237,7 @@
     {% if runs %}
       <div class="admin-table-wrapper">
         <table class="admin-table">
+          <caption class="visually-hidden">{% translate "История запусков загрузки" %}</caption>
           <thead>
             <tr>
               <th scope="col">{% translate "Начало" %}</th>

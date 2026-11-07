@@ -21,6 +21,7 @@
     </div>
     <div class="admin-table-wrapper">
       <table class="admin-table">
+        <caption class="visually-hidden">{% translate "Источники" %}</caption>
         <thead>
           <tr>
             <th scope="col">{% translate "Источник" %}</th>
@@ -88,10 +89,11 @@
       <summary>{% translate "Команды для обслуживания вручную, на стенде" %}</summary>
       <div class="admin-table-wrapper" style="margin-top: var(--space-3)">
         <table class="admin-table">
+          <caption class="visually-hidden">{% translate "Команды для обслуживания вручную, на стенде" %}</caption>
           <tbody>
             {% for item in commands %}
               <tr>
-                <td style="width: 30%">{{ item.title }}</td>
+                <th scope="row" style="width: 30%">{{ item.title }}</th>
                 <td><code>{{ item.command }}</code></td>
                 <td class="text-muted">{{ item.hint }}</td>
               </tr>
@@ -116,6 +118,7 @@
       </p>
       <div class="admin-table-wrapper">
         <table class="admin-table">
+          <caption class="visually-hidden">{% translate "Сшивка рядов с набором" %}</caption>
           <thead>
             <tr>
               <th scope="col">{% translate "Ряд" %}</th>
@@ -178,6 +181,7 @@
     {% if releases %}
       <div class="admin-table-wrapper">
         <table class="admin-table">
+          <caption class="visually-hidden">{% translate "Журнал выпусков" %}</caption>
           <thead>
             <tr>
               <th scope="col">{% translate "Получен" %}</th>

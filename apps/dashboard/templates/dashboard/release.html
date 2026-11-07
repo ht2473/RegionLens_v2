@@ -48,6 +48,7 @@
       <p class="text-muted">{% blocktranslate with count=release.row_count|ru_number:0 %}значений: {{ count }}{% endblocktranslate %}</p>
       <div class="admin-table-wrapper">
         <table class="admin-table">
+          <caption class="visually-hidden">{% translate "Разбор по таблицам" %}</caption>
           <thead>
             <tr>
               <th scope="col">{% translate "Показатель" %}</th>

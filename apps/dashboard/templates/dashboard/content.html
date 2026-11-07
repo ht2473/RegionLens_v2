@@ -54,6 +54,7 @@
   {% if rows %}
     <div class="admin-table-wrapper">
       <table class="admin-table">
+        <caption class="visually-hidden">{% if active_tab == "methodology" %}{% translate "Разделы методики" %}{% else %}{% translate "Термины глоссария" %}{% endif %}</caption>
         <thead>
           <tr>
             <th scope="col">{% translate "Название" %}</th>
