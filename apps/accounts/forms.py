@@ -234,7 +234,12 @@ class StyledPasswordChangeForm(StyledFormMixin, PasswordChangeForm):
 
 
 class PasswordCheckMixin:
-    """Проверка текущего пароля пользователя — перед действием, которое трудно отменить."""
+    """
+    Проверка текущего пароля пользователя — перед действием, которое трудно отменить.
+
+    Такие формы стоят на одной странице «Настроек», и у каждой — поле «Текущий пароль»:
+    ``auto_id`` формы даёт полям свои id, иначе подписи всех форм вели бы к первому полю.
+    """
 
     user: User
 
@@ -259,10 +264,12 @@ class EmailChangeForm(PasswordCheckMixin, StyledFormMixin, forms.Form):
         widget=forms.EmailInput(attrs={"autocomplete": "email"}),
     )
     password = password_field(_("Текущий пароль"))
+    auto_id = "id_email_%s"
 
     def __init__(self, *args: Any, user: User, **kwargs: Any) -> None:
         """Запомнить пользователя для проверки пароля и адреса."""
         self.user = user
+        kwargs.setdefault("auto_id", self.auto_id)
         super().__init__(*args, **kwargs)
         self.apply_styles()
 
@@ -280,16 +287,20 @@ class PasswordConfirmForm(PasswordCheckMixin, StyledFormMixin, forms.Form):
     """Подтверждение действия текущим паролем."""
 
     password = password_field(_("Текущий пароль"))
+    auto_id = "id_codes_%s"
 
     def __init__(self, *args: Any, user: User, **kwargs: Any) -> None:
         """Запомнить пользователя для проверки пароля."""
         self.user = user
+        kwargs.setdefault("auto_id", self.auto_id)
         super().__init__(*args, **kwargs)
         self.apply_styles()
 
 
 class DeleteAccountForm(PasswordConfirmForm):
     """Удаление учётной записи: пароль и явное согласие."""
+
+    auto_id = "id_delete_%s"
 
     confirm = forms.BooleanField(
         label=_("Я понимаю, что сохранённое будет удалено без возможности вернуть"),
@@ -314,10 +325,12 @@ class TwoFactorDisableForm(PasswordCheckMixin, StyledFormMixin, forms.Form):
 
     password = password_field(_("Текущий пароль"))
     code = code_field()
+    auto_id = "id_disable_%s"
 
     def __init__(self, *args: Any, user: User, **kwargs: Any) -> None:
         """Запомнить пользователя для проверки пароля."""
         self.user = user
+        kwargs.setdefault("auto_id", self.auto_id)
         super().__init__(*args, **kwargs)
         self.apply_styles()
 

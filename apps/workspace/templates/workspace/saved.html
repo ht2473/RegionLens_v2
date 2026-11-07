@@ -18,6 +18,8 @@
   {% endif %}
 
   {% if total %}
+    {# Раздел для оглавления программы чтения: заголовки плиток — третьего уровня. #}
+    <h2 class="visually-hidden">{% translate "Сохранённое" %}</h2>
     <nav class="saved-filter" aria-label="{% translate 'Отбор по виду' %}">
       <ul class="choice-list">
         <li><a class="choice-chip" href="{% url 'workspace:saved' %}"{% if not kind %} aria-current="true"{% endif %}>{% translate "Всё" %} <span class="choice-chip__count numeric">{{ total }}</span></a></li>
