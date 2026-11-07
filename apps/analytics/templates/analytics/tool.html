@@ -70,7 +70,7 @@
 
     <div class="workspace__content">
       <div id="analytics-results" class="canvas tool-canvas" data-announce="{% translate 'Расчёт обновлён' %}">
-        {% block results %}{% endblock %}
+        {% if busy %}{% include "analytics/partials/_busy.html" %}{% else %}{% block results %}{% endblock %}{% endif %}
       </div>
     </div>
   </form>

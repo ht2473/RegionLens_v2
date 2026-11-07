@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 21:46+0000\n"
+"POT-Creation-Date: 2026-11-07 21:54+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1321,24 +1321,24 @@ msgstr "components used: %(kept)s; share of variance explained: %(share)s"
 msgid "структуру связей определить не удалось: применены равные веса"
 msgstr "the structure of links could not be determined: equal weights used"
 
-#: apps/analytics/selectors.py:49
+#: apps/analytics/selectors.py:51
 msgid "постоянный: только субъекты со значениями во всех годах"
 msgstr "constant: only constituent entities with values in every year"
 
-#: apps/analytics/selectors.py:50
+#: apps/analytics/selectors.py:52
 msgid "все субъекты, по которым есть значения в каждом году"
 msgstr "all constituent entities with a value in each year"
 
-#: apps/analytics/selectors.py:57
+#: apps/analytics/selectors.py:59
 #: apps/surface/state.py:77
 msgid "все субъекты"
 msgstr "all regions"
 
-#: apps/analytics/selectors.py:58
+#: apps/analytics/selectors.py:60
 msgid "без Москвы и Московской области"
 msgstr "without Moscow and Moscow Oblast"
 
-#: apps/analytics/selectors.py:59
+#: apps/analytics/selectors.py:61
 msgid "без Северо-Кавказского округа"
 msgstr "without the North Caucasian District"
 
@@ -1397,7 +1397,7 @@ msgid "Какой коэффициент выбрать"
 msgstr "Which coefficient to choose"
 
 #: apps/analytics/templates/analytics/index.html:14
-#: apps/analytics/views/base.py:39
+#: apps/analytics/views/base.py:57
 #: apps/analytics/views/overview.py:25
 #: apps/analytics/views/overview.py:30
 #: apps/core/navigation.py:103
@@ -1518,6 +1518,14 @@ msgstr "The counting rules changed within the period"
 #: apps/analytics/templates/analytics/partials/_breaks_warning.html:20
 msgid "Считать с %(year)s года — по одним правилам"
 msgstr "Start from %(year)s — under the same rules"
+
+#: apps/analytics/templates/analytics/partials/_busy.html:6
+msgid "Слишком много расчётов подряд"
+msgstr "Too many calculations in a row"
+
+#: apps/analytics/templates/analytics/partials/_busy.html:7
+msgid "С вашего адреса за последние минуты пришло больше расчётов, чем сервер считает для одного посетителя. Повторите через несколько минут: уже посчитанное открывается без ожидания."
+msgstr "More calculations have come from your address in the last few minutes than the server runs for one visitor. Try again in a few minutes: results already calculated open without waiting."
 
 #: apps/analytics/templates/analytics/partials/_composition.html:6
 msgid "Постоянный состав: %(count)s субъектов из %(total)s — со значениями во всех годах периода."

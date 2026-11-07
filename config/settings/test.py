@@ -52,6 +52,8 @@ AXES_ENABLED = False
 
 # Предел API поднят по той же причине; его тест задаёт предел сам.
 REST_FRAMEWORK = {**REST_FRAMEWORK, "DEFAULT_THROTTLE_RATES": {"anon": "10000/hour"}}
+# Проверки считают анализ с одного адреса сотнями раз; предел проверяется отдельно.
+ANALYTICS_COMPUTATIONS = 1_000_000
 
 LOGGING = {
     "version": 1,

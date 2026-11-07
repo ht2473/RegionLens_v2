@@ -445,6 +445,33 @@ class TestAnalyticsTools:
         assert response.context["sigma"]
         assert response.context["beta"] is not None
 
+    def test_fresh_computations_are_limited_by_address(
+        self, client: Client, series_key: str, settings: Any
+    ) -> None:
+        """
+        Свежие расчёты сверх предела с адреса получают отказ, посчитанное — открывается.
+
+        Перебор параметров иначе занял бы все процессы сервера: каждый новый набор
+        параметров — новый расчёт мимо кэша.
+        """
+        from django.core.cache import cache
+
+        cache.clear()
+        settings.ANALYTICS_COMPUTATIONS = 2
+        url = reverse("analytics:convergence")
+        first = {"series": series_key, "first": 2005, "last": 2020}
+
+        assert client.get(url, first).status_code == 200
+        refused = client.get(url, {**first, "first": 2006})
+        assert refused.status_code == 429
+        assert "Слишком много расчётов подряд" in refused.text
+        # Фрагмент для htmx приходит с 200: ответ 4xx htmx в страницу не вставляет.
+        fragment = client.get(url, {**first, "first": 2007}, headers={"HX-Request": "true"})
+        assert fragment.status_code == 200
+        assert "Слишком много расчётов подряд" in fragment.text
+        # Уже посчитанное — из кэша, без расчёта.
+        assert client.get(url, first).status_code == 200
+
     def test_inequality_robustness_to_composition(self, client: Client, series_key: str) -> None:
         """Меры при всех субъектах, без Москвы с областью и без Северного Кавказа."""
         response = client.get(
