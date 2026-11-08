@@ -1,6 +1,7 @@
 # Обновления зависимостей раз в месяц, одним запросом на экосистему. Исправления
 # уязвимостей приходят отдельно и сразу (настройка репозитория). Django держится
 # на линии 6.1: переход на 6.2 LTS делается вручную, вместе с проверкой сайта.
+# Python в образе — тоже вручную: версия закреплена ещё в pyproject.toml и в CI.
 version: 2
 updates:
   - package-ecosystem: "uv"
@@ -33,3 +34,6 @@ updates:
       interval: "monthly"
     commit-message:
       prefix: "Развёртывание:"
+    ignore:
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]

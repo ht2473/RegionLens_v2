@@ -199,6 +199,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     """Точка входа."""
+    # Вывод в файл или канал Windows кодирует в cp1251, где нет «→» и «✓»: печать роняла запуск.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     args = build_parser().parse_args()
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
 

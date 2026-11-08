@@ -718,6 +718,12 @@ legend.question-card__title ~ * {
   font-size: var(--text-xs);
 }
 
+/* Ссылка мелким шрифтом над описанием: поле нажатия 24 px (WCAG 2.5.8). */
+.own-examples__source a {
+  display: inline-block;
+  padding-block: var(--space-1);
+}
+
 .own-examples__asks span {
   font-weight: var(--weight-semibold);
   color: var(--text-primary);

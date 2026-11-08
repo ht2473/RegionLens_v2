@@ -38,14 +38,14 @@ if _env_file.exists():
 
 PROJECT_NAME = "RegionLens"
 PROJECT_TAGLINE = "Анализ и визуализация социально-экономических показателей регионов России"
-PROJECT_VERSION = "0.9.2"
+PROJECT_VERSION = "0.9.3"
 PROJECT_AUTHOR = "Кузьмин Евгений Олегович"
 PROJECT_AUTHOR_SHORT = "Кузьмин Е. О."
 PROJECT_AUTHOR_EN = "Evgeny Kuzmin"
 PROJECT_AUTHOR_STUDENT_ID = "ГМФИТД0401/25-вос"
 PROJECT_AUTHOR_EMAIL = "lord10000297@gmail.com"
 PROJECT_THESIS_TITLE = (
-    "Приложение для анализа и визуализации социально-экономических показателей регионов РФ"
+    "Веб-приложение для анализа и визуализации социально-экономических показателей регионов РФ"
 )
 PROJECT_REPOSITORY_URL = "https://github.com/ht2473/RegionLens_v2"
 
@@ -143,6 +143,7 @@ MIDDLEWARE = [
     "apps.core.middleware.LanguageMemoryMiddleware",
     # После LocaleMiddleware: страница 400 — на языке адреса.
     "apps.core.middleware.NullCharacterMiddleware",
+    "apps.core.middleware.HtmxVaryMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -252,6 +253,9 @@ AXES_VERBOSE = True
 # Журнал удачных входов не ведётся: последний вход хранит учётная запись, а адреса
 # и браузеры входивших защите не нужны и после удаления учётной записи оставались бы.
 AXES_DISABLE_ACCESS_LOG = True
+# В журнале сервера неудачная попытка подписана отпечатком, а не почтой и адресом: журнал
+# контейнера живёт дольше часа, который политика называет сроком хранения попыток.
+AXES_CLIENT_STR_CALLABLE = "apps.accounts.security.attempt_label"
 
 # ---------------------------------------------------------------------------------------
 # Интернационализация: строки — gettext, содержимое — django-parler
@@ -573,6 +577,9 @@ PDF_FONT_CANDIDATES = [
 # ---------------------------------------------------------------------------------------
 
 ANALYTICS_CACHE_TTL = env.int("ANALYTICS_CACHE_TTL", default=3600)
+# Свежих расчётов анализа (промахов кэша) с адреса за 10 минут: человек столько не наберёт,
+# а перебор параметров не займёт все процессы сервера. Готовый результат из кэша не считается.
+ANALYTICS_COMPUTATIONS = env.int("ANALYTICS_COMPUTATIONS", default=300)
 
 # Пороги пригодности ряда для сравнительного анализа: доля регионов и число лет.
 SERIES_MIN_REGION_COVERAGE = 0.80

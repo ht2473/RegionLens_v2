@@ -8,6 +8,7 @@ from typing import Any
 from django.conf import settings
 from django.core.exceptions import BadRequest
 from django.http import HttpRequest, HttpResponse
+from django.utils.cache import patch_vary_headers
 from django.utils.translation import get_language
 
 
@@ -46,6 +47,24 @@ class LanguageMemoryMiddleware:
                 httponly=settings.LANGUAGE_COOKIE_HTTPONLY,
                 samesite=samesite,
             )
+        return response
+
+
+class HtmxVaryMiddleware:
+    """
+    Объявить, что ответ зависит от заголовка ``HX-Request``.
+
+    По одному адресу htmx получает фрагмент, а браузер — полную страницу. Без этого заголовка
+    кэш браузера считает их одним ответом, и возврат кнопкой «Назад» показывает голый фрагмент.
+    """
+
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
+        self.get_response = get_response
+
+    def __call__(self, request: HttpRequest) -> HttpResponse:
+        """Дополнить заголовок ``Vary`` готового ответа."""
+        response = self.get_response(request)
+        patch_vary_headers(response, ("HX-Request",))
         return response
 
 

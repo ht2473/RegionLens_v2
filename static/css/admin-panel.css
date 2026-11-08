@@ -136,7 +136,7 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.admin-table th {
+.admin-table thead th {
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
@@ -147,7 +147,12 @@
   white-space: nowrap;
 }
 
-.admin-table tbody tr:last-child td {
+/* Заголовок строки в таблице без шапки выглядит как обычная ячейка. */
+.admin-table tbody th {
+  font-weight: var(--weight-regular);
+}
+
+.admin-table tbody tr:last-child :is(th, td) {
   border-bottom: none;
 }
 

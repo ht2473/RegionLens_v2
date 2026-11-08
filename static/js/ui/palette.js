@@ -89,15 +89,51 @@ function items(box = document.getElementById(PALETTE_ID)) {
   return box ? [...box.querySelectorAll(".palette__item")] : [];
 }
 
+/** Поле, которому принадлежит перечень: поле палитры или поле с aria-controls на него. */
+function fieldOf(box) {
+  return box.querySelector(".palette__input") || document.querySelector(`[aria-controls="${box.id}"]`);
+}
+
+/**
+ * Сообщить программе чтения отмеченную строку (WCAG 4.1.2): перечень — listbox, строки —
+ * option, поле указывает на отмеченную через aria-activedescendant. Без отметки — снять.
+ */
+function expose(box, chosen) {
+  const list = box.matches(".palette__results") ? box : box.querySelector(".palette__results");
+  const field = fieldOf(box);
+  if (!list || !field) {
+    return;
+  }
+  const found = items(box);
+  if (!chosen) {
+    field.removeAttribute("aria-activedescendant");
+    if (!found.length) {
+      list.removeAttribute("role");
+    }
+    return;
+  }
+  list.setAttribute("role", "listbox");
+  found.forEach((item, at) => {
+    item.id = item.id || `${list.id}-option-${at}`;
+    item.setAttribute("role", "option");
+    item.setAttribute("aria-selected", String(item === chosen));
+  });
+  field.setAttribute("aria-activedescendant", chosen.id);
+}
+
 /** Отметить строку под номером классом is-selected, не выходя за границы списка. */
-function mark(index, box) {
+function mark(index, box = document.getElementById(PALETTE_ID)) {
   const found = items(box);
   if (!found.length) {
+    if (box) {
+      expose(box, null);
+    }
     return;
   }
   const chosen = Math.min(Math.max(index, 0), found.length - 1);
   found.forEach((item, at) => item.classList.toggle("is-selected", at === chosen));
   found[chosen].scrollIntoView({ block: "nearest" });
+  expose(box, found[chosen]);
 }
 
 /** Номер отмеченной строки или −1. */
@@ -168,9 +204,14 @@ function initField(form) {
     const visible = open && items(box).length > 0;
     box.hidden = !visible;
     field.setAttribute("aria-expanded", String(visible));
+    if (!visible) {
+      field.removeAttribute("aria-activedescendant");
+    }
   };
 
   form.addEventListener("htmx:afterSwap", () => {
+    // Новый список — без прежней отметки: ссылка на строку старого списка устарела.
+    expose(box, null);
     show(document.activeElement === field);
     if (form.hasAttribute("data-find-filter")) {
       filterTiles(box);

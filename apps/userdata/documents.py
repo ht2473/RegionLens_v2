@@ -32,6 +32,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree  # nosec B405 — объявления сущностей отклоняются до разбора
+from xml.parsers import expat  # nosec B407 — только чтобы найти объявления до разбора
 
 from django.conf import settings
 from django.utils.translation import gettext as _
@@ -78,6 +79,33 @@ def load(path: Path) -> list[DocumentTable]:
 # --- Word -----------------------------------------------------------------------------------
 
 
+class _DeclarationError(Exception):
+    """В разметке встретилось объявление типа документа или сущности."""
+
+
+def _declares(data: bytes) -> bool:
+    """
+    Есть ли в разметке объявление типа документа или сущности. В документе Word их не бывает:
+    такой файл — подделка (раздувание сущностями, ссылки на внешние файлы). Ищет сам
+    парсер, а не поиск байтов: в UTF-16 у «<!ENTITY» другие байты. Повреждённая разметка
+    здесь не отклоняется — об этом скажет разбор.
+    """
+
+    def refuse(*_args: object) -> None:
+        raise _DeclarationError
+
+    probe = expat.ParserCreate()
+    probe.StartDoctypeDeclHandler = refuse
+    probe.EntityDeclHandler = refuse
+    try:
+        probe.Parse(data, True)
+    except _DeclarationError:
+        return True
+    except expat.ExpatError:
+        return False
+    return False
+
+
 def word_tables(path: Path, name: str = "") -> list[DocumentTable]:
     """Таблицы документа Word; повреждённый или подозрительный файл — отказ."""
     from .paste import append
@@ -102,8 +130,7 @@ def word_tables(path: Path, name: str = "") -> list[DocumentTable]:
         raise IngestError(
             _("Документ «%(name)s» повреждён.") % {"name": label}, "broken"
         ) from error
-    # Объявления типа документа и сущностей в документе Word не бывает: такой файл — подделка.
-    if b"<!DOCTYPE" in data or b"<!ENTITY" in data:
+    if _declares(data):
         raise IngestError(_("Документ «%(name)s» повреждён.") % {"name": label}, "broken")
     try:
         root = ElementTree.fromstring(data)  # noqa: S314  # nosec B314 — сущности отклонены выше

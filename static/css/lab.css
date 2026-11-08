@@ -849,11 +849,8 @@
   display: none;
 }
 
+/* Название целиком: при крупном шрифте и увеличенных интервалах обрезка прятала бы его. */
 .study-source__title {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   color: var(--text-primary);

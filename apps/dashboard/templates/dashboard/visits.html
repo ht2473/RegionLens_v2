@@ -103,6 +103,7 @@
         </div>
         <div class="admin-table-wrapper">
           <table class="admin-table">
+            <caption class="visually-hidden">{% translate "По месяцам" %}</caption>
             <thead>
               <tr>
                 <th scope="col">{% translate "Месяц" %}</th>
@@ -155,6 +156,7 @@
       </div>
       <div class="admin-table-wrapper">
         <table class="admin-table">
+          <caption class="visually-hidden">{% translate "Страницы" %}</caption>
           <thead>
             <tr>
               <th scope="col">{% translate "Адрес" %}</th>
@@ -184,10 +186,11 @@
         </div>
         <div class="admin-table-wrapper">
           <table class="admin-table">
+            <caption class="visually-hidden">{% translate "Переходы с других сайтов" %}</caption>
             <tbody>
               {% for row in summary.referrers %}
                 <tr>
-                  <td>{{ row.label|truncatechars:60 }}</td>
+                  <th scope="row">{{ row.label|truncatechars:60 }}</th>
                   <td class="admin-table__numeric">{{ row.visitors|ru_number:0 }}</td>
                 </tr>
               {% empty %}
@@ -204,10 +207,11 @@
         </div>
         <div class="admin-table-wrapper">
           <table class="admin-table">
+            <caption class="visually-hidden">{% translate "Не найдено (404)" %}</caption>
             <tbody>
               {% for row in summary.not_found %}
                 <tr>
-                  <td><code>{{ row.label|truncatechars:60 }}</code></td>
+                  <th scope="row"><code>{{ row.label|truncatechars:60 }}</code></th>
                   <td class="admin-table__numeric">{{ row.hits|ru_number:0 }}</td>
                 </tr>
               {% empty %}

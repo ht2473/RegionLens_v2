@@ -164,6 +164,31 @@ class TestBruteForceProtection:
         assert attempt.username == member.email
         assert attempt.ip_address
 
+    def test_log_names_attempts_without_personal_data(
+        self, client: Client, member: User, settings: Any, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """
+        В журнале сервера неудачная попытка подписана отпечатком, без почты и адреса.
+
+        Журнал контейнера живёт дольше часа, который политика называет сроком хранения
+        неудачных попыток; почта и адрес остаются только в записи попыток.
+        """
+        settings.AXES_ENABLED = True
+        with caplog.at_level("INFO"):
+            for _ in range(2):
+                client.post(
+                    reverse("accounts:login"),
+                    {"username": member.email, "password": "неверный-пароль"},
+                )
+
+        # Записи о самих попытках: «New login failure by …», «Repeated login failure by …».
+        failures = [
+            record.getMessage() for record in caplog.records if "failure by" in record.getMessage()
+        ]
+        assert failures, "попытки не попали в журнал"
+        assert all(member.email not in text and "127.0.0.1" not in text for text in failures)
+        assert all("попытка " in text for text in failures)
+
 
 class TestCabinetSections:
     """Разделы кабинета, относящиеся к учётной записи."""

@@ -7,7 +7,9 @@
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import Any, cast
 
 from django.conf import settings
@@ -456,13 +458,38 @@ def describe_composition(composition: Composition) -> dict[str, Any]:
 # ---------------------------------------------------------------------------------------
 
 
+class ComputationLimitError(Exception):
+    """С этого адреса за последние минуты уже слишком много свежих расчётов."""
+
+
+# Разрешение на свежий расчёт в текущем запросе (``computation_budget``); вне запроса —
+# расчёты без предела: команды, проверки, прогрев кэша.
+_budget: ContextVar[Callable[[], bool] | None] = ContextVar("analytics_budget", default=None)
+
+
+@contextmanager
+def computation_budget(allowed: Callable[[], bool]) -> Iterator[None]:
+    """Учитывать свежие расчёты запроса: ``allowed`` списывает один и отвечает, можно ли."""
+    token = _budget.set(allowed)
+    try:
+        yield
+    finally:
+        _budget.reset(token)
+
+
 def cached_result(prefix: str, parameters: dict[str, Any], builder: Callable[[], Any]) -> Any:
-    """Вернуть результат расчёта из кэша или вычислить его."""
+    """
+    Вернуть результат расчёта из кэша или вычислить его. Свежий расчёт списывается с предела
+    запроса (``computation_budget``); исчерпан предел — ``ComputationLimitError``.
+    """
     key = build_cache_key(prefix, parameters)
     stored = cache.get(key)
     if stored is not None:
         return stored
 
+    allowed = _budget.get()
+    if allowed is not None and not allowed():
+        raise ComputationLimitError
     result = builder()
     cache.set(key, result, settings.ANALYTICS_CACHE_TTL)
     return result

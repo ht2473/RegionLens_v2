@@ -18,6 +18,13 @@ pytestmark = pytest.mark.unit
 # Наименьший допустимый контраст нижней ступени шкалы к подложке карты.
 BACKDROP_CONTRAST = 1.2
 
+# Тот же контраст в тёмной теме — и к подложке, и к заливке «нет данных»: у тёмного края
+# оттенок не различается, и ступень, подложку и пропуск отделяет только светлота.
+DARK_LOWEST_CONTRAST = 1.4
+
+# Наименьший контраст рамки поля ввода к поверхности (WCAG 1.4.11).
+CONTROL_CONTRAST = 3.0
+
 # Наименьший допустимый контраст границы субъекта к разделяемым ею заливкам.
 BORDER_CONTRAST = 1.3
 
@@ -223,6 +230,20 @@ class TestBackdrop:
         ratio = contrast(colour("--scale-seq-1", values), colour("--map-backdrop", values))
         assert ratio >= BACKDROP_CONTRAST, f"{theme}: {ratio:.2f}"
 
+    @pytest.mark.parametrize("neighbour", ("--map-backdrop", "--no-data-fill"))
+    def test_lowest_dark_step_stands_apart(
+        self, themes: tuple[dict[str, str], ...], neighbour: str
+    ) -> None:
+        """
+        В тёмной теме нижняя ступень не сливается с подложкой и с «нет данных».
+
+        На карте пропуск залит сплошь, без штриховки: регион с наименьшим значением
+        иначе читается как регион без данных.
+        """
+        values = variables(themes, "тёмная")
+        ratio = contrast(colour("--scale-seq-1", values), colour(neighbour, values))
+        assert ratio >= DARK_LOWEST_CONTRAST, f"{neighbour}: {ratio:.2f}"
+
     @pytest.mark.parametrize("theme", THEMES)
     def test_zero_of_the_diverging_scale_differs_from_the_backdrop(
         self, themes: tuple[dict[str, str], ...], theme: str
@@ -283,6 +304,26 @@ class TestBorder:
         values = variables(themes, theme)
         _line, alpha = translucent("--map-border", values)
         assert 0.2 <= alpha <= 0.7
+
+
+class TestControlBorder:
+    """Рамка поля ввода."""
+
+    @pytest.mark.parametrize("theme", THEMES)
+    @pytest.mark.parametrize(
+        "surface", ("--surface-base", "--surface-raised", "--surface-sunken", "--surface-overlay")
+    )
+    def test_field_is_visible_on_every_surface(
+        self, themes: tuple[dict[str, str], ...], theme: str, surface: str
+    ) -> None:
+        """
+        Рамка поля отличается от поверхности не меньше чем на 3 : 1 (WCAG 1.4.11).
+
+        Поле залито почти тем же цветом, что и страница: где оно, видно только по рамке.
+        """
+        values = variables(themes, theme)
+        ratio = contrast(colour("--border-control", values), colour(surface, values))
+        assert ratio >= CONTROL_CONTRAST, f"{theme}, {surface}: {ratio:.2f}"
 
 
 class TestSeriesPalette:

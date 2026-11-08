@@ -36,6 +36,30 @@
         <button type="submit" class="button button--primary button--block">{% translate "Войти" %}</button>
       </form>
 
+      {% if timer %}
+        {# Срок ввода кода: предупреждение за две минуты и продление (WCAG 2.2.1); ведёт ui/login-timer.js. #}
+        <div class="callout callout--warning" data-login-timer
+             data-seconds="{{ timer.seconds }}" data-warning="{{ timer.warning }}" hidden>
+          <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+          <div class="stack stack--tight">
+            <p data-login-timer-soon>
+              {% translate "Время на ввод кода скоро выйдет — потом придётся снова ввести пароль." %}
+            </p>
+            <p data-login-timer-over hidden>
+              {% translate "Время на ввод кода вышло." %}
+              <a href="{% url 'accounts:login' %}">{% translate "Войти заново" %}</a>
+            </p>
+            {% if timer.extensions %}
+              <form method="post" data-login-timer-extend>
+                {% csrf_token %}
+                <input type="hidden" name="action" value="extend">
+                <button type="submit" class="button button--secondary">{% translate "Продлить на 10 минут" %}</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+
       <div class="auth-card__links">
         <a href="{% url 'accounts:login' %}">{% translate "Войти заново" %}</a>
         <a href="{% url 'feedback:create' %}?topic=access">{% translate "Нет телефона и резервных кодов" %}</a>

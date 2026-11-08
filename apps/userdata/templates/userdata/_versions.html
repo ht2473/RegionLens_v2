@@ -93,7 +93,7 @@
         <div class="field">
           <label class="field__label" for="{{ version_paste_form.text.id_for_label }}">{{ version_paste_form.text.label }}</label>
           {{ version_paste_form.text }}
-          <span class="field__hint">{{ version_paste_form.text.help_text }}</span>
+          <span class="field__hint" id="{{ version_paste_form.text.auto_id }}_helptext">{{ version_paste_form.text.help_text }}</span>
         </div>
         {{ version_paste_form.markup }}
         <div class="form-sheet__actions">

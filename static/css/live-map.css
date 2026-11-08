@@ -18,7 +18,7 @@
   height: 3.5rem;
   padding: 0 var(--space-5);
   background-color: var(--surface-raised);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-pill);
   color: var(--text-muted);
   transition: border-color var(--duration-fast) var(--ease-out);
@@ -51,11 +51,11 @@
   color: var(--text-muted);
 }
 
-/* Карточка под указателем постоянной высоты: иначе всё под ней сдвигалось бы при движении
-   указателя. Название и сравнение — не длиннее двух строк. */
+/* Карточка под указателем не ниже постоянной высоты: иначе всё под ней сдвигалось бы при
+   движении указателя. Выше она становится, только если текст не помещается — при крупном
+   шрифте или увеличенных интервалах; обрезать его нельзя (WCAG 1.4.12). */
 .live-map__card {
-  height: 15.5rem;
-  overflow: hidden;
+  min-height: 15.5rem;
   padding: var(--space-4) var(--space-5);
   background-color: var(--surface-raised);
   border: 1px solid var(--border-subtle);
@@ -64,19 +64,6 @@
 
 .live-map__card p {
   margin: 0;
-}
-
-.live-map__card-name,
-.live-map__card-versus {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-}
-
-.live-map__card-versus[hidden] {
-  display: none;
 }
 
 .live-map__card-name {

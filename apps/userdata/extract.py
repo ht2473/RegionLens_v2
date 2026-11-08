@@ -586,10 +586,11 @@ class _Reader:
             for index, _header, selected in self.slices:
                 if selected and index < len(names):
                     marks = ", ".join("?" * len(selected))
-                    conditions.append(f'trim(CAST("{names[index]}" AS VARCHAR)) IN ({marks})')
+                    column = tables.identifier(names[index])
+                    conditions.append(f"trim(CAST({column} AS VARCHAR)) IN ({marks})")
                     arguments.extend(sorted(selected))
             where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
-            quoted = ", ".join(f'"{name}"' for name in names)
+            quoted = ", ".join(tables.identifier(name) for name in names)
             cursor = connection.execute(f"SELECT {quoted} FROM t {where}", arguments)  # noqa: S608 — имена столбцов из DESCRIBE
             while batch := cursor.fetchmany(BATCH_ROWS):
                 yield from batch

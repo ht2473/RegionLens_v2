@@ -133,6 +133,15 @@
   margin: 0;
 }
 
+/* На самом узком экране при увеличенных интервалах (WCAG 1.4.12) два крупных числа рядом
+   не помещаются: они встают одно под другим. */
+@media (max-width: 22.5rem) {
+  .surface-head__figures {
+    grid-auto-flow: row;
+    justify-content: start;
+  }
+}
+
 .surface-head__figure {
   display: grid;
   grid-row: span 2;
@@ -271,6 +280,14 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0 var(--space-6);
   margin: 0;
+}
+
+/* На самом узком экране при увеличенных интервалах (WCAG 1.4.12) крупные числа в две
+   колонки не помещаются. */
+@media (max-width: 22.5rem) {
+  .figure-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .figure-list > div {

@@ -79,6 +79,20 @@ class TestKinds:
             ingest.inspect(evil)
         assert caught.value.code == "broken"
 
+    def test_docx_declarations_are_refused_in_any_encoding(self, tmp_path: Path) -> None:
+        """
+        Объявление сущностей отклоняется и в UTF-16: байтов «<!ENTITY» там нет, разбирает же
+        такой текст парсер так же, как UTF-8.
+        """
+        text = '<?xml version="1.0" encoding="UTF-16"?><!DOCTYPE w [<!ENTITY x "x">]><w/>'
+        evil = _zip(
+            tmp_path / "evil16.docx",
+            {"word/document.xml": text.encode("utf-16"), "[Content_Types].xml": b""},
+        )
+        with pytest.raises(IngestError) as caught:
+            ingest.inspect(evil)
+        assert caught.value.code == "broken"
+
 
 class TestEncoding:
     """Кодировка: метка, строгий UTF-8, Windows-1251, UTF-16 без метки."""
