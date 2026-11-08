@@ -143,6 +143,7 @@ MIDDLEWARE = [
     "apps.core.middleware.LanguageMemoryMiddleware",
     # После LocaleMiddleware: страница 400 — на языке адреса.
     "apps.core.middleware.NullCharacterMiddleware",
+    "apps.core.middleware.HtmxVaryMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",

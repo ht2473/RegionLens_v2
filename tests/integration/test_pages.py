@@ -697,3 +697,9 @@ class TestSimilarRegions:
         )
         content = response.content.decode("utf-8")
         assert 'id="territory-similar"' not in content
+
+
+def test_response_varies_on_htmx_request(client: Client) -> None:
+    """Фрагмент и полная страница по одному адресу — разные ответы и для кэша браузера."""
+    response = client.get(reverse("content:glossary"))
+    assert "HX-Request" in response["Vary"]

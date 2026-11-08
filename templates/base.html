@@ -47,6 +47,8 @@
   {# Тема — до отрисовки, без вспышки светлого фона. #}
   <script src="{% static 'js/theme-init.js' %}"></script>
 
+  {# «Назад» и «Вперёд» берут страницу с сервера: копия из истории htmx хранит то, что дорисовали сценарии. #}
+  <meta name="htmx-config" content='{"historyCacheSize":0,"refreshOnHistoryMiss":true}'>
   <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
   <script type="module" src="{% static 'js/app.js' %}"></script>
   {% block extra_js %}{% endblock %}

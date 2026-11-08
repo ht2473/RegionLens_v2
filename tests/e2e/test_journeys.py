@@ -708,3 +708,45 @@ class TestScreenshots:
         page.screenshot(path=str(artifacts_dir / f"{name}.png"), full_page=False)
 
         assert (artifacts_dir / f"{name}.png").exists()
+
+
+class TestBrowserHistory:
+    """Кнопки браузера «Назад» и «Вперёд» на страницах, которые обновляются без перезагрузки."""
+
+    def test_back_and_forward_do_not_double_controls(
+        self, page: Page, site: Any, warehouse_committed: Any
+    ) -> None:
+        """Поле показателя и кнопки сохранения графика после возврата не удваиваются."""
+        page.goto(f"{site.url}/ru/rankings/")
+        page.wait_for_load_state("networkidle")
+        page.get_by_role("link", name="Распределение", exact=True).first.click()
+        expect(page).to_have_url(re.compile("/distribution/"))
+        save = page.locator("button", has_text=re.compile(r"^\s*PNG\s*$"))
+        expect(save).to_have_count(1, timeout=CHART_TIMEOUT)
+
+        page.go_back()
+        expect(page).to_have_url(re.compile("/rankings/"))
+        page.wait_for_load_state("networkidle")
+        expect(page.locator(".combobox__trigger")).to_have_count(1)
+
+        page.go_forward()
+        expect(page).to_have_url(re.compile("/distribution/"))
+        page.wait_for_load_state("networkidle")
+        expect(page.locator(".combobox__trigger")).to_have_count(1)
+        expect(save).to_have_count(1, timeout=CHART_TIMEOUT)
+
+    def test_back_to_address_opened_as_fragment_shows_whole_page(
+        self, page: Page, site: Any, warehouse_committed: Any
+    ) -> None:
+        """Возврат с другой страницы на адрес, открытый без перезагрузки, — вся страница."""
+        page.goto(f"{site.url}/ru/rankings/")
+        page.wait_for_load_state("networkidle")
+        page.get_by_role("link", name="Распределение", exact=True).first.click()
+        expect(page).to_have_url(re.compile("/distribution/"))
+        page.wait_for_load_state("networkidle")
+
+        page.goto(f"{site.url}/ru/glossary/")
+        page.go_back()
+        expect(page).to_have_url(re.compile("/distribution/"))
+        page.wait_for_load_state("networkidle")
+        expect(page.locator(".app-header")).to_be_visible()
