@@ -822,6 +822,14 @@ button.main-nav__link {
     padding-bottom: var(--rail-dock-height);
   }
 
+  /* Полоса вызова закреплена внизу: элемент в фокусе прокручивается выше неё, а не под неё
+     (WCAG 2.4.11), так же как под шапкой сверху (base.css). */
+  html[data-rail="sheet"] {
+    scroll-padding-bottom: calc(
+      var(--rail-dock-height) + env(safe-area-inset-bottom, 0px) + var(--space-4)
+    );
+  }
+
   html[data-rail="sheet"] .filter-rail {
     position: fixed;
     inset: auto 0 0 0;

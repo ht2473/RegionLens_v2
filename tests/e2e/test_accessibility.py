@@ -291,20 +291,32 @@ REFLOW_SCRIPT = r"""() => {
     return problems;
 }"""
 
-# Элемент в фокусе, целиком ушедший под прилипшие шапку и строку пути (WCAG 2.4.11).
+# Элемент в фокусе, целиком ушедший под прилипшие шапку и строку пути или под закреплённую
+# внизу полосу вызова панели на телефоне (WCAG 2.4.11).
 OBSCURED_SCRIPT = r"""() => {
     const el = document.activeElement;
-    if (!el || el === document.body || el.closest('.app-header, .breadcrumbs-bar')) return null;
+    if (!el || el === document.body || el.closest('.app-header, .breadcrumbs-bar, .rail-dock')) {
+        return null;
+    }
     if (el.classList.contains('skip-link')) return null;
     const box = el.getBoundingClientRect();
     if (!box.height) return null;
-    const cover = [...document.querySelectorAll('.app-header, .breadcrumbs-bar')]
-        .filter(bar => getComputedStyle(bar).position === 'sticky')
-        .reduce((bottom, bar) => Math.max(bottom, bar.getBoundingClientRect().bottom), 0);
-    return box.bottom <= cover + 1
-        ? el.tagName.toLowerCase() + ' «'
-            + (el.textContent || el.name || '').trim().slice(0, 30) + '»'
-        : null;
+    const shown = bar => {
+        const style = getComputedStyle(bar);
+        return ['sticky', 'fixed'].includes(style.position) && style.display !== 'none'
+            && style.visibility !== 'hidden';
+    };
+    const top = [...document.querySelectorAll('.app-header, .breadcrumbs-bar')]
+        .filter(shown)
+        .reduce((edge, bar) => Math.max(edge, bar.getBoundingClientRect().bottom), 0);
+    const bottom = [...document.querySelectorAll('.rail-dock')]
+        .filter(shown)
+        .reduce((edge, bar) => Math.min(edge, bar.getBoundingClientRect().top), innerHeight);
+    const name = el.tagName.toLowerCase() + ' «'
+        + (el.textContent || el.name || '').trim().slice(0, 30) + '»';
+    if (box.bottom <= top + 1) return 'под шапкой: ' + name;
+    if (box.top >= bottom - 1) return 'под полосой внизу: ' + name;
+    return null;
 }"""
 
 
@@ -381,7 +393,7 @@ class TestReflow:
 
 
 class TestFocusNotObscured:
-    """Фокус не прячется под прилипшей шапкой (WCAG 2.4.11)."""
+    """Фокус не прячется под прилипшими шапкой и нижней полосой (WCAG 2.4.11)."""
 
     @pytest.mark.parametrize("width", [1440, 390])
     def test_focus_stays_below_the_header(self, page: Page, site: Any, width: int) -> None:
@@ -405,6 +417,29 @@ class TestFocusNotObscured:
                     failures.append(f"{name}: {problem}")
 
         assert not failures, "фокус под шапкой:\n  " + "\n  ".join(failures)
+
+    def test_focus_stays_above_the_rail_dock(
+        self, page: Page, site: Any, warehouse_committed: Any
+    ) -> None:
+        """
+        На телефоне обход вперёд не уводит элемент в фокусе под полосу вызова панели.
+
+        Вперёд — худший случай для нижней полосы: элемент ниже видимой части прокручивается
+        к низу окна, где закреплена полоса.
+        """
+        page.set_viewport_size({"width": 390, "height": 700})
+        failures: list[str] = []
+        for name in ("rankings:index", "surface:table", "analytics:inequality"):
+            page.goto(f"{site.url}{reverse(name)}")
+            page.wait_for_load_state("networkidle")
+            page.keyboard.press("Tab")
+            for _ in range(60):
+                page.keyboard.press("Tab")
+                problem = page.evaluate(OBSCURED_SCRIPT)
+                if problem:
+                    failures.append(f"{name}: {problem}")
+
+        assert not failures, "фокус под полосой:\n  " + "\n  ".join(failures)
 
 
 class TestForcedColors:
