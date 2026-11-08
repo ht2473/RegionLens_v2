@@ -28,6 +28,9 @@ function baseOptions() {
       padding: [8, 12],
       // Подсказка удерживается внутри поля графика.
       confine: true,
+      // На подсказку можно навести указатель — она не исчезает (WCAG 1.4.13); закрывается
+      // клавишей Esc (elements/chart.js).
+      enterable: true,
       // Длинные названия рядов переносятся.
       extraCssText:
         "max-width: 320px; white-space: normal;" +

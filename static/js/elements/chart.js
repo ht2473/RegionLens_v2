@@ -422,6 +422,13 @@ window.addEventListener("beforeprint", () => {
 // Перерисовка после смены темы — с задержкой до пересчёта стилей.
 onThemeChange(() => window.setTimeout(() => mounted.forEach((chart) => chart.redraw()), 0));
 
+// Подсказка поверх графика закрывается клавишей Esc, не сдвигая указатель (WCAG 1.4.13).
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    mounted.forEach((chart) => chart.instance?.dispatchAction({ type: "hideTip" }));
+  }
+});
+
 let resizeTimer = null;
 window.addEventListener("resize", () => {
   window.clearTimeout(resizeTimer);
