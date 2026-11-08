@@ -5,8 +5,12 @@
 и свои таблицы пользователя на одной карте.
 
 [![Проверки](https://github.com/ht2473/RegionLens_v2/actions/workflows/ci.yml/badge.svg)](https://github.com/ht2473/RegionLens_v2/actions/workflows/ci.yml)
+[![Выпуск](https://img.shields.io/github/v/release/ht2473/RegionLens_v2?label=выпуск)](https://github.com/ht2473/RegionLens_v2/releases)
 ![Python 3.14](https://img.shields.io/badge/Python-3.14-3776ab)
 ![Django 6.1](https://img.shields.io/badge/Django-6.1-0c4b33)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![mypy](https://img.shields.io/badge/mypy-checked-2a6db2)](https://mypy-lang.org/)
+[![WCAG 2.2 AA](https://img.shields.io/badge/WCAG_2.2-AA-1f6f4a)](#проверка)
 [![Лицензия MIT](https://img.shields.io/badge/лицензия-MIT-6b7280)](LICENSE)
 
 ![Главная: карта показателя по регионам](docs/images/home.png)
@@ -192,7 +196,8 @@ Commons BY 4.0.
 страницы, кабинет, панель управления и шаги «Своих данных»: разметка, цели нажатия
 не меньше 24 пикселей, фокус не уходит под прилипшую шапку, страница помещается
 в 320 пикселей при увеличенных интервалах текста, режим высокой контрастности Windows.
-Контраст цветов в обеих темах считает модульная проверка.
+Контраст цветов в обеих темах считает модульная проверка. Поиск региона, построение графика,
+загрузка таблицы и форма с ошибкой пройдены вручную с программой чтения NVDA 2026.3.
 
 **Безопасность.** При каждом изменении — статический анализ (ruff, bandit), известные
 уязвимости зависимостей (pip-audit, Dependabot) и проверка настроек рабочего стенда
