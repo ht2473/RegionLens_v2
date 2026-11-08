@@ -13,6 +13,7 @@ from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.crypto import salted_hmac
 from django.utils.translation import gettext
 
 from apps.core.mail import deliver
@@ -33,6 +34,26 @@ EMAIL_CHANGE_SALT = "apps.accounts.email-change"
 # ---------------------------------------------------------------------------------------
 # Сеансы
 # ---------------------------------------------------------------------------------------
+
+
+def attempt_label(
+    username: str | None,
+    ip_address: str | None,
+    user_agent: str | None,  # noqa: ARG001 — так вызывает django-axes
+    path_info: Any,
+    request: HttpRequest | None,  # noqa: ARG001
+) -> str:
+    """
+    Подпись неудачной попытки входа в журнале django-axes (``AXES_CLIENT_STR_CALLABLE``):
+    отпечаток пары «почта и адрес» вместо них самих. Повторы с одной пары видны одним
+    отпечатком, а почта и адрес остаются только в записи попыток, которая удаляется через
+    час, как обещает политика обработки персональных данных.
+    """
+    pair = f"{username or ''}|{ip_address or ''}"
+    digest = salted_hmac("apps.accounts.attempt-label", pair, algorithm="sha256").hexdigest()[:12]
+    if isinstance(path_info, (tuple, list)):
+        path_info = path_info[0] if path_info else ""
+    return f"попытка {digest}, {path_info or ''}"
 
 
 def end_other_sessions(request: HttpRequest | None, user: User) -> None:
