@@ -292,8 +292,16 @@ REFLOW_SCRIPT = r"""() => {
 }"""
 
 # Элемент в фокусе, целиком ушедший под прилипшие шапку и строку пути или под закреплённую
-# внизу полосу вызова панели на телефоне (WCAG 2.4.11).
-OBSCURED_SCRIPT = r"""() => {
+# внизу полосу вызова панели на телефоне (WCAG 2.4.11). Сначала ждёт конца прокрутки: страница
+# едет плавно, и элемент за краем окна в середине движения ещё ни о чём не говорит.
+OBSCURED_SCRIPT = r"""async () => {
+    const deadline = performance.now() + 3000;
+    let last = scrollY;
+    for (let still = 0; still < 5 && performance.now() < deadline;) {
+        await new Promise(requestAnimationFrame);
+        still = scrollY === last ? still + 1 : 0;
+        last = scrollY;
+    }
     const el = document.activeElement;
     if (!el || el === document.body || el.closest('.app-header, .breadcrumbs-bar, .rail-dock')) {
         return null;
