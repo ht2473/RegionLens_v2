@@ -10,7 +10,7 @@ from collections import defaultdict
 from typing import Any
 
 from django.conf import settings
-from django.utils import timezone, translation
+from django.utils import translation
 
 from apps.catalog.constants import ValueFlag
 from apps.catalog.indicator import describe_series
@@ -45,6 +45,7 @@ from .base import (
     ReportDocument,
     Section,
     Table,
+    issue_day,
 )
 
 
@@ -537,7 +538,7 @@ def _meta_block(
             continue
         label = "Источник данных" if not dataset and index == 0 else "Также"
         rows.append((label, f"{module.publisher_ru}, «{module.title_ru}»; {module.licence_ru}"))
-    rows.append(("Отчёт сформирован", timezone.localtime().strftime("%d.%m.%Y %H:%M")))
+    rows.append(("Отчёт сформирован", issue_day().strftime("%d.%m.%Y")))
     return rows
 
 

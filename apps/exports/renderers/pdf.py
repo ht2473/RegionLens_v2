@@ -6,13 +6,16 @@
 
 from __future__ import annotations
 
+import calendar
 import io
+from typing import Any
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
+from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import (
     PageBreak,
     Paragraph,
@@ -24,7 +27,7 @@ from reportlab.platypus import (
     Table as PdfTable,
 )
 
-from ..reports.base import Column, ReportDocument, Table, format_value
+from ..reports.base import Column, ReportDocument, Table, format_value, issue_moment
 from .fonts import register_report_fonts
 from .palette import document_colours
 
@@ -84,8 +87,28 @@ def render(document: ReportDocument) -> bytes:
         story,
         onFirstPage=lambda canvas, doc: _draw_footer(canvas, doc, document.footer, regular),
         onLaterPages=lambda canvas, doc: _draw_footer(canvas, doc, document.footer, regular),
+        canvasmaker=_DatedCanvas,
     )
     return buffer.getvalue()
+
+
+class _DatedCanvas(Canvas):
+    """
+    Холст, у документа которого дата создания — день выдачи, а не текущее время.
+
+    В неизменном режиме reportlab не берёт текущее время, и тот же отчёт выходит теми же
+    байтами. Дата в свойствах документа — день выдачи вместо 1 января 2000 года, которое
+    этот режим пишет сам.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs["invariant"] = 1
+        super().__init__(*args, **kwargs)
+        moment = issue_moment()
+        stamp = self._doc._timeStamp
+        stamp.t = calendar.timegm(moment.timetuple())
+        stamp.lt = moment.timetuple()
+        stamp.YMDhms = tuple(stamp.lt)[:6]
 
 
 # ---------------------------------------------------------------------------------------

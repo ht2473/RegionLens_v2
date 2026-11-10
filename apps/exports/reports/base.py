@@ -3,7 +3,26 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date, datetime, time
 from typing import Any
+
+from django.utils import timezone
+
+
+def issue_day() -> date:
+    """
+    День выдачи отчёта — единственная отметка времени в файле выгрузки.
+
+    Без часов и минут тот же отчёт по тем же данным в тот же день получается теми же
+    байтами: его хэш и подпись совпадают, в реестре выданных он один.
+    """
+    return timezone.localdate()
+
+
+def issue_moment() -> datetime:
+    """Полночь дня выдачи — для отметок времени внутри файлов XLSX и PDF."""
+    return datetime.combine(issue_day(), time.min)
+
 
 # Виды столбцов: от них зависят выравнивание, формат числа и ширина.
 COLUMN_TEXT = "text"

@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import io
 import re
+import time
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -26,6 +28,7 @@ from apps.exports.reports.base import (
     Section,
     Table,
     format_value,
+    issue_day,
 )
 
 pytestmark = pytest.mark.unit
@@ -145,6 +148,39 @@ class TestRenderers:
         """Неизвестный формат не молчит, а сообщает об ошибке."""
         with pytest.raises(ValueError, match="формат"):
             render(build_document(), "rtf")
+
+
+class TestRepeatability:
+    """Тот же отчёт в тот же день — те же байты: на этом держится подпись выгрузки."""
+
+    @pytest.mark.parametrize("export_format", [ExportFormat.XLSX, ExportFormat.PDF])
+    def test_same_report_gives_same_bytes(
+        self, export_format: str, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Повторная сборка через секунды не отличается ни одним байтом."""
+        first = render(build_document(), export_format)
+        clock = time.time() + 5
+        monkeypatch.setattr(time, "time", lambda: clock)
+
+        assert render(build_document(), export_format) == first
+
+    def test_pdf_is_dated_by_the_issue_day(self) -> None:
+        """Дата в свойствах PDF — день выдачи, а не 2000 год неизменного режима reportlab."""
+        payload = render(build_document(), ExportFormat.PDF)
+
+        assert f"/CreationDate (D:{issue_day():%Y%m%d}000000".encode() in payload
+
+    def test_xlsx_is_dated_by_the_issue_day(self) -> None:
+        """Время создания книги и частей архива — полночь дня выдачи."""
+        payload = render(build_document(), ExportFormat.XLSX)
+
+        with zipfile.ZipFile(io.BytesIO(payload)) as bundle:
+            stamps = {info.date_time for info in bundle.infolist()}
+            core = bundle.read("docProps/core.xml").decode()
+        day = issue_day()
+        assert stamps == {(day.year, day.month, day.day, 0, 0, 0)}
+        assert f"{day:%Y-%m-%d}T00:00:00Z" in core
+        assert load_workbook(io.BytesIO(payload)).sheetnames[0] == "Отчёт"
 
 
 class TestColours:

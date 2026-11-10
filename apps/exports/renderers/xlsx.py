@@ -4,13 +4,25 @@ from __future__ import annotations
 
 import io
 import re
+import zipfile
+from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
+from openpyxl.writer.excel import ExcelWriter
 
-from ..reports.base import COLUMN_INTEGER, COLUMN_NUMBER, COLUMN_PERCENT, ReportDocument, Table
+from ..reports.base import (
+    COLUMN_INTEGER,
+    COLUMN_NUMBER,
+    COLUMN_PERCENT,
+    ReportDocument,
+    Table,
+    issue_moment,
+)
 from .palette import document_colours
 from .safety import safe_cell
 
@@ -42,9 +54,39 @@ def render(document: ReportDocument) -> bytes:
         used_names.add(name)
         _write_table_sheet(workbook.create_sheet(name), table)
 
+    # Время создания книги и частей архива — день выдачи: тот же отчёт — те же байты.
+    moment = issue_moment()
+    workbook.properties.created = moment
+    workbook.properties.modified = moment
     buffer = io.BytesIO()
-    workbook.save(buffer)
+    ExcelWriter(workbook, _DatedZip(buffer, moment)).save()
     return buffer.getvalue()
+
+
+class _DatedZip(zipfile.ZipFile):
+    """Архив книги, у всех частей которого одна отметка времени, а не время записи."""
+
+    def __init__(self, file: io.BytesIO, moment: datetime) -> None:
+        super().__init__(file, "w", zipfile.ZIP_DEFLATED, allowZip64=True)
+        self._date_time = moment.timetuple()[:6]
+
+    def writestr(  # type: ignore[override]
+        self, zinfo_or_arcname: str | zipfile.ZipInfo, data: str | bytes, *args: Any, **kwargs: Any
+    ) -> None:
+        """Записать часть книги с отметкой времени дня выдачи."""
+        if isinstance(zinfo_or_arcname, str):
+            info = zipfile.ZipInfo(zinfo_or_arcname, date_time=self._date_time)
+            info.compress_type = self.compression
+            info.external_attr = 0o600 << 16
+            zinfo_or_arcname = info
+        super().writestr(zinfo_or_arcname, data, *args, **kwargs)
+
+    def write(  # type: ignore[override]
+        self, filename: str, arcname: str | None = None, *_args: Any, **_kwargs: Any
+    ) -> None:
+        """Записать лист из временного файла: время — день выдачи, а не время файла."""
+        path = Path(filename)
+        self.writestr(arcname or path.name, path.read_bytes())
 
 
 def _write_summary_sheet(workbook: Workbook, document: ReportDocument) -> None:
