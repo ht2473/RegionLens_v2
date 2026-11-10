@@ -6,6 +6,7 @@ from typing import Any
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.db import connection
 
 from apps.userdata.models import Dataset
 
@@ -16,6 +17,10 @@ class Command(BaseCommand):
     help = "Каталоги таблиц без учётной записи: они хранятся сутки и в копию не входят"
 
     def handle(self, *args: Any, **options: Any) -> None:  # noqa: ARG002
+        # Копия снимается и с базы без схемы — после выкладки, оборванной до миграций;
+        # гостевых таблиц в ней нет.
+        if Dataset._meta.db_table not in connection.introspection.table_names():
+            return
         root = settings.USERDATA_DIR.relative_to(settings.BASE_DIR).as_posix()
         for public_id in Dataset.objects.filter(owner__isnull=True).values_list(
             "public_id", flat=True
