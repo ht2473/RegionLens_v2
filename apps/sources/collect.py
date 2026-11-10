@@ -21,6 +21,7 @@ from types import ModuleType
 from typing import Any
 
 import pandas as pd
+from django.apps import apps as django_apps
 from django.conf import settings
 from django.db import connection
 from django.utils import timezone
@@ -327,6 +328,19 @@ def rebuild_warehouse(report: Callable[[str], None]) -> bool:
     from apps.warehouse.etl.pipeline import EtlError
     from apps.warehouse.models import EtlRun
 
+    if django_apps.is_installed("apps.attest"):
+        from apps.attest import archive as sealed
+
+        # Опись не сходится с подписанной вершиной — архив подменён, склад по нему не строится.
+        tampered = sealed.problems()
+        if tampered:
+            for problem in tampered:
+                report(f"Архив: {problem}")
+            report("Склад не пересобран: опись архива не сходится с подписью; действует прежний")
+            return False
+        for note in sealed.unsealed():
+            report(f"Архив: {note}")
+
     run = EtlRun.objects.create(
         mode=EtlRun.Mode.FULL,
         status=EtlRun.Status.QUEUED,
@@ -353,6 +367,9 @@ def parse_release(
     say = report or logger.info
     path = archive.archive_root() / release.archive_path
     try:
+        # Разбирается тот файл, который был получен: подменённый в архиве не разбирается.
+        if archive.sha256_of(path.read_bytes()) != release.sha256:
+            raise OSError(f"файл архива изменён после получения: {release.archive_path}")
         with tempfile.TemporaryDirectory(prefix="regionlens-release-") as directory:
             result = module.parse(unpack(path, Path(directory)))
     except (SheetFormatError, UnpackError, OSError, NotImplementedError) as error:

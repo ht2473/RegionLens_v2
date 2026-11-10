@@ -17,6 +17,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 
+from django.apps import apps as django_apps
 from django.conf import settings
 from django.utils import timezone
 
@@ -127,11 +128,25 @@ def store(
         path=target.relative_to(archive_root()).as_posix(),
     )
     _append(record)
+    if django_apps.is_installed("apps.attest"):
+        from apps.attest import archive as sealed
+
+        sealed.reseal()
     return record, True
 
 
 def verify() -> list[str]:
-    """Сверить архив с описью: пропавшие файлы и несовпадение хэша."""
+    """Сверить архив с описью, а опись — с подписанной вершиной, если подпись подключена."""
+    problems = verify_files()
+    if django_apps.is_installed("apps.attest"):
+        from apps.attest import archive as sealed
+
+        problems += sealed.problems() + sealed.unsealed()
+    return problems
+
+
+def verify_files() -> list[str]:
+    """Сверить файлы архива с описью: пропавшие файлы и несовпадение хэша."""
     problems = []
     for item in entries():
         path = item.absolute_path
