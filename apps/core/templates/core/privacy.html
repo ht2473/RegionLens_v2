@@ -101,7 +101,12 @@
                   {% endblocktranslate %}
                 </td>
                 <td>{% translate "согласие (п. 1 ч. 1 ст. 6 152-ФЗ)" %}</td>
-                <td>{% translate "до удаления учётной записи или отзыва согласия" %}</td>
+                <td>
+                  {% blocktranslate trimmed with days=unconfirmed_days %}
+                    до удаления учётной записи или отзыва согласия; запись, адрес которой
+                    не подтверждён по ссылке из письма, — {{ days }} суток
+                  {% endblocktranslate %}
+                </td>
               </tr>
               <tr>
                 <th scope="row">{% translate "Свои данные: загрузка и показ своих таблиц" %}</th>
@@ -184,9 +189,11 @@
         <h2 class="about__title" id="privacy-cookies"><span class="terms__number">5.</span> Cookie</h2>
         <div class="prose">
           <p>
-            {% blocktranslate trimmed with days=session_days %}
+            {% blocktranslate trimmed with days=session_days device_days=device_days %}
               Сайт ставит только необходимые для работы cookie: сеанс после входа
-              ({{ days }} суток), защита форм, язык страницы, мой регион без входа. Тема
+              ({{ days }} суток), защита форм, язык страницы, мой регион без входа, отметка
+              браузера, из которого вы входили ({{ device_days }} суток; с ней чужие попытки
+              подобрать пароль не закрывают вход вам). Тема
               оформления и недавние переходы быстрого поиска хранятся только в браузере.
               Счётчиков посещений, рекламы и cookie других сайтов нет.
             {% endblocktranslate %}
