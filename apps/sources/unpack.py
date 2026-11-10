@@ -105,7 +105,10 @@ def _unrar(archive: Path, target: Path) -> None:
 
 def _safe_relative(name: str) -> Path | None:
     """Относительный путь внутри каталога; имена с «..» и абсолютные отбрасываются."""
-    parts = [part for part in PurePosixPath(name.replace("\\", "/")).parts if part not in {"", "/"}]
+    normalized = name.replace("\\", "/")
+    if normalized.startswith("/"):
+        return None
+    parts = [part for part in PurePosixPath(normalized).parts if part not in {"", "/"}]
     if not parts or any(part == ".." for part in parts) or ":" in parts[0]:
         return None
     return Path(*parts)
