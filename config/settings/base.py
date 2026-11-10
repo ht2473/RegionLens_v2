@@ -147,6 +147,9 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # После удачного входа браузер получает отметку «знакомого» (защита от блокировки
+    # чужой записи неверными паролями).
+    "apps.accounts.middleware.DeviceCookieMiddleware",
     # После аутентификации: слой рядов узнаёт, чьи наборы доступны в запросе.
     "apps.userdata.scope.UserDataScopeMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -243,7 +246,12 @@ PASSWORD_RESET_TIMEOUT = 3 * 24 * 3600
 AXES_ENABLED = env.bool("AXES_ENABLED", default=True)
 AXES_FAILURE_LIMIT = env.int("AXES_FAILURE_LIMIT", default=8)
 AXES_COOLOFF_TIME = 1  # час до автоматического снятия блокировки
-AXES_LOCKOUT_PARAMETERS = [["ip_address", "username"]]
+# Признаки блокировки задаёт LOGIN_LOCKOUT_PARAMETERS; функция смягчает блокировку по одной
+# почте для браузера, из которого владелец уже входил (apps/accounts/security.py).
+LOGIN_LOCKOUT_PARAMETERS: list[str | list[str]] = [["ip_address", "username"]]
+AXES_LOCKOUT_PARAMETERS = "apps.accounts.security.lockout_parameters"
+# Сколько живёт отметка браузера, из которого владелец входил: полгода.
+DEVICE_COOKIE_AGE = 180 * 24 * 3600
 
 # Поле формы входа Django называется ``username``; иначе axes не видит учётную запись.
 AXES_USERNAME_FORM_FIELD = "username"
