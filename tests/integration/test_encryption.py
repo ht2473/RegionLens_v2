@@ -137,7 +137,10 @@ class TestBackupCommands:
         assert (tmp_path / "opened" / "db-5.dump").read_bytes() == b"PGDMP" * 100
 
         sealed = directory / "db-5.dump.enc"
-        sealed.write_bytes(sealed.read_bytes()[:-1] + b"\x00")
+        # Последний байт меняется всегда: запись нуля не меняла файл, если байт и был нулём,
+        # и проверка раз в 256 прогонов проходила.
+        content = sealed.read_bytes()
+        sealed.write_bytes(content[:-1] + bytes([content[-1] ^ 0x01]))
         with pytest.raises(CommandError, match="не прошла проверку"):
             call_command("backup_verify", str(manifest), stdout=StringIO())
 
