@@ -256,6 +256,44 @@ def _grid(table: ElementTree.Element) -> list[list[str]]:
 CAPTION_BAND = 40
 
 
+def _check_page_objects(path: Path) -> None:
+    """
+    Страница с десятками тысяч линий и знаков разбирается pdfplumber минутами и съедает
+    гигабайты, а предел времени проверяется только между страницами. Поэтому объекты страниц
+    считаются заранее, библиотекой на C, со спуском во вложенные формы.
+
+    Замер 10.11.2026: у сборников ведомств — до 2 646 объектов на странице, у страницы
+    из 120 000 прямоугольников разбор шёл 13 с и занимал 1,5 ГБ. Повреждённый файл
+    и пароль здесь пропускаются: их назовёт pdfplumber. pypdfium2 ставится вместе с ним.
+    """
+    import pypdfium2 as pdfium
+
+    limit = settings.USERDATA_PDF_PAGE_OBJECTS
+    try:
+        document = pdfium.PdfDocument(str(path))
+    except pdfium.PdfiumError:
+        return
+    try:
+        for index in range(len(document)):
+            page = document[index]
+            try:
+                objects = itertools.islice(page.get_objects(max_depth=8), limit + 1)
+                if sum(1 for _object in objects) > limit:
+                    raise IngestError(
+                        _(
+                            "На странице %(page)s PDF слишком много линий и знаков, чтобы "
+                            "разобрать её как таблицу. Сохраните таблицу в Excel или CSV "
+                            "и загрузите этот файл."
+                        )
+                        % {"page": index + 1},
+                        "pdf_objects",
+                    )
+            finally:
+                page.close()
+    finally:
+        document.close()
+
+
 def pdf_tables(path: Path, name: str = "") -> list[DocumentTable]:
     """Таблицы PDF с текстовым слоем; скан, пароль, повреждение и пределы — отказ."""
     import pdfplumber
@@ -263,6 +301,7 @@ def pdf_tables(path: Path, name: str = "") -> list[DocumentTable]:
     from .paste import append
 
     label = name or "PDF"
+    _check_page_objects(path)
     try:
         document = pdfplumber.open(path)
     except Exception as error:  # библиотека сообщает о пароле и повреждении своими исключениями

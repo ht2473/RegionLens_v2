@@ -158,6 +158,7 @@ module = [
     # дают больше ложных замечаний, чем находок.
     "pandas.*",
     "pyarrow.*",
+    "pypdfium2.*",
     "parler.*",
     "reportlab.*",
     "rest_framework.*",

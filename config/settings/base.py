@@ -475,6 +475,9 @@ USERDATA_ZIP_MAX_FILES = env.int("USERDATA_ZIP_MAX_FILES", default=50)
 # сервер бережёт в первую очередь предел времени.
 USERDATA_PDF_MAX_PAGES = env.int("USERDATA_PDF_MAX_PAGES", default=100)
 USERDATA_PDF_SECONDS = env.int("USERDATA_PDF_SECONDS", default=30)
+# Объектов (линий, знаков, рисунков) на странице PDF: у сборников ведомств — до 2 646,
+# страница из 120 000 прямоугольников разбиралась 13 с и занимала 1,5 ГБ (замер 10.11.2026).
+USERDATA_PDF_PAGE_OBJECTS = env.int("USERDATA_PDF_PAGE_OBJECTS", default=10_000)
 # Вставка из буфера: текст таблицы, разметка таблицы из Word и Excel — больше текста.
 USERDATA_PASTE_MAX_BYTES = env.int("USERDATA_PASTE_MAX_BYTES", default=5 * 1024 * 1024)
 USERDATA_MAX_ROWS = env.int("USERDATA_MAX_ROWS", default=3_000_000)

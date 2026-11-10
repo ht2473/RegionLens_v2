@@ -556,14 +556,15 @@ def _workbook_tables(source: Path | IO[bytes], kind: str, prefix: str) -> list[T
 
 
 def check_workbook(source: Path | IO[bytes], kind: str, name: str = "") -> None:
-    """Размер листов XLSX и ODS проверяется до чтения: книга — тоже архив."""
+    """
+    Размер книги XLSX и ODS проверяется до чтения: книга — тоже архив.
+
+    Считаются все части, а не только листы: общие строки (``sharedStrings.xml``) читаются
+    в память целиком, и книга в сотни килобайт разворачивалась ими в сотни мегабайт.
+    """
     try:
         with zipfile.ZipFile(source) as bundle:
-            sheets = [
-                info
-                for info in bundle.infolist()
-                if info.filename.startswith("xl/worksheets/") or info.filename == "content.xml"
-            ]
+            sheets = [info for info in bundle.infolist() if not info.is_dir()]
     except zipfile.BadZipFile as error:
         raise IngestError(
             _("Файл «%(name)s» повреждён.") % {"name": name or kind.upper()}, "broken"
@@ -722,12 +723,23 @@ def iter_rows(path: Path, table: TableInfo, *, limit: int | None = None) -> Iter
         if table.kind == HTML:
             yield from html_rows(text.read())[:limit]
             return
-        for index, row in enumerate(csv.reader(text, delimiter=table.delimiter or ";")):
-            if limit is not None and index >= limit:
-                return
-            if index == 0 and row:
-                row[0] = row[0].removeprefix(BOM)
-            yield row
+        try:
+            for index, row in enumerate(csv.reader(text, delimiter=table.delimiter or ";")):
+                if limit is not None and index >= limit:
+                    return
+                if index == 0 and row:
+                    row[0] = row[0].removeprefix(BOM)
+                yield row
+        except csv.Error as error:
+            # Ячейка длиннее предела модуля csv — почти всегда незакрытая кавычка, которая
+            # склеила остаток файла в одно значение.
+            raise IngestError(
+                _(
+                    "Строку таблицы не прочитать: похоже, в файле не закрыта кавычка. Проверьте "
+                    "файл и загрузите его снова."
+                ),
+                "quote",
+            ) from error
 
 
 def _parquet_rows(path: Path, limit: int | None) -> Iterator[list[Any]]:

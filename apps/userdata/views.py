@@ -277,7 +277,12 @@ class TableStepView(DatasetStepMixin, TemplateView):
             if target != request.path:
                 return redirect(target)
             self.version.refresh_from_db()
-        self.recognized = describe.load_and_recognize(self.version, request.user)
+        try:
+            self.recognized = describe.load_and_recognize(self.version, request.user)
+        except ingest.IngestError as error:
+            context = self.get_waiting_context(jobs.FAILED)
+            context["waiting_error"] = str(error)
+            return self.render_to_response(context)
         if (
             not self.version.recipe.get("form")
             and not renew.is_renewal(self.version)
