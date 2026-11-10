@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from django.conf import settings
+
 # Публичные страницы: доступны без входа в систему.
 PUBLIC_PAGES = [
     "core:home",
@@ -31,3 +33,7 @@ PUBLIC_PAGES = [
     "accounts:register-done",
     "accounts:password-reset",
 ]
+
+# Проверка документов есть, только когда подключена подпись (библиотека doc-provenance).
+if "apps.attest" in settings.INSTALLED_APPS:
+    PUBLIC_PAGES.append("attest:verify")
