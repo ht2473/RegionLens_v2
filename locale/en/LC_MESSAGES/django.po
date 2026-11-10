@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 08:45+0000\n"
+"POT-Creation-Date: 2026-11-10 11:29+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -59,9 +59,9 @@ msgstr "Profile, sign-in and security, personal data"
 
 #: apps/accounts/cabinet.py:104
 #: apps/accounts/cabinet.py:106
-#: apps/accounts/views/auth.py:355
+#: apps/accounts/views/auth.py:353
 #: apps/accounts/views/security.py:135
-#: apps/core/navigation.py:232
+#: apps/core/navigation.py:238
 msgid "Личный кабинет"
 msgstr "Personal account"
 
@@ -447,9 +447,9 @@ msgstr "The link works once: it stops working after the password is changed. If 
 
 #: apps/accounts/templates/accounts/mail/password_reset_subject.txt:1
 #: apps/accounts/templates/accounts/password_reset.html:12
-#: apps/accounts/views/auth.py:385
-#: apps/accounts/views/auth.py:390
-#: apps/accounts/views/auth.py:420
+#: apps/accounts/views/auth.py:383
+#: apps/accounts/views/auth.py:388
+#: apps/accounts/views/auth.py:418
 msgid "Восстановление пароля"
 msgstr "Password recovery"
 
@@ -528,7 +528,7 @@ msgid "Всё сохранённое"
 msgstr "All saved items"
 
 #: apps/accounts/templates/accounts/overview.html:61
-#: apps/core/navigation.py:152
+#: apps/core/navigation.py:153
 #: apps/core/templates/core/home.html:149
 #: apps/userdata/templates/userdata/index.html:30
 #: apps/userdata/templates/userdata/study.html:55
@@ -568,8 +568,8 @@ msgid "Главная и кабинет будут открываться с э�
 msgstr "The home page and the personal account will start with this region"
 
 #: apps/accounts/templates/accounts/password_change.html:6
-#: apps/accounts/views/auth.py:357
-#: apps/accounts/views/auth.py:363
+#: apps/accounts/views/auth.py:355
+#: apps/accounts/views/auth.py:361
 msgid "Смена пароля"
 msgstr "Change of password"
 
@@ -605,7 +605,7 @@ msgid "Укажите адрес электронной почты, на кот�
 msgstr "Enter the email address the account is registered to. If the address is registered on the site, a link for setting a new password will be sent to it."
 
 #: apps/accounts/templates/accounts/password_reset_complete.html:11
-#: apps/accounts/views/auth.py:462
+#: apps/accounts/views/auth.py:460
 msgid "Пароль изменён"
 msgstr "Password changed"
 
@@ -614,8 +614,8 @@ msgid "Теперь можно войти с новым паролем."
 msgstr "You can now sign in with the new password."
 
 #: apps/accounts/templates/accounts/password_reset_confirm.html:13
-#: apps/accounts/views/auth.py:432
-#: apps/accounts/views/auth.py:437
+#: apps/accounts/views/auth.py:430
+#: apps/accounts/views/auth.py:435
 msgid "Новый пароль"
 msgstr "New password"
 
@@ -633,7 +633,7 @@ msgstr "The recovery link has already been used or has expired. Request a new on
 
 #: apps/accounts/templates/accounts/password_reset_done.html:11
 #: apps/accounts/templates/accounts/register_done.html:11
-#: apps/accounts/views/auth.py:301
+#: apps/accounts/views/auth.py:299
 msgid "Письмо отправлено"
 msgstr "Message sent"
 
@@ -662,9 +662,9 @@ msgid "Каждый код входит один раз вместо шести 
 msgstr "Each code works once instead of the six digits from the app. They will not be shown again: write them down or store them in a password manager."
 
 #: apps/accounts/templates/accounts/register.html:13
-#: apps/accounts/views/auth.py:249
-#: apps/accounts/views/auth.py:254
-#: apps/accounts/views/auth.py:296
+#: apps/accounts/views/auth.py:247
+#: apps/accounts/views/auth.py:252
+#: apps/accounts/views/auth.py:294
 #: apps/dashboard/templates/dashboard/user_detail.html:107
 msgid "Регистрация"
 msgstr "Registration"
@@ -680,15 +680,15 @@ msgstr "I already have an account"
 
 #: apps/accounts/templates/accounts/register.html:67
 #: apps/api/templates/api/docs.html:122
-#: apps/core/navigation.py:188
-#: apps/core/navigation.py:241
+#: apps/core/navigation.py:189
+#: apps/core/navigation.py:247
 #: apps/core/templates/core/about.html:127
 msgid "Условия использования"
 msgstr "Terms of use"
 
 #: apps/accounts/templates/accounts/register.html:68
 #: apps/accounts/templates/accounts/settings.html:272
-#: apps/core/navigation.py:194
+#: apps/core/navigation.py:195
 #: apps/core/templates/core/about.html:128
 #: apps/core/templates/core/privacy.html:20
 msgid "Политика обработки персональных данных"
@@ -699,8 +699,8 @@ msgid "Всё открыто и без учётной записи — карт�
 msgstr "Everything is open without an account — the map, rankings, analysis, downloads of figures and documents. An account lets you save things and come back to them."
 
 #: apps/accounts/templates/accounts/register_confirm.html:12
-#: apps/accounts/views/auth.py:318
-#: apps/accounts/views/auth.py:323
+#: apps/accounts/views/auth.py:316
+#: apps/accounts/views/auth.py:321
 msgid "Подтверждение регистрации"
 msgstr "Registration confirmation"
 
@@ -737,7 +737,7 @@ msgstr "Sign-in and security"
 
 #: apps/accounts/templates/accounts/settings.html:17
 #: apps/accounts/templates/accounts/settings.html:227
-#: apps/core/navigation.py:242
+#: apps/core/navigation.py:248
 msgid "Персональные данные"
 msgstr "Personal data"
 
@@ -853,8 +853,8 @@ msgid "адрес почты, имя, мой регион"
 msgstr "email address, name, my region"
 
 #: apps/accounts/templates/accounts/settings.html:247
-#: apps/core/navigation.py:145
-#: apps/core/navigation.py:226
+#: apps/core/navigation.py:146
+#: apps/core/navigation.py:232
 #: apps/core/templates/core/terms.html:195
 #: apps/core/templates/core/terms.html:361
 msgid "Свои данные"
@@ -998,11 +998,11 @@ msgstr "After it is turned on, the site shows backup codes. Save them: without t
 msgid "Код не подошёл. Проверьте время на телефоне и введите новый код."
 msgstr "The code did not match. Check the time on your phone and enter a new code."
 
-#: apps/accounts/views/auth.py:332
+#: apps/accounts/views/auth.py:330
 msgid "Адрес почты подтверждён. Войдите с ним и своим паролем."
 msgstr "The email address is confirmed. Sign in with it and your password."
 
-#: apps/accounts/views/auth.py:370
+#: apps/accounts/views/auth.py:368
 msgid "Пароль изменён. Сеансы на других устройствах завершены."
 msgstr "Password changed. Sessions on other devices have been ended."
 
@@ -1010,15 +1010,15 @@ msgstr "Password changed. Sessions on other devices have been ended."
 msgid "Слишком много попыток ввода кода. Попробуйте через час."
 msgstr "Too many code attempts. Try again in an hour."
 
-#: apps/accounts/views/auth.py:274
+#: apps/accounts/views/auth.py:272
 msgid "Слишком много регистраций подряд. Попробуйте через час."
 msgstr "Too many registrations in a row. Try again in an hour."
 
-#: apps/accounts/views/auth.py:284
+#: apps/accounts/views/auth.py:282
 msgid "Письмо не ушло: почтовый узел не ответил. Попробуйте позже."
 msgstr "The email was not sent: the mail server did not respond. Try again later."
 
-#: apps/accounts/views/auth.py:401
+#: apps/accounts/views/auth.py:399
 msgid "Слишком много запросов восстановления. Попробуйте через час."
 msgstr "Too many reset requests. Try again in an hour."
 
@@ -1470,7 +1470,7 @@ msgstr "Which coefficient to choose"
 #: apps/analytics/views/base.py:57
 #: apps/analytics/views/overview.py:25
 #: apps/analytics/views/overview.py:30
-#: apps/core/navigation.py:103
+#: apps/core/navigation.py:104
 msgid "Анализ"
 msgstr "Analysis"
 
@@ -2965,8 +2965,8 @@ msgstr "Calculation updated"
 
 #: apps/analytics/tools.py:41
 #: apps/catalog/views/series.py:288
-#: apps/core/navigation.py:123
-#: apps/core/navigation.py:225
+#: apps/core/navigation.py:124
+#: apps/core/navigation.py:231
 #: apps/workspace/constants.py:30
 msgid "Неравенство"
 msgstr "Inequality"
@@ -2984,7 +2984,7 @@ msgid "Джини · Тейл · Аткинсон · коэффициент ва
 msgstr "Gini · Theil · Atkinson · coefficient of variation · decile ratio"
 
 #: apps/analytics/tools.py:53
-#: apps/core/navigation.py:111
+#: apps/core/navigation.py:112
 #: apps/workspace/constants.py:31
 msgid "Конвергенция"
 msgstr "Convergence"
@@ -3002,7 +3002,7 @@ msgid "сигма-конвергенция · абсолютная и услов
 msgstr "sigma convergence · absolute and conditional beta convergence"
 
 #: apps/analytics/tools.py:66
-#: apps/core/navigation.py:128
+#: apps/core/navigation.py:129
 #: apps/workspace/constants.py:32
 msgid "Корреляции"
 msgstr "Correlations"
@@ -3022,7 +3022,7 @@ msgstr "Pearson · Spearman · Kendall · partial correlation · regression"
 #: apps/analytics/tools.py:78
 #: apps/catalog/views/series.py:294
 #: apps/content/constants.py:19
-#: apps/core/navigation.py:133
+#: apps/core/navigation.py:134
 #: apps/workspace/constants.py:33
 msgid "Пространственный анализ"
 msgstr "Spatial analysis"
@@ -3040,8 +3040,8 @@ msgid "индекс Морана · LISA · матрица соседства ·
 msgstr "Moran index · LISA · adjacency matrix · permutation estimates"
 
 #: apps/analytics/tools.py:90
-#: apps/core/navigation.py:118
-#: apps/core/navigation.py:224
+#: apps/core/navigation.py:119
+#: apps/core/navigation.py:230
 #: apps/search/templates/search/results.html:61
 #: apps/workspace/constants.py:34
 msgid "Интегральные индексы"
@@ -3061,7 +3061,7 @@ msgstr "5 normalisation methods · 5 weighting methods · 4 aggregation schemes"
 
 #: apps/analytics/tools.py:102
 #: apps/catalog/views/series.py:303
-#: apps/core/navigation.py:138
+#: apps/core/navigation.py:139
 #: apps/feedback/templates/feedback/feedback_form.html:87
 #: apps/workspace/constants.py:35
 msgid "Пересмотры статистики"
@@ -3182,7 +3182,7 @@ msgstr "per day"
 #: apps/api/docs.py:165
 #: apps/api/docs.py:170
 #: apps/api/templates/api/docs.html:15
-#: apps/core/navigation.py:233
+#: apps/core/navigation.py:239
 #: apps/core/templates/core/terms.html:146
 msgid "Программный интерфейс"
 msgstr "Application programming interface"
@@ -3428,6 +3428,222 @@ msgstr "No ranking has been calculated for this series"
 #: apps/api/views.py:200
 msgid "Нет рейтинга за этот год. Доступны: %s"
 msgstr "There is no ranking for this year. Available: %s"
+
+#: apps/attest/forms.py:21
+msgid "Документ"
+msgstr "Document"
+
+#: apps/attest/forms.py:22
+msgid "Файл CSV, XLSX или PDF, скачанный с сайта. Сайт его не сохраняет."
+msgstr "A CSV, XLSX or PDF file downloaded from the site. The site does not keep it."
+
+#: apps/attest/forms.py:25
+msgid "Файл подписи (.p7s)"
+msgstr "Signature file (.p7s)"
+
+#: apps/attest/forms.py:27
+msgid "Необязательно: документ, выданный сайтом, находится и без подписи."
+msgstr "Optional: a document issued by the site is found without it."
+
+#: apps/attest/forms.py:51
+msgid "Это не файл подписи: он слишком большой."
+msgstr "This is not a signature file: it is too large."
+
+#: apps/attest/forms.py:42
+msgid "Файл больше %(limit)s МБ: таких документов сайт не выдаёт."
+msgstr "The file is larger than %(limit)s MB: the site issues no such documents."
+
+#: apps/attest/services.py:39
+msgid "Файл подписи повреждён или это не подпись."
+msgstr "The signature file is damaged or is not a signature."
+
+#: apps/attest/services.py:40
+msgid "Подпись другого вида: сайт выдаёт отсоединённую подпись ECDSA с SHA-256."
+msgstr "A different kind of signature: the site issues detached ECDSA signatures with SHA-256."
+
+#: apps/attest/services.py:41
+msgid "Документ изменён после подписи, или подпись сделана для другого файла."
+msgstr "The document was changed after signing, or the signature belongs to another file."
+
+#: apps/attest/services.py:44
+msgid "Подпись не сходится с ключом из сертификата."
+msgstr "The signature does not match the key in the certificate."
+
+#: apps/attest/services.py:45
+msgid "В подписи нет сертификата подписавшего."
+msgstr "The signature carries no signer certificate."
+
+#: apps/attest/services.py:46
+msgid "Подпись сделана не этим сайтом: сертификат выпущен другим центром."
+msgstr "The signature was not made by this site: the certificate was issued by another authority."
+
+#: apps/attest/services.py:47
+msgid "Сертификат подписавшего не предназначен для подписи документов."
+msgstr "The signer certificate is not meant for signing documents."
+
+#: apps/attest/services.py:48
+msgid "В момент подписи сертификат не действовал."
+msgstr "The certificate was not valid at the time of signing."
+
+#: apps/attest/services.py:49
+msgid "Время подписи позже времени проверки."
+msgstr "The signing time is later than the time of the check."
+
+#: apps/attest/services.py:50
+msgid "Сертификат, которым подписан документ, отозван."
+msgstr "The certificate the document was signed with has been revoked."
+
+#: apps/attest/services.py:51
+msgid "Список отзыва сайта не прошёл проверку."
+msgstr "The site's revocation list failed the check."
+
+#: apps/attest/templates/attest/verify.html:15
+#: apps/attest/views.py:35
+#: apps/attest/views.py:40
+#: apps/core/navigation.py:216
+msgid "Проверить документ"
+msgstr "Verify a document"
+
+#: apps/attest/templates/attest/verify.html:26
+#: apps/catalog/templates/catalog/sources.html:62
+#: apps/userdata/views.py:48
+msgid "Проверка"
+msgstr "Check"
+
+#: apps/attest/templates/attest/verify.html:34
+msgid "Документ подлинный"
+msgstr "The document is authentic"
+
+#: apps/attest/templates/attest/verify.html:51
+msgid "Выдан"
+msgstr "Issued"
+
+#: apps/attest/templates/attest/verify.html:53
+#: apps/dashboard/templates/dashboard/dataset_version_form.html:7
+msgid "Версия набора данных"
+msgstr "Data set version"
+
+#: apps/attest/templates/attest/verify.html:56
+msgid "Подписал"
+msgstr "Signed by"
+
+#: apps/attest/templates/attest/verify.html:58
+msgid "Время подписи"
+msgstr "Signing time"
+
+#: apps/attest/templates/attest/verify.html:60
+msgid "Сертификат №"
+msgstr "Certificate no."
+
+#: apps/attest/templates/attest/verify.html:62
+msgid "Отзыв"
+msgstr "Revocation"
+
+#: apps/attest/templates/attest/verify.html:64
+msgid "сертификат не отозван"
+msgstr "certificate not revoked"
+
+#: apps/attest/templates/attest/verify.html:64
+msgid "не проверялся: списка отзыва нет"
+msgstr "not checked: no revocation list"
+
+#: apps/attest/templates/attest/verify.html:74
+msgid "Скачать подпись (.p7s)"
+msgstr "Download the signature (.p7s)"
+
+#: apps/attest/templates/attest/verify.html:83
+msgid "Подлинность не подтверждена"
+msgstr "Authenticity not confirmed"
+
+#: apps/attest/templates/attest/verify.html:88
+#: apps/dashboard/templates/dashboard/data.html:71
+#: apps/dashboard/templates/dashboard/etl_run.html:123
+#: apps/dashboard/templates/dashboard/release.html:24
+#: apps/dashboard/views/data.py:152
+msgid "Файл"
+msgstr "File"
+
+#: apps/attest/templates/attest/verify.html:98
+msgid "Такого документа сайт не выдавал"
+msgstr "The site has not issued this document"
+
+#: apps/attest/templates/attest/verify.html:117
+msgid "Подпись документов не настроена"
+msgstr "Document signing is not set up"
+
+#: apps/attest/templates/attest/verify.html:118
+msgid "На этом стенде документы выдаются без подписи, проверить их нечем."
+msgstr "On this server documents are issued unsigned, so there is nothing to check them with."
+
+#: apps/attest/templates/attest/verify.html:136
+#: apps/userdata/templates/userdata/_calc_panel.html:203
+#: apps/userdata/templates/userdata/formula.html:184
+msgid "Проверить"
+msgstr "Check"
+
+#: apps/attest/templates/attest/verify.html:143
+msgid "Как это работает"
+msgstr "How it works"
+
+#: apps/attest/templates/attest/verify.html:145
+msgid "Каждый документ с официальными данными сайт подписывает при выдаче."
+msgstr "The site signs every document with official data when it issues it."
+
+#: apps/attest/templates/attest/verify.html:146
+msgid "Проверка сравнивает файл с подписанным: расхождение в одном знаке — отказ."
+msgstr "The check compares the file with the signed one: a difference in one character fails it."
+
+#: apps/attest/templates/attest/verify.html:147
+msgid "Таблицы пользователей сайт не подписывает: за чужие данные он не ручается."
+msgstr "The site does not sign users' tables: it does not vouch for other people's data."
+
+#: apps/attest/templates/attest/verify.html:153
+msgid "Проверка без сайта"
+msgstr "Checking without the site"
+
+#: apps/attest/templates/attest/verify.html:165
+msgid "Корневой сертификат"
+msgstr "Root certificate"
+
+#: apps/attest/templates/attest/verify.html:166
+msgid "Сертификат службы подписи"
+msgstr "Signing service certificate"
+
+#: apps/attest/templates/attest/verify.html:168
+msgid "Список отзыва"
+msgstr "Revocation list"
+
+#: apps/attest/templates/attest/verify.html:17
+msgid "Таблицу или отчёт, скачанные с сайта, легко изменить и переслать дальше. Загрузите файл — сайт скажет, тот ли это документ, который он выдал, или в нём что-то поправили."
+msgstr "A table or report downloaded from the site is easy to change and pass on. Upload the file, and the site will tell you whether it is the document it issued or something in it was edited."
+
+#: apps/attest/templates/attest/verify.html:37
+msgid "«%(name)s» — тот самый документ, который выдал сайт: в нём не изменён ни один байт."
+msgstr "“%(name)s” is the very document the site issued: not a single byte has changed."
+
+#: apps/attest/templates/attest/verify.html:41
+msgid "«%(name)s» подписан сайтом и не изменён. В реестре выданных его уже нет: подлинность подтверждает приложенная подпись."
+msgstr "“%(name)s” was signed by the site and has not changed. It is no longer in the register of issued documents: the attached signature confirms it."
+
+#: apps/attest/templates/attest/verify.html:100
+msgid "«%(name)s» не найден среди выданных. Либо документ изменён — хватит одного знака, либо он выдан не этим сайтом, либо выдан давно и запись о нём удалена. Если рядом с документом был файл подписи (.p7s), приложите его."
+msgstr "“%(name)s” is not among the issued documents. Either it was changed (one character is enough), or another site issued it, or it was issued long ago and its record was removed. If the document came with a signature file (.p7s), attach it."
+
+#: apps/attest/templates/attest/verify.html:155
+msgid "Документ с файлом подписи проверяется и без сайта — программой OpenSSL и корневым сертификатом. Отпечаток сертификата сверьте с этим:"
+msgstr "A document with its signature file can be checked without the site, with OpenSSL and the root certificate. Compare the certificate fingerprint with this one:"
+
+#: apps/attest/templates/attest/verify.html:166
+msgid "действует до %(date)s"
+msgstr "valid until %(date)s"
+
+#: apps/attest/templates/attest/verify.html:168
+msgid "выпущен %(date)s"
+msgstr "issued %(date)s"
+
+#: apps/attest/views.py:48
+msgid "Слишком много проверок подряд. Повторите через несколько минут."
+msgstr "Too many checks in a row. Try again in a few minutes."
 
 #: apps/catalog/constants.py:72
 msgid "Изменение методологии наблюдения"
@@ -4105,7 +4321,7 @@ msgstr "Values are collected from the source’s releases: %(source)s."
 #: apps/catalog/views/dataset.py:36
 #: apps/catalog/views/dataset.py:41
 #: apps/catalog/views/sources.py:32
-#: apps/core/navigation.py:212
+#: apps/core/navigation.py:213
 msgid "О наборе данных"
 msgstr "About the dataset"
 
@@ -4468,8 +4684,8 @@ msgid "Новых значений не будет."
 msgstr "No new values will appear."
 
 #: apps/catalog/templates/catalog/partials/_indicator_page.html:78
-#: apps/core/navigation.py:217
-#: apps/core/navigation.py:93
+#: apps/core/navigation.py:223
+#: apps/core/navigation.py:94
 #: apps/core/templates/core/home.html:163
 #: apps/surface/views.py:85
 msgid "Исследовать"
@@ -5015,7 +5231,7 @@ msgstr "%(name)s: the value for Russia, the regions with the highest and lowest 
 #: apps/catalog/templates/catalog/sources.html:14
 #: apps/catalog/views/sources.py:33
 #: apps/catalog/views/sources.py:39
-#: apps/core/navigation.py:213
+#: apps/core/navigation.py:214
 #: apps/core/templates/core/about.html:122
 msgid "Источники данных"
 msgstr "Data sources"
@@ -5056,11 +5272,6 @@ msgstr "Latest release"
 #: apps/catalog/templates/catalog/sources.html:59
 msgid "ещё не получен"
 msgstr "not received yet"
-
-#: apps/catalog/templates/catalog/sources.html:62
-#: apps/userdata/views.py:48
-msgid "Проверка"
-msgstr "Check"
 
 #: apps/catalog/templates/catalog/sources.html:79
 msgid "Какие ряды продолжаются"
@@ -5200,7 +5411,7 @@ msgstr "All indicators"
 
 #: apps/catalog/templates/catalog/territory_detail.html:93
 #: apps/catalog/views/series.py:264
-#: apps/core/navigation.py:58
+#: apps/core/navigation.py:59
 #: apps/surface/panels.py:82
 #: apps/userdata/lab.py:1087
 msgid "Динамика"
@@ -5474,7 +5685,7 @@ msgid "Без округа"
 msgstr "No district"
 
 #: apps/catalog/views/series.py:258
-#: apps/core/navigation.py:53
+#: apps/core/navigation.py:54
 #: apps/maps/templates/maps/partials/_view.html:7
 #: apps/surface/panels.py:67
 #: apps/userdata/lab.py:539
@@ -5490,7 +5701,7 @@ msgid "Ход величины в выбранных регионах рядом
 msgstr "The course of the value in selected regions next to the country"
 
 #: apps/catalog/views/series.py:270
-#: apps/core/navigation.py:63
+#: apps/core/navigation.py:64
 #: apps/surface/panels.py:98
 #: apps/userdata/lab.py:1084
 #: apps/userdata/lab.py:556
@@ -5502,7 +5713,7 @@ msgid "Все регионы по местам и кто поднялся или
 msgstr "All regions by rank and who moved up or down"
 
 #: apps/catalog/views/series.py:276
-#: apps/core/navigation.py:68
+#: apps/core/navigation.py:69
 #: apps/surface/panels.py:113
 #: apps/userdata/lab.py:563
 #: apps/userdata/pages.py:49
@@ -5514,7 +5725,7 @@ msgid "Как значения регионов расположены на шк
 msgstr "How the regions' values lie on the scale"
 
 #: apps/catalog/views/series.py:282
-#: apps/core/navigation.py:73
+#: apps/core/navigation.py:74
 #: apps/surface/panels.py:127
 #: apps/userdata/export.py:209
 #: apps/userdata/ingest.py:490
@@ -5912,7 +6123,7 @@ msgstr "Terms of statistics and regional economics used in RegionLens: definitio
 #: apps/content/templates/content/glossary.html:19
 #: apps/content/views.py:52
 #: apps/content/views.py:62
-#: apps/core/navigation.py:240
+#: apps/core/navigation.py:246
 #: apps/dashboard/templates/dashboard/content.html:47
 msgid "Глоссарий"
 msgstr "Glossary"
@@ -6043,7 +6254,7 @@ msgid "Перечень изданий — на странице <a href=\"%(url
 msgstr "The list of publications is on the <a href=\"%(url)s\">“Data sources”</a> page."
 
 #: apps/content/views.py:30
-#: apps/core/navigation.py:159
+#: apps/core/navigation.py:160
 #: apps/dashboard/templates/dashboard/content.html:50
 #: apps/search/constants.py:24
 #: apps/userdata/templates/userdata/index.html:296
@@ -6099,111 +6310,111 @@ msgstr "consent to the processing of personal data"
 msgid "Даю {consent}"
 msgstr "I give {consent}"
 
-#: apps/core/navigation.py:170
-#: apps/core/navigation.py:208
+#: apps/core/navigation.py:171
+#: apps/core/navigation.py:209
 #: apps/core/templates/core/privacy.html:87
 #: apps/userdata/templates/userdata/_study_panel.html:10
 #: apps/userdata/templates/userdata/_study_panel.html:14
 msgid "Данные"
 msgstr "Data"
 
-#: apps/core/navigation.py:230
+#: apps/core/navigation.py:236
 msgid "Кабинет и API"
 msgstr "Account and API"
 
-#: apps/core/navigation.py:237
+#: apps/core/navigation.py:243
 #: apps/userdata/templates/userdata/index.html:206
 msgid "Справка"
 msgstr "Help"
 
-#: apps/core/navigation.py:55
+#: apps/core/navigation.py:56
 msgid "Картограмма с выбором способа разбиения шкалы и года"
 msgstr "A choropleth map with a choice of year and of the way the scale is split"
 
-#: apps/core/navigation.py:60
+#: apps/core/navigation.py:61
 msgid "Линии по выбранным территориям, профиль и таблица различий"
 msgstr "Lines for the selected territories, a profile and a table of differences"
 
-#: apps/core/navigation.py:65
+#: apps/core/navigation.py:66
 msgid "Позиции регионов и их изменение год к году"
 msgstr "Regional positions and their year-on-year movement"
 
-#: apps/core/navigation.py:70
+#: apps/core/navigation.py:71
 msgid "Разброс значений по субъектам: гистограмма, квартили, положение"
 msgstr "The spread of values across the regions: a histogram, quartiles, position"
 
-#: apps/core/navigation.py:75
+#: apps/core/navigation.py:76
 msgid "Все субъекты подряд, включая те, по которым значения нет"
 msgstr "Every region in a row, including those with no value"
 
-#: apps/core/navigation.py:84
+#: apps/core/navigation.py:85
 msgid "85 субъектов Российской Федерации: паспорт, ранги, динамика"
 msgstr "85 constituent entities of the Russian Federation: profile, ranks, trends"
 
-#: apps/core/navigation.py:90
+#: apps/core/navigation.py:91
 msgid "Каталог показателей с фильтрами по разделу, покрытию и источнику"
 msgstr "Catalogue of indicators with filters by section, coverage and source"
 
-#: apps/core/navigation.py:96
+#: apps/core/navigation.py:97
 msgid "Показатель, территории и год на одном экране: карта, динамика, рейтинг, распределение и таблица"
 msgstr "Indicator, territories and year on one screen: map, dynamics, ranking, distribution and table"
 
-#: apps/core/navigation.py:106
+#: apps/core/navigation.py:107
 msgid "Инструменты сравнительного и пространственного анализа"
 msgstr "Tools for comparative and spatial analysis"
 
-#: apps/core/navigation.py:107
-#: apps/core/navigation.py:223
+#: apps/core/navigation.py:108
+#: apps/core/navigation.py:229
 msgid "Все инструменты анализа"
 msgstr "All analysis tools"
 
-#: apps/core/navigation.py:148
+#: apps/core/navigation.py:149
 msgid "Своя таблица по регионам — на той же карте и в тех же видах"
 msgstr "Your own table by region — on the same map and in the same views"
 
-#: apps/core/navigation.py:162
+#: apps/core/navigation.py:163
 msgid "Формулы и правила, по которым выполняются расчёты"
 msgstr "Formulas and rules behind every calculation"
 
-#: apps/core/navigation.py:173
+#: apps/core/navigation.py:174
 msgid "Состав набора, покрытие, качество и выгрузка"
 msgstr "Dataset composition, coverage, quality and download"
 
-#: apps/core/navigation.py:176
+#: apps/core/navigation.py:177
 msgid "API"
 msgstr "API"
 
-#: apps/core/navigation.py:179
+#: apps/core/navigation.py:180
 msgid "Программный доступ к данным по протоколу REST"
 msgstr "Programmatic access to the data over REST"
 
-#: apps/core/navigation.py:182
-#: apps/core/navigation.py:239
+#: apps/core/navigation.py:183
+#: apps/core/navigation.py:245
 #: apps/core/templates/core/about.html:17
 #: apps/core/views.py:146
 #: apps/core/views.py:151
 msgid "О проекте"
 msgstr "About"
 
-#: apps/core/navigation.py:185
+#: apps/core/navigation.py:186
 msgid "Назначение, с чего начать, обозначения, источник данных и автор"
 msgstr "Purpose, first steps, symbols, data source and author"
 
-#: apps/core/navigation.py:191
+#: apps/core/navigation.py:192
 msgid "Условия источников, расчёты, программный интерфейс, учётная запись"
 msgstr "Source terms, calculations, the programming interface, the account"
 
-#: apps/core/navigation.py:197
+#: apps/core/navigation.py:198
 msgid "Какие сведения о пользователях хранятся, зачем, как долго и как их удалить"
 msgstr "What information about users is kept, why, for how long and how to delete it"
 
-#: apps/core/navigation.py:269
-#: apps/core/navigation.py:271
+#: apps/core/navigation.py:275
+#: apps/core/navigation.py:277
 #: apps/core/views.py:66
 msgid "Главная"
 msgstr "Home"
 
-#: apps/core/navigation.py:243
+#: apps/core/navigation.py:249
 #: apps/core/templates/core/about.html:144
 #: apps/dashboard/navigation.py:69
 #: apps/dashboard/views/tickets.py:73
@@ -6211,31 +6422,31 @@ msgstr "Home"
 msgid "Обратная связь"
 msgstr "Feedback"
 
-#: apps/core/navigation.py:113
+#: apps/core/navigation.py:114
 msgid "Сближение регионов: сигма- и бета-конвергенция"
 msgstr "Regional catch-up: sigma and beta convergence"
 
-#: apps/core/navigation.py:120
+#: apps/core/navigation.py:121
 msgid "Собственная методика оценки: показатели, нормализация, веса"
 msgstr "Your own assessment method: indicators, normalisation, weights"
 
-#: apps/core/navigation.py:125
+#: apps/core/navigation.py:126
 msgid "Джини, Тейл с декомпозицией по округам, кривая Лоренца"
 msgstr "Gini, Theil with decomposition by federal district, Lorenz curve"
 
-#: apps/core/navigation.py:130
+#: apps/core/navigation.py:131
 msgid "Связи между показателями с проверкой значимости"
 msgstr "Relationships between indicators with significance testing"
 
-#: apps/core/navigation.py:135
+#: apps/core/navigation.py:136
 msgid "Индекс Морана и локальные пространственные кластеры"
 msgstr "Moran's I and local spatial clusters"
 
-#: apps/core/navigation.py:140
+#: apps/core/navigation.py:141
 msgid "Как менялись значения между выпусками сборников"
 msgstr "How values changed between editions of the statistical yearbooks"
 
-#: apps/core/navigation.py:154
+#: apps/core/navigation.py:155
 msgid "Мой файл: загрузить свои данные из Excel, CSV или архива"
 msgstr "My file: upload your own data from Excel, CSV or an archive"
 
@@ -7807,14 +8018,6 @@ msgstr "MB"
 msgid "Склад недоступен"
 msgstr "The warehouse is unavailable"
 
-#: apps/dashboard/templates/dashboard/data.html:71
-#: apps/dashboard/templates/dashboard/etl_run.html:123
-#: apps/dashboard/templates/dashboard/release.html:24
-#: apps/dashboard/views/data.py:152
-#: apps/userdata/templates/userdata/_dataset_file.html:5
-msgid "Файл"
-msgstr "File"
-
 #: apps/dashboard/templates/dashboard/data.html:79
 #: apps/dashboard/templates/dashboard/data.html:83
 msgid "Проверенные версии ждут решения"
@@ -7952,10 +8155,6 @@ msgstr "The file is checked for its attributes and built next to the working war
 #: apps/dashboard/templates/dashboard/data.html:141
 msgid "Новую версию на странице набора «Если быть точным» ежедневный сбор источников находит, скачивает и проверяет сам; о готовой проверке приходит письмо."
 msgstr "The daily source collection finds a new version on the “Esli byt tochnym” dataset page, downloads and checks it by itself; an email arrives when the check is ready."
-
-#: apps/dashboard/templates/dashboard/dataset_version_form.html:7
-msgid "Версия набора данных"
-msgstr "Data set version"
 
 #: apps/dashboard/templates/dashboard/dataset_version_form.html:12
 msgid "К перечню версий"
@@ -12502,11 +12701,6 @@ msgstr "Calculate and add to the study"
 #: apps/userdata/templates/userdata/_calc_panel.html:201
 msgid "Сохранить и поставить на поле"
 msgstr "Save and add to the study"
-
-#: apps/userdata/templates/userdata/_calc_panel.html:203
-#: apps/userdata/templates/userdata/formula.html:184
-msgid "Проверить"
-msgstr "Check"
 
 #: apps/userdata/templates/userdata/_calc_panel.html:62
 msgid "Недоступно: %(count)s. Почему"
