@@ -146,6 +146,12 @@ class TestHistory:
                 "/ru/cabinet/security/email/confirm/eyJ1Ijo:1tAbCd/",
                 "/ru/cabinet/security/email/confirm/*/",
             ),
+            (
+                "/ru/accounts/register/confirm/eyJ1c2VyIjo:1tAbCd:xYz/",
+                "/ru/accounts/register/confirm/*/",
+            ),
+            ("/s/AbCdEfGhIjKlMnOpQrStUvWx/", "/s/*/"),
+            ("/s/AbCdEfGhIjKlMnOpQrStUvWx", "/s/*"),
         ],
     )
     def test_tokens_are_masked(self, uri: str, expected: str) -> None:
@@ -153,6 +159,24 @@ class TestHistory:
         converted = visits.history_line(caddy_line(uri).encode())
         assert converted is not None
         assert f"GET {expected} " in converted[1]
+
+    def test_share_token_is_masked_in_referer(self) -> None:
+        """Метка закрытой ссылки не попадает в историю и через заголовок перехода."""
+        entry = json.loads(caddy_line("/ru/own-data/"))
+        entry["request"]["headers"]["Referer"] = [
+            "https://regionlens.ru/s/AbCdEfGhIjKlMnOpQrStUvWx/"
+        ]
+        converted = visits.history_line(json.dumps(entry).encode())
+        assert converted is not None
+        assert "AbCdEfGh" not in converted[1]
+        assert '"https://regionlens.ru/s/*/"' in converted[1]
+
+    def test_caddy_log_masks_the_same_routes(self) -> None:
+        """Журнал Caddy прячет те же метки, что история: иначе они лежали бы в нём 30 суток."""
+        caddyfile = (Path(settings.BASE_DIR) / "docker" / "Caddyfile").read_text(encoding="utf-8")
+        rule = next(line for line in caddyfile.splitlines() if "request>uri regexp" in line)
+        for route in ("/s/", "/email/confirm/", "/register/confirm/", "/password/reset/"):
+            assert route in rule
 
     @pytest.mark.parametrize("uri", ["/static/css/tokens.3f2a.css", "/healthz", "/readyz"])
     def test_not_visits_are_skipped(self, uri: str) -> None:
