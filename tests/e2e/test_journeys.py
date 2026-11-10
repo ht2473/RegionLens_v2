@@ -395,12 +395,14 @@ class TestAnalysisPages:
 class TestAccountJourney:
     """Полный путь пользователя: регистрация, вход, личный кабинет."""
 
-    def test_registration_and_login(self, page: Page, site: Any) -> None:
+    def test_registration_and_login(
+        self, page: Page, site: Any, transactional_db: None, mailoutbox: list[Any]
+    ) -> None:
         """
-        Посетитель регистрируется, входит и попадает в личный кабинет.
+        Посетитель регистрируется, подтверждает адрес по ссылке из письма, входит и попадает
+        в личный кабинет.
 
-        Это самый длинный путь в системе и единственный, который проходит
-        через четыре формы подряд.
+        Это самый длинный путь в системе: форма регистрации, письмо, подтверждение, вход.
         """
         page.goto(f"{site.url}/ru/register/")
 
@@ -410,10 +412,31 @@ class TestAccountJourney:
         page.fill("input[name='password2']", "Очень-Длинный-Пароль-2026")
         page.check("input[name='accepted_terms']")
         page.check("input[name='accepted_consent']")
-        page.click("button[type='submit']")
+        page.locator("main button[type='submit']").click()
         page.wait_for_load_state("networkidle")
+        assert "/register/sent/" in page.url
 
-        assert "/cabinet/" in page.url or "/login/" in page.url
+        # До подтверждения запись закрыта и с верным паролем.
+        page.goto(f"{site.url}/ru/login/")
+        page.fill("input[name='username']", "newcomer@example.com")
+        page.fill("input[name='password']", "Очень-Длинный-Пароль-2026")
+        page.locator("main button[type='submit']").click()
+        page.wait_for_load_state("networkidle")
+        assert "/login/" in page.url
+        expect(page.locator(".callout--danger, .field__error").first).to_be_visible()
+
+        found = re.search(r"https?://[^/\s]+(/\S*/register/confirm/\S+)", mailoutbox[-1].body)
+        assert found is not None
+        page.goto(f"{site.url}{found.group(1)}")
+        page.locator("main button[type='submit']").click()
+        page.wait_for_load_state("networkidle")
+        assert "/login/" in page.url
+
+        page.fill("input[name='username']", "newcomer@example.com")
+        page.fill("input[name='password']", "Очень-Длинный-Пароль-2026")
+        page.locator("main button[type='submit']").click()
+        page.wait_for_load_state("networkidle")
+        assert page.url.endswith("/cabinet/")
 
     def test_login_and_open_cabinet(self, page: Page, site: Any, registered_user: Any) -> None:
         """Существующая учётная запись входит и видит обзор — первую страницу кабинета."""
