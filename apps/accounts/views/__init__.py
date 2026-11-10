@@ -15,6 +15,8 @@ from .auth import (
     PasswordResetConfirmView,
     PasswordResetDoneView,
     PasswordResetView,
+    RegisterConfirmView,
+    RegisterDoneView,
     RegisterView,
 )
 from .cabinet import CabinetOverviewView, ProfileView
@@ -50,6 +52,8 @@ __all__ = [
     "PasswordResetView",
     "ProfileView",
     "RecoveryCodesView",
+    "RegisterConfirmView",
+    "RegisterDoneView",
     "RegisterView",
     "SettingsPartView",
     "SettingsView",

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{# Подтверждение адреса по ссылке из письма: регистрация завершается кнопкой, не открытием ссылки. #}
+
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/cabinet.css' %}">{% endblock %}
+
+{% block content %}
+<div class="container page">
+  <div class="auth-layout">
+    <header class="page-head auth-layout__intro">
+      <h1 class="page-head__title">{% translate "Подтверждение регистрации" %}</h1>
+      {% if not error %}
+        <p class="page-head__lead">
+          {% blocktranslate trimmed %}
+            Подтвердите, что этот адрес ваш и что регистрировались вы. Если учётную запись
+            заводили не вы, просто закройте страницу: без подтверждения запись удалится сама.
+          {% endblocktranslate %}
+        </p>
+      {% endif %}
+    </header>
+
+    <div class="auth-card">
+      {% if error %}
+        <div class="callout callout--danger">
+          <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+          <div>
+            <div class="callout__title">{% translate "Адрес не подтверждён" %}</div>
+            <p>{{ error }}</p>
+          </div>
+        </div>
+        <div class="auth-card__links">
+          <a href="{% url 'accounts:register' %}">{% translate "Зарегистрироваться заново" %}</a>
+        </div>
+      {% else %}
+        <form method="post">
+          {% csrf_token %}
+          <button type="submit" class="button button--primary button--block">{% translate "Подтвердить адрес" %}</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
