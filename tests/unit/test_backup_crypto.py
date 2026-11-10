@@ -115,6 +115,18 @@ def test_edited_manifest_fails_signature(keys: Any, copy_dir: Path) -> None:
         backup_crypto.verify(manifest)
 
 
+def test_old_copy_under_a_fresh_name_is_rejected(keys: Any, copy_dir: Path) -> None:
+    """Старая копия, переименованная под свежую отметку, не сходит за новую."""
+    backup_crypto.seal(copy_dir, STAMP)
+    manifest, signature = backup_crypto.manifest_paths(copy_dir, STAMP)
+    assert backup_crypto.age_days(backup_crypto.verify(manifest)) == 0
+    fresh, fresh_signature = backup_crypto.manifest_paths(copy_dir, "20991231-000000")
+    manifest.rename(fresh)
+    signature.rename(fresh_signature)
+    with pytest.raises(backup_crypto.BackupCryptoError, match="назван иначе"):
+        backup_crypto.verify(fresh)
+
+
 def test_foreign_signer_is_rejected(keys: Any, copy_dir: Path) -> None:
     """Опись, подписанная чужим ключом, не проходит проверку ключом стенда."""
     backup_crypto.seal(copy_dir, STAMP)

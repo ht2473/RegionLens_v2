@@ -51,12 +51,13 @@ class TestRegistration:
         assert user.role_names == [ROLE_USER]
         assert not user.has_panel_access
 
-    def test_duplicate_email_is_rejected(self, client: Client, member: User) -> None:
+    def test_duplicate_email_makes_no_second_account(self, client: Client, member: User) -> None:
         """
-        Адрес, отличающийся только регистром, считается занятым.
+        Адрес, отличающийся только регистром, считается занятым: второй записи нет.
 
         Регистр в адресе почты значения не имеет, и две учётные записи, различающиеся
-        только им, привели бы к путанице при входе.
+        только им, привели бы к путанице при входе. Страница отвечает так же, как свободному
+        адресу: по ответу нельзя узнать, кто зарегистрирован.
         """
         response = client.post(
             reverse("accounts:register"),
@@ -70,7 +71,8 @@ class TestRegistration:
             },
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 302
+        assert response.url == reverse("accounts:register-done")
         assert User.objects.count() == 1
 
     def test_password_mismatch_is_rejected(self, client: Client) -> None:

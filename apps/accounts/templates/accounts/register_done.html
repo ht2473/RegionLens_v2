@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{# Сообщение об отправке письма; не раскрывает, был ли адрес уже зарегистрирован. #}
+
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/cabinet.css' %}">{% endblock %}
+
+{% block content %}
+<div class="container page">
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Письмо отправлено" %}</h1>
+    <p class="page-head__lead">
+      {% blocktranslate trimmed %}
+        На указанный адрес отправлено письмо. Откройте ссылку из него, чтобы закончить
+        регистрацию: ссылка действует {{ days }} суток. Если письма нет, проверьте папку
+        нежелательной почты.
+      {% endblocktranslate %}
+    </p>
+    <p>
+      <a class="button button--secondary" href="{% url 'accounts:login' %}">
+        {% translate "Вернуться ко входу" %}
+      </a>
+    </p>
+  </header>
+</div>
+{% endblock %}

@@ -38,7 +38,7 @@ if _env_file.exists():
 
 PROJECT_NAME = "RegionLens"
 PROJECT_TAGLINE = "Анализ и визуализация социально-экономических показателей регионов России"
-PROJECT_VERSION = "0.9.3"
+PROJECT_VERSION = "0.9.4"
 PROJECT_AUTHOR = "Кузьмин Евгений Олегович"
 PROJECT_AUTHOR_SHORT = "Кузьмин Е. О."
 PROJECT_AUTHOR_EN = "Evgeny Kuzmin"
@@ -147,6 +147,9 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # После удачного входа браузер получает отметку «знакомого» (защита от блокировки
+    # чужой записи неверными паролями).
+    "apps.accounts.middleware.DeviceCookieMiddleware",
     # После аутентификации: слой рядов узнаёт, чьи наборы доступны в запросе.
     "apps.userdata.scope.UserDataScopeMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -243,7 +246,12 @@ PASSWORD_RESET_TIMEOUT = 3 * 24 * 3600
 AXES_ENABLED = env.bool("AXES_ENABLED", default=True)
 AXES_FAILURE_LIMIT = env.int("AXES_FAILURE_LIMIT", default=8)
 AXES_COOLOFF_TIME = 1  # час до автоматического снятия блокировки
-AXES_LOCKOUT_PARAMETERS = [["ip_address", "username"]]
+# Признаки блокировки задаёт LOGIN_LOCKOUT_PARAMETERS; функция смягчает блокировку по одной
+# почте для браузера, из которого владелец уже входил (apps/accounts/security.py).
+LOGIN_LOCKOUT_PARAMETERS: list[str | list[str]] = [["ip_address", "username"]]
+AXES_LOCKOUT_PARAMETERS = "apps.accounts.security.lockout_parameters"
+# Сколько живёт отметка браузера, из которого владелец входил: полгода.
+DEVICE_COOKIE_AGE = 180 * 24 * 3600
 
 # Поле формы входа Django называется ``username``; иначе axes не видит учётную запись.
 AXES_USERNAME_FORM_FIELD = "username"
@@ -467,6 +475,9 @@ USERDATA_ZIP_MAX_FILES = env.int("USERDATA_ZIP_MAX_FILES", default=50)
 # сервер бережёт в первую очередь предел времени.
 USERDATA_PDF_MAX_PAGES = env.int("USERDATA_PDF_MAX_PAGES", default=100)
 USERDATA_PDF_SECONDS = env.int("USERDATA_PDF_SECONDS", default=30)
+# Объектов (линий, знаков, рисунков) на странице PDF: у сборников ведомств — до 2 646,
+# страница из 120 000 прямоугольников разбиралась 13 с и занимала 1,5 ГБ (замер 10.11.2026).
+USERDATA_PDF_PAGE_OBJECTS = env.int("USERDATA_PDF_PAGE_OBJECTS", default=10_000)
 # Вставка из буфера: текст таблицы, разметка таблицы из Word и Excel — больше текста.
 USERDATA_PASTE_MAX_BYTES = env.int("USERDATA_PASTE_MAX_BYTES", default=5 * 1024 * 1024)
 USERDATA_MAX_ROWS = env.int("USERDATA_MAX_ROWS", default=3_000_000)

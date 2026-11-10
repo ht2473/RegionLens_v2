@@ -2,18 +2,27 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Any
 
 from django.conf import settings
+from django.contrib.auth.hashers import make_password
+from django.core import signing
 from django.db import transaction
+from django.http import HttpRequest
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.crypto import salted_hmac
 from django.utils.translation import gettext
 
 from apps.core.mail import deliver
 
 from .models import User
 from .roles import LastAdministratorError, is_last_administrator
+
+# Подпись ссылки подтверждения регистрации; срок — как у ссылки восстановления пароля.
+REGISTRATION_SALT = "apps.accounts.registration"
 
 # Имя отправителя в обезличенных обращениях удалённой учётной записи.
 REMOVED_AUTHOR = "учётная запись удалена"
@@ -25,7 +34,11 @@ def register_user(
     password: str,
     full_name: str,
 ) -> User:
-    """Создать учётную запись с ролью «Пользователь» и согласием на действующую редакцию."""
+    """
+    Создать учётную запись с ролью «Пользователь» и согласием на действующую редакцию.
+
+    Адрес почты ещё не подтверждён: войти в запись можно после перехода по ссылке из письма.
+    """
     from apps.core.documents import CONSENT_REVISION
 
     return User.objects.create_user(
@@ -34,7 +47,99 @@ def register_user(
         full_name=full_name.strip(),
         consent_at=timezone.now(),
         consent_revision=CONSENT_REVISION,
+        email_confirmed_at=None,
     )
+
+
+class RegistrationError(Exception):
+    """Ссылка подтверждения регистрации недействительна или устарела."""
+
+
+def _password_mark(user: User) -> str:
+    """Отпечаток хеша пароля: ссылка действует, пока пароль записи тот же, что при её выдаче."""
+    return salted_hmac(REGISTRATION_SALT, user.password, algorithm="sha256").hexdigest()[:16]
+
+
+def request_registration(request: HttpRequest, *, email: str, password: str, full_name: str) -> str:
+    """
+    Принять заявку на регистрацию и отправить письмо на адрес; вернуть причину отказа почты.
+
+    Письмо уходит в любом случае, а страница отвечает одинаково: по ответу нельзя узнать,
+    зарегистрирован ли адрес. Свободный адрес получает ссылку подтверждения; запись, которую
+    так и не подтвердили, переписывается новой заявкой (её мог оставить не владелец адреса);
+    подтверждённой записи приходит напоминание, что она уже есть.
+    """
+    from apps.core.documents import CONSENT_REVISION
+
+    existing = User.objects.filter(email__iexact=email).first()
+    if existing is not None and existing.email_confirmed_at is not None:
+        # Хеш считается и здесь: иначе занятый адрес отвечал бы заметно быстрее свободного.
+        make_password(password)
+        return _send(request, existing, "registration_exists", gettext("Вы уже зарегистрированы"))
+    if existing is None:
+        user = register_user(email=email, password=password, full_name=full_name)
+    else:
+        user = existing
+        user.set_password(password)
+        user.full_name = full_name.strip()
+        user.consent_at = timezone.now()
+        user.consent_revision = CONSENT_REVISION
+        user.save(
+            update_fields=["password", "full_name", "consent_at", "consent_revision", "updated_at"]
+        )
+    token = signing.dumps(
+        {"user": user.pk, "email": user.email, "mark": _password_mark(user)},
+        salt=REGISTRATION_SALT,
+    )
+    link = request.build_absolute_uri(reverse("accounts:register-confirm", kwargs={"token": token}))
+    return _send(
+        request, user, "registration_confirm", gettext("Подтвердите регистрацию"), link=link
+    )
+
+
+def _send(request: HttpRequest, user: User, template: str, subject: str, **extra: Any) -> str:
+    """Письмо регистрации на адрес записи; вернуть причину отказа почты или пустую строку."""
+    context = {
+        "user": user,
+        "project_name": settings.PROJECT_NAME,
+        "days": settings.PASSWORD_RESET_TIMEOUT // (24 * 3600),
+        "login_url": request.build_absolute_uri(reverse("accounts:login")),
+        "reset_url": request.build_absolute_uri(reverse("accounts:password-reset")),
+        **extra,
+    }
+    body = render_to_string(f"accounts/mail/{template}.txt", context)
+    return deliver(f"{settings.EMAIL_SUBJECT_PREFIX}{subject}", body, [user.email])
+
+
+def confirm_registration(token: str) -> User:
+    """Подтвердить адрес почты по ссылке из письма; после этого в запись можно войти."""
+    try:
+        payload: dict[str, Any] = signing.loads(
+            token, salt=REGISTRATION_SALT, max_age=settings.PASSWORD_RESET_TIMEOUT
+        )
+    except signing.BadSignature as error:
+        raise RegistrationError(gettext("Ссылка недействительна или устарела")) from error
+    user = User.objects.filter(
+        pk=int(payload.get("user") or 0), email=str(payload.get("email", "")), is_active=True
+    ).first()
+    if user is None or (
+        user.email_confirmed_at is None and payload.get("mark") != _password_mark(user)
+    ):
+        # Запись удалена по сроку или переписана новой заявкой: прежняя ссылка не действует.
+        raise RegistrationError(gettext("Ссылка недействительна или устарела"))
+    if user.email_confirmed_at is None:
+        user.email_confirmed_at = timezone.now()
+        user.save(update_fields=["email_confirmed_at", "updated_at"])
+    return user
+
+
+def prune_unconfirmed() -> int:
+    """Удалить записи, адрес которых не подтвердили за срок действия ссылки; вернуть их число."""
+    edge = timezone.now() - timedelta(seconds=settings.PASSWORD_RESET_TIMEOUT)
+    removed, _kinds = User.objects.filter(
+        email_confirmed_at__isnull=True, created_at__lt=edge
+    ).delete()
+    return removed
 
 
 def _moment(value: Any) -> str | None:

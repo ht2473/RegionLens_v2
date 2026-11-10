@@ -127,11 +127,14 @@ class RegistrationForm(HoneypotMixin, StyledFormMixin, forms.ModelForm):
         self.apply_styles()
 
     def clean_email(self) -> str:
-        """Привести адрес к нижнему регистру и проверить, что он свободен."""
-        email = self.cleaned_data["email"].strip().lower()
-        if User.objects.filter(email__iexact=email).exists():
-            raise ValidationError(_("Учётная запись с таким адресом уже зарегистрирована"))
-        return email
+        """Привести адрес к нижнему регистру."""
+        return str(self.cleaned_data["email"]).strip().lower()
+
+    def validate_unique(self) -> None:
+        """
+        Занятость адреса форма не проверяет и не называет: по ответу страницы нельзя узнавать,
+        кто зарегистрирован. Занятому адресу уходит письмо-напоминание (``request_registration``).
+        """
 
     def clean_password2(self) -> str:
         """Проверить совпадение и стойкость пароля."""
@@ -167,6 +170,18 @@ class EmailAuthenticationForm(StyledFormMixin, AuthenticationForm):
         "invalid_login": _("Неверный адрес электронной почты или пароль"),
         "inactive": _("Учётная запись отключена"),
     }
+
+    def confirm_login_allowed(self, user: Any) -> None:
+        """Запись с неподтверждённым адресом не открывается и с верным паролем."""
+        super().confirm_login_allowed(user)
+        if user.email_confirmed_at is None:
+            raise ValidationError(
+                _(
+                    "Адрес почты не подтверждён. Откройте ссылку из письма; если письма нет, "
+                    "зарегистрируйтесь заново — придёт новое."
+                ),
+                code="unconfirmed",
+            )
 
 
 class CodeForm(StyledFormMixin, forms.Form):

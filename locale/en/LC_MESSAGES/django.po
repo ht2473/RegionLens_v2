@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-07 21:54+0000\n"
+"POT-Creation-Date: 2026-11-10 08:45+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -59,7 +59,7 @@ msgstr "Profile, sign-in and security, personal data"
 
 #: apps/accounts/cabinet.py:104
 #: apps/accounts/cabinet.py:106
-#: apps/accounts/views/auth.py:300
+#: apps/accounts/views/auth.py:355
 #: apps/accounts/views/security.py:135
 #: apps/core/navigation.py:232
 msgid "Личный кабинет"
@@ -103,31 +103,31 @@ msgstr "Password again"
 msgid "Не короче десяти знаков; пароль не должен совпадать с адресом почты"
 msgstr "At least ten characters; the password must not match the email address"
 
-#: apps/accounts/forms.py:157
-#: apps/accounts/forms.py:344
+#: apps/accounts/forms.py:160
+#: apps/accounts/forms.py:359
 msgid "Адрес электронной почты"
 msgstr "Email address"
 
-#: apps/accounts/forms.py:167
+#: apps/accounts/forms.py:170
 msgid "Неверный адрес электронной почты или пароль"
 msgstr "Incorrect email address or password"
 
-#: apps/accounts/forms.py:168
+#: apps/accounts/forms.py:171
 msgid "Учётная запись отключена"
 msgstr "The account is disabled"
 
-#: apps/accounts/forms.py:200
+#: apps/accounts/forms.py:215
 #: apps/content/forms.py:126
 msgid "не выбран"
 msgstr "not selected"
 
-#: apps/accounts/forms.py:266
-#: apps/accounts/forms.py:289
-#: apps/accounts/forms.py:326
+#: apps/accounts/forms.py:281
+#: apps/accounts/forms.py:304
+#: apps/accounts/forms.py:341
 msgid "Текущий пароль"
 msgstr "Current password"
 
-#: apps/accounts/forms.py:319
+#: apps/accounts/forms.py:334
 msgid "Шесть цифр, которые показывает приложение"
 msgstr "The six digits shown by the app"
 
@@ -157,15 +157,15 @@ msgstr "I consent to the processing of personal data"
 msgid "условия использования"
 msgstr "terms of use"
 
-#: apps/accounts/forms.py:214
+#: apps/accounts/forms.py:229
 msgid "Слишком много неверных паролей. Попробуйте через час."
 msgstr "Too many wrong passwords. Try again in an hour."
 
-#: apps/accounts/forms.py:262
+#: apps/accounts/forms.py:277
 msgid "Новый адрес"
 msgstr "New address"
 
-#: apps/accounts/forms.py:306
+#: apps/accounts/forms.py:321
 msgid "Я понимаю, что сохранённое будет удалено без возможности вернуть"
 msgstr "I understand that my saved items will be deleted permanently"
 
@@ -177,24 +177,24 @@ msgstr "The form was not accepted"
 msgid "Принимаю {terms}"
 msgstr "I accept the {terms}"
 
-#: apps/accounts/forms.py:133
-msgid "Учётная запись с таким адресом уже зарегистрирована"
-msgstr "An account with this address is already registered"
-
-#: apps/accounts/forms.py:141
+#: apps/accounts/forms.py:144
 msgid "Пароли не совпадают"
 msgstr "The passwords do not match"
 
-#: apps/accounts/forms.py:280
+#: apps/accounts/forms.py:179
+msgid "Адрес почты не подтверждён. Откройте ссылку из письма; если письма нет, зарегистрируйтесь заново — придёт новое."
+msgstr "The email address is not confirmed. Open the link from the email; if there is no email, register again and a new one will be sent."
+
+#: apps/accounts/forms.py:295
 msgid "Это нынешний адрес учётной записи"
 msgstr "This is the current address of the account"
 
-#: apps/accounts/forms.py:282
-#: apps/accounts/security.py:201
+#: apps/accounts/forms.py:297
+#: apps/accounts/security.py:292
 msgid "Этот адрес уже занят другой учётной записью"
 msgstr "This address is already used by another account"
 
-#: apps/accounts/forms.py:252
+#: apps/accounts/forms.py:267
 msgid "Пароль не подходит"
 msgstr "The password is incorrect"
 
@@ -234,25 +234,35 @@ msgstr "The control panel requires sign-in with a one-time code. Turn it on belo
 msgid "Подтвердите вход одноразовым кодом."
 msgstr "Confirm the sign-in with a one-time code."
 
-#: apps/accounts/security.py:163
+#: apps/accounts/security.py:254
 msgid "Подтвердите новый адрес почты"
 msgstr "Confirm your new email address"
 
-#: apps/accounts/security.py:215
+#: apps/accounts/security.py:306
 msgid "Адрес почты учётной записи изменён"
 msgstr "The account email address has been changed"
 
-#: apps/accounts/security.py:185
+#: apps/accounts/security.py:276
+#: apps/accounts/services.py:121
+#: apps/accounts/services.py:129
 msgid "Ссылка недействительна или устарела"
 msgstr "The link is invalid or has expired"
 
-#: apps/accounts/security.py:199
+#: apps/accounts/security.py:290
 msgid "Ссылка уже использована или отменена"
 msgstr "The link has already been used or cancelled"
 
-#: apps/accounts/services.py:136
+#: apps/accounts/services.py:241
 msgid "Учётная запись удалена"
 msgstr "Account deleted"
+
+#: apps/accounts/services.py:96
+msgid "Подтвердите регистрацию"
+msgstr "Confirm your registration"
+
+#: apps/accounts/services.py:78
+msgid "Вы уже зарегистрированы"
+msgstr "You are already registered"
 
 #: apps/accounts/templates/accounts/email_confirm.html:12
 #: apps/accounts/views/security.py:86
@@ -269,6 +279,7 @@ msgid "Запросить ссылку заново"
 msgstr "Request a new link"
 
 #: apps/accounts/templates/accounts/email_confirm.html:38
+#: apps/accounts/templates/accounts/register_confirm.html:38
 msgid "Подтвердить адрес"
 msgstr "Confirm address"
 
@@ -290,8 +301,8 @@ msgstr "Too many failed sign-in attempts. Try again in an hour or recover the pa
 
 #: apps/accounts/templates/accounts/login.html:13
 #: apps/accounts/templates/accounts/settings.html:259
-#: apps/accounts/views/auth.py:62
-#: apps/accounts/views/auth.py:67
+#: apps/accounts/views/auth.py:63
+#: apps/accounts/views/auth.py:68
 msgid "Вход"
 msgstr "Sign-in"
 
@@ -352,8 +363,8 @@ msgid "Каталог показателей, карта, рейтинги, ан
 msgstr "The indicator catalogue, map, rankings, analysis and downloads are open without signing in. An account is needed to save things."
 
 #: apps/accounts/templates/accounts/login_code.html:12
-#: apps/accounts/views/auth.py:100
-#: apps/accounts/views/auth.py:132
+#: apps/accounts/views/auth.py:101
+#: apps/accounts/views/auth.py:133
 msgid "Код входа"
 msgstr "Sign-in code"
 
@@ -389,6 +400,8 @@ msgstr "The password for %(email)s is correct. Enter the six digits from the aut
 #: apps/accounts/templates/accounts/mail/account_deleted.txt:1
 #: apps/accounts/templates/accounts/mail/email_change_confirm.txt:1
 #: apps/accounts/templates/accounts/mail/email_changed_notice.txt:1
+#: apps/accounts/templates/accounts/mail/registration_confirm.txt:1
+#: apps/accounts/templates/accounts/mail/registration_exists.txt:1
 msgid "Здравствуйте, %(name)s!"
 msgstr "Hello, %(name)s!"
 
@@ -434,11 +447,35 @@ msgstr "The link works once: it stops working after the password is changed. If 
 
 #: apps/accounts/templates/accounts/mail/password_reset_subject.txt:1
 #: apps/accounts/templates/accounts/password_reset.html:12
-#: apps/accounts/views/auth.py:330
-#: apps/accounts/views/auth.py:335
-#: apps/accounts/views/auth.py:365
+#: apps/accounts/views/auth.py:385
+#: apps/accounts/views/auth.py:390
+#: apps/accounts/views/auth.py:420
 msgid "Восстановление пароля"
 msgstr "Password recovery"
+
+#: apps/accounts/templates/accounts/mail/registration_confirm.txt:3
+msgid "На адрес %(email)s заведена учётная запись в %(project)s. Чтобы закончить регистрацию, откройте ссылку и нажмите «Подтвердить адрес»:"
+msgstr "An account in %(project)s has been created for %(email)s. To finish the registration, open the link and press “Confirm address”:"
+
+#: apps/accounts/templates/accounts/mail/registration_confirm.txt:10
+msgid "Ссылка действует %(days)s суток. Если регистрировались не вы, ничего делать не нужно: без подтверждения учётная запись удалится сама."
+msgstr "The link is valid for %(days)s days. If it was not you who registered, do nothing: without confirmation the account will be deleted automatically."
+
+#: apps/accounts/templates/accounts/mail/registration_exists.txt:8
+msgid "Если это были вы, войдите:"
+msgstr "If it was you, sign in:"
+
+#: apps/accounts/templates/accounts/mail/registration_exists.txt:12
+msgid "Если пароль забыт, назначьте новый:"
+msgstr "If you have forgotten the password, set a new one:"
+
+#: apps/accounts/templates/accounts/mail/registration_exists.txt:16
+msgid "Если это были не вы, ничего делать не нужно."
+msgstr "If it was not you, do nothing."
+
+#: apps/accounts/templates/accounts/mail/registration_exists.txt:3
+msgid "Кто-то попробовал зарегистрироваться в %(project)s с адресом %(email)s, но учётная запись с этим адресом уже есть. Новая не создана, пароль прежний."
+msgstr "Someone tried to register in %(project)s with the address %(email)s, but an account with this address already exists. No new account was created and the password is unchanged."
 
 #: apps/accounts/templates/accounts/overview.html:12
 msgid "Панели управления нужен вход с кодом"
@@ -531,8 +568,8 @@ msgid "Главная и кабинет будут открываться с э�
 msgstr "The home page and the personal account will start with this region"
 
 #: apps/accounts/templates/accounts/password_change.html:6
-#: apps/accounts/views/auth.py:302
-#: apps/accounts/views/auth.py:308
+#: apps/accounts/views/auth.py:357
+#: apps/accounts/views/auth.py:363
 msgid "Смена пароля"
 msgstr "Change of password"
 
@@ -559,6 +596,7 @@ msgstr "Send the link"
 
 #: apps/accounts/templates/accounts/password_reset.html:31
 #: apps/accounts/templates/accounts/password_reset_done.html:20
+#: apps/accounts/templates/accounts/register_done.html:21
 msgid "Вернуться ко входу"
 msgstr "Return to sign-in"
 
@@ -567,7 +605,7 @@ msgid "Укажите адрес электронной почты, на кот�
 msgstr "Enter the email address the account is registered to. If the address is registered on the site, a link for setting a new password will be sent to it."
 
 #: apps/accounts/templates/accounts/password_reset_complete.html:11
-#: apps/accounts/views/auth.py:393
+#: apps/accounts/views/auth.py:462
 msgid "Пароль изменён"
 msgstr "Password changed"
 
@@ -576,8 +614,8 @@ msgid "Теперь можно войти с новым паролем."
 msgstr "You can now sign in with the new password."
 
 #: apps/accounts/templates/accounts/password_reset_confirm.html:13
-#: apps/accounts/views/auth.py:377
-#: apps/accounts/views/auth.py:382
+#: apps/accounts/views/auth.py:432
+#: apps/accounts/views/auth.py:437
 msgid "Новый пароль"
 msgstr "New password"
 
@@ -594,6 +632,8 @@ msgid "Ссылка восстановления уже использована
 msgstr "The recovery link has already been used or has expired. Request a new one — the old link stops working as soon as the password is changed."
 
 #: apps/accounts/templates/accounts/password_reset_done.html:11
+#: apps/accounts/templates/accounts/register_done.html:11
+#: apps/accounts/views/auth.py:301
 msgid "Письмо отправлено"
 msgstr "Message sent"
 
@@ -622,10 +662,10 @@ msgid "Каждый код входит один раз вместо шести 
 msgstr "Each code works once instead of the six digits from the app. They will not be shown again: write them down or store them in a password manager."
 
 #: apps/accounts/templates/accounts/register.html:13
-#: apps/accounts/views/auth.py:243
-#: apps/accounts/views/auth.py:248
+#: apps/accounts/views/auth.py:249
+#: apps/accounts/views/auth.py:254
+#: apps/accounts/views/auth.py:296
 #: apps/dashboard/templates/dashboard/user_detail.html:107
-#: apps/dashboard/templates/dashboard/user_list.html:67
 msgid "Регистрация"
 msgstr "Registration"
 
@@ -657,6 +697,28 @@ msgstr "Personal data processing policy"
 #: apps/accounts/templates/accounts/register.html:15
 msgid "Всё открыто и без учётной записи — карта, рейтинги, анализ, выгрузка чисел и документов. Учётная запись нужна, чтобы сохранять и возвращаться."
 msgstr "Everything is open without an account — the map, rankings, analysis, downloads of figures and documents. An account lets you save things and come back to them."
+
+#: apps/accounts/templates/accounts/register_confirm.html:12
+#: apps/accounts/views/auth.py:318
+#: apps/accounts/views/auth.py:323
+msgid "Подтверждение регистрации"
+msgstr "Registration confirmation"
+
+#: apps/accounts/templates/accounts/register_confirm.html:28
+msgid "Адрес не подтверждён"
+msgstr "Address not confirmed"
+
+#: apps/accounts/templates/accounts/register_confirm.html:33
+msgid "Зарегистрироваться заново"
+msgstr "Register again"
+
+#: apps/accounts/templates/accounts/register_confirm.html:15
+msgid "Подтвердите, что этот адрес ваш и что регистрировались вы. Если учётную запись заводили не вы, просто закройте страницу: без подтверждения запись удалится сама."
+msgstr "Confirm that this address is yours and that it was you who registered. If you did not create the account, just close the page: without confirmation the account will be deleted automatically."
+
+#: apps/accounts/templates/accounts/register_done.html:13
+msgid "На указанный адрес отправлено письмо. Откройте ссылку из него, чтобы закончить регистрацию: ссылка действует %(days)s суток. Если письма нет, проверьте папку нежелательной почты."
+msgstr "An email has been sent to the address you entered. Open the link in it to finish the registration: the link is valid for %(days)s days. If there is no email, check the spam folder."
 
 #: apps/accounts/templates/accounts/settings.html:13
 msgid "Разделы настроек"
@@ -850,7 +912,7 @@ msgid "Удалить"
 msgstr "Delete"
 
 #: apps/accounts/templates/accounts/settings.html:182
-#: apps/accounts/views/security.py:238
+#: apps/accounts/views/security.py:244
 msgid "Резервные коды"
 msgstr "Backup codes"
 
@@ -931,36 +993,40 @@ msgstr "Open the authenticator app and scan the QR code. If you cannot scan it, 
 msgid "После включения сайт покажет резервные коды — сохраните их: без телефона войти можно будет только по ним. Сеансы на других устройствах завершатся."
 msgstr "After it is turned on, the site shows backup codes. Save them: without the phone, they are the only way to sign in. Sessions on other devices will end."
 
-#: apps/accounts/views/auth.py:215
+#: apps/accounts/views/auth.py:216
 #: apps/accounts/views/security.py:165
 msgid "Код не подошёл. Проверьте время на телефоне и введите новый код."
 msgstr "The code did not match. Check the time on your phone and enter a new code."
 
-#: apps/accounts/views/auth.py:277
-msgid "Учётная запись создана"
-msgstr "Account created"
+#: apps/accounts/views/auth.py:332
+msgid "Адрес почты подтверждён. Войдите с ним и своим паролем."
+msgstr "The email address is confirmed. Sign in with it and your password."
 
-#: apps/accounts/views/auth.py:315
+#: apps/accounts/views/auth.py:370
 msgid "Пароль изменён. Сеансы на других устройствах завершены."
 msgstr "Password changed. Sessions on other devices have been ended."
 
-#: apps/accounts/views/auth.py:178
+#: apps/accounts/views/auth.py:179
 msgid "Слишком много попыток ввода кода. Попробуйте через час."
 msgstr "Too many code attempts. Try again in an hour."
 
-#: apps/accounts/views/auth.py:268
+#: apps/accounts/views/auth.py:274
 msgid "Слишком много регистраций подряд. Попробуйте через час."
 msgstr "Too many registrations in a row. Try again in an hour."
 
-#: apps/accounts/views/auth.py:346
+#: apps/accounts/views/auth.py:284
+msgid "Письмо не ушло: почтовый узел не ответил. Попробуйте позже."
+msgstr "The email was not sent: the mail server did not respond. Try again later."
+
+#: apps/accounts/views/auth.py:401
 msgid "Слишком много запросов восстановления. Попробуйте через час."
 msgstr "Too many reset requests. Try again in an hour."
 
-#: apps/accounts/views/auth.py:193
+#: apps/accounts/views/auth.py:194
 msgid "Вход по резервному коду; осталось кодов: %(count)d. Новые выпускаются в «Настройках» кабинета."
 msgstr "Signed in with a backup code; codes left: %(count)d. New ones are issued in the account Settings."
 
-#: apps/accounts/views/auth.py:211
+#: apps/accounts/views/auth.py:212
 msgid "Слишком много неверных кодов. Войдите заново."
 msgstr "Too many wrong codes. Sign in again."
 
@@ -1014,11 +1080,11 @@ msgstr "Sessions on other devices have been ended"
 msgid "Вход с кодом включён"
 msgstr "Sign-in with a code is on"
 
-#: apps/accounts/views/security.py:202
+#: apps/accounts/views/security.py:208
 msgid "Вход с кодом выключен"
 msgstr "Sign-in with a code is off"
 
-#: apps/accounts/views/security.py:231
+#: apps/accounts/views/security.py:237
 msgid "Выпущены новые резервные коды; прежние не действуют"
 msgstr "New backup codes have been issued; the previous ones no longer work"
 
@@ -1042,7 +1108,11 @@ msgstr "The email address has been changed. Sign in with the new address: %(emai
 msgid "С правами панели управления вход с кодом обязателен."
 msgstr "With control panel rights, sign-in with a code is required."
 
-#: apps/accounts/views/security.py:199
+#: apps/accounts/views/security.py:201
+msgid "Слишком много неверных кодов. Попробуйте через час."
+msgstr "Too many wrong codes. Try again in an hour."
+
+#: apps/accounts/views/security.py:205
 msgid "Код не подошёл"
 msgstr "The code did not match"
 
@@ -4056,7 +4126,7 @@ msgid "выпусков изданий"
 msgstr "editions of publications"
 
 #: apps/catalog/templates/catalog/dataset.html:54
-#: apps/userdata/views.py:622
+#: apps/userdata/views.py:627
 msgid "период"
 msgstr "period"
 
@@ -5589,6 +5659,7 @@ msgid "лучше всех"
 msgstr "best"
 
 #: apps/compare/templates/compare/partials/_compare_results.html:199
+#: apps/compare/templates/compare/partials/_compare_results.html:213
 msgid "Таблица различий"
 msgstr "Table of differences"
 
@@ -5596,11 +5667,11 @@ msgstr "Table of differences"
 msgid "Последнее доступное значение и место среди субъектов"
 msgstr "The latest available value and the place among the regions"
 
-#: apps/compare/templates/compare/partials/_compare_results.html:221
+#: apps/compare/templates/compare/partials/_compare_results.html:222
 msgid "РФ"
 msgstr "RF"
 
-#: apps/compare/templates/compare/partials/_compare_results.html:237
+#: apps/compare/templates/compare/partials/_compare_results.html:238
 #: apps/core/charts.py:430
 msgid "место"
 msgstr "place"
@@ -6349,9 +6420,9 @@ msgid "Согласие на обработку персональных дан�
 msgstr "Consent to the processing of personal data on RegionLens: which data, for what purposes, which operations, the term and how to withdraw it."
 
 #: apps/core/templates/core/consent.html:20
-#: apps/core/templates/core/privacy.html:362
+#: apps/core/templates/core/privacy.html:369
 #: apps/core/templates/core/terms.html:371
-#: apps/core/views.py:230
+#: apps/core/views.py:232
 msgid "Согласие на обработку персональных данных"
 msgstr "Consent to the processing of personal data"
 
@@ -6567,18 +6638,18 @@ msgid "Какие сведения о пользователях обрабат�
 msgstr "What information about users RegionLens processes, why, on what legal ground, how long it is kept and how to delete it."
 
 #: apps/core/templates/core/privacy.html:33
-#: apps/core/templates/core/privacy.html:348
+#: apps/core/templates/core/privacy.html:355
 #: apps/core/templates/core/terms.html:32
 #: apps/core/templates/core/terms.html:356
 msgid "Общие положения"
 msgstr "General provisions"
 
-#: apps/core/templates/core/privacy.html:349
+#: apps/core/templates/core/privacy.html:356
 #: apps/core/templates/core/privacy.html:47
 msgid "Оператор"
 msgstr "Operator"
 
-#: apps/core/templates/core/privacy.html:350
+#: apps/core/templates/core/privacy.html:357
 #: apps/core/templates/core/privacy.html:62
 msgid "Чьи данные обрабатываются"
 msgstr "Whose data are processed"
@@ -6595,7 +6666,7 @@ msgstr "Senders of enquiries through the form on the site, including those witho
 msgid "Посетители сайта — в журнале веб-сервера и при попытках входа."
 msgstr "Site visitors — in the web server log and on sign-in attempts."
 
-#: apps/core/templates/core/privacy.html:351
+#: apps/core/templates/core/privacy.html:358
 #: apps/core/templates/core/privacy.html:80
 msgid "Цели, данные, основания и сроки"
 msgstr "Purposes, data, legal grounds and periods"
@@ -6621,140 +6692,136 @@ msgid "Учётная запись: вход, сохранённое, мой р�
 msgstr "Account: sign-in, saved items, my region"
 
 #: apps/core/templates/core/privacy.html:103
-#: apps/core/templates/core/privacy.html:129
-#: apps/core/templates/core/privacy.html:141
+#: apps/core/templates/core/privacy.html:134
+#: apps/core/templates/core/privacy.html:146
 msgid "согласие (п. 1 ч. 1 ст. 6 152-ФЗ)"
 msgstr "consent (Federal Law No. 152-FZ, Art. 6(1)(1))"
 
-#: apps/core/templates/core/privacy.html:104
-msgid "до удаления учётной записи или отзыва согласия"
-msgstr "until the account is deleted or consent is withdrawn"
-
-#: apps/core/templates/core/privacy.html:107
+#: apps/core/templates/core/privacy.html:112
 msgid "Свои данные: загрузка и показ своих таблиц"
 msgstr "Your own data: uploading and displaying your tables"
 
-#: apps/core/templates/core/privacy.html:116
+#: apps/core/templates/core/privacy.html:121
 msgid "согласие (п. 1 ч. 1 ст. 6 152-ФЗ); без учётной записи таблица с личностью не связана"
 msgstr "consent (Art. 6(1)(1) of Federal Law 152-FZ); without an account the table is not linked to a person"
 
-#: apps/core/templates/core/privacy.html:125
+#: apps/core/templates/core/privacy.html:130
 msgid "Ответ на обращение"
 msgstr "Replying to an enquiry"
 
-#: apps/core/templates/core/privacy.html:127
+#: apps/core/templates/core/privacy.html:132
 msgid "имя, адрес для ответа, текст обращения, страница, с которой оно отправлено; ответ"
 msgstr "name, reply address, text of the enquiry, the page it was sent from; the reply"
 
-#: apps/core/templates/core/privacy.html:139
+#: apps/core/templates/core/privacy.html:144
 msgid "Защита формы обращения от рассылок"
 msgstr "Protecting the enquiry form from bulk messages"
 
-#: apps/core/templates/core/privacy.html:140
+#: apps/core/templates/core/privacy.html:145
 msgid "адрес IP и браузер отправителя обращения"
 msgstr "the IP address and browser of the enquiry’s sender"
 
-#: apps/core/templates/core/privacy.html:147
+#: apps/core/templates/core/privacy.html:152
 msgid "Защита входа от подбора пароля"
 msgstr "Protecting sign-in from password guessing"
 
-#: apps/core/templates/core/privacy.html:148
+#: apps/core/templates/core/privacy.html:153
 msgid "адрес IP, введённый адрес почты и браузер при неудачной попытке входа"
 msgstr "the IP address, the email address entered and the browser on a failed sign-in attempt"
 
-#: apps/core/templates/core/privacy.html:149
-#: apps/core/templates/core/privacy.html:159
+#: apps/core/templates/core/privacy.html:154
+#: apps/core/templates/core/privacy.html:164
 msgid "законный интерес оператора — безопасность сайта (п. 7 ч. 1 ст. 6 152-ФЗ)"
 msgstr "the operator’s legitimate interest — the site’s security (Federal Law No. 152-FZ, Art. 6(1)(7))"
 
-#: apps/core/templates/core/privacy.html:155
+#: apps/core/templates/core/privacy.html:160
 msgid "Защита сайта и статистика посещений"
 msgstr "Site protection and visit statistics"
 
-#: apps/core/templates/core/privacy.html:157
+#: apps/core/templates/core/privacy.html:162
 msgid "журнал веб-сервера: адрес IP, время, запрошенная страница, браузер, страница перехода"
 msgstr "web server log: IP address, time, requested page, browser, referring page"
 
-#: apps/core/templates/core/privacy.html:177
+#: apps/core/templates/core/privacy.html:182
 msgid "Резервные копии базы делаются ежедневно; копии во внешнем хранилище хранятся без срока."
 msgstr "Database backups are made daily; copies in external storage are kept without a time limit."
 
-#: apps/core/templates/core/privacy.html:198
-#: apps/core/templates/core/privacy.html:353
+#: apps/core/templates/core/privacy.html:205
+#: apps/core/templates/core/privacy.html:360
 msgid "Действия с данными"
 msgstr "Operations on data"
 
-#: apps/core/templates/core/privacy.html:212
-#: apps/core/templates/core/privacy.html:354
+#: apps/core/templates/core/privacy.html:219
+#: apps/core/templates/core/privacy.html:361
 msgid "Передача и место хранения"
 msgstr "Transfer and place of storage"
 
-#: apps/core/templates/core/privacy.html:240
-#: apps/core/templates/core/privacy.html:355
+#: apps/core/templates/core/privacy.html:247
+#: apps/core/templates/core/privacy.html:362
 msgid "Кто видит данные"
 msgstr "Who sees the data"
 
-#: apps/core/templates/core/privacy.html:258
-#: apps/core/templates/core/privacy.html:356
+#: apps/core/templates/core/privacy.html:265
+#: apps/core/templates/core/privacy.html:363
 msgid "Загружаемые таблицы"
 msgstr "Uploaded tables"
 
-#: apps/core/templates/core/privacy.html:287
-#: apps/core/templates/core/privacy.html:357
+#: apps/core/templates/core/privacy.html:294
+#: apps/core/templates/core/privacy.html:364
 msgid "Права пользователя"
 msgstr "The user’s rights"
 
-#: apps/core/templates/core/privacy.html:289
+#: apps/core/templates/core/privacy.html:296
 msgid "Получить сведения об обработке своих персональных данных (ст. 14 152-ФЗ)."
 msgstr "To obtain information about the processing of one’s personal data (Federal Law No. 152-FZ, Art. 14)."
 
-#: apps/core/templates/core/privacy.html:290
+#: apps/core/templates/core/privacy.html:297
 msgid "Потребовать уточнения, блокирования или уничтожения неполных, устаревших, неточных или ненужных для цели данных."
 msgstr "To demand that incomplete, outdated, inaccurate or unnecessary data be corrected, blocked or destroyed."
 
-#: apps/core/templates/core/privacy.html:291
+#: apps/core/templates/core/privacy.html:298
 msgid "Отозвать согласие на обработку персональных данных."
 msgstr "To withdraw consent to the processing of personal data."
 
-#: apps/core/templates/core/privacy.html:292
+#: apps/core/templates/core/privacy.html:299
 msgid "Обжаловать действия оператора в Роскомнадзоре или в суде."
 msgstr "To appeal against the operator’s actions to Roskomnadzor or in court."
 
-#: apps/core/templates/core/privacy.html:321
-#: apps/core/templates/core/privacy.html:358
+#: apps/core/templates/core/privacy.html:328
+#: apps/core/templates/core/privacy.html:365
 msgid "Меры защиты"
 msgstr "Security measures"
 
-#: apps/core/templates/core/privacy.html:323
+#: apps/core/templates/core/privacy.html:330
 msgid "Передача данных — только по протоколу HTTPS (шифрование TLS)."
 msgstr "Data are transferred only over HTTPS (TLS encryption)."
 
-#: apps/core/templates/core/privacy.html:324
+#: apps/core/templates/core/privacy.html:331
 msgid "Пароли хранятся только в виде хэшей Argon2; резервные коды входа — тоже хэшами."
 msgstr "Passwords are kept only as Argon2 hashes; backup sign-in codes are hashed too."
 
-#: apps/core/templates/core/privacy.html:325
+#: apps/core/templates/core/privacy.html:332
 msgid "Число неудачных попыток входа ограничено; для панели управления обязателен вход с одноразовым кодом."
 msgstr "The number of failed sign-in attempts is limited; sign-in with a one-time code is mandatory for the control panel."
 
-#: apps/core/templates/core/privacy.html:326
+#: apps/core/templates/core/privacy.html:333
 msgid "Доступ к сведениям о пользователях есть только у администратора; права разделены по ролям."
 msgstr "Only the administrator has access to user information; permissions are divided by role."
 
-#: apps/core/templates/core/privacy.html:327
+#: apps/core/templates/core/privacy.html:334
 msgid "Резервные копии базы делаются ежедневно и хранятся ограниченный срок."
 msgstr "Database backups are made daily and kept for a limited period."
 
-#: apps/core/templates/core/privacy.html:328
+#: apps/core/templates/core/privacy.html:335
 msgid "Письма об ошибках сервера не содержат паролей и содержимого форм."
 msgstr "Server error reports contain no passwords and no form contents."
 
-#: apps/core/templates/core/privacy.html:333
-#: apps/core/templates/core/privacy.html:359
+#: apps/core/templates/core/privacy.html:340
+#: apps/core/templates/core/privacy.html:366
 msgid "Изменение политики"
 msgstr "Changes to the policy"
 
-#: apps/core/templates/core/privacy.html:346
+#: apps/core/templates/core/privacy.html:353
 #: apps/core/templates/core/terms.html:354
 msgid "На странице"
 msgstr "On this page"
@@ -6775,79 +6842,83 @@ msgstr "Special categories of personal data and biometric personal data are not 
 msgid "адрес почты, имя, мой регион; пароль — только в виде хэша Argon2; даты регистрации, последнего входа и визита; ключ входа с кодом и хэши резервных кодов, если вход с кодом включён; сохранённые регионы, показатели и виды экрана с пометками"
 msgstr "email address, name, my region; the password — only as an Argon2 hash; dates of registration, last sign-in and last visit; the one-time code key and hashes of backup codes, if sign-in with a code is on; saved regions, indicators and views with notes"
 
-#: apps/core/templates/core/privacy.html:109
+#: apps/core/templates/core/privacy.html:105
+msgid "до удаления учётной записи или отзыва согласия; запись, адрес которой не подтверждён по ссылке из письма, — %(days)s суток"
+msgstr "until the account is deleted or consent is withdrawn; an account whose address is not confirmed by the link from the email — %(days)s days"
+
+#: apps/core/templates/core/privacy.html:114
 msgid "загруженная таблица — исходный файл и его разбор, прежние версии файла; название, источник и описание, указанные пользователем; исследования — название, заметки и параметры карточек; закрытые ссылки — отпечаток, срок и число открытий; без учётной записи — случайный ключ в сеансе, к которому привязана таблица"
 msgstr "an uploaded table — the original file and its parsing, earlier versions of the file; the title, source and description given by the user; studies — the title, notes and card parameters; private links — the fingerprint, term and number of openings; without an account — a random key in the session the table is tied to"
 
-#: apps/core/templates/core/privacy.html:118
+#: apps/core/templates/core/privacy.html:123
 msgid "без учётной записи — %(hours)s ч; с учётной записью — до удаления таблицы или учётной записи"
 msgstr "without an account — %(hours)s h; with an account — until the table or the account is deleted"
 
-#: apps/core/templates/core/privacy.html:131
+#: apps/core/templates/core/privacy.html:136
 msgid "обращение из учётной записи — пока она существует, затем без имени и адреса; без учётной записи — имя и адрес удаляются через %(days)s суток после ответа или закрытия обращения"
 msgstr "an enquiry from an account — while the account exists, then without the name and address; without an account — the name and address are deleted %(days)s days after the reply or closure"
 
-#: apps/core/templates/core/privacy.html:143
+#: apps/core/templates/core/privacy.html:148
 msgid "%(days)s суток"
 msgstr "%(days)s days"
 
-#: apps/core/templates/core/privacy.html:151
+#: apps/core/templates/core/privacy.html:156
 msgid "%(hours)s ч после последней попытки"
 msgstr "%(hours)s h after the last attempt"
 
-#: apps/core/templates/core/privacy.html:161
+#: apps/core/templates/core/privacy.html:166
 msgid "%(days)s суток; статистика посещений хранит адреса без последней части"
 msgstr "%(days)s days; visit statistics keep addresses without the last part"
 
-#: apps/core/templates/core/privacy.html:172
+#: apps/core/templates/core/privacy.html:177
 msgid "Резервные копии базы делаются ежедневно; удалённое исчезает из них через %(days)s суток."
 msgstr "Database backups are made daily; deleted data disappear from them after %(days)s days."
 
-#: apps/core/templates/core/privacy.html:187
-msgid "Сайт ставит только необходимые для работы cookie: сеанс после входа (%(days)s суток), защита форм, язык страницы, мой регион без входа. Тема оформления и недавние переходы быстрого поиска хранятся только в браузере. Счётчиков посещений, рекламы и cookie других сайтов нет."
-msgstr "The site sets only the cookies it needs to work: the session after sign-in (%(days)s days), form protection, page language, my region without sign-in. The colour theme and recent quick-search items are kept only in the browser. There are no visit counters, advertising or third-party cookies."
+#: apps/core/templates/core/privacy.html:192
+msgid "Сайт ставит только необходимые для работы cookie: сеанс после входа (%(days)s суток), защита форм, язык страницы, мой регион без входа, отметка браузера, из которого вы входили (%(device_days)s суток; с ней чужие попытки подобрать пароль не закрывают вход вам). Тема оформления и недавние переходы быстрого поиска хранятся только в браузере. Счётчиков посещений, рекламы и cookie других сайтов нет."
+msgstr "The site sets only the cookies it needs to work: the session after sign-in (%(days)s days), form protection, page language, my region without sign-in, and a mark of the browser you signed in from (%(device_days)s days; with it, other people's attempts to guess the password do not lock you out). The colour theme and recent quick-search jumps are stored only in the browser. There are no visit counters, advertising or third-party cookies."
 
-#: apps/core/templates/core/privacy.html:201
+#: apps/core/templates/core/privacy.html:208
 msgid "Сбор, запись, систематизация, накопление, хранение, уточнение (обновление, изменение), извлечение, использование, передача (предоставление), блокирование, удаление, уничтожение. Обработка автоматизированная, с передачей по сети Интернет по защищённому протоколу."
 msgstr "Collection, recording, systematisation, accumulation, storage, clarification (updating, changing), retrieval, use, transfer (provision), blocking, deletion, destruction. The processing is automated, with transfer over the internet by a secure protocol."
 
-#: apps/core/templates/core/privacy.html:215
+#: apps/core/templates/core/privacy.html:222
 msgid "Персональные данные не продаются и не передаются третьим лицам, кроме почтового сервера, через который сайт отправляет письма (адрес получателя и текст письма), и случаев, предусмотренных законом."
 msgstr "Personal data are not sold or passed to third parties, except to the mail server through which the site sends email (the recipient’s address and the text of the message) and in cases provided for by law."
 
-#: apps/core/templates/core/privacy.html:223
+#: apps/core/templates/core/privacy.html:230
 msgid "Сведения об ошибках страниц уходят в службу учёта ошибок без адресов, имён и cookie."
 msgstr "Reports of page errors go to an error tracking service without addresses, names or cookies."
 
-#: apps/core/templates/core/privacy.html:230
+#: apps/core/templates/core/privacy.html:237
 msgid "Базы данных, в которых записываются и хранятся персональные данные, и резервные копии находятся в Российской Федерации (ч. 5 ст. 18 152-ФЗ). Трансграничная передача персональных данных не выполняется."
 msgstr "The databases in which personal data are recorded and stored, and their backups, are located in the Russian Federation (Federal Law No. 152-FZ, Art. 18(5)). Personal data are not transferred across borders."
 
-#: apps/core/templates/core/privacy.html:243
+#: apps/core/templates/core/privacy.html:250
 msgid "Сохранённое, загруженные таблицы и исследования видит только владелец. Таблицу или исследование видит также тот, кому владелец передал закрытую ссылку на неё: только для чтения, пока не истёк срок ссылки и владелец её не отозвал; скачивать таблицу и документы — если владелец это разрешил. Читатель ссылки не видит ни учётной записи владельца, ни его других таблиц, кроме тех, ряды которых есть в открытом исследовании. Администратор видит учётную запись — почту, имя, даты входа, число сохранённого и таблиц, — но не само сохранённое и не содержимое таблиц и исследований. Обращения читают те, кто на них отвечает."
 msgstr "Saved items, uploaded tables and studies are visible only to their owner. A table or a study is also visible to the person to whom the owner gave a private link to it: for reading only, until the link’s term expires or the owner revokes it; downloading the table and documents — if the owner allowed it. A link reader sees neither the owner’s account nor the owner’s other tables, except those whose series are in the opened study. An administrator sees the account — email, name, sign-in dates, the number of saved items and tables — but not the saved items themselves or the contents of the tables and studies. Enquiries are read by those who answer them."
 
-#: apps/core/templates/core/privacy.html:261
+#: apps/core/templates/core/privacy.html:268
 msgid "Таблицы раздела «Свои данные» предназначены для значений по территориям, а не для сведений о людях. Загружать таблицы с персональными данными нельзя. Содержимое таблиц сайт разбирает только для показа их владельцу: по нему не строятся выводы о пользователе, и оно не передаётся третьим лицам."
 msgstr "Tables in the “Your own data” section are meant for values by territory, not for information about people. Tables with personal data must not be uploaded. The site parses the contents of tables only to show them to their owner: no conclusions about the user are drawn from them, and they are not passed to third parties."
 
-#: apps/core/templates/core/privacy.html:269
+#: apps/core/templates/core/privacy.html:276
 msgid "Таблица без учётной записи удаляется через %(hours)s ч; после входа она переходит в учётную запись. Таблица удаляется на её странице, а все таблицы и исследования — вместе с учётной записью; удаление затрагивает исходный файл, его версии и весь разбор. У таблицы хранятся последние версии файла (их число названо на странице таблицы); более старые удаляются при загрузке новой. Закрытая ссылка перестаёт действовать в свой срок, при отзыве и при удалении таблицы или исследования."
 msgstr "A table without an account is deleted after %(hours)s h; after signing in it moves to the account. A table is deleted on its page, and all tables and studies — together with the account; deletion covers the original file, its versions and all of its parsing. A table keeps its latest file versions (their number is given on the table page); older ones are deleted when a new one is uploaded. A private link stops working at the end of its term, when revoked and when the table or study is deleted."
 
-#: apps/core/templates/core/privacy.html:278
+#: apps/core/templates/core/privacy.html:285
 msgid "Таблицы учётных записей входят в резервные копии и исчезают из них через %(days)s суток после удаления; таблицы без учётной записи в копии не входят."
 msgstr "Tables of accounts are included in backups and disappear from them %(days)s days after deletion; tables without an account are not included in backups."
 
-#: apps/core/templates/core/privacy.html:298
+#: apps/core/templates/core/privacy.html:305
 msgid "В личном кабинете, в разделе <a href=\"%(data_url)s\">«Персональные данные»</a>, всё сохранённое о себе выгружается одним файлом JSON, а учётная запись удаляется после подтверждения паролем; имя и мой регион меняются в <a href=\"%(profile_url)s\">профиле</a>. Удаление учётной записи — отзыв согласия: сохранённое удаляется сразу, обращения остаются без имени и адреса."
 msgstr "In the personal account, in the <a href=\"%(data_url)s\">“Personal data”</a> section, everything kept about you is downloaded as one JSON file, and the account is deleted after confirmation with the password; the name and my region are changed in the <a href=\"%(profile_url)s\">profile</a>. Deleting the account withdraws consent: saved items are deleted at once, enquiries remain without the name and address."
 
-#: apps/core/templates/core/privacy.html:309
+#: apps/core/templates/core/privacy.html:316
 msgid "Остальные запросы, в том числе отзыв согласия по обращению без учётной записи, — по адресу <a href=\"mailto:%(email)s\">%(email)s</a> или через <a href=\"%(url)s\">форму обращения</a>. Ответ — в течение 10 рабочих дней; после отзыва согласия данные уничтожаются в течение %(days)s дней, если закон не требует их хранить."
 msgstr "Other requests, including withdrawal of consent for an enquiry sent without an account, go to <a href=\"mailto:%(email)s\">%(email)s</a> or through the <a href=\"%(url)s\">enquiry form</a>. The reply comes within 10 working days; after consent is withdrawn the data are destroyed within %(days)s days unless the law requires them to be kept."
 
-#: apps/core/templates/core/privacy.html:336
+#: apps/core/templates/core/privacy.html:343
 msgid "Новая редакция публикуется на этой странице с датой. Если меняются цели обработки или состав данных, новое согласие запрашивается отдельно."
 msgstr "A new version is published on this page with its date. If the purposes of processing or the set of data change, new consent is requested separately."
 
@@ -7450,7 +7521,7 @@ msgid "Единицы измерения"
 msgstr "Units of measurement"
 
 #: apps/dashboard/templates/dashboard/_candidate_report.html:56
-#: apps/warehouse/etl/integrity.py:25
+#: apps/warehouse/etl/integrity.py:27
 msgid "Связи с выпусками источников"
 msgstr "Links to source releases"
 
@@ -10567,47 +10638,51 @@ msgstr "from the sheet name “%(text)s”"
 msgid "из имени файла «%(text)s»"
 msgstr "from the file name “%(text)s”"
 
-#: apps/userdata/documents.py:103
-#: apps/userdata/documents.py:107
-#: apps/userdata/documents.py:112
+#: apps/userdata/documents.py:131
+#: apps/userdata/documents.py:134
+#: apps/userdata/documents.py:139
 msgid "Документ «%(name)s» повреждён."
 msgstr "The document “%(name)s” is damaged."
 
-#: apps/userdata/documents.py:300
+#: apps/userdata/documents.py:366
 msgid "Это скан: в PDF нет текстового слоя, таблицу из него не прочитать. Нужен PDF, сохранённый из Word или Excel, или сама таблица."
 msgstr "This is a scan: the PDF has no text layer, so the table cannot be read from it. Use a PDF saved from Word or Excel, or the table itself."
 
-#: apps/userdata/documents.py:244
+#: apps/userdata/documents.py:310
 msgid "PDF защищён паролем. Снимите защиту и загрузите снова."
 msgstr "The PDF is password-protected. Remove the protection and upload it again."
 
-#: apps/userdata/documents.py:246
+#: apps/userdata/documents.py:312
 msgid "PDF «%(name)s» повреждён."
 msgstr "The PDF “%(name)s” is damaged."
 
-#: apps/userdata/documents.py:250
+#: apps/userdata/documents.py:316
 msgid "В PDF больше %(limit)s страниц. Сохраните страницы с нужной таблицей отдельным файлом и загрузите его."
 msgstr "The PDF has more than %(limit)s pages. Save the pages with the table you need as a separate file and upload it."
 
-#: apps/userdata/documents.py:266
+#: apps/userdata/documents.py:332
 msgid "PDF читается слишком долго. Сохраните страницы с нужной таблицей отдельным файлом и загрузите его."
 msgstr "The PDF takes too long to read. Save the pages with the table you need as a separate file and upload it."
 
-#: apps/userdata/documents.py:91
+#: apps/userdata/documents.py:119
 msgid "Документ «%(name)s» слишком большой."
 msgstr "The document “%(name)s” is too large."
 
-#: apps/userdata/documents.py:96
+#: apps/userdata/documents.py:124
 msgid "Документ «%(name)s» сжат слишком сильно. Такой файл не принимается."
 msgstr "The document “%(name)s” is compressed too strongly. Such a file is not accepted."
 
-#: apps/userdata/documents.py:289
+#: apps/userdata/documents.py:355
 msgid "Таблица %(number)s, стр. %(page)s"
 msgstr "Table %(number)s, p. %(page)s"
 
-#: apps/userdata/documents.py:128
+#: apps/userdata/documents.py:155
 msgid "Таблица %(number)s"
 msgstr "Table %(number)s"
+
+#: apps/userdata/documents.py:283
+msgid "На странице %(page)s PDF слишком много линий и знаков, чтобы разобрать её как таблицу. Сохраните таблицу в Excel или CSV и загрузите этот файл."
+msgstr "Page %(page)s of the PDF has too many lines and characters to read it as a table. Save the table to Excel or CSV and upload that file."
 
 #: apps/userdata/examples.py:80
 msgid "Пример: %(title)s"
@@ -11058,27 +11133,27 @@ msgstr "The group contains all regions, so there is nothing to compare it with."
 msgid "Групп уже %(count)s — это предел. Удалите ненужные."
 msgstr "You already have %(count)s groups, which is the limit. Delete the ones you no longer need."
 
-#: apps/userdata/ingest.py:760
+#: apps/userdata/ingest.py:772
 msgid "Файл защищён паролем. Снимите защиту в Excel и загрузите снова."
 msgstr "The file is password-protected. Remove the protection in Excel and upload it again."
 
-#: apps/userdata/ingest.py:771
+#: apps/userdata/ingest.py:783
 msgid "Подходят CSV, TXT, XLSX, XLS, ODS, Parquet, DOCX, PDF и ZIP с ними."
 msgstr "CSV, TXT, XLSX, XLS, ODS, Parquet, DOCX, PDF and ZIP archives with them are accepted."
 
-#: apps/userdata/ingest.py:764
+#: apps/userdata/ingest.py:776
 msgid "Таблица «%(name)s» в распакованном виде больше %(limit)s МБ. Оставьте в ней только нужные показатели или годы."
 msgstr "Unpacked, the table “%(name)s” is larger than %(limit)s MB. Keep only the indicators or years you need."
 
-#: apps/userdata/ingest.py:773
+#: apps/userdata/ingest.py:785
 msgid "Документ этого вида не читается. Сохраните его в Word как DOCX или скопируйте таблицу и вставьте её в поле «Вставить таблицу»."
 msgstr "A document of this kind cannot be read. Save it in Word as DOCX, or copy the table and paste it into the “Paste a table” field."
 
-#: apps/userdata/ingest.py:778
+#: apps/userdata/ingest.py:790
 msgid "Архивы RAR и 7z не принимаются. Распакуйте архив и загрузите таблицу или ZIP."
 msgstr "RAR and 7z archives are not accepted. Unpack the archive and upload the table or a ZIP."
 
-#: apps/userdata/ingest.py:779
+#: apps/userdata/ingest.py:791
 msgid "Сжатые файлы GZIP не принимаются. Распакуйте файл или загрузите архив ZIP."
 msgstr "GZIP files are not accepted. Unpack the file or upload a ZIP archive."
 
@@ -11098,23 +11173,23 @@ msgstr "The archive contains files with paths outside the archive. Such an archi
 msgid "В архиве больше %(count)s файлов. Загрузите архив только с нужными таблицами."
 msgstr "The archive has more than %(count)s files. Upload an archive with only the tables you need."
 
-#: apps/userdata/ingest.py:580
+#: apps/userdata/ingest.py:581
 msgid "Листы книги «%(name)s» сжаты слишком сильно. Такой файл не принимается."
 msgstr "The sheets of the workbook “%(name)s” are compressed too strongly. Such a file is not accepted."
 
-#: apps/userdata/ingest.py:592
+#: apps/userdata/ingest.py:593
 msgid "Файл Parquet повреждён."
 msgstr "The Parquet file is damaged."
 
-#: apps/userdata/ingest.py:777
+#: apps/userdata/ingest.py:789
 msgid "Это изображение, а не таблица."
 msgstr "This is an image, not a table."
 
-#: apps/userdata/ingest.py:780
+#: apps/userdata/ingest.py:792
 msgid "Это не таблица."
 msgstr "This is not a table."
 
-#: apps/userdata/ingest.py:781
+#: apps/userdata/ingest.py:793
 msgid "В архиве нет таблиц."
 msgstr "The archive contains no tables."
 
@@ -11134,11 +11209,15 @@ msgstr "The archive has no file “%(name)s”."
 msgid "Файл «%(name)s» не читается как таблица Excel."
 msgstr "The file “%(name)s” cannot be read as an Excel table."
 
-#: apps/userdata/ingest.py:569
+#: apps/userdata/ingest.py:570
 msgid "Файл «%(name)s» повреждён."
 msgstr "The file “%(name)s” is damaged."
 
-#: apps/userdata/jobs.py:252
+#: apps/userdata/ingest.py:737
+msgid "Строку таблицы не прочитать: похоже, в файле не закрыта кавычка. Проверьте файл и загрузите его снова."
+msgstr "A row of the table cannot be read: the file probably has an unclosed quote. Check the file and upload it again."
+
+#: apps/userdata/jobs.py:257
 msgid "Разбор прервался. Попробуйте ещё раз или оставьте в таблице только нужные показатели и годы."
 msgstr "Parsing was interrupted. Try again, or keep only the indicators and years you need in the table."
 
@@ -11549,12 +11628,12 @@ msgid "по полугодиям"
 msgstr "by half-year"
 
 #: apps/userdata/monthly.py:143
-#: apps/userdata/views.py:637
+#: apps/userdata/views.py:642
 msgid "с начала года"
 msgstr "year to date"
 
 #: apps/userdata/monthly.py:145
-#: apps/userdata/views.py:639
+#: apps/userdata/views.py:644
 msgid "на начало месяца"
 msgstr "at the start of the month"
 
@@ -12458,7 +12537,7 @@ msgstr "Find an indicator in all tables"
 
 #: apps/userdata/templates/userdata/_column_role.html:5
 #: apps/userdata/templates/userdata/table_step.html:284
-#: apps/userdata/views.py:719
+#: apps/userdata/views.py:724
 msgid "столбец %(number)s"
 msgstr "column %(number)s"
 
@@ -14123,13 +14202,13 @@ msgstr "Table layout"
 #: apps/userdata/templates/userdata/index.html:230
 #: apps/userdata/templates/userdata/index.html:239
 #: apps/userdata/templates/userdata/index.html:248
-#: apps/userdata/views.py:619
+#: apps/userdata/views.py:624
 msgid "регион"
 msgstr "region"
 
 #: apps/userdata/templates/userdata/index.html:221
 #: apps/userdata/templates/userdata/table_step.html:278
-#: apps/userdata/views.py:627
+#: apps/userdata/views.py:632
 msgid "значение"
 msgstr "value"
 
@@ -14305,8 +14384,8 @@ msgid "Незначимые после поправки: %(count)s"
 msgstr "Not significant after adjustment: %(count)s"
 
 #: apps/userdata/templates/userdata/series_step.html:20
-#: apps/userdata/views.py:409
-#: apps/userdata/views.py:424
+#: apps/userdata/views.py:414
+#: apps/userdata/views.py:429
 msgid "Проверка таблицы"
 msgstr "Table check"
 
@@ -14675,8 +14754,8 @@ msgid "изменено %(moment)s"
 msgstr "changed %(moment)s"
 
 #: apps/userdata/templates/userdata/table_step.html:17
-#: apps/userdata/views.py:297
-#: apps/userdata/views.py:322
+#: apps/userdata/views.py:302
+#: apps/userdata/views.py:327
 #: apps/userdata/views.py:47
 msgid "Что в таблице"
 msgstr "What is in the table"
@@ -15043,87 +15122,87 @@ msgstr "The file has several tables: choose the one used in the previous version
 msgid "Таблица снова в версии %(number)s."
 msgstr "The table is back at version %(number)s."
 
-#: apps/userdata/views.py:633
+#: apps/userdata/views.py:638
 msgid "годы"
 msgstr "years"
 
-#: apps/userdata/views.py:634
+#: apps/userdata/views.py:639
 msgid "месяцы"
 msgstr "months"
 
-#: apps/userdata/views.py:635
+#: apps/userdata/views.py:640
 msgid "кварталы"
 msgstr "quarters"
 
-#: apps/userdata/views.py:636
+#: apps/userdata/views.py:641
 msgid "полугодия"
 msgstr "half-years"
 
-#: apps/userdata/views.py:638
+#: apps/userdata/views.py:643
 msgid "скользящие месяцы"
 msgstr "rolling months"
 
-#: apps/userdata/views.py:642
+#: apps/userdata/views.py:647
 msgid "Длинная таблица: регион, период и значение — в своих столбцах."
 msgstr "A long table: region, period and value in their own columns."
 
-#: apps/userdata/views.py:643
+#: apps/userdata/views.py:648
 msgid "Годы или периоды — в столбцах, регионы — в строках."
 msgstr "Years or periods in columns, regions in rows."
 
-#: apps/userdata/views.py:644
+#: apps/userdata/views.py:649
 msgid "Показатели — в столбцах, регионы — в строках; года в таблице нет."
 msgstr "Indicators in columns, regions in rows; the table has no year."
 
-#: apps/userdata/views.py:645
+#: apps/userdata/views.py:650
 msgid "Регионы — в столбцах, годы — в строках."
 msgstr "Regions in columns, years in rows."
 
-#: apps/userdata/views.py:646
+#: apps/userdata/views.py:651
 msgid "Регионы в таблице не найдены."
 msgstr "No regions were found in the table."
 
-#: apps/userdata/views.py:620
+#: apps/userdata/views.py:625
 msgid "код региона"
 msgstr "region code"
 
-#: apps/userdata/views.py:621
+#: apps/userdata/views.py:626
 msgid "уровень территории"
 msgstr "territory level"
 
-#: apps/userdata/views.py:623
+#: apps/userdata/views.py:628
 msgid "показатель"
 msgstr "indicator"
 
-#: apps/userdata/views.py:624
+#: apps/userdata/views.py:629
 msgid "код показателя"
 msgstr "indicator code"
 
-#: apps/userdata/views.py:625
+#: apps/userdata/views.py:630
 msgid "единица"
 msgstr "unit"
 
-#: apps/userdata/views.py:626
+#: apps/userdata/views.py:631
 msgid "разрез"
 msgstr "breakdown"
 
-#: apps/userdata/views.py:628
+#: apps/userdata/views.py:633
 msgid "причина пропуска"
 msgstr "reason for a missing value"
 
-#: apps/userdata/views.py:629
+#: apps/userdata/views.py:634
 msgid "примечание"
 msgstr "note"
 
-#: apps/userdata/views.py:630
+#: apps/userdata/views.py:635
 msgid "пропустить"
 msgstr "skip"
 
-#: apps/userdata/views.py:364
+#: apps/userdata/views.py:369
 msgid "Описание таблицы сохранено."
 msgstr "The table description has been saved."
 
-#: apps/userdata/views.py:399
+#: apps/userdata/views.py:404
 msgid "Сначала сохраните описание таблицы."
 msgstr "Save the table description first."
 
@@ -15139,31 +15218,31 @@ msgstr "The pasted text has no new rows."
 msgid "Строк добавлено: %(count)s."
 msgstr "Rows added: %(count)s."
 
-#: apps/warehouse/etl/integrity.py:23
+#: apps/warehouse/etl/integrity.py:25
 msgid "Основной набор"
 msgstr "Core set"
 
-#: apps/warehouse/etl/integrity.py:24
+#: apps/warehouse/etl/integrity.py:26
 msgid "Пересчёт в реальное выражение"
 msgstr "Conversion to real terms"
 
-#: apps/warehouse/etl/integrity.py:26
+#: apps/warehouse/etl/integrity.py:28
 msgid "Статусы публикации рядов"
 msgstr "Series publication statuses"
 
-#: apps/warehouse/etl/integrity.py:27
+#: apps/warehouse/etl/integrity.py:29
 msgid "Численность для рядов на жителя"
 msgstr "Population for per capita series"
 
-#: apps/warehouse/etl/integrity.py:28
+#: apps/warehouse/etl/integrity.py:30
 msgid "Стоимость набора в паспорте"
 msgstr "Basket cost in the region profile"
 
-#: apps/warehouse/etl/integrity.py:29
+#: apps/warehouse/etl/integrity.py:31
 msgid "Сохранённые виды пользователей"
 msgstr "Users' saved views"
 
-#: apps/warehouse/etl/integrity.py:30
+#: apps/warehouse/etl/integrity.py:32
 msgid "Избранное пользователей"
 msgstr "Users' favourites"
 
@@ -15642,63 +15721,63 @@ msgstr "Server error"
 msgid "Страницу не удалось собрать. Сведения об ошибке сохранены; обновите страницу через минуту."
 msgstr "The page could not be assembled. The error has been logged; refresh the page in a minute."
 
-#: templates/base.html:58
+#: templates/base.html:60
 msgid "Сохранить картинкой с подписью и источником"
 msgstr "Save as an image with a caption and source"
 
-#: templates/base.html:59
+#: templates/base.html:61
 msgid "Сохранить картинкой PNG"
 msgstr "Save as a PNG image"
 
-#: templates/base.html:60
+#: templates/base.html:62
 msgid "Сохранить чертежом SVG"
 msgstr "Save as an SVG drawing"
 
-#: templates/base.html:61
+#: templates/base.html:63
 msgid "График"
 msgstr "Chart"
 
-#: templates/base.html:62
+#: templates/base.html:64
 msgid "Линий всего"
 msgstr "Lines in total"
 
-#: templates/base.html:63
+#: templates/base.html:65
 msgid "Точек"
 msgstr "Points"
 
-#: templates/base.html:64
+#: templates/base.html:66
 msgid "Всего значений"
 msgstr "Values in total"
 
-#: templates/base.html:65
+#: templates/base.html:67
 msgid "наименьшее"
 msgstr "lowest"
 
-#: templates/base.html:66
+#: templates/base.html:68
 msgid "наибольшее"
 msgstr "highest"
 
-#: templates/base.html:67
+#: templates/base.html:69
 msgid "по горизонтали"
 msgstr "horizontal axis"
 
-#: templates/base.html:68
+#: templates/base.html:70
 msgid "по вертикали"
 msgstr "vertical axis"
 
-#: templates/base.html:70
+#: templates/base.html:72
 msgid "Прокрутить назад"
 msgstr "Scroll back"
 
-#: templates/base.html:71
+#: templates/base.html:73
 msgid "Прокрутить вперёд"
 msgstr "Scroll forward"
 
-#: templates/base.html:72
+#: templates/base.html:74
 msgid "Перейти к содержимому"
 msgstr "Skip to content"
 
-#: templates/base.html:94
+#: templates/base.html:96
 msgid "Закрыть уведомление"
 msgstr "Close the notification"
 

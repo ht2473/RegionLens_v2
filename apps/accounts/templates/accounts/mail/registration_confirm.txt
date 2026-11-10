@@ -1,0 +1,14 @@
+{% load i18n %}{% autoescape off %}{% blocktranslate trimmed with name=user.full_name %}Здравствуйте, {{ name }}!{% endblocktranslate %}
+
+{% blocktranslate trimmed with project=project_name email=user.email %}
+На адрес {{ email }} заведена учётная запись в {{ project }}.
+Чтобы закончить регистрацию, откройте ссылку и нажмите «Подтвердить адрес»:
+{% endblocktranslate %}
+
+{{ link }}
+
+{% blocktranslate trimmed %}
+Ссылка действует {{ days }} суток. Если регистрировались не вы, ничего делать не нужно:
+без подтверждения учётная запись удалится сама.
+{% endblocktranslate %}
+{% endautoescape %}

@@ -36,7 +36,8 @@ CLIENT_IP_HEADER = env.str("CLIENT_IP_HEADER", default="HTTP_X_REAL_IP")
 AXES_FAILURE_LIMIT = 5  # попыток до блокировки
 AXES_COOLOFF_TIME = 1  # часов блокировки
 # На стенде блокировка — по каждому признаку в отдельности: перебор идёт с многих адресов.
-AXES_LOCKOUT_PARAMETERS = ["ip_address", "username"]  # type: ignore[list-item]
+# Браузеру, из которого владелец уже входил, блокировка по одной почте вход не закрывает.
+LOGIN_LOCKOUT_PARAMETERS = ["ip_address", "username"]
 # Адрес для django-axes — из того же заголовка, что CLIENT_IP_HEADER: REMOTE_ADDR
 # за прокси у всех один.
 AXES_IPWARE_META_PRECEDENCE_ORDER = ("HTTP_X_REAL_IP", "REMOTE_ADDR")

@@ -1,0 +1,17 @@
+{% load i18n %}{% autoescape off %}{% blocktranslate trimmed with name=user.full_name %}Здравствуйте, {{ name }}!{% endblocktranslate %}
+
+{% blocktranslate trimmed with project=project_name email=user.email %}
+Кто-то попробовал зарегистрироваться в {{ project }} с адресом {{ email }},
+но учётная запись с этим адресом уже есть. Новая не создана, пароль прежний.
+{% endblocktranslate %}
+
+{% translate "Если это были вы, войдите:" %}
+
+{{ login_url }}
+
+{% translate "Если пароль забыт, назначьте новый:" %}
+
+{{ reset_url }}
+
+{% translate "Если это были не вы, ничего делать не нужно." %}
+{% endautoescape %}

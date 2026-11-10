@@ -14,11 +14,13 @@ class AccountsConfig(AppConfig):
     verbose_name = "Пользователи и доступ"
 
     def ready(self) -> None:
-        """Роли — после прав, которые заводит сигнал приложения auth; регион гостя — при входе."""
+        """Роли — после прав приложения auth; регион гостя и отметка браузера — при входе."""
         from django.contrib.auth.signals import user_logged_in
 
         from .region import adopt_guest_region
         from .roles import ensure_roles
+        from .security import remember_device
 
         post_migrate.connect(ensure_roles, sender=self, dispatch_uid="accounts-ensure-roles")
         user_logged_in.connect(adopt_guest_region, dispatch_uid="accounts-adopt-region")
+        user_logged_in.connect(remember_device, dispatch_uid="accounts-remember-device")

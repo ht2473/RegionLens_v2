@@ -12,7 +12,7 @@ from django.utils.translation import gettext
 
 # Даты редакций: меняются вместе с содержанием документа.
 TERMS_REVISION = date(2026, 10, 5)
-PRIVACY_REVISION = date(2026, 10, 5)
+PRIVACY_REVISION = date(2026, 11, 10)
 CONSENT_REVISION = date(2026, 10, 5)
 
 # Сроки хранения из политики; очистку выполняет команда prune_personal_data.

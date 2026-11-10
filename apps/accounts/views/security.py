@@ -12,12 +12,12 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView, TemplateView, View
 
 from apps.core.navigation import Crumb
-from apps.core.throttle import allow_key
+from apps.core.throttle import allow_key, used
 from apps.core.views import BreadcrumbMixin
 
 from .. import security, totp
 from ..cabinet import CABINET_SECTIONS, CabinetViewMixin, settings_url
-from ..constants import EMAIL_CHANGE_PER_USER
+from ..constants import CODE_CHECK_PER_USER, EMAIL_CHANGE_PER_USER
 from ..forms import EmailChangeForm, PasswordConfirmForm, TwoFactorDisableForm, TwoFactorEnableForm
 from .settings import SettingsContextMixin
 
@@ -195,7 +195,13 @@ class TwoFactorDisableView(SettingsContextMixin, FormView):
         if user.has_panel_access:
             form.add_error(None, _("С правами панели управления вход с кодом обязателен."))
             return self.form_invalid(form)
+        rate = CODE_CHECK_PER_USER
+        key = str(user.pk)
+        if used("code-check", key) >= rate.limit:
+            form.add_error(None, _("Слишком много неверных кодов. Попробуйте через час."))
+            return self.form_invalid(form)
         if not security.verify_code(user, form.cleaned_data["code"]):
+            allow_key("code-check", key, limit=rate.limit, window=rate.window)
             form.add_error("code", _("Код не подошёл"))
             return self.form_invalid(form)
         security.disable_two_factor(self.request, user)

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import re
+import threading
 from functools import lru_cache
+from typing import Any
 
 import snowballstemmer
 
@@ -44,10 +46,20 @@ _STOP_TEXT = (
 )
 STOP_WORDS = frozenset(_STOP_TEXT.split())
 
-_STEMMERS = {
-    "ru": snowballstemmer.stemmer("russian"),
-    "en": snowballstemmer.stemmer("english"),
-}
+# Стеммер Snowball хранит разбираемое слово в себе и не годится для нескольких потоков
+# сразу: на стенде (gunicorn, по четыре потока) два одновременных поиска портили друг другу
+# слово, и запрос падал с IndexError. Поэтому у каждого потока свои стеммеры.
+_LOCAL = threading.local()
+
+
+def _stemmer(language: str) -> Any:
+    stemmers = getattr(_LOCAL, "stemmers", None)
+    if stemmers is None:
+        stemmers = _LOCAL.stemmers = {
+            "ru": snowballstemmer.stemmer("russian"),
+            "en": snowballstemmer.stemmer("english"),
+        }
+    return stemmers[language]
 
 
 def normalize(text: str) -> str:
@@ -66,7 +78,7 @@ def stem(word: str) -> str:
     if word.isdigit():
         return word
     language = "ru" if _CYRILLIC_RE.search(word) else "en"
-    return str(_STEMMERS[language].stemWord(word))
+    return str(_stemmer(language).stemWord(word))
 
 
 def stems(text: str, *, keep_stop: bool = False) -> list[str]:

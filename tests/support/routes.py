@@ -28,5 +28,6 @@ PUBLIC_PAGES = [
     "userdata:index",
     "accounts:login",
     "accounts:register",
+    "accounts:register-done",
     "accounts:password-reset",
 ]

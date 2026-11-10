@@ -18,6 +18,10 @@ from django.conf import settings
 
 # Флаг ZIP «имя в UTF-8».
 _UTF8_FLAG = 0x800
+# Предел распакованного: выпуск источника — десятки мегабайт, а архив, который
+# разворачивается в гигабайты, — подмена или порча; без предела он занял бы всю память.
+MAX_UNPACKED_BYTES = 2 * 1024**3
+_CHUNK_BYTES = 1 << 20
 _WINDOWS_BSDTAR = Path(os.environ.get("SYSTEMROOT", r"C:\Windows")) / "System32" / "tar.exe"
 
 
@@ -51,8 +55,11 @@ def bsdtar() -> str | None:
 
 
 def _unzip(archive: Path, target: Path) -> None:
+    written = 0
     try:
         with zipfile.ZipFile(archive) as bundle:
+            if sum(info.file_size for info in bundle.infolist()) > MAX_UNPACKED_BYTES:
+                raise UnpackError(f"{archive.name}: распакованный архив больше допустимого")
             for info in bundle.infolist():
                 name = info.filename
                 if not info.flag_bits & _UTF8_FLAG:
@@ -66,7 +73,15 @@ def _unzip(archive: Path, target: Path) -> None:
                     destination.mkdir(parents=True, exist_ok=True)
                     continue
                 destination.parent.mkdir(parents=True, exist_ok=True)
-                destination.write_bytes(bundle.read(info))
+                # Размер считается по ходу: заголовок архива может его занижать.
+                with bundle.open(info) as source, destination.open("wb") as output:
+                    while chunk := source.read(_CHUNK_BYTES):
+                        written += len(chunk)
+                        if written > MAX_UNPACKED_BYTES:
+                            raise UnpackError(
+                                f"{archive.name}: распакованный архив больше допустимого"
+                            )
+                        output.write(chunk)
     except zipfile.BadZipFile as error:
         raise UnpackError(f"{archive.name}: повреждённый ZIP ({error})") from error
 
@@ -90,7 +105,10 @@ def _unrar(archive: Path, target: Path) -> None:
 
 def _safe_relative(name: str) -> Path | None:
     """Относительный путь внутри каталога; имена с «..» и абсолютные отбрасываются."""
-    parts = [part for part in PurePosixPath(name.replace("\\", "/")).parts if part not in {"", "/"}]
+    normalized = name.replace("\\", "/")
+    if normalized.startswith("/"):
+        return None
+    parts = [part for part in PurePosixPath(normalized).parts if part not in {"", "/"}]
     if not parts or any(part == ".." for part in parts) or ":" in parts[0]:
         return None
     return Path(*parts)

@@ -15,6 +15,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from apps.accounts.services import prune_unconfirmed
 from apps.core.documents import TICKET_CONTACT_DAYS, TICKET_TRACE_DAYS
 from apps.feedback.constants import TicketStatus
 from apps.feedback.models import Ticket
@@ -26,8 +27,8 @@ EXPIRED_CONTACT = "удалено по сроку хранения"
 
 class Command(BaseCommand):
     """
-    Удалить сеансы, попытки входа, сведения об отправителях обращений и таблицы гостей,
-    чей срок истёк, и осиротевшие файлы таблиц.
+    Удалить сеансы, попытки входа, неподтверждённые учётные записи, сведения об отправителях
+    обращений и таблицы гостей, чей срок истёк, и осиротевшие файлы таблиц.
     """
 
     help = "Удаляет персональные данные, срок хранения которых истёк"
@@ -59,11 +60,15 @@ class Command(BaseCommand):
             .update(contact_name=EXPIRED_CONTACT, contact_email="")
         )
 
+        # Запись без подтверждённого адреса: ссылка из письма истекла, войти в неё нельзя.
+        unconfirmed = prune_unconfirmed()
+
         tables, orphans = prune_tables()
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Истёкшие сеансы удалены; попыток входа: {attempts}; обращений без адреса IP: "
+                f"Истёкшие сеансы удалены; попыток входа: {attempts}; неподтверждённых учётных "
+                f"записей: {unconfirmed}; обращений без адреса IP: "
                 f"{traces}; обращений без имени и адреса: {contacts}; таблиц гостей: {tables}; "
                 f"осиротевших каталогов таблиц: {orphans}"
             )

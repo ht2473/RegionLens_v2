@@ -14,6 +14,12 @@ urlpatterns = [
     path("login/code/", views.LoginCodeView.as_view(), name="login-code"),
     path("logout/", views.LogoutView.as_view(), name="logout"),
     path("register/", views.RegisterView.as_view(), name="register"),
+    path("register/sent/", views.RegisterDoneView.as_view(), name="register-done"),
+    path(
+        "register/confirm/<str:token>/",
+        views.RegisterConfirmView.as_view(),
+        name="register-confirm",
+    ),
     path("my-region/", views.MyRegionView.as_view(), name="my-region"),
     # --- Восстановление пароля ---------------------------------------------------------
     path("password/reset/", views.PasswordResetView.as_view(), name="password-reset"),

@@ -14,12 +14,13 @@ from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonRes
 from django.http.response import HttpResponseBase
 from django.shortcuts import redirect, resolve_url
 from django.urls import reverse_lazy
-from django.utils.http import url_has_allowed_host_and_scheme
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import FormView
+from django.views.generic import FormView, TemplateView
 
 from apps.core.navigation import Crumb
 from apps.core.throttle import allow, allow_key
+from apps.core.utils.redirects import is_local_path
 from apps.core.views import BreadcrumbMixin
 
 from ..cabinet import CABINET_SECTIONS, CabinetViewMixin, settings_url
@@ -44,7 +45,7 @@ from ..forms import (
 )
 from ..models import User
 from ..security import mark_second_factor, passed_second_factor, verify_code
-from ..services import register_user
+from ..services import RegistrationError, confirm_registration, request_registration
 
 # Сеанс между верным паролем и кодом: кто входит, куда потом и сколько кодов не подошло.
 PENDING_LOGIN_SESSION_KEY = "accounts:pending-login"
@@ -220,9 +221,7 @@ class LoginCodeView(BreadcrumbMixin, FormView):
         """Куда перейти после кода: сохранённый при вводе пароля адрес или ``next``."""
         request = self.request
         wanted = (self.pending or {}).get("next") or request.GET.get("next", "")
-        if wanted and url_has_allowed_host_and_scheme(
-            wanted, allowed_hosts={request.get_host()}, require_https=request.is_secure()
-        ):
+        if is_local_path(request, str(wanted)):
             return str(wanted)
         return resolve_url(settings.LOGIN_REDIRECT_URL)
 
@@ -232,11 +231,16 @@ class LogoutView(auth_views.LogoutView):
 
 
 class RegisterView(BreadcrumbMixin, FormView):
-    """Регистрация учётной записи; после неё пользователь сразу входит в систему."""
+    """
+    Регистрация учётной записи: заявка и письмо со ссылкой на адрес.
+
+    Войти можно после перехода по ссылке — так запись получает только владелец адреса.
+    Ответ страницы один и тот же для свободного и занятого адреса.
+    """
 
     template_name = "accounts/register.html"
     form_class = RegistrationForm
-    success_url = reverse_lazy("accounts:dashboard")
+    success_url = reverse_lazy("accounts:register-done")
 
     def get_crumbs(self) -> tuple[Crumb, ...]:
         """Путь к странице."""
@@ -268,14 +272,63 @@ class RegisterView(BreadcrumbMixin, FormView):
             form.add_error(None, _("Слишком много регистраций подряд. Попробуйте через час."))
             return self.form_invalid(form)
 
-        user = register_user(
+        error = request_registration(
+            self.request,
             email=email,
             password=form.cleaned_data["password2"],
             full_name=form.cleaned_data["full_name"],
         )
-        login(self.request, user, backend="django.contrib.auth.backends.ModelBackend")
-        messages.success(self.request, _("Учётная запись создана"))
+        if error:
+            form.add_error(None, _("Письмо не ушло: почтовый узел не ответил. Попробуйте позже."))
+            return self.form_invalid(form)
         return super().form_valid(form)
+
+
+class RegisterDoneView(BreadcrumbMixin, TemplateView):
+    """Сообщение об отправке письма; не раскрывает, был ли адрес зарегистрирован."""
+
+    template_name = "accounts/register_done.html"
+
+    def get_crumbs(self) -> tuple[Crumb, ...]:
+        """Путь к странице."""
+        return (Crumb(title=_("Регистрация")),)
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Заголовок страницы и срок действия ссылки."""
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = _("Письмо отправлено")
+        context["days"] = settings.PASSWORD_RESET_TIMEOUT // (24 * 3600)
+        return context
+
+
+class RegisterConfirmView(BreadcrumbMixin, TemplateView):
+    """
+    Подтверждение адреса по ссылке из письма.
+
+    Открытие ссылки только показывает кнопку: почтовые службы открывают ссылки сами.
+    После подтверждения — обычный вход: пароль знает тот, кто заполнял форму.
+    """
+
+    template_name = "accounts/register_confirm.html"
+
+    def get_crumbs(self) -> tuple[Crumb, ...]:
+        """Путь к странице."""
+        return (Crumb(title=_("Подтверждение регистрации")),)
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Заголовок страницы."""
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = _("Подтверждение регистрации")
+        return context
+
+    def post(self, request: HttpRequest, token: str) -> HttpResponse:
+        """Подтвердить адрес и отправить ко входу."""
+        try:
+            confirm_registration(token)
+        except RegistrationError as error:
+            return self.render_to_response(self.get_context_data(error=str(error)))
+        messages.success(request, _("Адрес почты подтверждён. Войдите с ним и своим паролем."))
+        return redirect(settings.LOGIN_URL)
 
 
 # ---------------------------------------------------------------------------------------
@@ -381,6 +434,20 @@ class PasswordResetConfirmView(BreadcrumbMixin, auth_views.PasswordResetConfirmV
         context = super().get_context_data(**kwargs)
         context["page_title"] = _("Новый пароль")
         return context
+
+    def form_valid(self, form: StyledSetPasswordForm) -> HttpResponse:  # type: ignore[override]
+        """
+        Назначить пароль; ссылка из письма заодно подтверждает адрес почты.
+
+        Так владелец адреса получает запись, которую на его почту завёл кто-то другой:
+        новый пароль знает только он.
+        """
+        response = super().form_valid(form)
+        user: Any = form.user
+        if user.email_confirmed_at is None:
+            user.email_confirmed_at = timezone.now()
+            user.save(update_fields=["email_confirmed_at", "updated_at"])
+        return response
 
 
 class PasswordResetCompleteView(BreadcrumbMixin, auth_views.PasswordResetCompleteView):

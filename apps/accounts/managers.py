@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from django.contrib.auth.models import BaseUserManager, Group
+from django.utils import timezone
 
 from .constants import ROLE_ADMIN, ROLE_USER
 
@@ -26,6 +27,8 @@ class UserManager(BaseUserManager["User"]):
             raise ValueError("Адрес электронной почты обязателен для создания пользователя")
 
         email = self.normalize_email(email).lower()
+        # Запись, созданная не формой регистрации (команда, наполнение), подтверждения не ждёт.
+        extra.setdefault("email_confirmed_at", timezone.now())
         user = self.model(email=email, **extra)
         user.set_password(password)
         user.full_clean(exclude=["password"])

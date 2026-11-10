@@ -156,6 +156,19 @@ class TestUnpack:
         with pytest.raises(unpack.UnpackError, match="повреждённый"):
             unpack.unpack(source, tmp_path / "out")
 
+    def test_oversized_zip_is_refused(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Архив, который разворачивается больше предела, не распаковывается."""
+        import zipfile
+
+        monkeypatch.setattr(unpack, "MAX_UNPACKED_BYTES", 1000)
+        source = tmp_path / "release.zip"
+        with zipfile.ZipFile(source, "w", zipfile.ZIP_DEFLATED) as bundle:
+            bundle.writestr("big.csv", b"0" * 5000)
+        with pytest.raises(unpack.UnpackError, match="больше допустимого"):
+            unpack.unpack(source, tmp_path / "out")
+
     def test_rar_without_tool(
         self, settings: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

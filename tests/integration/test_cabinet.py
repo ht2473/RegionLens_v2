@@ -33,6 +33,7 @@ from apps.accounts.forms import EmailChangeForm
 from apps.accounts.models import User
 from apps.accounts.region import REGION_COOKIE
 from apps.accounts.security import SECOND_FACTOR_SESSION_KEY, SETUP_SESSION_KEY
+from apps.core import secretbox
 from apps.feedback.constants import TicketStatus
 from apps.feedback.models import Ticket
 from apps.workspace.models import Favorite, SavedQuery
@@ -50,6 +51,12 @@ def fresh_counters() -> None:
 def current_code(secret: str = TEST_TOTP_SECRET) -> str:
     """Код текущего шага."""
     return totp.code_at(secret, totp.current_step())
+
+
+def setup_secret(client: Client, user: User) -> str:
+    """Ключ, который пользователь сейчас настраивает: в сеансе он зашифрован."""
+    sealed = client.session[SETUP_SESSION_KEY]
+    return secretbox.unseal(sealed, f"{SETUP_SESSION_KEY}:{user.pk}")
 
 
 def logged_in(client: Client) -> bool:
@@ -226,7 +233,7 @@ class TestTwoFactorSettings:
         page = member_client.get(reverse("accounts:two-factor"))
         assert page.status_code == 200
         assert 'class="qr-code__ink"' in page.content.decode()
-        secret = member_client.session[SETUP_SESSION_KEY]
+        secret = setup_secret(member_client, member)
 
         response = member_client.post(
             reverse("accounts:two-factor"), {"code": current_code(secret)}
@@ -243,7 +250,7 @@ class TestTwoFactorSettings:
     def test_wrong_first_code_keeps_it_off(self, member_client: Client, member: User) -> None:
         """Неверный первый код ничего не включает."""
         member_client.get(reverse("accounts:two-factor"))
-        secret = member_client.session[SETUP_SESSION_KEY]
+        secret = setup_secret(member_client, member)
         wrong = "000000" if current_code(secret) != "000000" else "111111"
         member_client.post(reverse("accounts:two-factor"), {"code": wrong})
         member.refresh_from_db()

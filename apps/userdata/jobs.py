@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import subprocess  # nosec B404 — запускается собственная команда проекта
@@ -23,6 +24,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+import duckdb
 from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -84,7 +86,10 @@ def ensure_summary(version: DatasetVersion) -> str:
         return state
     path = version.directory / version.recipe["file"]
     if path.stat().st_size <= INLINE_BYTES:
-        summarize(version)
+        # Таблицу не прочитать (например, незакрытая кавычка склеила весь файл в строку длиннее
+        # предела DuckDB): сбой записан в отчёт версии, страница скажет о нём вместо ошибки.
+        with contextlib.suppress(duckdb.Error):
+            summarize(version)
         return summary_state(version)
     mark(version, profile_state=RUNNING, profile_started=timezone.now().isoformat())
     launch(version)

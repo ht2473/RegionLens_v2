@@ -66,6 +66,9 @@ class User(AbstractBaseUser, PermissionsMixin, PublicIdentifierModel, TimeStampe
     # Входит в хэш сеанса: увеличение завершает все сеансы, кроме пересчитанного.
     session_version = models.PositiveIntegerField("версия сеансов", default=0)
     pending_email = models.EmailField("новый адрес, ждёт подтверждения", max_length=254, blank=True)
+    # Пусто — регистрация не завершена: владелец адреса ещё не открыл ссылку из письма.
+    # Войти в такую запись нельзя; неподтверждённая запись удаляется, когда ссылка истекает.
+    email_confirmed_at = models.DateTimeField("адрес почты подтверждён", null=True, blank=True)
 
     # Согласие на обработку персональных данных: доказать его получение должен оператор.
     consent_at = models.DateTimeField("согласие на обработку дано", null=True, blank=True)

@@ -13,9 +13,10 @@ from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.crypto import salted_hmac
+from django.utils.crypto import constant_time_compare, salted_hmac
 from django.utils.translation import gettext
 
+from apps.core import secretbox
 from apps.core.mail import deliver
 
 from . import totp
@@ -29,6 +30,10 @@ SETUP_SESSION_KEY = "accounts:pending-totp"
 
 # Ссылка подтверждения нового адреса живёт столько же, сколько ссылка восстановления пароля.
 EMAIL_CHANGE_SALT = "apps.accounts.email-change"
+
+# Отметка браузера, из которого владелец уже входил; срок — DEVICE_COOKIE_AGE в настройках.
+DEVICE_COOKIE = "regionlens_device"
+DEVICE_SALT = "apps.accounts.device"
 
 
 # ---------------------------------------------------------------------------------------
@@ -56,6 +61,60 @@ def attempt_label(
     return f"попытка {digest}, {path_info or ''}"
 
 
+# ---------------------------------------------------------------------------------------
+# Знакомый браузер
+# ---------------------------------------------------------------------------------------
+#
+# Блокировка по одной почте останавливает перебор пароля с многих адресов, но ею же любой
+# посторонний закрывает вход владельцу: пять неверных паролей в час — и запись недоступна.
+# Браузер, из которого владелец уже входил, получает подписанную отметку; с ней неудачи
+# считаются только по паре «адрес + почта», и чужие попытки вход владельцу не закрывают.
+# Отметка ничего не открывает: пароль и код нужны по-прежнему.
+
+
+def device_mark(email: str) -> str:
+    """Отпечаток почты для отметки браузера: самой почты в cookie нет."""
+    return salted_hmac(DEVICE_SALT, email.strip().lower(), algorithm="sha256").hexdigest()[:24]
+
+
+def remember_device(request: HttpRequest, user: User, **_kwargs: Any) -> None:
+    """Вход удался: в ответе браузер получит отметку (``DeviceCookieMiddleware``)."""
+    request.device_mark = device_mark(user.email)  # type: ignore[attr-defined]
+
+
+def known_device(request: HttpRequest, email: str) -> bool:
+    """Из этого браузера в запись с такой почтой уже входили."""
+    value = request.COOKIES.get(DEVICE_COOKIE, "")
+    if not value or not email:
+        return False
+    try:
+        mark = signing.loads(value, salt=DEVICE_SALT, max_age=settings.DEVICE_COOKIE_AGE)
+    except signing.BadSignature:
+        return False
+    return constant_time_compare(str(mark), device_mark(email))
+
+
+def lockout_parameters(
+    request_or_attempt: Any, credentials: dict[str, Any] | None = None
+) -> list[Any]:
+    """
+    Признаки блокировки для django-axes (``AXES_LOCKOUT_PARAMETERS``).
+
+    Обычно это ``LOGIN_LOCKOUT_PARAMETERS``. У знакомого браузера блокировка по одной почте
+    заменяется блокировкой по паре «адрес + почта».
+    """
+    parameters: list[Any] = list(settings.LOGIN_LOCKOUT_PARAMETERS)
+    if "username" not in parameters or not isinstance(request_or_attempt, HttpRequest):
+        return parameters
+    request = request_or_attempt
+    email = str((credentials or {}).get("username") or request.POST.get("username", ""))
+    if not known_device(request, email):
+        return parameters
+    pair = ["ip_address", "username"]
+    kept = [item for item in parameters if item != "username"]
+    return kept if pair in kept else [*kept, pair]
+
+
 def end_other_sessions(request: HttpRequest | None, user: User) -> None:
     """Завершить все сеансы учётной записи, кроме текущего (если он её)."""
     User.objects.filter(pk=user.pk).update(session_version=F("session_version") + 1)
@@ -80,12 +139,23 @@ def passed_second_factor(request: HttpRequest) -> bool:
 
 
 def pending_secret(request: HttpRequest) -> str:
-    """Ключ, который пользователь сейчас добавляет в приложение; создаётся при первом показе."""
-    secret = request.session.get(SETUP_SESSION_KEY)
-    if not secret:
-        secret = totp.new_secret()
-        request.session[SETUP_SESSION_KEY] = secret
-    return str(secret)
+    """
+    Ключ, который пользователь сейчас добавляет в приложение; создаётся при первом показе.
+
+    В сеансе он лежит зашифрованным, как потом в учётной записи: данные сеанса хранятся
+    в базе и кэше открыто, а этот ключ после включения станет действующим.
+    """
+    context = f"{SETUP_SESSION_KEY}:{request.user.pk}"
+    sealed = request.session.get(SETUP_SESSION_KEY)
+    if sealed:
+        try:
+            return secretbox.unseal(str(sealed), context)
+        except secretbox.SecretBoxError:
+            # Запись прежнего вида или другого ключа шифрования: настройка начинается заново.
+            pass
+    secret = totp.new_secret()
+    request.session[SETUP_SESSION_KEY] = secretbox.seal(secret, context)
+    return secret
 
 
 @transaction.atomic

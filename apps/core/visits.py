@@ -38,11 +38,24 @@ RUN_TIMEOUT = 600
 MOSCOW = timezone(timedelta(hours=3))
 # Не посещения: файлы оформления и сценарии, проверки состояния.
 SKIPPED_PREFIXES = ("/static/", "/healthz", "/readyz", "/favicon.ico")
-# Адреса со служебными метками (сброс пароля, подтверждение почты): метка заменяется.
+# Адреса со служебными метками (сброс пароля, подтверждение почты и регистрации, закрытая
+# ссылка на таблицу или исследование): метка заменяется. Метка закрытой ссылки открывает
+# чужие данные, пока ссылка действует, — в истории, которая хранится без срока, ей не место.
+# Те же правила — у журнала Caddy (docker/Caddyfile).
 MASKED_ROUTES = (
     (re.compile(r"(/password/reset/)[^/]+/[^/]+/"), r"\1*/*/"),
     (re.compile(r"(/email/confirm/)[^/]+/"), r"\1*/"),
+    (re.compile(r"(/register/confirm/)[^/]+/"), r"\1*/"),
+    (re.compile(r"(^|://[^/]+)(/s/)[A-Za-z0-9_-]{8,64}(?=/|\?|$)"), r"\1\2*"),
 )
+
+
+def mask_tokens(text: str) -> str:
+    """Адрес или заголовок перехода без служебных меток."""
+    for pattern, replacement in MASKED_ROUTES:
+        text = pattern.sub(replacement, text)
+    return text
+
 
 # Сколько строк в перечнях раздела панели.
 TOP_ROWS = 15
@@ -112,13 +125,13 @@ def history_line(raw: bytes) -> tuple[datetime, str] | None:
     path = str(request.get("uri", "")).split("?", 1)[0] or "/"
     if path.startswith(SKIPPED_PREFIXES):
         return None
-    for pattern, replacement in MASKED_ROUTES:
-        path = pattern.sub(replacement, path)
+    path = mask_tokens(path)
     headers = request.get("headers") or {}
 
     def header(name: str) -> str:
         values = headers.get(name) or ["-"]
-        return str(values[0]).replace('"', "'") or "-"
+        # Страница закрытой ссылки называет свой адрес в заголовке перехода следующих страниц.
+        return mask_tokens(str(values[0]).replace('"', "'")) or "-"
 
     address = mask_ip(str(request.get("client_ip") or request.get("remote_ip") or ""))
     line = (

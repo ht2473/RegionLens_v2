@@ -180,6 +180,8 @@ class DocumentView(BreadcrumbMixin, TemplateView):
         context["ticket_contact_days"] = documents.TICKET_CONTACT_DAYS
         context["destruction_days"] = documents.DESTRUCTION_DAYS
         context["lockout_hours"] = settings.AXES_COOLOFF_TIME
+        context["unconfirmed_days"] = settings.PASSWORD_RESET_TIMEOUT // (24 * 3600)
+        context["device_days"] = settings.DEVICE_COOKIE_AGE // (24 * 3600)
         context["guest_hours"] = settings.USERDATA_GUEST_HOURS
         context["upload_mb"] = settings.USERDATA_UPLOAD_MAX_BYTES // (1024 * 1024)
         context["table_limit"] = settings.USERDATA_MAX_DATASETS
