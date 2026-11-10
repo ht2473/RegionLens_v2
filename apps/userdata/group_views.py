@@ -12,13 +12,13 @@ from django.contrib import messages
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView
 
 from apps.catalog.selectors import grouped_territories
 from apps.core.navigation import Crumb
+from apps.core.utils.redirects import is_local_path
 from apps.core.views import BreadcrumbMixin
 
 from . import groups, studies
@@ -91,10 +91,7 @@ class GroupsView(BreadcrumbMixin, TemplateView):
 def _next(request: HttpRequest) -> str:
     """Куда вернуться после сохранения: только адрес этого сайта."""
     target = request.POST.get("next") or request.GET.get("next") or ""
-    allowed = url_has_allowed_host_and_scheme(
-        target, allowed_hosts={request.get_host()}, require_https=request.is_secure()
-    )
-    return target if target and allowed else ""
+    return target if is_local_path(request, target) else ""
 
 
 class StudyGroupView(TemplateView):

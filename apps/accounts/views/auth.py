@@ -15,12 +15,12 @@ from django.http.response import HttpResponseBase
 from django.shortcuts import redirect, resolve_url
 from django.urls import reverse_lazy
 from django.utils import timezone
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView, TemplateView
 
 from apps.core.navigation import Crumb
 from apps.core.throttle import allow, allow_key
+from apps.core.utils.redirects import is_local_path
 from apps.core.views import BreadcrumbMixin
 
 from ..cabinet import CABINET_SECTIONS, CabinetViewMixin, settings_url
@@ -221,9 +221,7 @@ class LoginCodeView(BreadcrumbMixin, FormView):
         """Куда перейти после кода: сохранённый при вводе пароля адрес или ``next``."""
         request = self.request
         wanted = (self.pending or {}).get("next") or request.GET.get("next", "")
-        if wanted and url_has_allowed_host_and_scheme(
-            wanted, allowed_hosts={request.get_host()}, require_https=request.is_secure()
-        ):
+        if is_local_path(request, str(wanted)):
             return str(wanted)
         return resolve_url(settings.LOGIN_REDIRECT_URL)
 
