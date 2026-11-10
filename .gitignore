@@ -30,6 +30,7 @@ data/tmp/
 # Наборы, загруженные из панели управления; архив выпусков источников и их разбор.
 data/uploads/
 data/archive/
+data/attest/
 data/sources/
 data/visits/
 # Таблицы пользователей («Свои данные»).

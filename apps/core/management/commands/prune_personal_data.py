@@ -11,6 +11,7 @@ from importlib import import_module
 from typing import Any
 
 from axes.models import AccessAttempt
+from django.apps import apps
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -65,11 +66,19 @@ class Command(BaseCommand):
 
         tables, orphans = prune_tables()
 
+        # Заодно — реестр выданных документов: персональных данных в нём нет, но срок хранения
+        # у него свой, и чистится он тем же суточным запуском.
+        issued = 0
+        if apps.is_installed("apps.attest"):
+            from apps.attest.services import prune as prune_issued
+
+            issued = prune_issued()
+
         self.stdout.write(
             self.style.SUCCESS(
                 f"Истёкшие сеансы удалены; попыток входа: {attempts}; неподтверждённых учётных "
                 f"записей: {unconfirmed}; обращений без адреса IP: "
                 f"{traces}; обращений без имени и адреса: {contacts}; таблиц гостей: {tables}; "
-                f"осиротевших каталогов таблиц: {orphans}"
+                f"осиротевших каталогов таблиц: {orphans}; записей реестра документов: {issued}"
             )
         )

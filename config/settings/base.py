@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
 
 import environ
@@ -124,6 +125,12 @@ LOCAL_APPS = [
     "apps.userdata",  # свои данные: таблицы пользователей, разбор, ряды
     "apps.search",  # поиск вопросом: разбор запроса, ответы, журнал запросов без ответа
 ]
+
+# Подпись выдаваемых документов (apps/attest) работает на библиотеке doc-provenance;
+# без библиотеки приложение не подключается, и сайт работает как прежде.
+ATTEST_ENABLED = importlib.util.find_spec("provenance") is not None
+if ATTEST_ENABLED:
+    LOCAL_APPS.append("apps.attest")
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -446,6 +453,19 @@ SOURCE_USER_AGENT = env.str(
     "SOURCE_USER_AGENT",
     default=f"RegionLens/{PROJECT_VERSION} (+mailto:{PROJECT_AUTHOR_EMAIL})",
 )
+
+# ---------------------------------------------------------------------------------------
+# Подпись документов и описи архива (apps/attest)
+# ---------------------------------------------------------------------------------------
+
+# Ключ и сертификат службы подписи, корневой сертификат и список отзыва. Корневого
+# закрытого ключа здесь нет. Пустой каталог — подпись выключена.
+ATTEST_DIR = BASE_DIR / env.str("ATTEST_DIR", default="data/attest")
+# Сколько хранится запись реестра выданных: в этот срок документ проверяется по одному
+# файлу, позже — вместе с файлом подписи.
+ATTEST_REGISTRY_DAYS = env.int("ATTEST_REGISTRY_DAYS", default=730)
+# Предел файла на странице проверки: выгрузки сайта заведомо меньше.
+ATTEST_MAX_BYTES = env.int("ATTEST_MAX_BYTES", default=20 * 1024 * 1024)
 
 # ---------------------------------------------------------------------------------------
 # Статистика посещений по журналу Caddy (команда visits)

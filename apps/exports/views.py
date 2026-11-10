@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import logging
+
+from django.apps import apps
+from django.db import DatabaseError
 from django.http import Http404, HttpRequest, HttpResponse
 from django.views.generic import View
 
@@ -11,7 +15,9 @@ from apps.warehouse.routing import exportable, is_user_key
 
 from .constants import REPORT_KINDS_BY_CODE, ExportFormat
 from .reports import ReportParameterError
-from .services import DocumentRequestError, build_document, default_parameters
+from .services import Document, DocumentRequestError, build_document, default_parameters
+
+logger = logging.getLogger(__name__)
 
 # Предел документов с одного адреса за окно в секундах.
 DOCUMENT_LIMIT = 60
@@ -57,6 +63,10 @@ class DocumentView(View):
         except WarehouseNotBuiltError:
             return _refusal("Данные ещё не загружены", 503)
 
+        # За числа из чужой таблицы сайт не ручается: подписываются только ряды склада.
+        if not is_user_key(series):
+            _sign(document, kind, export_format)
+
         response = HttpResponse(document.payload, content_type=document.content_type)
         response["Content-Disposition"] = document.disposition
         # Происхождение — заголовком ``Link`` на исходную страницу, не строкой в файле.
@@ -70,6 +80,20 @@ class DataDownloadView(DocumentView):
     """Числа таблицей по короткому адресу ``data.csv``."""
 
     fixed_format = ExportFormat.CSV
+
+
+def _sign(document: Document, kind: str, export_format: str) -> None:
+    """Подписать документ и записать в реестр выданных; сбой подписи не мешает выдаче."""
+    if not apps.is_installed("apps.attest"):
+        return
+    from apps.attest import services as attest
+
+    try:
+        attest.issue(
+            document.payload, kind=kind, export_format=export_format, filename=document.filename
+        )
+    except DatabaseError:
+        logger.exception("Документ выдан без записи в реестр выданных")
 
 
 def _refusal(message: str, status: int) -> HttpResponse:

@@ -41,6 +41,12 @@ urlpatterns += i18n_patterns(
     prefix_default_language=True,
 )
 
+# Проверка документов — только когда подключена подпись (библиотека doc-provenance).
+if "apps.attest" in settings.INSTALLED_APPS:
+    urlpatterns += i18n_patterns(
+        path("", include("apps.attest.urls")), prefix_default_language=True
+    )
+
 # --- Разработка -------------------------------------------------------------------------------
 # Панель отладки включается явно (DEBUG_TOOLBAR в local.py).
 if settings.DEBUG and "debug_toolbar" in settings.INSTALLED_APPS:  # pragma: no cover

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{# Проверка документа: слева — форма и исход, справа — как проверить без сайта. #}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/cabinet.css' %}">
+  <link rel="stylesheet" href="{% static 'css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page">
+
+  <header class="page-head">
+    <h1 class="page-head__title">{% translate "Проверить документ" %}</h1>
+    <p class="page-head__lead">
+      {% blocktranslate trimmed %}
+        Таблицу или отчёт, скачанные с сайта, легко изменить и переслать дальше. Загрузите
+        файл — сайт скажет, тот ли это документ, который он выдал, или в нём что-то поправили.
+      {% endblocktranslate %}
+    </p>
+  </header>
+
+  <div class="feedback-layout">
+
+    <section class="form-sheet" aria-label="{% translate 'Проверка' %}">
+
+      {% if outcome %}
+        <div role="status" class="verify-outcome">
+        {% if outcome.status == "authentic" %}
+          <div class="callout callout--success">
+            <svg class="callout__icon" aria-hidden="true"><use href="#icon-check"></use></svg>
+            <div>
+              <div class="callout__title">{% translate "Документ подлинный" %}</div>
+              <p>
+                {% if outcome.record %}
+                  {% blocktranslate trimmed with name=name %}
+                    «{{ name }}» — тот самый документ, который выдал сайт: в нём не изменён ни один байт.
+                  {% endblocktranslate %}
+                {% else %}
+                  {% blocktranslate trimmed with name=name %}
+                    «{{ name }}» подписан сайтом и не изменён. В реестре выданных его уже нет:
+                    подлинность подтверждает приложенная подпись.
+                  {% endblocktranslate %}
+                {% endif %}
+              </p>
+            </div>
+          </div>
+          <dl class="definition-list verify-facts">
+            {% if outcome.record %}
+              <dt>{% translate "Выдан" %}</dt>
+              <dd>{{ outcome.record.created_at|date:"j E Y, H:i" }}</dd>
+              <dt>{% translate "Версия набора данных" %}</dt>
+              <dd>{{ outcome.record.dataset_version|default:"—" }}</dd>
+            {% endif %}
+            <dt>{% translate "Подписал" %}</dt>
+            <dd lang="ru">{{ outcome.verified.signer }}{% if outcome.verified.organization %}, {{ outcome.verified.organization }}{% endif %}</dd>
+            <dt>{% translate "Время подписи" %}</dt>
+            <dd>{{ outcome.verified.signing_time|date:"j E Y, H:i" }}</dd>
+            <dt>{% translate "Сертификат №" %}</dt>
+            <dd class="verify-hash">{{ outcome.verified.serial }}</dd>
+            <dt>{% translate "Отзыв" %}</dt>
+            <dd>
+              {% if outcome.verified.crl_checked %}{% translate "сертификат не отозван" %}{% else %}{% translate "не проверялся: списка отзыва нет" %}{% endif %}
+            </dd>
+            <dt>SHA-256</dt>
+            <dd class="verify-hash">{{ outcome.digest }}</dd>
+          </dl>
+          {% if outcome.record %}
+            <p>
+              <a class="button button--secondary button--sm"
+                 href="{% url 'attest:signature' sha256=outcome.digest %}" download>
+                <svg aria-hidden="true"><use href="#icon-download"></use></svg>
+                {% translate "Скачать подпись (.p7s)" %}
+              </a>
+            </p>
+          {% endif %}
+
+        {% elif outcome.status == "refused" %}
+          <div class="callout callout--danger">
+            <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+            <div>
+              <div class="callout__title">{% translate "Подлинность не подтверждена" %}</div>
+              <p>{{ outcome.reason }}</p>
+            </div>
+          </div>
+          <dl class="definition-list verify-facts">
+            <dt>{% translate "Файл" %}</dt>
+            <dd>{{ name }}</dd>
+            <dt>SHA-256</dt>
+            <dd class="verify-hash">{{ outcome.digest }}</dd>
+          </dl>
+
+        {% elif outcome.status == "unknown" %}
+          <div class="callout callout--warning">
+            <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+            <div>
+              <div class="callout__title">{% translate "Такого документа сайт не выдавал" %}</div>
+              <p>
+                {% blocktranslate trimmed with name=name %}
+                  «{{ name }}» не найден среди выданных. Либо документ изменён — хватит одного
+                  знака, либо он выдан не этим сайтом, либо выдан давно и запись о нём удалена.
+                  Если рядом с документом был файл подписи (.p7s), приложите его.
+                {% endblocktranslate %}
+              </p>
+            </div>
+          </div>
+          <dl class="definition-list verify-facts">
+            <dt>SHA-256</dt>
+            <dd class="verify-hash">{{ outcome.digest }}</dd>
+          </dl>
+
+        {% else %}
+          <div class="callout callout--info">
+            <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+            <div>
+              <div class="callout__title">{% translate "Подпись документов не настроена" %}</div>
+              <p>{% translate "На этом стенде документы выдаются без подписи, проверить их нечем." %}</p>
+            </div>
+          </div>
+        {% endif %}
+        </div>
+      {% endif %}
+
+      <form method="post" enctype="multipart/form-data" class="stack" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="callout callout--danger">
+            <svg class="callout__icon" aria-hidden="true"><use href="#icon-alert"></use></svg>
+            <div>{{ form.non_field_errors }}</div>
+          </div>
+        {% endif %}
+        {% include "partials/_field.html" with field=form.document %}
+        {% include "partials/_field.html" with field=form.signature %}
+        <div class="form-sheet__actions">
+          <button class="button button--primary" type="submit">{% translate "Проверить" %}</button>
+        </div>
+      </form>
+    </section>
+
+    <aside class="feedback-aside">
+      <section class="feedback-aside__block" aria-labelledby="verify-how">
+        <h2 class="feedback-aside__title" id="verify-how">{% translate "Как это работает" %}</h2>
+        <ol class="about-steps about-steps--compact">
+          <li>{% translate "Каждый документ с официальными данными сайт подписывает при выдаче." %}</li>
+          <li>{% translate "Проверка сравнивает файл с подписанным: расхождение в одном знаке — отказ." %}</li>
+          <li>{% translate "Таблицы пользователей сайт не подписывает: за чужие данные он не ручается." %}</li>
+        </ol>
+      </section>
+
+      {% if trust %}
+        <section class="feedback-aside__block" aria-labelledby="verify-offline">
+          <h2 class="feedback-aside__title" id="verify-offline">{% translate "Проверка без сайта" %}</h2>
+          <p>
+            {% blocktranslate trimmed %}
+              Документ с файлом подписи проверяется и без сайта — программой OpenSSL и корневым
+              сертификатом. Отпечаток сертификата сверьте с этим:
+            {% endblocktranslate %}
+          </p>
+          <p class="verify-hash">{{ trust.root_fingerprint }}</p>
+          <pre class="code-block"><code>openssl cms -verify -binary -inform DER \
+  -in report.csv.p7s -content report.csv \
+  -CAfile regionlens-root.crt -purpose any -out /dev/null</code></pre>
+          <ul class="verify-files">
+            <li><a href="{% url 'attest:trust-file' name='root.crt' %}" download>{% translate "Корневой сертификат" %}</a> — <span lang="ru">{{ trust.root_name }}</span></li>
+            <li><a href="{% url 'attest:trust-file' name='signer.crt' %}" download>{% translate "Сертификат службы подписи" %}</a> — {% blocktranslate trimmed with date=trust.signer_until|date:"j E Y" %}действует до {{ date }}{% endblocktranslate %}</li>
+            {% if trust.crl_updated %}
+              <li><a href="{% url 'attest:trust-file' name='crl.pem' %}" download>{% translate "Список отзыва" %}</a> — {% blocktranslate trimmed with date=trust.crl_updated|date:"j E Y" %}выпущен {{ date }}{% endblocktranslate %}</li>
+            {% endif %}
+          </ul>
+        </section>
+      {% endif %}
+    </aside>
+
+  </div>
+</div>
+{% endblock %}

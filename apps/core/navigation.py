@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.http import HttpRequest
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -211,6 +212,11 @@ FOOTER_NAVIGATION: tuple[tuple[Translatable, tuple[NavItem, ...]], ...] = (
             NavItem(title=_("Регионы"), url_name="catalog:territory-list"),
             NavItem(title=_("О наборе данных"), url_name="catalog:dataset"),
             NavItem(title=_("Источники данных"), url_name="catalog:sources"),
+            *(
+                (NavItem(title=_("Проверить документ"), url_name="attest:verify"),)
+                if "apps.attest" in settings.INSTALLED_APPS
+                else ()
+            ),
         ),
     ),
     (

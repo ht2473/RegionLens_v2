@@ -861,6 +861,15 @@ a.leader-list__name:hover {
   background-color: var(--negative-soft);
 }
 
+.callout--success {
+  border-left-color: var(--positive);
+  background-color: var(--positive-soft);
+}
+
+.callout--success .callout__icon {
+  color: var(--positive);
+}
+
 .callout--methodology {
   border-left-color: var(--border-strong);
   background-color: var(--surface-sunken);
