@@ -89,6 +89,16 @@
 			roll_uncompressed
 			mode 0644
 		}
-		format json
+		# Служебные метки в адресах — закрытой ссылки, подтверждения почты и регистрации,
+		# сброса пароля — в журнал не пишутся: файл читают статистика и резервные копии,
+		# а метка закрытой ссылки открывает чужую таблицу, пока ссылка действует.
+		# Те же правила — у истории посещений (MASKED_ROUTES в apps/core/visits.py).
+		format filter {
+			wrap json
+			fields {
+				request>uri regexp "(^/s/|/email/confirm/|/register/confirm/|/password/reset/[^/]+/)[^/?]+" "${1}*"
+				request>headers>Referer regexp "(://[^/]+/s/)[^/?]+" "${1}*"
+			}
+		}
 	}
 }
