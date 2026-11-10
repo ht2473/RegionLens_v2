@@ -32,6 +32,11 @@ class ResilientValkeyCache(RedisCache):
         super().__init__(server, params)
         self._paused_until = 0.0
 
+    @property
+    def unavailable(self) -> bool:
+        """Хранилище только что отказало: до конца паузы обращения к нему не идут."""
+        return time.monotonic() < self._paused_until
+
     def _guard[T](self, action: Callable[[], T], fallback: T) -> T:
         """Выполнить обращение к хранилищу, заменив отказ запасным значением."""
         if time.monotonic() < self._paused_until:
