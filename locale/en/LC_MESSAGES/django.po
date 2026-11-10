@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RegionLens\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-09 22:58+0000\n"
+"POT-Creation-Date: 2026-11-10 08:45+0000\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -59,7 +59,7 @@ msgstr "Profile, sign-in and security, personal data"
 
 #: apps/accounts/cabinet.py:104
 #: apps/accounts/cabinet.py:106
-#: apps/accounts/views/auth.py:357
+#: apps/accounts/views/auth.py:355
 #: apps/accounts/views/security.py:135
 #: apps/core/navigation.py:232
 msgid "Личный кабинет"
@@ -243,8 +243,8 @@ msgid "Адрес почты учётной записи изменён"
 msgstr "The account email address has been changed"
 
 #: apps/accounts/security.py:276
-#: apps/accounts/services.py:125
-#: apps/accounts/services.py:133
+#: apps/accounts/services.py:121
+#: apps/accounts/services.py:129
 msgid "Ссылка недействительна или устарела"
 msgstr "The link is invalid or has expired"
 
@@ -252,15 +252,15 @@ msgstr "The link is invalid or has expired"
 msgid "Ссылка уже использована или отменена"
 msgstr "The link has already been used or cancelled"
 
-#: apps/accounts/services.py:245
+#: apps/accounts/services.py:241
 msgid "Учётная запись удалена"
 msgstr "Account deleted"
 
-#: apps/accounts/services.py:100
+#: apps/accounts/services.py:96
 msgid "Подтвердите регистрацию"
 msgstr "Confirm your registration"
 
-#: apps/accounts/services.py:80
+#: apps/accounts/services.py:78
 msgid "Вы уже зарегистрированы"
 msgstr "You are already registered"
 
@@ -447,9 +447,9 @@ msgstr "The link works once: it stops working after the password is changed. If 
 
 #: apps/accounts/templates/accounts/mail/password_reset_subject.txt:1
 #: apps/accounts/templates/accounts/password_reset.html:12
-#: apps/accounts/views/auth.py:387
-#: apps/accounts/views/auth.py:392
-#: apps/accounts/views/auth.py:422
+#: apps/accounts/views/auth.py:385
+#: apps/accounts/views/auth.py:390
+#: apps/accounts/views/auth.py:420
 msgid "Восстановление пароля"
 msgstr "Password recovery"
 
@@ -568,8 +568,8 @@ msgid "Главная и кабинет будут открываться с э�
 msgstr "The home page and the personal account will start with this region"
 
 #: apps/accounts/templates/accounts/password_change.html:6
-#: apps/accounts/views/auth.py:359
-#: apps/accounts/views/auth.py:365
+#: apps/accounts/views/auth.py:357
+#: apps/accounts/views/auth.py:363
 msgid "Смена пароля"
 msgstr "Change of password"
 
@@ -605,7 +605,7 @@ msgid "Укажите адрес электронной почты, на кот�
 msgstr "Enter the email address the account is registered to. If the address is registered on the site, a link for setting a new password will be sent to it."
 
 #: apps/accounts/templates/accounts/password_reset_complete.html:11
-#: apps/accounts/views/auth.py:464
+#: apps/accounts/views/auth.py:462
 msgid "Пароль изменён"
 msgstr "Password changed"
 
@@ -614,8 +614,8 @@ msgid "Теперь можно войти с новым паролем."
 msgstr "You can now sign in with the new password."
 
 #: apps/accounts/templates/accounts/password_reset_confirm.html:13
-#: apps/accounts/views/auth.py:434
-#: apps/accounts/views/auth.py:439
+#: apps/accounts/views/auth.py:432
+#: apps/accounts/views/auth.py:437
 msgid "Новый пароль"
 msgstr "New password"
 
@@ -633,7 +633,7 @@ msgstr "The recovery link has already been used or has expired. Request a new on
 
 #: apps/accounts/templates/accounts/password_reset_done.html:11
 #: apps/accounts/templates/accounts/register_done.html:11
-#: apps/accounts/views/auth.py:303
+#: apps/accounts/views/auth.py:301
 msgid "Письмо отправлено"
 msgstr "Message sent"
 
@@ -664,7 +664,7 @@ msgstr "Each code works once instead of the six digits from the app. They will n
 #: apps/accounts/templates/accounts/register.html:13
 #: apps/accounts/views/auth.py:249
 #: apps/accounts/views/auth.py:254
-#: apps/accounts/views/auth.py:298
+#: apps/accounts/views/auth.py:296
 #: apps/dashboard/templates/dashboard/user_detail.html:107
 msgid "Регистрация"
 msgstr "Registration"
@@ -699,8 +699,8 @@ msgid "Всё открыто и без учётной записи — карт�
 msgstr "Everything is open without an account — the map, rankings, analysis, downloads of figures and documents. An account lets you save things and come back to them."
 
 #: apps/accounts/templates/accounts/register_confirm.html:12
-#: apps/accounts/views/auth.py:320
-#: apps/accounts/views/auth.py:325
+#: apps/accounts/views/auth.py:318
+#: apps/accounts/views/auth.py:323
 msgid "Подтверждение регистрации"
 msgstr "Registration confirmation"
 
@@ -998,11 +998,11 @@ msgstr "After it is turned on, the site shows backup codes. Save them: without t
 msgid "Код не подошёл. Проверьте время на телефоне и введите новый код."
 msgstr "The code did not match. Check the time on your phone and enter a new code."
 
-#: apps/accounts/views/auth.py:334
+#: apps/accounts/views/auth.py:332
 msgid "Адрес почты подтверждён. Войдите с ним и своим паролем."
 msgstr "The email address is confirmed. Sign in with it and your password."
 
-#: apps/accounts/views/auth.py:372
+#: apps/accounts/views/auth.py:370
 msgid "Пароль изменён. Сеансы на других устройствах завершены."
 msgstr "Password changed. Sessions on other devices have been ended."
 
@@ -1014,11 +1014,11 @@ msgstr "Too many code attempts. Try again in an hour."
 msgid "Слишком много регистраций подряд. Попробуйте через час."
 msgstr "Too many registrations in a row. Try again in an hour."
 
-#: apps/accounts/views/auth.py:285
+#: apps/accounts/views/auth.py:284
 msgid "Письмо не ушло: почтовый узел не ответил. Попробуйте позже."
 msgstr "The email was not sent: the mail server did not respond. Try again later."
 
-#: apps/accounts/views/auth.py:403
+#: apps/accounts/views/auth.py:401
 msgid "Слишком много запросов восстановления. Попробуйте через час."
 msgstr "Too many reset requests. Try again in an hour."
 
@@ -4126,7 +4126,7 @@ msgid "выпусков изданий"
 msgstr "editions of publications"
 
 #: apps/catalog/templates/catalog/dataset.html:54
-#: apps/userdata/views.py:622
+#: apps/userdata/views.py:627
 msgid "период"
 msgstr "period"
 
@@ -10644,23 +10644,23 @@ msgstr "from the file name “%(text)s”"
 msgid "Документ «%(name)s» повреждён."
 msgstr "The document “%(name)s” is damaged."
 
-#: apps/userdata/documents.py:327
+#: apps/userdata/documents.py:366
 msgid "Это скан: в PDF нет текстового слоя, таблицу из него не прочитать. Нужен PDF, сохранённый из Word или Excel, или сама таблица."
 msgstr "This is a scan: the PDF has no text layer, so the table cannot be read from it. Use a PDF saved from Word or Excel, or the table itself."
 
-#: apps/userdata/documents.py:271
+#: apps/userdata/documents.py:310
 msgid "PDF защищён паролем. Снимите защиту и загрузите снова."
 msgstr "The PDF is password-protected. Remove the protection and upload it again."
 
-#: apps/userdata/documents.py:273
+#: apps/userdata/documents.py:312
 msgid "PDF «%(name)s» повреждён."
 msgstr "The PDF “%(name)s” is damaged."
 
-#: apps/userdata/documents.py:277
+#: apps/userdata/documents.py:316
 msgid "В PDF больше %(limit)s страниц. Сохраните страницы с нужной таблицей отдельным файлом и загрузите его."
 msgstr "The PDF has more than %(limit)s pages. Save the pages with the table you need as a separate file and upload it."
 
-#: apps/userdata/documents.py:293
+#: apps/userdata/documents.py:332
 msgid "PDF читается слишком долго. Сохраните страницы с нужной таблицей отдельным файлом и загрузите его."
 msgstr "The PDF takes too long to read. Save the pages with the table you need as a separate file and upload it."
 
@@ -10672,13 +10672,17 @@ msgstr "The document “%(name)s” is too large."
 msgid "Документ «%(name)s» сжат слишком сильно. Такой файл не принимается."
 msgstr "The document “%(name)s” is compressed too strongly. Such a file is not accepted."
 
-#: apps/userdata/documents.py:316
+#: apps/userdata/documents.py:355
 msgid "Таблица %(number)s, стр. %(page)s"
 msgstr "Table %(number)s, p. %(page)s"
 
 #: apps/userdata/documents.py:155
 msgid "Таблица %(number)s"
 msgstr "Table %(number)s"
+
+#: apps/userdata/documents.py:283
+msgid "На странице %(page)s PDF слишком много линий и знаков, чтобы разобрать её как таблицу. Сохраните таблицу в Excel или CSV и загрузите этот файл."
+msgstr "Page %(page)s of the PDF has too many lines and characters to read it as a table. Save the table to Excel or CSV and upload that file."
 
 #: apps/userdata/examples.py:80
 msgid "Пример: %(title)s"
@@ -11129,27 +11133,27 @@ msgstr "The group contains all regions, so there is nothing to compare it with."
 msgid "Групп уже %(count)s — это предел. Удалите ненужные."
 msgstr "You already have %(count)s groups, which is the limit. Delete the ones you no longer need."
 
-#: apps/userdata/ingest.py:760
+#: apps/userdata/ingest.py:772
 msgid "Файл защищён паролем. Снимите защиту в Excel и загрузите снова."
 msgstr "The file is password-protected. Remove the protection in Excel and upload it again."
 
-#: apps/userdata/ingest.py:771
+#: apps/userdata/ingest.py:783
 msgid "Подходят CSV, TXT, XLSX, XLS, ODS, Parquet, DOCX, PDF и ZIP с ними."
 msgstr "CSV, TXT, XLSX, XLS, ODS, Parquet, DOCX, PDF and ZIP archives with them are accepted."
 
-#: apps/userdata/ingest.py:764
+#: apps/userdata/ingest.py:776
 msgid "Таблица «%(name)s» в распакованном виде больше %(limit)s МБ. Оставьте в ней только нужные показатели или годы."
 msgstr "Unpacked, the table “%(name)s” is larger than %(limit)s MB. Keep only the indicators or years you need."
 
-#: apps/userdata/ingest.py:773
+#: apps/userdata/ingest.py:785
 msgid "Документ этого вида не читается. Сохраните его в Word как DOCX или скопируйте таблицу и вставьте её в поле «Вставить таблицу»."
 msgstr "A document of this kind cannot be read. Save it in Word as DOCX, or copy the table and paste it into the “Paste a table” field."
 
-#: apps/userdata/ingest.py:778
+#: apps/userdata/ingest.py:790
 msgid "Архивы RAR и 7z не принимаются. Распакуйте архив и загрузите таблицу или ZIP."
 msgstr "RAR and 7z archives are not accepted. Unpack the archive and upload the table or a ZIP."
 
-#: apps/userdata/ingest.py:779
+#: apps/userdata/ingest.py:791
 msgid "Сжатые файлы GZIP не принимаются. Распакуйте файл или загрузите архив ZIP."
 msgstr "GZIP files are not accepted. Unpack the file or upload a ZIP archive."
 
@@ -11169,23 +11173,23 @@ msgstr "The archive contains files with paths outside the archive. Such an archi
 msgid "В архиве больше %(count)s файлов. Загрузите архив только с нужными таблицами."
 msgstr "The archive has more than %(count)s files. Upload an archive with only the tables you need."
 
-#: apps/userdata/ingest.py:580
+#: apps/userdata/ingest.py:581
 msgid "Листы книги «%(name)s» сжаты слишком сильно. Такой файл не принимается."
 msgstr "The sheets of the workbook “%(name)s” are compressed too strongly. Such a file is not accepted."
 
-#: apps/userdata/ingest.py:592
+#: apps/userdata/ingest.py:593
 msgid "Файл Parquet повреждён."
 msgstr "The Parquet file is damaged."
 
-#: apps/userdata/ingest.py:777
+#: apps/userdata/ingest.py:789
 msgid "Это изображение, а не таблица."
 msgstr "This is an image, not a table."
 
-#: apps/userdata/ingest.py:780
+#: apps/userdata/ingest.py:792
 msgid "Это не таблица."
 msgstr "This is not a table."
 
-#: apps/userdata/ingest.py:781
+#: apps/userdata/ingest.py:793
 msgid "В архиве нет таблиц."
 msgstr "The archive contains no tables."
 
@@ -11205,11 +11209,15 @@ msgstr "The archive has no file “%(name)s”."
 msgid "Файл «%(name)s» не читается как таблица Excel."
 msgstr "The file “%(name)s” cannot be read as an Excel table."
 
-#: apps/userdata/ingest.py:569
+#: apps/userdata/ingest.py:570
 msgid "Файл «%(name)s» повреждён."
 msgstr "The file “%(name)s” is damaged."
 
-#: apps/userdata/jobs.py:252
+#: apps/userdata/ingest.py:737
+msgid "Строку таблицы не прочитать: похоже, в файле не закрыта кавычка. Проверьте файл и загрузите его снова."
+msgstr "A row of the table cannot be read: the file probably has an unclosed quote. Check the file and upload it again."
+
+#: apps/userdata/jobs.py:257
 msgid "Разбор прервался. Попробуйте ещё раз или оставьте в таблице только нужные показатели и годы."
 msgstr "Parsing was interrupted. Try again, or keep only the indicators and years you need in the table."
 
@@ -11620,12 +11628,12 @@ msgid "по полугодиям"
 msgstr "by half-year"
 
 #: apps/userdata/monthly.py:143
-#: apps/userdata/views.py:637
+#: apps/userdata/views.py:642
 msgid "с начала года"
 msgstr "year to date"
 
 #: apps/userdata/monthly.py:145
-#: apps/userdata/views.py:639
+#: apps/userdata/views.py:644
 msgid "на начало месяца"
 msgstr "at the start of the month"
 
@@ -12529,7 +12537,7 @@ msgstr "Find an indicator in all tables"
 
 #: apps/userdata/templates/userdata/_column_role.html:5
 #: apps/userdata/templates/userdata/table_step.html:284
-#: apps/userdata/views.py:719
+#: apps/userdata/views.py:724
 msgid "столбец %(number)s"
 msgstr "column %(number)s"
 
@@ -14194,13 +14202,13 @@ msgstr "Table layout"
 #: apps/userdata/templates/userdata/index.html:230
 #: apps/userdata/templates/userdata/index.html:239
 #: apps/userdata/templates/userdata/index.html:248
-#: apps/userdata/views.py:619
+#: apps/userdata/views.py:624
 msgid "регион"
 msgstr "region"
 
 #: apps/userdata/templates/userdata/index.html:221
 #: apps/userdata/templates/userdata/table_step.html:278
-#: apps/userdata/views.py:627
+#: apps/userdata/views.py:632
 msgid "значение"
 msgstr "value"
 
@@ -14376,8 +14384,8 @@ msgid "Незначимые после поправки: %(count)s"
 msgstr "Not significant after adjustment: %(count)s"
 
 #: apps/userdata/templates/userdata/series_step.html:20
-#: apps/userdata/views.py:409
-#: apps/userdata/views.py:424
+#: apps/userdata/views.py:414
+#: apps/userdata/views.py:429
 msgid "Проверка таблицы"
 msgstr "Table check"
 
@@ -14746,8 +14754,8 @@ msgid "изменено %(moment)s"
 msgstr "changed %(moment)s"
 
 #: apps/userdata/templates/userdata/table_step.html:17
-#: apps/userdata/views.py:297
-#: apps/userdata/views.py:322
+#: apps/userdata/views.py:302
+#: apps/userdata/views.py:327
 #: apps/userdata/views.py:47
 msgid "Что в таблице"
 msgstr "What is in the table"
@@ -15114,87 +15122,87 @@ msgstr "The file has several tables: choose the one used in the previous version
 msgid "Таблица снова в версии %(number)s."
 msgstr "The table is back at version %(number)s."
 
-#: apps/userdata/views.py:633
+#: apps/userdata/views.py:638
 msgid "годы"
 msgstr "years"
 
-#: apps/userdata/views.py:634
+#: apps/userdata/views.py:639
 msgid "месяцы"
 msgstr "months"
 
-#: apps/userdata/views.py:635
+#: apps/userdata/views.py:640
 msgid "кварталы"
 msgstr "quarters"
 
-#: apps/userdata/views.py:636
+#: apps/userdata/views.py:641
 msgid "полугодия"
 msgstr "half-years"
 
-#: apps/userdata/views.py:638
+#: apps/userdata/views.py:643
 msgid "скользящие месяцы"
 msgstr "rolling months"
 
-#: apps/userdata/views.py:642
+#: apps/userdata/views.py:647
 msgid "Длинная таблица: регион, период и значение — в своих столбцах."
 msgstr "A long table: region, period and value in their own columns."
 
-#: apps/userdata/views.py:643
+#: apps/userdata/views.py:648
 msgid "Годы или периоды — в столбцах, регионы — в строках."
 msgstr "Years or periods in columns, regions in rows."
 
-#: apps/userdata/views.py:644
+#: apps/userdata/views.py:649
 msgid "Показатели — в столбцах, регионы — в строках; года в таблице нет."
 msgstr "Indicators in columns, regions in rows; the table has no year."
 
-#: apps/userdata/views.py:645
+#: apps/userdata/views.py:650
 msgid "Регионы — в столбцах, годы — в строках."
 msgstr "Regions in columns, years in rows."
 
-#: apps/userdata/views.py:646
+#: apps/userdata/views.py:651
 msgid "Регионы в таблице не найдены."
 msgstr "No regions were found in the table."
 
-#: apps/userdata/views.py:620
+#: apps/userdata/views.py:625
 msgid "код региона"
 msgstr "region code"
 
-#: apps/userdata/views.py:621
+#: apps/userdata/views.py:626
 msgid "уровень территории"
 msgstr "territory level"
 
-#: apps/userdata/views.py:623
+#: apps/userdata/views.py:628
 msgid "показатель"
 msgstr "indicator"
 
-#: apps/userdata/views.py:624
+#: apps/userdata/views.py:629
 msgid "код показателя"
 msgstr "indicator code"
 
-#: apps/userdata/views.py:625
+#: apps/userdata/views.py:630
 msgid "единица"
 msgstr "unit"
 
-#: apps/userdata/views.py:626
+#: apps/userdata/views.py:631
 msgid "разрез"
 msgstr "breakdown"
 
-#: apps/userdata/views.py:628
+#: apps/userdata/views.py:633
 msgid "причина пропуска"
 msgstr "reason for a missing value"
 
-#: apps/userdata/views.py:629
+#: apps/userdata/views.py:634
 msgid "примечание"
 msgstr "note"
 
-#: apps/userdata/views.py:630
+#: apps/userdata/views.py:635
 msgid "пропустить"
 msgstr "skip"
 
-#: apps/userdata/views.py:364
+#: apps/userdata/views.py:369
 msgid "Описание таблицы сохранено."
 msgstr "The table description has been saved."
 
-#: apps/userdata/views.py:399
+#: apps/userdata/views.py:404
 msgid "Сначала сохраните описание таблицы."
 msgstr "Save the table description first."
 
