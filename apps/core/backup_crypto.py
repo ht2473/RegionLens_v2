@@ -290,6 +290,12 @@ def verify(manifest_path: Path, key: Ed25519PublicKey | None = None) -> dict[str
     manifest: dict[str, Any] = json.loads(body)
     if manifest.get("format") != FORMAT:
         raise BackupCryptoError("опись не копии RegionLens")
+    # Подпись старой копии остаётся верной: переименованная под свежую отметку, она сошла бы
+    # за новую. Отметка внутри подписанной описи должна совпадать с именем файла.
+    if manifest_path.name != f"manifest-{manifest.get('stamp')}.json":
+        raise BackupCryptoError(
+            f"опись подписана для копии {manifest.get('stamp')}, а файл назван иначе"
+        )
     for entry in manifest["files"]:
         name = entry["name"]
         # Имена из описи становятся путями при расшифровке: только имя файла, без каталогов.
@@ -303,6 +309,12 @@ def verify(manifest_path: Path, key: Ed25519PublicKey | None = None) -> dict[str
         if sha256_file(path) != entry["sha256"]:
             raise BackupCryptoError(f"{name}: SHA-256 не совпадает с описью — файл изменён")
     return manifest
+
+
+def age_days(manifest: dict[str, Any]) -> int:
+    """Сколько суток назад сделана копия — по времени из подписанной описи."""
+    created = datetime.fromisoformat(str(manifest["created"]))
+    return max(0, (datetime.now(UTC) - created).days)
 
 
 def open_copy(manifest_path: Path, private: X25519PrivateKey, target: Path) -> list[Path]:

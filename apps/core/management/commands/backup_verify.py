@@ -35,6 +35,7 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(
                 f"Подпись верна (ключ {manifest['signer']}), файлы целы; "
-                f"зашифровано для ключа {manifest['recipient']}"
+                f"зашифровано для ключа {manifest['recipient']}; копия сделана "
+                f"{manifest['created']}, суток назад: {backup_crypto.age_days(manifest)}"
             )
         )
