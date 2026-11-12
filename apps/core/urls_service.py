@@ -1,4 +1,7 @@
-"""Служебные маршруты без языкового префикса: проверки состояния, карта сайта, robots.txt."""
+"""
+Служебные маршруты без языкового префикса: проверки состояния, карта сайта, robots.txt,
+адрес для сообщений об уязвимостях.
+"""
 
 from __future__ import annotations
 
@@ -20,6 +23,7 @@ urlpatterns = [
         {"sitemaps": SITEMAPS},
         name="django.contrib.sitemaps.views.sitemap",
     ),
+    path(".well-known/security.txt", views.security_txt, name="security-txt"),
     path(
         "robots.txt",
         TemplateView.as_view(template_name="core/robots.txt", content_type="text/plain"),

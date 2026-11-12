@@ -32,5 +32,21 @@ def warm_cache() -> int:
                     warmed += 1
                 else:
                     logger.warning("Прогрев %s: ответ %s", path, response.status_code)
+            warmed += _warm_regions(client)
     logger.info("Прогрев кэша: собрано страниц — %s", warmed)
+    return warmed
+
+
+def _warm_regions(client: Client) -> int:
+    """
+    Страницы регионов на текущем языке: первая сборка каждой — доли секунды процессора,
+    и обход сайта поисковой системой сразу после пересборки занял бы все рабочие потоки.
+    """
+    from apps.catalog.models import Territory
+
+    warmed = 0
+    for slug in Territory.objects.comparable().values_list("slug", flat=True):
+        path = reverse("catalog:territory-detail", kwargs={"slug": slug})
+        if client.get(path, secure=True).status_code == 200:  # noqa: PLR2004
+            warmed += 1
     return warmed
