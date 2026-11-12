@@ -16,7 +16,7 @@ from django.utils import translation
 from django.utils.translation import gettext as _
 from django.views.generic import View
 
-from apps.core.client_ip import client_ip
+from apps.core.client_ip import client_ip, rate_subject
 from apps.core.throttle import allow, used
 
 from . import access, shares, studies
@@ -37,7 +37,7 @@ class ShareOpenView(View):
     """
 
     def get(self, request: HttpRequest, token: str) -> HttpResponse:
-        address = client_ip(request) or "unknown"
+        address = rate_subject(client_ip(request))
         if used(ATTEMPTS_SCOPE, address) >= settings.USERDATA_SHARE_ATTEMPTS:
             return _gone(request, status=TOO_MANY)
         share = shares.find(token)
