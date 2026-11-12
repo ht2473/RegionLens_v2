@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from .base import *  # noqa: F403
-from .base import ALLOWED_HOSTS, CSP_POLICY, PROJECT_VERSION, env
+from .base import ALLOWED_HOSTS, CSP_POLICY, DATABASES, LOGGING, PROJECT_VERSION, env
 
 DEBUG = False
 
@@ -48,7 +50,12 @@ AXES_LOCKOUT_TEMPLATE = "accounts/lockout.html"
 SECURE_CSP = {**CSP_POLICY, "upgrade-insecure-requests": True}
 
 # --- Наблюдаемость -----------------------------------------------------------------------------
-LOG_FORMAT = env.str("LOG_FORMAT", default="json")
+# Пустое значение в .env — то же, что отсутствие.
+LOG_FORMAT = env.str("LOG_FORMAT", default="") or "json"
+# Описание журнала собрано в базовых настройках с их форматом: формат стенда
+# проставляется обработчику явно.
+_handlers: Any = LOGGING["handlers"]
+_handlers["console"]["formatter"] = LOG_FORMAT
 
 SENTRY_DSN = env.str("SENTRY_DSN", default="")
 if SENTRY_DSN:
@@ -63,6 +70,16 @@ if SENTRY_DSN:
         environment="production",
         release=f"regionlens@{env.str('PROJECT_VERSION', default=PROJECT_VERSION)}",
     )
+
+# --- База данных ---------------------------------------------------------------------------------
+# Запросы приложения к PostgreSQL — миллисекунды. Запрос, идущий дольше минуты, и
+# транзакция, простаивающая дольше пяти, обрываются сервером базы: застрявший запрос
+# не держит рабочий поток и блокировки бесконечно.
+DATABASES["default"].setdefault("OPTIONS", {})["options"] = (
+    f"-c statement_timeout={env.int('DATABASE_STATEMENT_TIMEOUT_MS', default=60_000)} "
+    f"-c idle_in_transaction_session_timeout="
+    f"{env.int('DATABASE_IDLE_TRANSACTION_TIMEOUT_MS', default=300_000)}"
+)
 
 # --- Ресурсные ограничения VPS ------------------------------------------------------------------
 DUCKDB_READ_ONLY = env.bool("DUCKDB_READ_ONLY", default=True)
