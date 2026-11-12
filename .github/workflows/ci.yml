@@ -15,6 +15,11 @@ on:
   # Ручной запуск — прогон после смены версий зависимостей без правок кода.
   workflow_dispatch:
 
+# Действия закреплены по коммиту: ярлык версии автор действия может переставить на другой
+# код, коммит — нет. Обновляет их Dependabot. Ключ репозитория у задач — только на чтение.
+permissions:
+  contents: read
+
 # Новый прогон ветки отменяет предыдущий.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -35,10 +40,10 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Установка uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
           version: "0.11.15"
           enable-cache: true
@@ -84,10 +89,10 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Установка uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
           version: "0.11.15"
           enable-cache: true
@@ -101,7 +106,7 @@ jobs:
 
       - name: Известные уязвимости зависимостей
         # Не прерывает сборку: уязвимость зависимости обычно исправляет её сопровождающий.
-        # Результат — в сводке.
+        # Результат — в сводке; еженедельная проверка (security.yml) при находке падает.
         continue-on-error: true
         run: uv run pip-audit --skip-editable --strict
 
@@ -140,10 +145,10 @@ jobs:
           --health-retries 10
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Установка uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
           version: "0.11.15"
           enable-cache: true
@@ -166,7 +171,7 @@ jobs:
 
       - name: Отчёты
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: test-reports
           path: |
@@ -198,10 +203,10 @@ jobs:
           --health-retries 10
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Установка uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
           version: "0.11.15"
           enable-cache: true
@@ -223,7 +228,7 @@ jobs:
 
       - name: Снимки экрана и следы
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: e2e
           path: |
@@ -242,13 +247,13 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Подготовка сборщика
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
 
       - name: Сборка
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
           file: docker/Dockerfile
