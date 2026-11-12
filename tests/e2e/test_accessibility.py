@@ -22,7 +22,6 @@ PAGES = (
     "content:methodology",
     "content:glossary",
     "feedback:create",
-    "userdata:upload",
 )
 
 # Проверки выполняются в браузере: часть требований зависит от вычисленного
@@ -253,6 +252,7 @@ SIGNED_IN_PAGES = (
     "workspace:saved",
     "feedback:mine",
     "userdata:index",
+    "userdata:upload",
     "userdata:groups",
     "dashboard:index",
     "dashboard:user-list",

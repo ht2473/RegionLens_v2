@@ -16,7 +16,10 @@
 #   postgres — учётные записи, справочники, обращения;
 #   valkey   — кэш и счётчики ограничителей частоты.
 #
-# Наружу открыты только порты 80 и 443; порты базы и Valkey не публикуются.
+# Наружу открыты только порты 80 и 443; порты базы и Valkey не публикуются. Сетей две:
+# в edge — прокси и приложение, в backend — приложение, база и Valkey; у backend нет
+# выхода наружу, а прокси базу и Valkey не видит. Контейнеры работают без лишних
+# привилегий ядра (cap_drop) и не могут их повысить (no-new-privileges).
 # Пределы памяти — для VPS с 8 ГБ: обычно стенду хватает около 1,2 ГБ, во время
 # сборки склада — до 3 ГБ (прибавка — у web), разбор таблиц пользователей — ещё до 1,5 ГБ
 # в своём контейнере.
@@ -42,7 +45,15 @@ x-app: &app
       condition: service_healthy
     valkey:
       condition: service_healthy
-  networks: [internal]
+  # Выход наружу (почта, сбор источников) — через edge; база и Valkey — в backend.
+  networks: [edge, backend]
+  # Процесс № 1 — init: он собирает завершившиеся дочерние процессы (сборка склада, разборы)
+  # и передаёт сигналы остановки.
+  init: true
+  # Приложение работает от непривилегированного пользователя: привилегии ядра ему не нужны.
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  pids_limit: 512
   logging: &logging
     driver: json-file
     options:
@@ -73,8 +84,18 @@ services:
       # Статику отдаёт прокси, минуя приложение.
       - static:/srv/static:ro
     depends_on: [web]
-    networks: [internal]
-    mem_limit: 128m
+    networks: [edge]
+    # Из привилегий ядра — только право занять порты 80 и 443; своя файловая система
+    # только на чтение, запись — в тома сертификатов и журнала.
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: ["no-new-privileges:true"]
+    read_only: true
+    tmpfs: [/tmp]
+    pids_limit: 256
+    # Тела запросов прокси принимает в память (до 32 МБ на запрос), сжатие — тоже в памяти:
+    # под нагрузкой 128 МБ не хватало, и ядро останавливало прокси.
+    mem_limit: 512m
     logging: *logging
 
   # --- Приложение ---------------------------------------------------------------------------
@@ -98,6 +119,8 @@ services:
       <<: *app-environment
       # Предел памяти самой сборки склада: она идёт в этом контейнере.
       DUCKDB_BUILD_MEMORY_LIMIT: ${DUCKDB_BUILD_MEMORY_LIMIT:-1GB}
+      # Рабочих процессов gunicorn — по числу ядер сервера: сборка страницы занимает процессор.
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-4}
     # Рабочие процессы сервера — 0,9–1,5 ГБ, сборка склада — ещё до 1,5 ГБ; в запросе —
     # маленькие таблицы пользователей и чтение PDF (до 40 страниц).
     mem_limit: 3584m
@@ -147,12 +170,19 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-regionlens}
-      POSTGRES_USER: ${POSTGRES_USER:-regionlens}
+      # Суперпользователь образа — служебный, для обслуживания изнутри контейнера. Роль
+      # приложения (POSTGRES_USER из .env) заводит postgres-init.sh при создании каталога
+      # данных: она владеет базой, но не сервером. Пароль образ требует при создании;
+      # у суперпользователя сценарий его снимает.
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?переменная POSTGRES_PASSWORD обязательна}
+      APP_DB_USER: ${POSTGRES_USER:-regionlens}
+      APP_DB_PASSWORD: ${POSTGRES_PASSWORD:?переменная POSTGRES_PASSWORD обязательна}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
     volumes:
       # С версии 18 образ хранит данные в подкаталоге версии и ждёт том на уровень выше.
       - postgres_data:/var/lib/postgresql
+      - ./postgres-init.sh:/docker-entrypoint-initdb.d/10-app-role.sh:ro
     # Настройки — для VPS с 4 ГБ; значения по умолчанию рассчитаны на машину много меньше.
     command:
       - postgres
@@ -175,7 +205,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-    networks: [internal]
+    networks: [backend]
+    # Точка входа образа назначает владельца каталога данных и переходит к пользователю
+    # postgres: нужны только эти привилегии.
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 256
     mem_limit: 1024m
     logging: *logging
 
@@ -200,13 +236,24 @@ services:
       interval: 10s
       timeout: 3s
       retries: 10
-    networks: [internal]
+    networks: [backend]
+    # Точка входа переходит к пользователю valkey; на диск служба не пишет.
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETGID, SETUID]
+    security_opt: ["no-new-privileges:true"]
+    read_only: true
+    pids_limit: 128
     mem_limit: 192m
     logging: *logging
 
 networks:
-  internal:
+  # Прокси и приложение; через неё приложение выходит наружу.
+  edge:
     driver: bridge
+  # Приложение, база и Valkey; выхода наружу нет.
+  backend:
+    driver: bridge
+    internal: true
 
 volumes:
   postgres_data:

@@ -56,7 +56,6 @@ class GroupsView(BreadcrumbMixin, TemplateView):
             territory_groups=grouped_territories(),
             next_url=_next(self.request),
             limit=groups.MAX_GROUPS,
-            guest=not self.request.user.is_authenticated,
         )
         return context
 

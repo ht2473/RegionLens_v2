@@ -213,10 +213,8 @@ def is_current(version: DatasetVersion) -> bool:
     )
 
 
-def value_limit(version: DatasetVersion) -> int:
-    """Предел значений набора: у гостя меньше."""
-    if version.dataset.owner_id is None:
-        return int(settings.USERDATA_GUEST_MAX_VALUES)
+def value_limit(version: DatasetVersion) -> int:  # noqa: ARG001 — предел один для всех таблиц
+    """Предел значений набора."""
     return int(settings.USERDATA_MAX_VALUES)
 
 

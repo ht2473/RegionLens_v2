@@ -13,6 +13,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from django.core.files import File
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
@@ -20,7 +21,7 @@ from django.db.models import Max, Sum
 from django.http import HttpRequest
 from django.utils.translation import gettext as _
 
-from apps.core.throttle import allow, allow_key
+from apps.core.throttle import allow_key
 from apps.warehouse.duckdb_client import close_dataset
 
 from . import access, ingest, paste, tables
@@ -302,44 +303,31 @@ def discard(dataset: Dataset, *, rebuild: bool = True) -> None:
 
 def check_limits(request: HttpRequest, *, new_table: bool = True) -> None:
     """
-    Пределы до приёма таблицы: частота загрузок, число таблиц и место; ``new_table`` ложно —
-    новая версия той же таблицы, число таблиц не растёт.
+    Пределы до приёма таблицы: частота загрузок, число таблиц и место учётной записи;
+    ``new_table`` ложно — новая версия той же таблицы, число таблиц не растёт.
     """
     user = request.user
-    if user.is_authenticated:
-        if not allow_key(
-            "userdata-upload",
-            f"user:{user.pk}",
-            limit=settings.USERDATA_UPLOADS_PER_HOUR,
-            window=3600,
-        ):
-            raise ingest.IngestError(_rate_text(), "rate")
-        mine = Dataset.objects.filter(owner=user)
-        if new_table and mine.count() >= settings.USERDATA_MAX_DATASETS:
-            raise ingest.IngestError(
-                _("Таблиц уже %(count)s — это предел. Удалите ненужные таблицы.")
-                % {"count": settings.USERDATA_MAX_DATASETS},
-                "quota",
-            )
-        if used_bytes(user) >= settings.USERDATA_QUOTA_BYTES:
-            raise ingest.IngestError(
-                _("Место для таблиц закончилось: %(limit)s МБ. Удалите ненужные таблицы.")
-                % {"limit": settings.USERDATA_QUOTA_BYTES // (1024 * 1024)},
-                "space",
-            )
-        return
-    if not allow(
-        request, "userdata-upload", limit=settings.USERDATA_GUEST_UPLOADS_PER_HOUR, window=3600
+    if not user.is_authenticated:
+        raise PermissionDenied
+    if not allow_key(
+        "userdata-upload",
+        f"user:{user.pk}",
+        limit=settings.USERDATA_UPLOADS_PER_HOUR,
+        window=3600,
     ):
         raise ingest.IngestError(_rate_text(), "rate")
-    if new_table and access.owned(request).count() >= settings.USERDATA_GUEST_MAX_DATASETS:
+    mine = Dataset.objects.filter(owner=user)
+    if new_table and mine.count() >= settings.USERDATA_MAX_DATASETS:
         raise ingest.IngestError(
-            _(
-                "Без входа можно держать не больше %(count)s таблиц одни сутки. Войдите, "
-                "чтобы сохранить их и загрузить новые."
-            )
-            % {"count": settings.USERDATA_GUEST_MAX_DATASETS},
-            "guest",
+            _("Таблиц уже %(count)s — это предел. Удалите ненужные таблицы.")
+            % {"count": settings.USERDATA_MAX_DATASETS},
+            "quota",
+        )
+    if used_bytes(user) >= settings.USERDATA_QUOTA_BYTES:
+        raise ingest.IngestError(
+            _("Место для таблиц закончилось: %(limit)s МБ. Удалите ненужные таблицы.")
+            % {"limit": settings.USERDATA_QUOTA_BYTES // (1024 * 1024)},
+            "space",
         )
 
 
@@ -580,23 +568,15 @@ def export_datasets(user: Any) -> list[dict[str, Any]]:
     return found
 
 
-def prune() -> tuple[int, int]:
+def prune() -> int:
     """
-    Удалить истёкшие таблицы, исследования и группы гостей и осиротевшие файлы: каталоги без
-    набора, прежние файлы сборки. Занятый другим процессом файл (Windows) удалится
-    при следующей очистке.
-    Возвращает число удалённых таблиц и каталогов.
+    Удалить осиротевшие файлы: каталоги без набора, прежние файлы сборки. Занятый другим
+    процессом файл (Windows) удалится при следующей очистке.
+    Возвращает число удалённых каталогов.
     """
-    from django.utils import timezone
-
-    expired = list(Dataset.objects.filter(owner__isnull=True, expires_at__lt=timezone.now()))
-    for dataset in expired:
-        discard(dataset)
-    Study.objects.filter(owner__isnull=True, expires_at__lt=timezone.now()).delete()
-    RegionGroup.objects.filter(owner__isnull=True, expires_at__lt=timezone.now()).delete()
     root = Path(settings.USERDATA_DIR)
     if not root.exists():
-        return len(expired), 0
+        return 0
     known = {str(value) for value in Dataset.objects.values_list("public_id", flat=True)}
     # Скрытые каталоги — служебные (очередь службы разборов), а не таблицы.
     orphans = [
@@ -621,4 +601,4 @@ def prune() -> tuple[int, int]:
     for path in root.glob("*/*/data-*.duckdb.tmp"):
         if path.with_suffix("") not in current:
             shutil.rmtree(path, ignore_errors=True)
-    return len(expired), len(orphans)
+    return len(orphans)

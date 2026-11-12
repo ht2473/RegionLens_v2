@@ -1,0 +1,101 @@
+# =====================================================================================
+# Проверки защиты.
+#
+# Анализ кода CodeQL — при каждом изменении основной ветки. Уязвимости образов служб —
+# запуском вручную перед выкладкой: итог в сводке запуска. Об уязвимых зависимостях
+# Python сообщает Dependabot (настройка репозитория) и pip-audit в «Проверках».
+# =====================================================================================
+
+name: Защита
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # --- Образы служб и приложения -----------------------------------------------------------
+  images:
+    name: Уязвимости образов
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Сборка образа приложения
+        run: docker build -f docker/Dockerfile -t regionlens:scan .
+
+      - name: Образы служб из описания стенда
+        # Те же ярлыки, что уйдут на сервер при выкладке.
+        run: |
+          {
+            echo "regionlens:scan"
+            sed -n 's/^ *image: *\([^$ ][^ ]*\)$/\1/p' docker/compose.prod.yml
+          } > images.txt
+          cat images.txt
+
+      - name: Установка Trivy
+        uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
+
+      - name: Проверка образов
+        # Уязвимости высокой и критической важности, у которых уже есть исправление.
+        # Задача от них не падает: пакеты базового образа обновляет его автор, проект
+        # получает исправление со следующей выкладкой. Число по образам — в сводке.
+        run: |
+          {
+            echo "| Образ | Уязвимостей с исправлением (высокой и критической важности) |"
+            echo "|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          while read -r image; do
+            echo "::group::${image}"
+            trivy image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed \
+              --no-progress --format json --output report.json "$image"
+            trivy convert --format table report.json
+            count=$(jq '[.Results[]?.Vulnerabilities[]?] | length' report.json)
+            echo "| ${image} | ${count} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "::endgroup::"
+          done < images.txt
+
+  # --- Анализ кода -------------------------------------------------------------------------
+  codeql:
+    name: Анализ кода CodeQL
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python, javascript-typescript]
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Подготовка CodeQL
+        uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          # Сторонние библиотеки лежат готовыми файлами: их код проверяют их авторы.
+          config: |
+            paths-ignore:
+              - static/vendor
+              - tests
+
+      - name: Анализ
+        uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
+        with:
+          category: /language:${{ matrix.language }}

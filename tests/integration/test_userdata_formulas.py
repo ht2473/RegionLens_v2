@@ -272,9 +272,12 @@ class TestFormulas:
         assert not formula_store.definitions(version_of(accidents))
         assert not version_of(accidents).series.filter(code=code).exists()
 
-    def test_other_session_and_foreign_table(self, client: Client, warehouse: Any) -> None:
+    def test_other_session_and_foreign_table(
+        self, client: Client, make_user: Any, warehouse: Any
+    ) -> None:
         accidents, _cars = _accidents_and_cars(client)
         stranger = Client()
+        stranger.force_login(make_user(email="stranger@example.com"))
         assert stranger.get(_calc_url(accidents)).status_code == 404
         # Таблица другого человека в формуле не видна.
         mine = _table(

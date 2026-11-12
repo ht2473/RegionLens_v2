@@ -38,16 +38,8 @@ class Dataset(PublicIdentifierModel, TimeStampedModel):
         settings.AUTH_USER_MODEL,
         verbose_name="владелец",
         on_delete=models.CASCADE,
-        null=True,
-        blank=True,
         related_name="datasets",
     )
-    # Набор гостя привязан к отпечатку случайного ключа из сеанса, а не к ключу сеанса:
-    # тот меняется при входе.
-    guest_key = models.CharField(
-        "отпечаток гостевого ключа", max_length=64, blank=True, db_index=True
-    )
-    expires_at = models.DateTimeField("хранится до", null=True, blank=True)
     title = models.CharField("название", max_length=200)
     description = models.TextField("описание", blank=True)
     source_title = models.CharField("источник", max_length=300, blank=True)
@@ -67,12 +59,6 @@ class Dataset(PublicIdentifierModel, TimeStampedModel):
         verbose_name = "набор пользователя"
         verbose_name_plural = "наборы пользователей"
         ordering = ["-created_at"]
-        constraints = [
-            models.CheckConstraint(
-                condition=models.Q(owner__isnull=False) | ~models.Q(guest_key=""),
-                name="userdata_dataset_has_owner",
-            )
-        ]
 
     def __str__(self) -> str:
         return self.title
@@ -256,22 +242,15 @@ class Study(PublicIdentifierModel, TimeStampedModel):
     Исследование: рабочее поле лаборатории — карточки и заметки по порядку с общим годом
     и регионами; таблицы пользователя и ряды сайта — его источники.
 
-    Исследование гостя, как и его таблица, привязано к отпечатку ключа из сеанса и хранится
-    сутки; после входа переходит в учётную запись.
+    Исследование, как и таблица, принадлежит учётной записи.
     """
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name="владелец",
         on_delete=models.CASCADE,
-        null=True,
-        blank=True,
         related_name="studies",
     )
-    guest_key = models.CharField(
-        "отпечаток гостевого ключа", max_length=64, blank=True, db_index=True
-    )
-    expires_at = models.DateTimeField("хранится до", null=True, blank=True)
     title = models.CharField("название", max_length=200)
     description = models.TextField("описание", blank=True)
     # Блоки по порядку: заметка, вид или ответ, см. studies.py.
@@ -286,12 +265,6 @@ class Study(PublicIdentifierModel, TimeStampedModel):
         verbose_name = "исследование"
         verbose_name_plural = "исследования"
         ordering = ["-updated_at"]
-        constraints = [
-            models.CheckConstraint(
-                condition=models.Q(owner__isnull=False) | ~models.Q(guest_key=""),
-                name="userdata_study_has_owner",
-            )
-        ]
 
     def __str__(self) -> str:
         return self.title
@@ -300,22 +273,15 @@ class Study(PublicIdentifierModel, TimeStampedModel):
 class RegionGroup(PublicIdentifierModel, TimeStampedModel):
     """
     Своя группа регионов: название и субъекты — для карточки «Группа регионов» (итог группы
-    против остальных). Группа гостя, как исследование, привязана к отпечатку ключа из сеанса,
-    хранится сутки и после входа переходит в учётную запись.
+    против остальных). Группа, как исследование, принадлежит учётной записи.
     """
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name="владелец",
         on_delete=models.CASCADE,
-        null=True,
-        blank=True,
         related_name="region_groups",
     )
-    guest_key = models.CharField(
-        "отпечаток гостевого ключа", max_length=64, blank=True, db_index=True
-    )
-    expires_at = models.DateTimeField("хранится до", null=True, blank=True)
     title = models.CharField("название", max_length=120)
     codes = models.JSONField("субъекты", default=list, blank=True)
 
@@ -323,12 +289,6 @@ class RegionGroup(PublicIdentifierModel, TimeStampedModel):
         verbose_name = "группа регионов"
         verbose_name_plural = "группы регионов"
         ordering = ["title"]
-        constraints = [
-            models.CheckConstraint(
-                condition=models.Q(owner__isnull=False) | ~models.Q(guest_key=""),
-                name="userdata_group_has_owner",
-            )
-        ]
 
     def __str__(self) -> str:
         return self.title

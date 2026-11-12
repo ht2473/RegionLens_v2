@@ -18,6 +18,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView, TemplateView
 
+from apps.core.mail import public_mail_allowed
 from apps.core.navigation import Crumb
 from apps.core.throttle import allow, allow_key
 from apps.core.utils.redirects import is_local_path
@@ -263,11 +264,14 @@ class RegisterView(BreadcrumbMixin, FormView):
         email = form.cleaned_data["email"]
         if not allow(
             self.request, "register", limit=REGISTER_PER_IP.limit, window=REGISTER_PER_IP.window
-        ) or not allow_key(
-            "register-email",
-            email,
-            limit=REGISTER_PER_EMAIL.limit,
-            window=REGISTER_PER_EMAIL.window,
+        ) or not (
+            allow_key(
+                "register-email",
+                email,
+                limit=REGISTER_PER_EMAIL.limit,
+                window=REGISTER_PER_EMAIL.window,
+            )
+            and public_mail_allowed()
         ):
             form.add_error(None, _("Слишком много регистраций подряд. Попробуйте через час."))
             return self.form_invalid(form)
@@ -398,11 +402,14 @@ class PasswordResetView(BreadcrumbMixin, auth_views.PasswordResetView):
         if not allow(self.request, "reset", limit=RESET_PER_IP.limit, window=RESET_PER_IP.window):
             form.add_error(None, _("Слишком много запросов восстановления. Попробуйте через час."))
             return self.form_invalid(form)
-        if not allow_key(
-            "reset-email",
-            form.cleaned_data["email"],
-            limit=RESET_PER_EMAIL.limit,
-            window=RESET_PER_EMAIL.window,
+        if not (
+            allow_key(
+                "reset-email",
+                form.cleaned_data["email"],
+                limit=RESET_PER_EMAIL.limit,
+                window=RESET_PER_EMAIL.window,
+            )
+            and public_mail_allowed()
         ):
             return HttpResponseRedirect(self.get_success_url())
         return super().form_valid(form)

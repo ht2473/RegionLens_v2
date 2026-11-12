@@ -166,13 +166,16 @@ class TestUserText:
 
 
 class TestRequests:
-    def test_delete_needs_csrf(self, warehouse: Any) -> None:
+    def test_delete_needs_csrf(self, member: Any, warehouse: Any) -> None:
+        owner = Client()
+        owner.force_login(member)
+        dataset = _built(owner)
         client = Client(enforce_csrf_checks=True)
-        dataset = _built(Client())
+        client.force_login(member)
         response = client.post(
             reverse("userdata:delete", args=[dataset.public_id]), {"confirm": "1"}
         )
-        assert response.status_code in {403, 404}
+        assert response.status_code == 403
         assert Dataset.objects.filter(pk=dataset.pk).exists()
 
     def test_source_file_is_attachment(self, client: Client, warehouse: Any) -> None:

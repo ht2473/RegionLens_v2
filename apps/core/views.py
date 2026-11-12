@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import logging
-from datetime import date
+from datetime import date, timedelta
 from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from django.db import connection
 from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.utils import timezone
 from django.utils.cache import patch_cache_control
 from django.utils.translation import get_language
 from django.utils.translation import gettext_lazy as _
@@ -182,7 +183,6 @@ class DocumentView(BreadcrumbMixin, TemplateView):
         context["lockout_hours"] = settings.AXES_COOLOFF_TIME
         context["unconfirmed_days"] = settings.PASSWORD_RESET_TIMEOUT // (24 * 3600)
         context["device_days"] = settings.DEVICE_COOKIE_AGE // (24 * 3600)
-        context["guest_hours"] = settings.USERDATA_GUEST_HOURS
         context["upload_mb"] = settings.USERDATA_UPLOAD_MAX_BYTES // (1024 * 1024)
         context["table_limit"] = settings.USERDATA_MAX_DATASETS
         context["quota_mb"] = settings.USERDATA_QUOTA_BYTES // (1024 * 1024)
@@ -231,6 +231,38 @@ class ConsentView(DocumentView):
     template_name = "core/consent.html"
     title = _("Согласие на обработку персональных данных")
     revision = documents.CONSENT_REVISION
+
+
+# ---------------------------------------------------------------------------------------
+# Куда сообщать об уязвимости
+# ---------------------------------------------------------------------------------------
+
+# На сколько вперёд объявляется срок действия сведений: RFC 9116 советует меньше года.
+SECURITY_CONTACT_DAYS = 180
+
+
+@require_GET
+def security_txt(request: HttpRequest) -> HttpResponse:
+    """
+    Файл ``/.well-known/security.txt`` (RFC 9116): адрес для сообщений об уязвимостях.
+
+    Срок действия отсчитывается от дня запроса: файл не устаревает между выпусками.
+    """
+    expires = (timezone.now() + timedelta(days=SECURITY_CONTACT_DAYS)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    origin = f"{request.scheme}://{request.get_host()}"
+    lines = [
+        f"Contact: mailto:{settings.PROJECT_AUTHOR_EMAIL}",
+        f"Expires: {expires.strftime('%Y-%m-%dT%H:%M:%SZ')}",
+        "Preferred-Languages: ru, en",
+        f"Canonical: {origin}/.well-known/security.txt",
+        f"Policy: {settings.PROJECT_REPOSITORY_URL}/security/policy",
+    ]
+    body = "".join(f"{line}\n" for line in lines)
+    response = HttpResponse(body, content_type="text/plain; charset=utf-8")
+    patch_cache_control(response, public=True, max_age=24 * 3600)
+    return response
 
 
 # ---------------------------------------------------------------------------------------

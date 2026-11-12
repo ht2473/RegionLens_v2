@@ -1,4 +1,4 @@
-{% load i18n %}{% autoescape off %}{% blocktranslate trimmed with name=user.full_name %}Здравствуйте, {{ name }}!{% endblocktranslate %}
+{% load i18n %}{% autoescape off %}{% translate "Здравствуйте!" %}
 
 {% blocktranslate trimmed with project=project_name email=user.email %}
 На адрес {{ email }} заведена учётная запись в {{ project }}.

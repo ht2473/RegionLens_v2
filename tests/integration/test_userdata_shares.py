@@ -62,13 +62,6 @@ class TestCreate:
         assert "видно вам и по закрытой ссылке" in again.text
         assert (share.expires_at - timezone.now()).days in {29, 30}
 
-    def test_guest_cannot_share(self, client: Client, warehouse: Any) -> None:
-        dataset = _built(client)
-        client.post(reverse("userdata:share-create", args=[dataset.public_id]), {"days": "30"})
-        assert not Share.objects.exists()
-        page = client.get(reverse("userdata:dataset", args=[dataset.public_id]), {"tab": "access"})
-        assert "Войдите, чтобы создать ссылку" in page.text
-
     def test_stranger_cannot_share(
         self, member_client: Client, make_user: Any, warehouse: Any
     ) -> None:

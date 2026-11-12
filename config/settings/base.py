@@ -39,7 +39,7 @@ if _env_file.exists():
 
 PROJECT_NAME = "RegionLens"
 PROJECT_TAGLINE = "Анализ и визуализация социально-экономических показателей регионов России"
-PROJECT_VERSION = "0.9.4"
+PROJECT_VERSION = "0.9.5"
 PROJECT_AUTHOR = "Кузьмин Евгений Олегович"
 PROJECT_AUTHOR_SHORT = "Кузьмин Е. О."
 PROJECT_AUTHOR_EN = "Evgeny Kuzmin"
@@ -65,6 +65,9 @@ DATA_SOURCE_VERSION = "v20260313"
 # ---------------------------------------------------------------------------------------
 
 SECRET_KEY = env.str("DJANGO_SECRET_KEY")
+# Прежние ключи при смене SECRET_KEY: подписанное ими (сеансы, ссылки из писем) действует,
+# пока не истечёт; новое подписывается новым ключом. После срока ссылок — убрать.
+SECRET_KEY_FALLBACKS = env.list("DJANGO_SECRET_KEY_FALLBACKS", default=[])
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
@@ -142,7 +145,11 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.csp.ContentSecurityPolicyMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    # До сеанса и сборки страницы: адрес, исчерпавший общий предел, получает короткий отказ.
+    "apps.core.middleware.RequestRateMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    # После сеанса (по нему узнаётся вошедший) и до слоёв, читающих тело запроса.
+    "apps.core.middleware.BodyLimitMiddleware",
     # LocaleMiddleware обязан идти после SessionMiddleware и до CommonMiddleware:
     # он определяет язык по префиксу URL, cookie и заголовку Accept-Language.
     "django.middleware.locale.LocaleMiddleware",
@@ -205,6 +212,9 @@ DATABASES = {
     ),
 }
 DATABASES["default"]["CONN_MAX_AGE"] = env.int("DATABASE_CONN_MAX_AGE", default=60)
+# Удержанное соединение проверяется перед запросом: после перезапуска базы оно мертво,
+# и без проверки первый запрос каждого потока кончался бы ошибкой.
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 DATABASES["default"]["ATOMIC_REQUESTS"] = False
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -393,6 +403,9 @@ MAILERS = {
 DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL", default="RegionLens <noreply@regionlens.ru>")
 SERVER_EMAIL = env.str("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
 EMAIL_SUBJECT_PREFIX = "[RegionLens] "
+# Писем в час, которые вызывают посетители без входа (регистрация, восстановление пароля),
+# на весь сайт: почтовые службы ограничивают отправителя сотнями писем в сутки.
+PUBLIC_MAIL_PER_HOUR = env.int("PUBLIC_MAIL_PER_HOUR", default=120)
 
 # ---------------------------------------------------------------------------------------
 # Аналитический склад DuckDB: собирается командой etl_build, в репозитории не хранится
@@ -477,7 +490,7 @@ VISITS_DIR = BASE_DIR / env.str("VISITS_DIR", default="data/visits")
 GOACCESS_BIN = env.str("GOACCESS_BIN", default="goaccess")
 
 # ---------------------------------------------------------------------------------------
-# Свои данные: таблицы пользователей (apps/userdata)
+# Свои данные: таблицы пользователей (apps/userdata); раздел работает после входа
 # ---------------------------------------------------------------------------------------
 
 # Каталог таблиц: <набор>/<версия>/ — исходный файл как загружен и его разбор.
@@ -503,18 +516,13 @@ USERDATA_PASTE_MAX_BYTES = env.int("USERDATA_PASTE_MAX_BYTES", default=5 * 1024 
 USERDATA_MAX_ROWS = env.int("USERDATA_MAX_ROWS", default=3_000_000)
 # Разбор большой таблицы: память DuckDB одного разбора (замер: 264 МБ CSV — +348 МБ).
 USERDATA_PARSE_MEMORY = env.str("USERDATA_PARSE_MEMORY", default="768MB")
-# Набор без входа хранится сутки.
-USERDATA_GUEST_HOURS = env.int("USERDATA_GUEST_HOURS", default=24)
-# Значений в наборе после отбора разрезов («Преступность» ЕБТ — 127 тыс.); у гостя меньше.
+# Значений в наборе после отбора разрезов («Преступность» ЕБТ — 127 тыс.).
 USERDATA_MAX_VALUES = env.int("USERDATA_MAX_VALUES", default=1_000_000)
-USERDATA_GUEST_MAX_VALUES = env.int("USERDATA_GUEST_MAX_VALUES", default=200_000)
-# Наборов на учётную запись и у гостя; место на учётную запись (исходник и файл DuckDB).
+# Наборов на учётную запись и место на неё (исходник и файл DuckDB).
 USERDATA_MAX_DATASETS = env.int("USERDATA_MAX_DATASETS", default=20)
-USERDATA_GUEST_MAX_DATASETS = env.int("USERDATA_GUEST_MAX_DATASETS", default=3)
 USERDATA_QUOTA_BYTES = env.int("USERDATA_QUOTA_BYTES", default=200 * 1024 * 1024)
-# Загрузок в час: с учётной записи и с адреса без входа.
+# Загрузок в час с учётной записи.
 USERDATA_UPLOADS_PER_HOUR = env.int("USERDATA_UPLOADS_PER_HOUR", default=20)
-USERDATA_GUEST_UPLOADS_PER_HOUR = env.int("USERDATA_GUEST_UPLOADS_PER_HOUR", default=10)
 # Разборов отдельным процессом одновременно на сервер и предел времени одного разбора.
 USERDATA_PARALLEL_JOBS = env.int("USERDATA_PARALLEL_JOBS", default=2)
 USERDATA_JOB_SECONDS = env.int("USERDATA_JOB_SECONDS", default=120)
@@ -529,13 +537,12 @@ USERDATA_KEEP_VERSIONS = env.int("USERDATA_KEEP_VERSIONS", default=5)
 # с адреса за 10 минут (подбор токена).
 USERDATA_MAX_SHARES = env.int("USERDATA_MAX_SHARES", default=10)
 USERDATA_SHARE_ATTEMPTS = env.int("USERDATA_SHARE_ATTEMPTS", default=30)
-# Исследования: на учётную запись, у гостя (на сутки), карточек с заметками в исследовании;
-# правок поля за 10 минут с учётной записи или адреса.
+# Исследования: на учётную запись, карточек с заметками в исследовании; правок поля
+# за 10 минут с учётной записи.
 USERDATA_MAX_STUDIES = env.int("USERDATA_MAX_STUDIES", default=20)
-USERDATA_GUEST_MAX_STUDIES = env.int("USERDATA_GUEST_MAX_STUDIES", default=3)
 USERDATA_STUDY_BLOCKS = env.int("USERDATA_STUDY_BLOCKS", default=40)
 USERDATA_STUDY_EDITS = env.int("USERDATA_STUDY_EDITS", default=300)
-# Предпросмотров формулы за 10 минут с учётной записи или адреса: формула считается заново.
+# Предпросмотров формулы за 10 минут с учётной записи: формула считается заново.
 USERDATA_FORMULA_PREVIEWS = env.int("USERDATA_FORMULA_PREVIEWS", default=120)
 
 # ---------------------------------------------------------------------------------------
@@ -607,6 +614,17 @@ PDF_FONT_CANDIDATES = [
 # Прикладные ограничения
 # ---------------------------------------------------------------------------------------
 
+# Тело запроса (apps.core.middleware.BodyLimitMiddleware): без входа — формы входа,
+# регистрации и обращения; после входа — таблица и её вставка из буфера с запасом на
+# оформление запроса; больше — только выпуск набора от того, кто управляет данными.
+ANONYMOUS_BODY_BYTES = env.int("ANONYMOUS_BODY_BYTES", default=1024 * 1024)
+MEMBER_BODY_BYTES = env.int("MEMBER_BODY_BYTES", default=34 * 1024 * 1024)
+
+# Обращений к сайту с одного адреса в минуту (адрес IPv6 — сетью /64); 0 — без предела.
+# Человеку с запасом хватает десятой части; за общим адресом организации — десятки людей.
+# Один адрес при этом не займёт все рабочие потоки (apps.core.middleware.RequestRateMiddleware).
+REQUESTS_PER_MINUTE = env.int("REQUESTS_PER_MINUTE", default=600)
+
 ANALYTICS_CACHE_TTL = env.int("ANALYTICS_CACHE_TTL", default=3600)
 # Свежих расчётов анализа (промахов кэша) с адреса за 10 минут: человек столько не наберёт,
 # а перебор параметров не займёт все процессы сервера. Готовый результат из кэша не считается.
@@ -623,7 +641,7 @@ SERIES_MIN_YEARS_SOURCE = 5
 # ---------------------------------------------------------------------------------------
 
 LOG_LEVEL = env.str("LOG_LEVEL", default="INFO")
-LOG_FORMAT = env.str("LOG_FORMAT", default="console")
+LOG_FORMAT = env.str("LOG_FORMAT", default="") or "console"
 
 # Письмо об ошибке 500 уходит адресатам из DJANGO_ADMINS (через запятую), одна и та же
 # ошибка — не чаще раза в час (apps.core.logging.ErrorMailHandler).

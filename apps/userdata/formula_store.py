@@ -120,15 +120,8 @@ def plan_items(version: DatasetVersion) -> list[dict[str, Any]]:
 
 
 def siblings(dataset: Dataset) -> QuerySet[Dataset]:
-    """Таблицы того же владельца (или того же гостя), кроме самой таблицы."""
-    if dataset.owner_id is not None:
-        found = Dataset.objects.filter(owner_id=dataset.owner_id)
-    else:
-        # Истёкшую таблицу гостя удалит очистка; до неё её уже нет, как в ``access.owned``.
-        found = Dataset.objects.filter(
-            owner__isnull=True, guest_key=dataset.guest_key, expires_at__gt=timezone.now()
-        )
-    return found.exclude(pk=dataset.pk)
+    """Таблицы того же владельца, кроме самой таблицы."""
+    return Dataset.objects.filter(owner_id=dataset.owner_id).exclude(pk=dataset.pk)
 
 
 def directory(dataset: Dataset, *, before: str = "") -> Directory:

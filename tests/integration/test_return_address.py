@@ -39,11 +39,11 @@ def test_only_site_paths_are_local(candidate: str, local: bool) -> None:
 
 @pytest.mark.integration
 @pytest.mark.django_db
-def test_add_to_study_with_hostile_back_goes_home(client: Client) -> None:
+def test_add_to_study_with_hostile_back_goes_home(member_client: Client) -> None:
     """«В исследование» со строкой атаки в поле возврата — переход на главную, а не 500."""
-    client.raise_request_exception = False
-    for _ in range(4):  # и в пределе исследований гостя — тоже переход, а не ошибка
-        response = client.post(
+    member_client.raise_request_exception = False
+    for _ in range(4):
+        response = member_client.post(
             reverse("userdata:study-add"),
             {"study": "new", "target": "maps:choropleth", "back": SHELLSHOCK},
         )

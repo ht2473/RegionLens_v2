@@ -25,7 +25,7 @@
   <header class="page-head">
     <p class="kicker">
       {% translate "Исследование" %} ·
-      <span class="own-private">{% if not owner %}{% translate "открыто по закрытой ссылке" %}{% elif guest %}{% blocktranslate trimmed with moment=study.expires_at|date:"d.m.Y H:i" %}без входа — хранится до {{ moment }}{% endblocktranslate %}{% elif shared %}{% translate "видно вам и по закрытой ссылке" %}{% else %}{% translate "видно только вам" %}{% endif %}</span>
+      <span class="own-private">{% if not owner %}{% translate "открыто по закрытой ссылке" %}{% elif shared %}{% translate "видно вам и по закрытой ссылке" %}{% else %}{% translate "видно только вам" %}{% endif %}</span>
     </p>
     <h1 class="page-head__title"{% with lang=study.title|source_lang %}{% if lang %} lang="{{ lang }}"{% endif %}{% endwith %}>
       {% if owner %}<button type="button" class="inplace" data-inplace="study-title" data-default="{{ study.title }}"
@@ -122,17 +122,10 @@
   {% if owner %}
     <div class="menu-popover share-menu study-share no-print" id="study-share" popover role="dialog"
          aria-label="{% translate 'Закрытая ссылка' %}">
-      {% if guest %}
-        <p class="study-share__guest">
-          {% translate "Закрытой ссылкой делятся после входа: без входа исследование хранится сутки." %}
-          <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "Войти" %}</a>
-        </p>
-      {% else %}
-        {% url 'userdata:study-share-create' study.public_id as share_create_url %}
-        {% translate "По ссылке исследование смотрят без входа, в том числе с телефона: карточки, заметки и ваши таблицы, показатели которых в нём есть. Изменить ничего нельзя." as share_lead %}
-        {% translate "Можно скачивать таблицы и документы" as share_downloads_label %}
-        {% include "userdata/_shares.html" with share_target=study share_revoke_name="userdata:study-share-revoke" %}
-      {% endif %}
+      {% url 'userdata:study-share-create' study.public_id as share_create_url %}
+      {% translate "По ссылке исследование смотрят без входа, в том числе с телефона: карточки, заметки и ваши таблицы, показатели которых в нём есть. Изменить ничего нельзя." as share_lead %}
+      {% translate "Можно скачивать таблицы и документы" as share_downloads_label %}
+      {% include "userdata/_shares.html" with share_target=study share_revoke_name="userdata:study-share-revoke" %}
     </div>
     <div class="menu-popover study-settings no-print" id="study-menu" popover role="dialog"
          aria-label="{% translate 'Название и удаление' %}">

@@ -13,12 +13,7 @@
     <dd>{{ dataset.size_bytes|filesizeformat }}</dd>
     <dt>{% translate "Хранится" %}</dt>
     <dd>
-      {% if guest %}
-        {% blocktranslate trimmed with moment=dataset.expires_at|date:"d.m.Y H:i" %}до {{ moment }}{% endblocktranslate %}
-        · <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "войдите, чтобы сохранить" %}</a>
-      {% else %}
-        {% translate "пока вы её не удалите" %}{% if retention_days %}; {% blocktranslate trimmed with days=retention_days %}из резервных копий удалённая исчезает через {{ days }} сут.{% endblocktranslate %}{% endif %}
-      {% endif %}
+      {% translate "пока вы её не удалите" %}{% if retention_days %}; {% blocktranslate trimmed with days=retention_days %}из резервных копий удалённая исчезает через {{ days }} сут.{% endblocktranslate %}{% endif %}
     </dd>
   </dl>
 </section>
