@@ -70,7 +70,7 @@ class TestUpload:
         assert version is not None
         assert (version.file_kind, version.number) == (ingest.ZIP, 1)
         assert len(version.sha256) == 64
-        assert dataset.owner is not None and dataset.expires_at is None
+        assert dataset.owner is not None
         assert (version.directory / "source.zip").exists()
 
         page = client.get(response["Location"])
@@ -189,7 +189,7 @@ class TestAccess:
     def test_owner_and_other_user(self, member_client: Client, make_user: Any) -> None:
         _upload(member_client, "t.csv", (FIXTURES / "crime_wide.csv").read_bytes())
         dataset = Dataset.objects.get()
-        assert dataset.owner is not None and not dataset.guest_key
+        assert dataset.owner is not None
         url = reverse("userdata:file", args=[dataset.public_id])
         # Одна таблица в файле — шаг выбирает её сам и ведёт дальше.
         assert member_client.get(url, follow=True).status_code == 200

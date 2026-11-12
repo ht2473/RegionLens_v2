@@ -59,7 +59,7 @@ def readable_study(request: HttpRequest, public_id: Any) -> tuple[Study, bool]:
     own = studies.owned(request).filter(public_id=public_id).first()
     if own is not None:
         return own, True
-    study = Study.objects.filter(public_id=public_id, owner__isnull=False).first()
+    study = Study.objects.filter(public_id=public_id).first()
     if study is not None and shares.opened_study(request, study) is not None:
         return study, False
     raise Http404

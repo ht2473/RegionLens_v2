@@ -121,8 +121,6 @@ def plan_items(version: DatasetVersion) -> list[dict[str, Any]]:
 
 def siblings(dataset: Dataset) -> QuerySet[Dataset]:
     """Таблицы того же владельца, кроме самой таблицы."""
-    if dataset.owner_id is None:
-        return Dataset.objects.none()
     return Dataset.objects.filter(owner_id=dataset.owner_id).exclude(pk=dataset.pk)
 
 

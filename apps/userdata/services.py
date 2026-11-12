@@ -568,24 +568,15 @@ def export_datasets(user: Any) -> list[dict[str, Any]]:
     return found
 
 
-def prune() -> tuple[int, int]:
+def prune() -> int:
     """
-    Удалить таблицы, исследования и группы без владельца (остались от времени, когда раздел
-    работал без входа), чей срок истёк, и осиротевшие файлы: каталоги без
-    набора, прежние файлы сборки. Занятый другим процессом файл (Windows) удалится
-    при следующей очистке.
-    Возвращает число удалённых таблиц и каталогов.
+    Удалить осиротевшие файлы: каталоги без набора, прежние файлы сборки. Занятый другим
+    процессом файл (Windows) удалится при следующей очистке.
+    Возвращает число удалённых каталогов.
     """
-    from django.utils import timezone
-
-    expired = list(Dataset.objects.filter(owner__isnull=True, expires_at__lt=timezone.now()))
-    for dataset in expired:
-        discard(dataset)
-    Study.objects.filter(owner__isnull=True, expires_at__lt=timezone.now()).delete()
-    RegionGroup.objects.filter(owner__isnull=True, expires_at__lt=timezone.now()).delete()
     root = Path(settings.USERDATA_DIR)
     if not root.exists():
-        return len(expired), 0
+        return 0
     known = {str(value) for value in Dataset.objects.values_list("public_id", flat=True)}
     # Скрытые каталоги — служебные (очередь службы разборов), а не таблицы.
     orphans = [
@@ -610,4 +601,4 @@ def prune() -> tuple[int, int]:
     for path in root.glob("*/*/data-*.duckdb.tmp"):
         if path.with_suffix("") not in current:
             shutil.rmtree(path, ignore_errors=True)
-    return len(expired), len(orphans)
+    return len(orphans)

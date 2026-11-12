@@ -11,7 +11,6 @@ from __future__ import annotations
 import csv
 import io
 import json
-from datetime import timedelta
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
@@ -22,7 +21,6 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import Client
 from django.urls import reverse
-from django.utils import timezone
 from openpyxl import load_workbook
 
 from apps.userdata import extract, indicators, jobs, scope, semantics
@@ -1068,7 +1066,7 @@ class TestAgencyExamples:
 
 @pytest.mark.django_db
 class TestLimits:
-    """Пределы частоты и места учётной записи; очистка таблиц без владельца."""
+    """Пределы частоты и места учётной записи; очистка осиротевших каталогов."""
 
     def test_rate_limit(self, client: Client, settings: Any, warehouse: Any) -> None:
         settings.USERDATA_UPLOADS_PER_HOUR = 1
@@ -1091,17 +1089,18 @@ class TestLimits:
     def test_prune(self, client: Client, warehouse: Any, userdata_dir: Path) -> None:  # noqa: F811
         from django.core.management import call_command
 
-        dataset = _built(client)
-        # Таблица без владельца со сроком — от времени, когда раздел работал без входа.
-        Dataset.objects.filter(pk=dataset.pk).update(
-            owner=None, guest_key="legacy", expires_at=timezone.now() - timedelta(hours=1)
-        )
+        kept = _built(client)
+        # Строка удалена мимо службы (так миграция убрала строки без владельца) — каталог
+        # таблицы остался без набора.
+        gone = _built(client)
+        Dataset.objects.filter(pk=gone.pk).delete()
         orphan = userdata_dir / "00000000-0000-0000-0000-000000000000"
         orphan.mkdir(parents=True)
         call_command("prune_personal_data", stdout=io.StringIO())
-        assert not Dataset.objects.filter(pk=dataset.pk).exists()
         assert not orphan.exists()
-        assert not dataset.directory.exists()
+        assert not gone.directory.exists()
+        assert kept.directory.exists()
+        assert Dataset.objects.filter(pk=kept.pk).exists()
 
 
 @pytest.mark.django_db
