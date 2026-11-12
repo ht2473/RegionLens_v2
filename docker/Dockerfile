@@ -89,12 +89,16 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
 
 ENTRYPOINT ["/app/docker/entrypoint.sh"]
 
-# Процессы — на два ядра VPS; потоки — потому что запрос в основном ждёт PostgreSQL и DuckDB.
+# Число рабочих процессов gunicorn берёт из WEB_CONCURRENCY (compose задаёт его по числу
+# ядер сервера); потоки — потому что часть запроса ждёт PostgreSQL и DuckDB. Отметки жизни
+# процессов — в памяти (/dev/shm): запись на медленный диск gunicorn принимает за зависание.
+ENV WEB_CONCURRENCY=3
+
 CMD ["gunicorn", "config.wsgi:application", \
      "--bind", "0.0.0.0:8000", \
-     "--workers", "3", \
      "--threads", "4", \
      "--worker-class", "gthread", \
+     "--worker-tmp-dir", "/dev/shm", \
      "--timeout", "120", \
      "--graceful-timeout", "30", \
      "--max-requests", "2000", \
