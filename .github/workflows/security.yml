@@ -1,18 +1,14 @@
 # =====================================================================================
-# Еженедельные проверки защиты.
+# Проверки защиты.
 #
-# Уязвимость в зависимости или в образе службы появляется без правок кода, поэтому
-# проверки идут по расписанию. Находка в зависимостях Python роняет задачу, и владелец
-# репозитория получает письмо; итог по образам — в сводке запуска. Анализ кода CodeQL
-# идёт ещё и при каждом изменении основной ветки.
+# Анализ кода CodeQL — при каждом изменении основной ветки. Уязвимости образов служб —
+# запуском вручную перед выкладкой: итог в сводке запуска. Об уязвимых зависимостях
+# Python сообщает Dependabot (настройка репозитория) и pip-audit в «Проверках».
 # =====================================================================================
 
 name: Защита
 
 on:
-  schedule:
-    # Понедельник, 06:17 по Москве.
-    - cron: "17 3 * * 1"
   push:
     branches: [main]
   pull_request:
@@ -27,35 +23,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # --- Зависимости Python ------------------------------------------------------------------
-  dependencies:
-    name: Уязвимости зависимостей
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - name: Установка uv
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
-        with:
-          version: "0.11.15"
-          enable-cache: true
-          cache-dependency-glob: uv.lock
-
-      - name: Установка зависимостей
-        run: uv sync --frozen
-
-      - name: Известные уязвимости зависимостей
-        run: uv run pip-audit --skip-editable --strict
-
   # --- Образы служб и приложения -----------------------------------------------------------
   images:
     name: Уязвимости образов
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch'
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
