@@ -19,6 +19,7 @@ from django.core.management.base import CommandError
 from django.db import DatabaseError
 from django.test import Client
 from django.urls import reverse
+from django.utils import translation
 
 provenance = pytest.importorskip("provenance")
 
@@ -274,6 +275,34 @@ class TestVerifyPage:
         page = response.content.decode()
         assert "Подлинность не подтверждена" in page
         assert "Документ изменён после подписи" in page
+
+    def test_visitor_may_send_document_larger_than_form_limit(
+        self, client: Client, attest_dir: Path, settings: Any
+    ) -> None:
+        """Без входа страница принимает документ больше общего предела тела — до своего."""
+        large = DOCUMENT + b"0" * (2 * 1024 * 1024)
+        assert len(large) > settings.ANONYMOUS_BODY_BYTES
+
+        for language in ("ru", "en"):
+            with translation.override(language):
+                url = reverse("attest:verify")
+            response = client.post(url, {"document": SimpleUploadedFile("report.csv", large)})
+            assert response.status_code == 200, language
+
+        login = client.post(
+            reverse("accounts:login"), {"document": SimpleUploadedFile("report.csv", large)}
+        )
+        assert login.status_code == 413
+
+    def test_document_over_page_limit_is_refused_unread(
+        self, client: Client, attest_dir: Path, settings: Any
+    ) -> None:
+        """Тело больше предела страницы отклоняется до чтения."""
+        settings.ANONYMOUS_BODY_ROUTES = {"attest:verify": 2 * 1024 * 1024}
+
+        response = self._post(client, b"0" * (3 * 1024 * 1024))
+
+        assert response.status_code == 413
 
     def test_page_without_keys_says_signing_is_off(self, client: Client, no_keys: None) -> None:
         """Без ключей страница честно говорит, что проверять нечем."""

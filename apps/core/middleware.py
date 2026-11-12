@@ -11,8 +11,9 @@ from typing import Any
 from django.conf import settings
 from django.core.exceptions import BadRequest
 from django.http import HttpRequest, HttpResponse
+from django.urls import Resolver404, resolve
 from django.utils.cache import patch_vary_headers
-from django.utils.translation import get_language
+from django.utils.translation import get_language, get_language_from_path, override
 
 from .client_ip import client_ip, is_loopback, rate_subject
 from .throttle import allow_key
@@ -59,8 +60,9 @@ class BodyLimitMiddleware:
     Тело запроса читается раньше проверки входа: его разбирают проверка нулевого байта
     и защита от подделки запроса. Без этого слоя любой посетитель заставлял бы сервер
     принять и разобрать десятки мегабайт по любому адресу. Формы посетителя без входа —
-    вход, регистрация, обращение — малы; таблицы загружают после входа; выпуск набора —
-    только тот, кто управляет данными. Запрос с телом без объявленной длины не принимается:
+    вход, регистрация, обращение — малы, проверка документа — со своим пределом; таблицы
+    загружают после входа; выпуск набора — только тот, кто управляет данными. Запрос
+    с телом без объявленной длины не принимается:
     браузеры длину объявляют всегда.
     """
 
@@ -97,10 +99,26 @@ class BodyLimitMiddleware:
         # Слой аутентификации возьмёт уже найденного пользователя.
         request._cached_user = user  # type: ignore[attr-defined]
         if not user.is_authenticated:
-            return 413
+            return 0 if length <= BodyLimitMiddleware._anonymous_limit(request) else 413
         if length > settings.MEMBER_BODY_BYTES and not user.has_perm("accounts.manage_data"):
             return 413
         return 0
+
+    @staticmethod
+    def _anonymous_limit(request: HttpRequest) -> int:
+        """Предел тела без входа: у страниц из ``ANONYMOUS_BODY_ROUTES`` — свой."""
+        routes: dict[str, int] = settings.ANONYMOUS_BODY_ROUTES
+        if not routes:
+            return int(settings.ANONYMOUS_BODY_BYTES)
+        # Язык ещё не выбран (слой языка — дальше), а адрес с префиксом разбирается только
+        # на своём языке.
+        language = get_language_from_path(request.path_info) or settings.LANGUAGE_CODE
+        try:
+            with override(language):
+                name = resolve(request.path_info).view_name
+        except Resolver404:
+            return int(settings.ANONYMOUS_BODY_BYTES)
+        return routes.get(name, int(settings.ANONYMOUS_BODY_BYTES))
 
 
 class LanguageMemoryMiddleware:
