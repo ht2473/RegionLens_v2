@@ -34,7 +34,7 @@ SESSION_LIMIT = 20
 
 
 class ShareError(Exception):
-    """Ссылку не создать: предел или гость."""
+    """Ссылку не создать: исчерпан предел."""
 
 
 def fingerprint(token: str) -> str:

@@ -2,7 +2,7 @@
 Исследования: создание, страница исследования (панель данных и поле карточек), карточки
 фрагментами, правка поля, «Вернуть», удаление и «В исследование» со страниц холста.
 
-Исследование видит владелец — учётная запись или гость по ключу сеанса — и читатель его
+Исследование видит владелец — учётная запись — и читатель его
 закрытой ссылки (только чтение); чужое — 404. Правки поля ограничены по частоте.
 
 Правка без сценариев — форма с переходом обратно на страницу. Запрос HTMX получает ту же
@@ -81,7 +81,7 @@ def _common(request: HttpRequest, study: Study) -> tuple[int | None, list[str]]:
 
 
 def edit_allowed(request: HttpRequest) -> bool:
-    """Правка поля в пределах частоты: с учётной записи, у гостя — с адреса."""
+    """Правка поля в пределах частоты: с учётной записи."""
     limit = settings.USERDATA_STUDY_EDITS
     if request.user.is_authenticated:
         return allow_key("study-edit", f"user:{request.user.pk}", limit=limit, window=EDIT_WINDOW)
@@ -96,7 +96,7 @@ def _url(study: Study, **params: str) -> str:
 
 
 class StudyCreateView(View):
-    """Новое исследование — у учётной записи или у гостя на сутки."""
+    """Новое исследование учётной записи."""
 
     def post(self, request: HttpRequest) -> HttpResponse:
         if not edit_allowed(request):
@@ -155,7 +155,6 @@ class StudyView(BreadcrumbMixin, TemplateView):
             page_title=study.title,
             study=study,
             owner=self.owner,
-            guest=study.owner_id is None,
             blocks=blocks,
             # Только что поставленные карточки: одна или набор через запятую.
             added=[item for item in request.GET.get("added", "").split(",") if item],
@@ -579,7 +578,7 @@ def _downloads(request: HttpRequest, study: Study) -> bool:
 
 
 def _report_allowed(request: HttpRequest) -> bool:
-    """Отчёты в пределах частоты: с учётной записи, у гостя и читателя — с адреса."""
+    """Отчёты в пределах частоты: с учётной записи, у читателя закрытой ссылки — с адреса."""
     if request.user.is_authenticated:
         return allow_key(
             "study-report",

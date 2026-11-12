@@ -222,8 +222,8 @@
             {% endblocktranslate %}
           </li>
           <li>
-            {% blocktranslate trimmed with hours=guest_hours %}
-              Без входа таблица хранится {{ hours }} ч. С учётной записью — пока пользователь
+            {% blocktranslate trimmed %}
+              Свои таблицы загружают после входа. Таблица хранится, пока пользователь
               не удалит её на странице таблицы или вместе с учётной записью.
             {% endblocktranslate %}
             {% if backup_days %}

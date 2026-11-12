@@ -4,27 +4,23 @@
 среднее, взвешенное по среднегодовой численности населения (как значение «по России»
 у долей и средних — приближение: точнее взвешивать по знаменателю показателя).
 
-Группа гостя, как исследование, привязана к отпечатку ключа из сеанса и хранится сутки;
-после входа переходит в учётную запись.
+Группа, как таблица и исследование, принадлежит учётной записи.
 """
 
 from __future__ import annotations
 
 import statistics
 from dataclasses import dataclass
-from datetime import timedelta
 from typing import Any
 
-from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from django.db.models import QuerySet
 from django.http import Http404, HttpRequest
-from django.utils import timezone
 from django.utils.translation import gettext as _
 
-from .access import guest_fingerprint
 from .models import RegionGroup
 
-# Групп у учётной записи и у гостя не больше этого.
+# Групп у учётной записи не больше этого.
 MAX_GROUPS = 30
 TITLE_LENGTH = 120
 
@@ -34,15 +30,10 @@ class GroupError(Exception):
 
 
 def owned(request: HttpRequest) -> QuerySet[RegionGroup]:
-    """Группы того, кто спрашивает: учётной записи или гостя по ключу сеанса."""
-    if request.user.is_authenticated:
-        return RegionGroup.objects.filter(owner=request.user)
-    fingerprint = guest_fingerprint(request)
-    if not fingerprint:
+    """Группы того, кто спрашивает; без входа их нет."""
+    if not request.user.is_authenticated:
         return RegionGroup.objects.none()
-    return RegionGroup.objects.filter(
-        owner__isnull=True, guest_key=fingerprint, expires_at__gt=timezone.now()
-    )
+    return RegionGroup.objects.filter(owner=request.user)
 
 
 def own_or_404(request: HttpRequest, public_id: Any) -> RegionGroup:
@@ -76,12 +67,9 @@ def save(
             raise GroupError(
                 _("Групп уже %(count)s — это предел. Удалите ненужные.") % {"count": MAX_GROUPS}
             )
-        group = RegionGroup()
-        if request.user.is_authenticated:
-            group.owner = request.user
-        else:
-            group.guest_key = guest_fingerprint(request, create=True)
-            group.expires_at = timezone.now() + timedelta(hours=settings.USERDATA_GUEST_HOURS)
+        if not request.user.is_authenticated:
+            raise PermissionDenied
+        group = RegionGroup(owner=request.user)
     group.title = name
     # Порядок показа — как в справочнике, а не порядок отметок.
     group.codes = [code for code in comparable if code in set(wanted)]

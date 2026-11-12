@@ -10,20 +10,19 @@
 у карты — знаки и шкала в параметрах вида и подписи ``labels``.
 
 Каждая правка поля запоминает прежние блоки: «Вернуть» меняет их местами с нынешними.
-Исследование гостя, как его таблица, привязано к ключу сеанса и хранится сутки.
+Исследование, как и таблица, принадлежит учётной записи.
 """
 
 from __future__ import annotations
 
 import secrets
 from collections.abc import Iterable
-from datetime import timedelta
 from typing import Any
 
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from django.db.models import QuerySet
 from django.http import Http404, HttpRequest
-from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from apps.warehouse import routing
@@ -31,7 +30,6 @@ from apps.workspace.constants import QUERY_TARGETS_BY_CODE
 from apps.workspace.models import parameter_series_keys
 from apps.workspace.services import parse_query_string
 
-from .access import guest_fingerprint
 from .models import Study
 
 TEXT = "text"
@@ -83,16 +81,10 @@ class StudyError(Exception):
 
 
 def owned(request: HttpRequest) -> QuerySet[Study]:
-    """Исследования того, кто спрашивает: учётной записи или гостя по ключу сеанса."""
-    if request.user.is_authenticated:
-        return Study.objects.filter(owner=request.user)
-    fingerprint = guest_fingerprint(request)
-    if not fingerprint:
+    """Исследования того, кто спрашивает; без входа их нет."""
+    if not request.user.is_authenticated:
         return Study.objects.none()
-    # Истёкшее исследование гостя удалит очистка; до неё его уже нет.
-    return Study.objects.filter(
-        owner__isnull=True, guest_key=fingerprint, expires_at__gt=timezone.now()
-    )
+    return Study.objects.filter(owner=request.user)
 
 
 def own_or_404(request: HttpRequest, public_id: Any) -> Study:
@@ -104,23 +96,16 @@ def own_or_404(request: HttpRequest, public_id: Any) -> Study:
 
 
 def create(request: HttpRequest, title: str) -> Study:
-    """Новое исследование учётной записи или гостя (на сутки)."""
+    """Новое исследование учётной записи."""
     user = request.user
-    limit = (
-        settings.USERDATA_MAX_STUDIES
-        if user.is_authenticated
-        else settings.USERDATA_GUEST_MAX_STUDIES
-    )
+    if not user.is_authenticated:
+        raise PermissionDenied
+    limit = settings.USERDATA_MAX_STUDIES
     if owned(request).count() >= limit:
         raise StudyError(
             _("Исследований уже %(count)s — это предел. Удалите ненужные.") % {"count": limit}
         )
-    study = Study(title=(title.strip() or _("Исследование"))[:TITLE_LENGTH])
-    if user.is_authenticated:
-        study.owner = user
-    else:
-        study.guest_key = guest_fingerprint(request, create=True)
-        study.expires_at = timezone.now() + timedelta(hours=settings.USERDATA_GUEST_HOURS)
+    study = Study(title=(title.strip() or _("Исследование"))[:TITLE_LENGTH], owner=user)
     study.save()
     return study
 

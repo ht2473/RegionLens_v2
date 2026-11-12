@@ -1,7 +1,15 @@
-"""Маршруты своих данных: раздел, мастер загрузки, страница таблицы, ссылки и исследования."""
+"""
+Маршруты своих данных: раздел, мастер загрузки, страница таблицы, ссылки и исследования.
+
+Раздел работает после входа. Страницы, где что-то заводится (загрузка, пример, новое
+исследование, группы), отправляют гостя на вход (``member``). Страницы таблицы
+и исследования ищут объект среди своих и чужому, как и гостю, отвечают 404; страницы
+чтения открыты ещё получателю закрытой ссылки.
+"""
 
 from __future__ import annotations
 
+from django.contrib.auth.decorators import login_required as member
 from django.urls import path
 
 from . import (
@@ -21,13 +29,21 @@ app_name = "userdata"
 
 urlpatterns = [
     path("own-data/", pages.SectionView.as_view(), name="index"),
-    path("own-data/new/", views.UploadView.as_view(), name="upload"),
-    path("own-data/example/", pages.ExampleView.as_view(), name="example"),
-    path("own-data/examples/<slug:slug>/", pages.ExampleFileView.as_view(), name="example-file"),
-    path("own-data/studies/new/", study_views.StudyCreateView.as_view(), name="study-new"),
-    path("own-data/studies/add/", study_views.StudyAddView.as_view(), name="study-add"),
+    path("own-data/new/", member(views.UploadView.as_view()), name="upload"),
+    path("own-data/example/", member(pages.ExampleView.as_view()), name="example"),
+    path(
+        "own-data/examples/<slug:slug>/",
+        member(pages.ExampleFileView.as_view()),
+        name="example-file",
+    ),
+    path("own-data/studies/new/", member(study_views.StudyCreateView.as_view()), name="study-new"),
+    path("own-data/studies/add/", member(study_views.StudyAddView.as_view()), name="study-add"),
     path("own-data/studies/<uuid:public_id>/", study_views.StudyView.as_view(), name="study"),
-    path("own-data/studies/<uuid:public_id>/calc/", calc_views.CalcView.as_view(), name="calc"),
+    path(
+        "own-data/studies/<uuid:public_id>/calc/",
+        calc_views.CalcView.as_view(),
+        name="calc",
+    ),
     path(
         "own-data/<uuid:public_id>/calc/",
         calc_views.DatasetCalcView.as_view(),
@@ -48,7 +64,7 @@ urlpatterns = [
         group_views.StudyGroupView.as_view(),
         name="study-group",
     ),
-    path("own-data/groups/", group_views.GroupsView.as_view(), name="groups"),
+    path("own-data/groups/", member(group_views.GroupsView.as_view()), name="groups"),
     path(
         "own-data/studies/<uuid:public_id>/report/",
         study_views.StudyReportView.as_view(),
@@ -82,7 +98,9 @@ urlpatterns = [
         name="exclusions",
     ),
     path(
-        "own-data/<uuid:public_id>/study/", pages.DatasetStudyView.as_view(), name="dataset-study"
+        "own-data/<uuid:public_id>/study/",
+        pages.DatasetStudyView.as_view(),
+        name="dataset-study",
     ),
     path(
         "own-data/<uuid:public_id>/versions/new/",

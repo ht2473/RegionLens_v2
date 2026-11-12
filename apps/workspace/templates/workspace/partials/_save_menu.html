@@ -54,7 +54,7 @@
       </form>
     {% endif %}
 
-    {% if study_target or study_territory %}
+    {% if request.user.is_authenticated and study_target or request.user.is_authenticated and study_territory %}
       <form class="save-menu__studies" method="post" action="{% url 'userdata:study-add' %}"
             aria-labelledby="save-menu-studies">
         {% csrf_token %}
