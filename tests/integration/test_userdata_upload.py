@@ -70,7 +70,7 @@ class TestUpload:
         assert version is not None
         assert (version.file_kind, version.number) == (ingest.ZIP, 1)
         assert len(version.sha256) == 64
-        assert dataset.guest_key and dataset.owner is None and dataset.expires_at
+        assert dataset.owner is not None and dataset.expires_at is None
         assert (version.directory / "source.zip").exists()
 
         page = client.get(response["Location"])
@@ -173,7 +173,7 @@ class TestPaste:
 
 @pytest.mark.django_db
 class TestAccess:
-    """Таблицу видит только владелец; гость — по ключу своего сеанса."""
+    """Таблицу видит только владелец."""
 
     def test_other_guest_gets_404(self, client: Client) -> None:
         _upload(client, "t.csv", (FIXTURES / "crime_wide.csv").read_bytes())

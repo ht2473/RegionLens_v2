@@ -1,8 +1,8 @@
 """
-Свои данные целиком в браузере: выбор файла → сразу «Проверка» (одна таблица и вопросов
-нет — шаги «Файл» и «Что в таблице» проходятся сами) → исследование с первыми карточками →
-карта на холсте → страница таблицы; на 1440 и 390 точках, по-английски; разметка каждого
-шага, и пропущенных, — под аудитом доступности и размера целей нажатия.
+Свои данные целиком в браузере, после входа: выбор файла → сразу «Проверка» (одна таблица
+и вопросов нет — шаги «Файл» и «Что в таблице» проходятся сами) → исследование с первыми
+карточками → карта на холсте → страница таблицы; на 1440 и 390 точках, по-английски;
+разметка каждого шага, и пропущенных, — под аудитом доступности и размера целей нажатия.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ from typing import Any
 import pytest
 from playwright.sync_api import Browser, Page, expect
 
+from tests.e2e.conftest import open_session
 from tests.e2e.test_accessibility import AUDIT_SCRIPT, TARGET_SCRIPT
 from tests.e2e.test_responsive import OVERFLOW_SCRIPT
 
@@ -89,11 +90,12 @@ def _open_card(page: Page) -> None:
     page.wait_for_load_state("networkidle")
 
 
-def test_journey_desktop(page: Page, own_data: Any) -> None:
+def test_journey_desktop(page: Page, own_data: Any, registered_user: Any) -> None:
+    open_session(page.context, own_data, registered_user)
     page.set_viewport_size({"width": 1440, "height": 900})
     problems = _walk(page, own_data.url)
     expect(page.locator(".study-card__title").first).to_contain_text(TITLE)
-    expect(page.locator(".study-page .own-private")).to_contain_text("без входа — хранится до")
+    expect(page.locator(".study-page .own-private")).to_contain_text("видно только вам")
     _open_card(page)
     expect(page.locator(".surface-head__private")).to_have_text("видно только вам")
     page.locator(".surface-head__about a").click()
@@ -105,10 +107,11 @@ def test_journey_desktop(page: Page, own_data: Any) -> None:
     assert not problems, "\n".join(problems)
 
 
-def test_journey_phone(browser: Browser, own_data: Any) -> None:
+def test_journey_phone(browser: Browser, own_data: Any, registered_user: Any) -> None:
     context = browser.new_context(
         viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True
     )
+    open_session(context, own_data, registered_user)
     page = context.new_page()
     session = context.new_cdp_session(page)
     session.send(
@@ -123,7 +126,8 @@ def test_journey_phone(browser: Browser, own_data: Any) -> None:
         context.close()
 
 
-def test_journey_english(page: Page, own_data: Any) -> None:
+def test_journey_english(page: Page, own_data: Any, registered_user: Any) -> None:
+    open_session(page.context, own_data, registered_user)
     page.set_viewport_size({"width": 1440, "height": 900})
     problems = _walk(page, own_data.url, "en")
     _open_card(page)
@@ -206,17 +210,19 @@ def _analysis(page: Page, base: str) -> list[str]:
     return problems
 
 
-def test_analysis_desktop(page: Page, own_data: Any) -> None:
+def test_analysis_desktop(page: Page, own_data: Any, registered_user: Any) -> None:
+    open_session(page.context, own_data, registered_user)
     page.set_viewport_size({"width": 1440, "height": 900})
     problems = _walk(page, own_data.url)
     problems += _analysis(page, own_data.url)
     assert not problems, "\n".join(problems)
 
 
-def test_analysis_phone(browser: Browser, own_data: Any) -> None:
+def test_analysis_phone(browser: Browser, own_data: Any, registered_user: Any) -> None:
     context = browser.new_context(
         viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True
     )
+    open_session(context, own_data, registered_user)
     page = context.new_page()
     try:
         problems = _walk(page, own_data.url)

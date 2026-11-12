@@ -50,7 +50,7 @@ def _record(dataset: Dataset, title: str) -> Any:
 
 
 def _panel(dataset: Dataset, key: str) -> dict[int, dict[str, float]]:
-    with scope.reading_as(fingerprint=dataset.guest_key):
+    with scope.reading_as(user=dataset.owner):
         return queries.region_panel(key)
 
 

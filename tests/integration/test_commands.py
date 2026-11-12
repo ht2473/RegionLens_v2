@@ -201,22 +201,3 @@ class TestSyntheticDataset:
         assert synthetic_dataset.first_year == synthetic.FIRST_YEAR
         assert synthetic_dataset.last_year == synthetic.LAST_YEAR
         assert synthetic_dataset.row_count > 30_000
-
-
-@pytest.mark.django_db
-class TestUserdataGuestDirs:
-    """Каталоги гостей для исключения из резервной копии."""
-
-    def test_database_without_schema_gives_nothing(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """
-        Копия снимается и с базы без схемы — после выкладки, оборванной до миграций: команда
-        не падает, а гостевых каталогов в такой базе нет.
-        """
-        from django.db import connection
-
-        monkeypatch.setattr(connection.introspection, "table_names", lambda *args, **kw: [])
-        out = StringIO()
-
-        call_command("userdata_guest_dirs", stdout=out)
-
-        assert out.getvalue() == ""

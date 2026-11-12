@@ -434,7 +434,7 @@ class TestSeriesStep:
             return
         assert _build(client, dataset).status_code == 302
         key = _key(dataset, _version(dataset).series.get())
-        with scope.reading_as(fingerprint=dataset.guest_key):
+        with scope.reading_as(user=dataset.owner):
             values = queries.series_values([key], ["RU-BEL"])
         # Части таблицы одна под другой: на карте — первая.
         assert values[key]["RU-BEL"] == {2023: 100.0}
@@ -864,13 +864,8 @@ class TestAccess:
         key = _key(dataset, record)
         assert queries.year_counts(key) == {}
         assert queries.series_values([key], ["RU-TA"]) == {}
-        with scope.reading_as(fingerprint=dataset.guest_key):
+        with scope.reading_as(user=dataset.owner):
             assert sorted(queries.year_counts(key)) == list(range(2014, 2023))
-
-    def test_expired_guest_table(self, client: Client, warehouse: Any) -> None:
-        dataset = _built(client)
-        Dataset.objects.filter(pk=dataset.pk).update(expires_at=timezone.now() - timedelta(hours=1))
-        assert client.get(reverse("userdata:dataset", args=[dataset.public_id])).status_code == 404
 
     def test_api_rejects_user_keys(self, client: Client, warehouse: Any) -> None:
         dataset = _built(client)
@@ -1072,21 +1067,11 @@ class TestAgencyExamples:
 
 
 @pytest.mark.django_db
-class TestGuestsAndLimits:
-    """Гость: три таблицы на сутки, перенос при входе; пределы частоты и места."""
-
-    def test_guest_limit(self, client: Client, settings: Any, warehouse: Any) -> None:
-        settings.USERDATA_GUEST_MAX_DATASETS = 1
-        _upload(client, "environment.csv")
-        response = client.post(
-            reverse("userdata:upload"),
-            {"action": "upload", "file": SimpleUploadedFile("a.csv", b"x;y\n1;2\n")},
-        )
-        assert "Без входа можно держать не больше 1 таблиц" in response.text
-        assert Dataset.objects.count() == 1
+class TestLimits:
+    """Пределы частоты и места учётной записи; очистка таблиц без владельца."""
 
     def test_rate_limit(self, client: Client, settings: Any, warehouse: Any) -> None:
-        settings.USERDATA_GUEST_UPLOADS_PER_HOUR = 1
+        settings.USERDATA_UPLOADS_PER_HOUR = 1
         _upload(client, "environment.csv")
         response = client.post(
             reverse("userdata:upload"),
@@ -1103,22 +1088,14 @@ class TestGuestsAndLimits:
         )
         assert "Место для таблиц закончилось" in response.text
 
-    def test_guest_tables_move_to_account(
-        self, client: Client, make_user: Any, warehouse: Any
-    ) -> None:
-        dataset = _built(client)
-        user = make_user(email="guest@example.com")
-        client.force_login(user)
-        dataset.refresh_from_db()
-        assert dataset.owner == user
-        assert dataset.expires_at is None
-        assert client.get(reverse("userdata:dataset", args=[dataset.public_id])).status_code == 200
-
     def test_prune(self, client: Client, warehouse: Any, userdata_dir: Path) -> None:  # noqa: F811
         from django.core.management import call_command
 
         dataset = _built(client)
-        Dataset.objects.filter(pk=dataset.pk).update(expires_at=timezone.now() - timedelta(hours=1))
+        # Таблица без владельца со сроком — от времени, когда раздел работал без входа.
+        Dataset.objects.filter(pk=dataset.pk).update(
+            owner=None, guest_key="legacy", expires_at=timezone.now() - timedelta(hours=1)
+        )
         orphan = userdata_dir / "00000000-0000-0000-0000-000000000000"
         orphan.mkdir(parents=True)
         call_command("prune_personal_data", stdout=io.StringIO())
@@ -1164,7 +1141,7 @@ class TestMasks:
         masks = version.report["extract"]["masks"]
         assert {"value": "8888", "count": 73, "detected": True, "masked": True} in masks
         key = _key(dataset, version.series.order_by("order").first())
-        with scope.reading_as(fingerprint=dataset.guest_key):
+        with scope.reading_as(user=dataset.owner):
             values = queries.series_values([key], ["RU-NEN", "RU-AD", "RU-KL"])
         assert all(
             value is None or value <= 100
@@ -1185,7 +1162,7 @@ class TestMasks:
         version = _version(dataset)
         assert not any(item["masked"] for item in version.report["extract"]["masks"])
         key = _key(dataset, version.series.order_by("order").first())
-        with scope.reading_as(fingerprint=dataset.guest_key):
+        with scope.reading_as(user=dataset.owner):
             values = queries.series_values([key], ["RU-NEN", "RU-AD", "RU-KL"])
         assert any(
             value == 8888 for years in values.get(key, {}).values() for value in years.values()
@@ -1230,7 +1207,7 @@ def test_equal_values_are_ranked_alphabetically(client: Client, warehouse: Any) 
     _describe(client, dataset)
     assert _build(client, dataset).status_code == 302
     key = _key(dataset, _version(dataset).series.get(derived=""))
-    with scope.reading_as(fingerprint=dataset.guest_key):
+    with scope.reading_as(user=dataset.owner):
         rows = ranking_table(key, 2023)
     names = [row["name_ru"] for row in rows]
     assert names[:3] == ["Курская область", "Москва", "Тверская область"]
