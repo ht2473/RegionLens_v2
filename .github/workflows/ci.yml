@@ -269,3 +269,5 @@ jobs:
         run: |
           docker run --rm --entrypoint python regionlens:${{ github.sha }} \
             -c "import django; print('Django', django.get_version())"
+          docker run --rm --entrypoint test regionlens:${{ github.sha }} \
+            -x /app/docker/entrypoint.sh

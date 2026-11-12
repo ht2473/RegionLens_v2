@@ -64,8 +64,10 @@ COPY --from=builder --chown=regionlens:regionlens /app/.venv /app/.venv
 COPY --chown=regionlens:regionlens . .
 
 # Рабочая копия правится и в Windows: окончания строк сценариев приводятся к LF
-# (с CRLF — `env: 'sh\r': No such file or directory`).
-RUN sed -i 's/\r$//' /app/docker/entrypoint.sh /app/scripts/*.sh
+# (с CRLF — `env: 'sh\r': No such file or directory`), право на запуск ставится явно —
+# в архиве коммита его может не быть.
+RUN sed -i 's/\r$//' /app/docker/entrypoint.sh /app/scripts/*.sh \
+    && chmod 0755 /app/docker/entrypoint.sh /app/scripts/*.sh
 
 # Каталоги записи приложения: в compose это тома, но нужны и при запуске без томов.
 # Пустой том получает владельца точки подключения в образе: каталога нет — том
