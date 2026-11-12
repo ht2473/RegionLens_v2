@@ -34,7 +34,7 @@ SESSION_LIMIT = 20
 
 
 class ShareError(Exception):
-    """Ссылку не создать: предел или гость."""
+    """Ссылку не создать: исчерпан предел."""
 
 
 def fingerprint(token: str) -> str:
@@ -143,8 +143,6 @@ def is_shared(dataset: Dataset) -> bool:
     """Таблицу видно по закрытой ссылке: своей или исследования, в котором есть её ряды."""
     if of(dataset).exists():
         return True
-    if dataset.owner_id is None:
-        return False
     from .studies import dataset_codes
 
     studies = Study.objects.filter(owner_id=dataset.owner_id, shares__in=active()).distinct()

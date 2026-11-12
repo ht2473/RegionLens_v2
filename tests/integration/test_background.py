@@ -22,6 +22,7 @@ from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.catalog.models import Territory
 from apps.core.cache import ResilientValkeyCache
 from apps.core.models import ServiceBeat
 from apps.feedback.constants import DeliveryStatus, TicketStatus, TicketTopic
@@ -153,7 +154,8 @@ def test_warm_cache_renders_popular_pages(warehouse: Any) -> None:
     """Прогрев собирает частые страницы на обоих языках."""
     from apps.core.warmup import WARM_PAGES, warm_cache
 
-    assert warm_cache() == 2 * len(WARM_PAGES)
+    regions = Territory.objects.comparable().count()
+    assert warm_cache() == 2 * (len(WARM_PAGES) + regions)
 
 
 def test_abandoned_build_is_closed(db: None) -> None:

@@ -23,6 +23,8 @@ CACHES = {
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
 MAILERS = {"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}}
+# Письма вне запроса уходят сразу: проверка читает ящик следом за ответом.
+MAIL_INLINE = True
 
 # Хранилище без манифеста: collectstatic в тестах не выполняется.
 STORAGES = {

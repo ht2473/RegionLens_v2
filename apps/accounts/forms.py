@@ -369,12 +369,18 @@ class StyledPasswordResetForm(StyledFormMixin, PasswordResetForm):
         to_email: str,
         html_email_template_name: str | None = None,
     ) -> None:
-        """Отправить письмо со ссылкой; отказ почтового узла отмечается, а не роняет страницу."""
-        from apps.core.mail import deliver
+        """
+        Отправить письмо со ссылкой вне запроса; отказ почтового узла отмечается в панели.
+
+        Письмо уходит только зарегистрированному адресу: отправленное внутри запроса, оно
+        удлиняло бы ответ на время разговора с почтовым узлом, и по времени ответа было бы
+        видно, есть ли такая учётная запись.
+        """
+        from apps.core.mail import deliver_later
 
         subject = "".join(render_to_string(subject_template_name, context).splitlines())
         body = render_to_string(email_template_name, context)
-        deliver(subject, body, [to_email])
+        deliver_later(subject, body, [to_email])
 
 
 class StyledSetPasswordForm(StyledFormMixin, SetPasswordForm):

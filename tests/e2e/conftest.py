@@ -82,6 +82,17 @@ def registered_user(transactional_db: None) -> Any:
     return user
 
 
+def open_session(context: Any, site: Any, user: Any) -> None:
+    """Сеанс учётной записи в браузере: cookie сеанса, открытого тестовым клиентом."""
+    from django.conf import settings
+    from django.test import Client
+
+    client = Client()
+    client.force_login(user)
+    name = settings.SESSION_COOKIE_NAME
+    context.add_cookies([{"name": name, "value": client.cookies[name].value, "url": site.url}])
+
+
 @pytest.fixture
 def warehouse_committed(
     transactional_db: None,

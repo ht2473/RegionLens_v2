@@ -214,7 +214,7 @@ until $COMPOSE exec -T web curl --fail --silent http://127.0.0.1:8000/healthz >/
     sleep 2
 done
 
-# Таблицы гостей в копию не входят: их записи в базе и каталоги без записей убирает очистка.
+# Записи таблиц, файлов которых в копии нет, и каталоги без записей убирает очистка.
 step "Очистка таблиц без файлов"
 $COMPOSE exec -T web python manage.py prune_personal_data
 

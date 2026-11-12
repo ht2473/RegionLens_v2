@@ -15,6 +15,7 @@ import pytest
 from django.core.cache import cache
 from playwright.sync_api import Browser, Page, expect
 
+from tests.e2e.conftest import open_session
 from tests.e2e.test_accessibility import AUDIT_SCRIPT
 from tests.e2e.test_cabinet_journeys import sign_in
 from tests.e2e.test_responsive import OVERFLOW_SCRIPT
@@ -133,7 +134,8 @@ def test_study_link_phone(
     assert not problems, "\n".join(problems)
 
 
-def test_chart_image_on_canvas(page: Page, own_data: Any) -> None:
+def test_chart_image_on_canvas(page: Page, own_data: Any, registered_user: Any) -> None:
+    open_session(page.context, own_data, registered_user)
     page.set_viewport_size({"width": 1440, "height": 900})
     _walk(page, own_data.url)
     page.locator(".study-card__open").first.click()

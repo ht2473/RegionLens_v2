@@ -413,7 +413,6 @@ def _check_userdata() -> dict[str, Any]:
     title = _("Свои данные")
     since = timezone.now() - timedelta(days=1)
     tables = Dataset.objects.count()
-    guests = Dataset.objects.filter(owner__isnull=True).count()
     size = Dataset.objects.aggregate(total=Sum("size_bytes"))["total"] or 0
     recent = DatasetVersion.objects.filter(updated_at__gte=since)
     built = recent.filter(state=DatasetVersion.State.BUILT).count()
@@ -425,8 +424,8 @@ def _check_userdata() -> dict[str, Any]:
     return {
         "ok": True,
         "title": title,
-        "detail": _("таблиц: %(tables)s, из них без входа: %(guests)s; %(size).1f МБ")
-        % {"tables": tables, "guests": guests, "size": size / 1024**2},
+        "detail": _("таблиц: %(tables)s; %(size).1f МБ")
+        % {"tables": tables, "size": size / 1024**2},
         "extra": _(
             "за сутки собрано: %(built)s, не разобрано: %(failed)s; исследований: %(studies)s, "
             "действующих закрытых ссылок: %(shares)s"

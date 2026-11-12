@@ -120,6 +120,8 @@ class UserProfileUpdateView(AdminViewMixin, UpdateView):
     form_class = UserProfileForm
     section_code = "users"
     template_name = "dashboard/user_detail.html"
+    # Форма — в карточке учётной записи; у этого адреса своей страницы нет.
+    http_method_names = ["post"]
     slug_field = "public_id"
     slug_url_kwarg = "public_id"
 

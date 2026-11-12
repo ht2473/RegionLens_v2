@@ -185,7 +185,7 @@ class TestCountryOnly:
         request = RequestFactory().get("/")
         request.user = AnonymousUser()
         request.session = SessionStore()
-        with scope.reading_as(fingerprint=dataset.guest_key):
+        with scope.reading_as(user=dataset.owner):
             info = operations.info_of(key)
             assert info is not None and info.value.country_only
             assert "только значение по России" in semantics.verdict("view:map", info.value).reason

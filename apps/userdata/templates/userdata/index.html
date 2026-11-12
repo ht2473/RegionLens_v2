@@ -2,7 +2,7 @@
 {% load i18n static formatting userdata %}
 
 {% comment %}
-  Рабочий стол раздела «Свои данные»: зона загрузки (файл перетаскивают на страницу или
+  Рабочий стол раздела «Свои данные» (гостю — рассказ о разделе и приглашение войти): зона загрузки (файл перетаскивают на страницу или
   выбирают — загрузка начинается сразу), «Продолжить» — исследования карточками с миниатюрой,
   таблицы с состоянием, что можно сделать; справка о формах таблиц, примерах и хранении
   свёрнута. В первый раз — зона крупнее, «Что получится» и примеры ведомств карточками.
@@ -26,6 +26,19 @@
     </p>
   </header>
 
+  {% if not user.is_authenticated %}
+    <section class="callout callout--info own-invite" aria-labelledby="own-invite-title">
+      <svg class="callout__icon" aria-hidden="true"><use href="#icon-info"></use></svg>
+      <div>
+        <h2 class="callout__title" id="own-invite-title">{% translate "Свои таблицы — после входа" %}</h2>
+        <p>{% translate "Таблицы и исследования хранятся в учётной записи. Видите их только вы." %}</p>
+        <p class="own-invite__actions">
+          <a class="button button--primary button--sm" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "Войти" %}</a>
+          <a class="button button--secondary button--sm" href="{% url 'accounts:register' %}">{% translate "Зарегистрироваться" %}</a>
+        </p>
+      </div>
+    </section>
+  {% else %}
   <section class="desk-drop{% if first_visit %} desk-drop--big{% endif %}" aria-labelledby="desk-drop-title">
     <h2 class="visually-hidden" id="desk-drop-title">{% translate "Загрузить таблицу" %}</h2>
     <form method="post" action="{% url 'userdata:upload' %}" enctype="multipart/form-data" novalidate
@@ -46,12 +59,9 @@
           <button class="desk-drop__example" type="submit">{% translate "Пример" %}</button>
         </form>
       {% endif %}
-      {% if first_visit and not user.is_authenticated %}
-        <span aria-hidden="true">·</span>
-        <span>{% blocktranslate trimmed with hours=guest_hours %}без входа таблица хранится {{ hours }} ч{% endblocktranslate %}</span>
-      {% endif %}
     </div>
   </section>
+  {% endif %}
 
   {% if study_cards %}
     <section class="page-section desk-section" aria-labelledby="desk-studies">
@@ -96,12 +106,6 @@
         </li>
       </ul>
       <p class="field__hint" id="desk-study-empty" hidden>{% translate "Ничего не найдено" %}</p>
-      {% if not user.is_authenticated %}
-        <p class="field__hint">
-          {% blocktranslate trimmed with hours=guest_hours %}Без входа исследования хранятся {{ hours }} ч.{% endblocktranslate %}
-          <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "Войдите, чтобы сохранить их" %}</a>
-        </p>
-      {% endif %}
     </section>
   {% endif %}
 
@@ -110,11 +114,7 @@
       <div class="desk-section__head">
         <h2 class="page-section__title" id="desk-tables">{% translate "Таблицы" %}</h2>
         <p class="desk-quota">
-          {% if user.is_authenticated %}
-            {% blocktranslate trimmed with used=used|filesizeformat quota=quota|filesizeformat count=datasets|length limit=limit %}Занято {{ used }} из {{ quota }} · таблиц {{ count }} из {{ limit }}{% endblocktranslate %}
-          {% else %}
-            {% blocktranslate trimmed with count=datasets|length limit=limit %}Таблиц {{ count }} из {{ limit }}{% endblocktranslate %}
-          {% endif %}
+          {% blocktranslate trimmed with used=used|filesizeformat quota=quota|filesizeformat count=datasets|length limit=limit %}Занято {{ used }} из {{ quota }} · таблиц {{ count }} из {{ limit }}{% endblocktranslate %}
         </p>
       </div>
       <ul class="desk-rows">
@@ -130,7 +130,6 @@
                   {% else %}
                     {% blocktranslate trimmed with moment=item.created_at|date:"d.m.Y" %}не собрана · начата {{ moment }}{% endblocktranslate %} · {{ item.size_bytes|filesizeformat }}
                   {% endif %}
-                  {% if item.expires_at %}· {% blocktranslate trimmed with moment=item.expires_at|date:"d.m.Y H:i" %}хранится до {{ moment }}{% endblocktranslate %}{% endif %}
                 </p>
               </div>
               {% if row.built %}
@@ -146,11 +145,6 @@
           {% endwith %}
         {% endfor %}
       </ul>
-      {% if not user.is_authenticated %}
-        <p class="field__hint">
-          <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">{% translate "Войдите, чтобы таблицы хранились дольше суток" %}</a>
-        </p>
-      {% endif %}
     </section>
   {% endif %}
 
@@ -178,13 +172,15 @@
         <p class="desk-task__text">{% translate "Карточки и заметки исследования — в Word, Excel, печать или по закрытой ссылке." %}</p>
       </li>
     </ul>
-    <p class="desk-groups">
-      <a href="{% url 'userdata:groups' %}">{% translate "Группы регионов" %}</a>
-      — {% translate "свой набор регионов, итог которого сравнивается с остальными." %}
-    </p>
+    {% if user.is_authenticated %}
+      <p class="desk-groups">
+        <a href="{% url 'userdata:groups' %}">{% translate "Группы регионов" %}</a>
+        — {% translate "свой набор регионов, итог которого сравнивается с остальными." %}
+      </p>
+    {% endif %}
   </section>
 
-  {% if first_visit and examples %}
+  {% if user.is_authenticated and first_visit and examples %}
     <section class="page-section desk-section" aria-labelledby="desk-examples">
       <div class="desk-section__head">
         <h2 class="page-section__title" id="desk-examples">{% translate "Нет своей таблицы под рукой? Начните с примера" %}</h2>
@@ -274,10 +270,7 @@
       <ul class="compact-list own-storage">
         <li>{% translate "Таблицу и исследования с ней видите только вы, пока не дадите закрытую ссылку. Поисковики их не индексируют. В панели управления видно только число таблиц и занятое место." %}</li>
         <li>
-          {% blocktranslate trimmed with hours=guest_hours %}
-            Без входа таблица хранится {{ hours }} ч, затем удаляется. После входа таблицы
-            переходят в учётную запись и хранятся, пока вы их не удалите.
-          {% endblocktranslate %}
+          {% translate "Таблицы хранятся в учётной записи, пока вы их не удалите." %}
         </li>
         <li>
           {% if retention_days %}

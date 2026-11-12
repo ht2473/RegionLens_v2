@@ -16,6 +16,6 @@ class UserdataConfig(AppConfig):
         """Ключи «u:» слоя рядов ведут в файлы наборов с проверкой доступа и права скачивать."""
         from apps.warehouse import routing
 
-        from . import scope, signals  # noqa: F401 — перенос наборов гостя при входе
+        from . import scope
 
         routing.register(scope.resolve, scope.exportable)

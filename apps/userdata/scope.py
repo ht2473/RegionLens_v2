@@ -1,6 +1,5 @@
 """
-Кто спрашивает: учётная запись, гость по ключу в сеансе, читатель закрытой ссылки — для
-слоя рядов.
+Кто спрашивает: учётная запись или читатель закрытой ссылки — для слоя рядов.
 
 ``UserDataScopeMiddleware`` кладёт запрос в переменную контекста; слой рядов
 (``apps.warehouse.routing``) спрашивает здесь, доступен ли набор по коду, и получает файл
@@ -17,7 +16,6 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from django.http import HttpRequest, HttpResponse
-from django.utils import timezone
 
 from apps.warehouse.duckdb_client import DataSource
 
@@ -27,12 +25,11 @@ from .models import Dataset, DatasetVersion
 @dataclass(slots=True)
 class Scope:
     """
-    Читатель наборов: учётная запись, отпечаток гостевого ключа, наборы открытых закрытых
-    ссылок (код → можно ли скачивать); ответы — на запрос.
+    Читатель наборов: учётная запись и наборы открытых закрытых ссылок (код → можно ли
+    скачивать); ответы — на запрос.
     """
 
     user_id: int | None = None
-    fingerprint: str = ""
     shared: dict[str, bool] = field(default_factory=dict)
     sources: dict[str, DataSource | None] = field(default_factory=dict)
     datasets: dict[str, Dataset | None] = field(default_factory=dict)
@@ -40,28 +37,26 @@ class Scope:
     _resolved: bool = False
 
     def _resolve(self) -> None:
-        """Пользователь, ключ гостя и ссылки — при первом обращении: ``request.user`` ленив."""
+        """Пользователь и ссылки — при первом обращении: ``request.user`` ленив."""
         if self._resolved or self.request is None:
             return
         from . import shares
-        from .access import guest_fingerprint
 
         user = getattr(self.request, "user", None)
         if user is not None and user.is_authenticated:
             self.user_id = user.pk
         if hasattr(self.request, "session"):
-            self.fingerprint = guest_fingerprint(self.request)
             self.shared = shares.readable(shares.opened(self.request))
         self._resolved = True
 
     def owns(self, dataset: Dataset) -> bool:
-        """Набор принадлежит читателю и не истёк."""
+        """Набор принадлежит читателю."""
         self._resolve()
-        if dataset.owner_id is not None:
-            return self.user_id is not None and dataset.owner_id == self.user_id
-        if not self.fingerprint or dataset.guest_key != self.fingerprint:
-            return False
-        return dataset.expires_at is None or dataset.expires_at > timezone.now()
+        return (
+            dataset.owner_id is not None
+            and self.user_id is not None
+            and dataset.owner_id == self.user_id
+        )
 
     def can_read(self, dataset: Dataset) -> bool:
         """Набор свой или открыт закрытой ссылкой."""
@@ -93,11 +88,10 @@ def current() -> Scope | None:
 
 
 @contextmanager
-def reading_as(*, user: Any = None, fingerprint: str = "") -> Iterator[Scope]:
-    """Читать наборы от имени учётной записи или гостя — для проверок и команд."""
+def reading_as(*, user: Any = None) -> Iterator[Scope]:
+    """Читать наборы от имени учётной записи — для проверок и команд."""
     scope = Scope(
         user_id=user.pk if user is not None and user.is_authenticated else None,
-        fingerprint=fingerprint,
         _resolved=True,
     )
     token = _scope.set(scope)

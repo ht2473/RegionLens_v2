@@ -165,20 +165,6 @@ class TestOwner:
         study.refresh_from_db()
         assert studies.blocks_of(study) == []
 
-    def test_guest_study_lives_a_day_and_moves_on_login(
-        self, client: Client, member: Any, warehouse: Any
-    ) -> None:
-        response = client.post(reverse("userdata:study-new"), {"title": "Гостевое"})
-        study = Study.objects.get()
-        assert response["Location"] == reverse("userdata:study", args=[study.public_id])
-        assert study.owner is None and study.guest_key and study.expires_at
-        assert client.get(response["Location"]).status_code == 200
-        # Чужой сеанс исследования гостя не видит.
-        assert Client().get(response["Location"]).status_code == 404
-        client.force_login(member)
-        study.refresh_from_db()
-        assert study.owner == member and not study.guest_key and study.expires_at is None
-
     def test_save_popover_lists_studies(self, member_client: Client, warehouse: Any) -> None:
         study = _study(member_client, "Для редактора")
         page = member_client.get(reverse("maps:choropleth"))
@@ -738,9 +724,3 @@ class TestLab:
             for number in range(3)
         ]
         assert statuses == [204, 204, 429]
-
-    def test_guest_study_limit(self, client: Client, settings: Any, warehouse: Any) -> None:
-        settings.USERDATA_GUEST_MAX_STUDIES = 1
-        client.post(reverse("userdata:study-new"), {"title": "Первое"})
-        client.post(reverse("userdata:study-new"), {"title": "Второе"})
-        assert Study.objects.count() == 1

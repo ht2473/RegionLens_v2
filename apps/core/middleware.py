@@ -1,4 +1,7 @@
-"""Запоминание языка для страниц без языкового префикса и отказ в запросах с нулевым байтом."""
+"""
+Общий предел частоты обращений, запоминание языка для страниц без языкового префикса
+и отказ в запросах с нулевым байтом.
+"""
 
 from __future__ import annotations
 
@@ -10,6 +13,94 @@ from django.core.exceptions import BadRequest
 from django.http import HttpRequest, HttpResponse
 from django.utils.cache import patch_vary_headers
 from django.utils.translation import get_language
+
+from .client_ip import client_ip, is_loopback, rate_subject
+from .throttle import allow_key
+
+
+class RequestRateMiddleware:
+    """
+    Общий предел обращений с одного адреса в минуту — до любой работы над запросом.
+
+    У расчётов, выгрузок и входа свои, более строгие пределы; этот не даёт одному адресу
+    занять все рабочие потоки обычными страницами. Отказ — короткий текст с кодом 429,
+    без сборки страницы. Обращения контейнера к самому себе (проверка живости, прогрев)
+    не считаются. ``REQUESTS_PER_MINUTE = 0`` предел выключает.
+    """
+
+    WINDOW = 60
+
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
+        self.get_response = get_response
+
+    def __call__(self, request: HttpRequest) -> HttpResponse:
+        """Отказать адресу, исчерпавшему предел, иначе передать запрос дальше."""
+        limit = settings.REQUESTS_PER_MINUTE
+        if limit > 0:
+            address = client_ip(request)
+            if not is_loopback(address) and not allow_key(
+                "requests", rate_subject(address), limit=limit, window=self.WINDOW
+            ):
+                response = HttpResponse(
+                    "Слишком много запросов с вашего адреса. Повторите через минуту.\n"
+                    "Too many requests from your address. Try again in a minute.\n",
+                    status=429,
+                    content_type="text/plain; charset=utf-8",
+                )
+                response["Retry-After"] = str(self.WINDOW)
+                return response
+        return self.get_response(request)
+
+
+class BodyLimitMiddleware:
+    """
+    Отказать в большом теле запроса до его чтения тому, кому оно не положено.
+
+    Тело запроса читается раньше проверки входа: его разбирают проверка нулевого байта
+    и защита от подделки запроса. Без этого слоя любой посетитель заставлял бы сервер
+    принять и разобрать десятки мегабайт по любому адресу. Формы посетителя без входа —
+    вход, регистрация, обращение — малы; таблицы загружают после входа; выпуск набора —
+    только тот, кто управляет данными. Запрос с телом без объявленной длины не принимается:
+    браузеры длину объявляют всегда.
+    """
+
+    METHODS = frozenset({"POST", "PUT", "PATCH"})
+
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
+        self.get_response = get_response
+
+    def __call__(self, request: HttpRequest) -> HttpResponse:
+        """Сверить объявленную длину тела с пределом отправителя."""
+        if request.method in self.METHODS:
+            status = self._refusal(request)
+            if status:
+                return HttpResponse(
+                    "Запрос больше, чем принимает сайт. / The request is larger than the "
+                    "site accepts.\n",
+                    status=status,
+                    content_type="text/plain; charset=utf-8",
+                )
+        return self.get_response(request)
+
+    @staticmethod
+    def _refusal(request: HttpRequest) -> int:
+        """Код отказа или ноль; пользователь узнаётся по сеансу, только когда тело велико."""
+        declared = request.META.get("CONTENT_LENGTH") or ""
+        if not declared.isdigit():
+            return 411 if request.META.get("HTTP_TRANSFER_ENCODING") else 0
+        length = int(declared)
+        if length <= settings.ANONYMOUS_BODY_BYTES:
+            return 0
+        from django.contrib.auth import get_user
+
+        user: Any = get_user(request)
+        # Слой аутентификации возьмёт уже найденного пользователя.
+        request._cached_user = user  # type: ignore[attr-defined]
+        if not user.is_authenticated:
+            return 413
+        if length > settings.MEMBER_BODY_BYTES and not user.has_perm("accounts.manage_data"):
+            return 413
+        return 0
 
 
 class LanguageMemoryMiddleware:

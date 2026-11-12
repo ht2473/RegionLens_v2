@@ -87,16 +87,6 @@ class TestGroupsPage:
         )
         assert response.status_code == 404
 
-    def test_guest_group_moves_to_the_account(
-        self, client: Client, member: Any, warehouse: Any
-    ) -> None:
-        _group(client)
-        group = RegionGroup.objects.get()
-        assert group.owner is None and group.expires_at is not None
-        client.force_login(member)
-        group.refresh_from_db()
-        assert group.owner == member and group.expires_at is None
-
 
 class TestGroupCard:
     """Итог группы против остальных: доля у суммы, взвешенные средние у относительной."""

@@ -15,7 +15,7 @@ import time
 from django.core.cache import cache
 from django.http import HttpRequest
 
-from .client_ip import client_ip
+from .client_ip import client_ip, rate_subject
 
 # Запасные счётчики процесса: имя — число обращений и момент конца окна.
 _local: dict[str, tuple[int, float]] = {}
@@ -25,8 +25,12 @@ LOCAL_COUNTERS = 20_000
 
 
 def allow(request: HttpRequest, scope: str, *, limit: int, window: int) -> bool:
-    """Учесть обращение и вернуть, укладывается ли оно в ``limit`` за ``window`` секунд."""
-    return allow_key(scope, client_ip(request) or "unknown", limit=limit, window=window)
+    """
+    Учесть обращение и вернуть, укладывается ли оно в ``limit`` за ``window`` секунд.
+
+    Адреса IPv6 считаются сетью абонента (/64), а не по одному.
+    """
+    return allow_key(scope, rate_subject(client_ip(request)), limit=limit, window=window)
 
 
 def _name(scope: str, key: str) -> str:

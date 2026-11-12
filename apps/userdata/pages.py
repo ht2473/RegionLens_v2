@@ -76,6 +76,7 @@ class SectionView(BreadcrumbMixin, TemplateView):
     """
     Рабочий стол раздела: зона загрузки, «Продолжить» — исследования карточками, таблицы
     с состоянием, что можно сделать; справка свёрнута. В первый раз — зона крупнее и примеры.
+    Без входа — рассказ о разделе и приглашение войти.
     """
 
     template_name = "userdata/index.html"
@@ -98,14 +99,9 @@ class SectionView(BreadcrumbMixin, TemplateView):
             first_visit=not mine and not own_studies,
             upload_form=UploadForm(),
             upload_limit=services.upload_size_text(),
-            used=services.used_bytes(user)
-            if user.is_authenticated
-            else sum(item.size_bytes for item in mine),
+            used=services.used_bytes(user) if user.is_authenticated else 0,
             quota=settings.USERDATA_QUOTA_BYTES,
-            limit=settings.USERDATA_MAX_DATASETS
-            if user.is_authenticated
-            else settings.USERDATA_GUEST_MAX_DATASETS,
-            guest_hours=settings.USERDATA_GUEST_HOURS,
+            limit=settings.USERDATA_MAX_DATASETS,
             pdf_pages=settings.USERDATA_PDF_MAX_PAGES,
             retention_days=backup_retention_days(),
             examples=examples.examples(),
@@ -221,7 +217,6 @@ class DatasetView(ReadableDatasetMixin, BreadcrumbMixin, TemplateView):
             built=built,
             can_export=self.owner or scope.exportable(dataset.code),
             continue_url=continue_url(dataset, version),
-            guest=dataset.owner_id is None,
             retention_days=backup_retention_days(),
         )
         if not built:

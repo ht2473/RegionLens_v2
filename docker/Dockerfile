@@ -64,8 +64,10 @@ COPY --from=builder --chown=regionlens:regionlens /app/.venv /app/.venv
 COPY --chown=regionlens:regionlens . .
 
 # Рабочая копия правится и в Windows: окончания строк сценариев приводятся к LF
-# (с CRLF — `env: 'sh\r': No such file or directory`).
-RUN sed -i 's/\r$//' /app/docker/entrypoint.sh /app/scripts/*.sh
+# (с CRLF — `env: 'sh\r': No such file or directory`), право на запуск ставится явно —
+# в архиве коммита его может не быть.
+RUN sed -i 's/\r$//' /app/docker/entrypoint.sh /app/scripts/*.sh \
+    && chmod 0755 /app/docker/entrypoint.sh /app/scripts/*.sh
 
 # Каталоги записи приложения: в compose это тома, но нужны и при запуске без томов.
 # Пустой том получает владельца точки подключения в образе: каталога нет — том
@@ -89,12 +91,16 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
 
 ENTRYPOINT ["/app/docker/entrypoint.sh"]
 
-# Процессы — на два ядра VPS; потоки — потому что запрос в основном ждёт PostgreSQL и DuckDB.
+# Число рабочих процессов gunicorn берёт из WEB_CONCURRENCY (compose задаёт его по числу
+# ядер сервера); потоки — потому что часть запроса ждёт PostgreSQL и DuckDB. Отметки жизни
+# процессов — в памяти (/dev/shm): запись на медленный диск gunicorn принимает за зависание.
+ENV WEB_CONCURRENCY=3
+
 CMD ["gunicorn", "config.wsgi:application", \
      "--bind", "0.0.0.0:8000", \
-     "--workers", "3", \
      "--threads", "4", \
      "--worker-class", "gthread", \
+     "--worker-tmp-dir", "/dev/shm", \
      "--timeout", "120", \
      "--graceful-timeout", "30", \
      "--max-requests", "2000", \

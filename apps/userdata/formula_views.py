@@ -257,7 +257,7 @@ def _study(request: HttpRequest, public_id: Any) -> Study | None:
 
 
 def preview_allowed(request: HttpRequest) -> bool:
-    """Проверки предпросмотра в пределах частоты: с учётной записи, у гостя — с адреса."""
+    """Проверки предпросмотра в пределах частоты: с учётной записи."""
     limit = settings.USERDATA_FORMULA_PREVIEWS
     if request.user.is_authenticated:
         return allow_key(

@@ -882,6 +882,8 @@ def _walk_table(
     from apps.userdata.services import discard
 
     client = Client(HTTP_HOST="127.0.0.1")
+    # Раздел работает после входа: мастер проходит служебная учётная запись.
+    client.force_login(_corpus_user())
     before = Dataset.objects.order_by("-pk").values_list("pk", flat=True).first() or 0
     moments = [time.perf_counter()]
     start(client)
@@ -953,7 +955,7 @@ def _glance_rows(row: dict[str, Any], dataset: Any, version: Any) -> list[dict[s
     """«Первый взгляд» по ведущим рядам таблицы — для сверки вида величины и состава."""
     from apps.userdata import glance, scope
 
-    with scope.reading_as(fingerprint=dataset.guest_key):
+    with scope.reading_as(user=dataset.owner):
         found = glance.glance(dataset, version)
     rows = []
     for look in found["looks"]:
@@ -1079,6 +1081,18 @@ def _document_targets(
         yield source, f"{tag}{table.key}", size, start, table.key
 
 
+def _corpus_user() -> Any:
+    """Учётная запись, от имени которой корпус проходит мастер; заводится при первом вызове."""
+    from django.contrib.auth import get_user_model
+    from django.utils import timezone
+
+    user, _created = get_user_model().objects.get_or_create(
+        email="corpus@regionlens.local",
+        defaults={"full_name": "Прогон корпуса", "email_confirmed_at": timezone.now()},
+    )
+    return user
+
+
 def command_build(
     corpus: Path, *, only: str = "", limit: int = 0, with_glance: bool = False
 ) -> None:
@@ -1092,9 +1106,9 @@ def command_build(
     from apps.userdata import jobs
 
     settings.USERDATA_DIR = Path(tempfile.mkdtemp(prefix="userdata_corpus_"))
-    settings.USERDATA_GUEST_MAX_DATASETS = 10**6
-    settings.USERDATA_GUEST_UPLOADS_PER_HOUR = 10**6
-    settings.USERDATA_GUEST_MAX_VALUES = settings.USERDATA_MAX_VALUES
+    settings.USERDATA_MAX_DATASETS = 10**6
+    settings.USERDATA_UPLOADS_PER_HOUR = 10**6
+    settings.USERDATA_QUOTA_BYTES = 10**15
     settings.ALLOWED_HOSTS = ["*"]
     jobs._inline = _always_inline  # type: ignore[assignment]
     results: list[dict[str, Any]] = []

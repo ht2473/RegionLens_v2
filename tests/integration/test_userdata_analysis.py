@@ -212,7 +212,7 @@ class TestGlance:
 
         version = DatasetVersion.objects.get(pk=dataset.current_version_id)
         # Таблица гостя: читать её ряды — от имени его ключа, как это делает страница.
-        with scope.reading_as(fingerprint=dataset.guest_key):
+        with scope.reading_as(user=dataset.owner):
             return list(glance.glance(dataset, version)["looks"])
 
     def _shares(self, client: Client, kind: str) -> Dataset:

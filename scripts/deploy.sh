@@ -13,8 +13,9 @@
 # сборки — DEPLOY_BUILD_ARGS. Образ собирается здесь и уходит потоком
 # `docker save | ssh … docker load`; образы Caddy, PostgreSQL и Valkey — так же, если
 # на сервере их нет или они другие: Docker Hub из России доступен не всегда. Затем
-# на сервер кладутся описание служб, Caddyfile, сценарии и юниты systemd, и там этот
-# же сценарий с ключом --apply снимает копию, заменяет контейнеры и ждёт готовности.
+# на сервер кладутся описание служб, Caddyfile, сценарий роли базы, сценарии и юниты
+# systemd, и там этот же сценарий с ключом --apply снимает копию, заменяет контейнеры
+# и ждёт готовности.
 #
 # Отказ на любом шаге до замены контейнеров оставляет работающую версию. Откат
 # (--rollback) возвращает прежний образ, но не схему базы: если выкладка её меняла,
@@ -226,7 +227,8 @@ fi
 cd "$ROOT"
 step "Передача описания служб и сценариев"
 # Первым делом: при первой выкладке .env на сервере заводится из этого .env.example.
-tar -czf - docker/compose.prod.yml docker/Caddyfile deploy/systemd .env.example \
+tar -czf - docker/compose.prod.yml docker/Caddyfile docker/postgres-init.sh deploy/systemd \
+    .env.example \
     scripts/compose.sh scripts/deploy.sh scripts/backup.sh scripts/restore.sh |
     remote "mkdir -p ${REMOTE_DIR} && tar -xzf - -C ${REMOTE_DIR}"
 remote "test -f ${REMOTE_DIR}/.env" ||
@@ -241,14 +243,18 @@ TAG="${IMAGE_NAME}:${VERSION}-$(date +%Y%m%d-%H%M%S)"
 DEBIAN_MIRROR="${DEPLOY_DEBIAN_MIRROR-http://mirror.yandex.ru}"
 
 pull_image() {
-    # Связь с реестрами рвётся на рукопожатии TLS — до трёх попыток.
+    # Образ запрашивается у реестра при каждой выкладке: под тем же ярлыком выходят
+    # исправления уязвимостей, а копия на этой машине сама не обновляется. Связь
+    # с реестрами рвётся на рукопожатии TLS — до трёх попыток; без связи остаётся
+    # имеющаяся копия, если она есть.
     local image="$1" attempt
-    docker image inspect "$image" >/dev/null 2>&1 && return
     for attempt in 1 2 3; do
-        docker pull --platform linux/amd64 "$image" >/dev/null && return
-        [ "$attempt" -lt 3 ] || fail "Не загружается образ ${image}: реестр недоступен."
+        docker pull --platform linux/amd64 "$image" >/dev/null 2>&1 && return
         sleep 5
     done
+    docker image inspect "$image" >/dev/null 2>&1 ||
+        fail "Не загружается образ ${image}: реестр недоступен."
+    echo "Реестр недоступен: ${image} берётся из копии на этой машине, она могла устареть." >&2
 }
 
 step "Проверка доступа к реестрам и пакетам"
@@ -290,11 +296,34 @@ step "Сборка образа ${TAG}"
 # Сервер — x86-64; сборка на другой архитектуре дала бы образ, который там не запустится.
 build_args=()
 [ -z "$DEBIAN_MIRROR" ] || build_args+=(--build-arg "DEBIAN_MIRROR=${DEBIAN_MIRROR}")
+
+# В образ идёт последний коммит, а не рабочая папка: файлы, которых нет в репозитории
+# (ключи, выгрузки, черновики), в образ попасть не могут, а собранное всегда отвечает
+# коммиту. DEPLOY_WORKTREE=1 собирает из рабочей папки — для пробы правки до коммита.
+build_from_commit=0
+if [ "${DEPLOY_WORKTREE:-0}" != "1" ] && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    build_from_commit=1
+    echo "Коммит: $(git log -1 --format='%h %s')"
+    if [ -n "$(git status --porcelain)" ]; then
+        echo "В рабочей папке есть незакоммиченные изменения — в образ они не войдут." >&2
+    fi
+fi
+
+build_image() {
+    # shellcheck disable=SC2086 — ключи намеренно разворачиваются в отдельные слова.
+    if [ "$build_from_commit" -eq 1 ]; then
+        git archive --format=tar HEAD |
+            docker build --platform linux/amd64 "${build_args[@]}" ${DEPLOY_BUILD_ARGS:-} \
+                -f docker/Dockerfile -t "$TAG" -
+    else
+        docker build --platform linux/amd64 "${build_args[@]}" ${DEPLOY_BUILD_ARGS:-} \
+            -f docker/Dockerfile -t "$TAG" .
+    fi
+}
+
 # Связь с реестрами и PyPI рвётся — сборка повторяется до трёх раз.
 for attempt in 1 2 3; do
-    # shellcheck disable=SC2086 — ключи намеренно разворачиваются в отдельные слова.
-    docker build --platform linux/amd64 "${build_args[@]}" ${DEPLOY_BUILD_ARGS:-} \
-        -f docker/Dockerfile -t "$TAG" . && break
+    build_image && break
     [ "$attempt" -lt 3 ] || fail "Образ не собрался."
     echo "Сборка не удалась, повтор через 10 с…"
     sleep 10

@@ -183,6 +183,26 @@ def member_client(client: Client, member: Any) -> Client:
     return client
 
 
+# Приспособления, с которыми проверка входит сама.
+LOGIN_FIXTURES = frozenset({"member_client", "second_admin_client", "admin_panel_client"})
+
+
+@pytest.fixture(autouse=True)
+def userdata_member(request: pytest.FixtureRequest) -> None:
+    """
+    «Свои данные» работают после входа: в проверках раздела (``test_userdata_*``) клиент
+    входит участником, если проверка не вошла сама.
+    """
+    module = request.module.__name__.rpartition(".")[2]
+    if not module.startswith("test_userdata"):
+        return
+    if "client" not in request.fixturenames or LOGIN_FIXTURES & set(request.fixturenames):
+        return
+    client = request.getfixturevalue("client")
+    make_user = request.getfixturevalue("make_user")
+    client.force_login(make_user(email="owner@example.com"))
+
+
 @pytest.fixture
 def second_admin(make_user: Callable[..., Any]) -> Any:
     """Второй администратор: разбирает обращения и ведёт тексты."""
