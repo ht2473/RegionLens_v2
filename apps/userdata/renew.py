@@ -4,7 +4,8 @@
 
 Пока новая версия не собрана, она — черновик: таблица на холсте, ссылки и исследования работают
 на текущей. Перенос: та же таблица файла (по ключу, по похожему имени или единственная),
-роли столбцов — по тексту шапки (новый столбец получает роль по догадке), ответы о
+роли столбцов, выбранные человеком, — по тексту шапки (остальные столбцы получают роль
+по догадке на новом файле: пустой прежде столбец свежих месяцев становится значениями), ответы о
 территориях и вложенных, отбор разрезов, выбор кодов-масок, описание показателей
 с пересчётами, формулы.
 Год таблицы «показатели в столбцах» спрашивается заново: новый файл — обычно новый год.
@@ -134,11 +135,15 @@ def _roles(
     old: dict[str, Any], guess: recognize.Recognition
 ) -> tuple[dict[str, str], dict[str, str]]:
     """
-    Роли столбцов нового файла и соответствие номеров «прежний → новый»: столбец с той же
-    шапкой получает прежнюю роль, новый — роль по догадке.
+    Роли столбцов нового файла и соответствие номеров «прежний → новый». Столбец с той же
+    шапкой получает прежнюю роль, только если её выбрал человек; роль, которую распознаватель
+    вывел из данных прежнего файла, выводится заново по новому. Иначе столбец, пустой в прежнем
+    выпуске («пропустить»), остаётся пропущенным и в новом, где у него уже есть значения:
+    свежие месяцы молча не попадают в таблицу.
     """
     old_roles: dict[str, str] = old.get("roles") or {}
     old_headers: dict[str, str] = old.get("headers") or {}
+    old_guessed: dict[str, str] | None = old.get("guessed")
     by_header: dict[str, list[str]] = {}
     for index in old_roles:
         by_header.setdefault(_header_key(old_headers.get(index, ""), index), []).append(index)
@@ -147,11 +152,26 @@ def _roles(
     for column in guess.columns:
         found = by_header.get(_header_key(column.header, str(column.index)), [])
         if len(found) == 1:
-            roles[str(column.index)] = old_roles[found[0]]
-            moved[found[0]] = str(column.index)
+            before = found[0]
+            guessed = old_guessed.get(before) if old_guessed is not None else None
+            roles[str(column.index)] = _carried(old_roles[before], column.role, guessed)
+            moved[before] = str(column.index)
         else:
             roles[str(column.index)] = column.role
     return roles, moved
+
+
+def _carried(old_role: str, new_guess: str, old_guess: str | None) -> str:
+    """
+    Роль столбца в новой версии: решение человека (роль, отличная от догадки по прежнему
+    файлу) переносится, догадка — берётся по новому файлу. В рецептах до хранения догадок
+    их нет: там заново определяется только «пропустить», если в столбце появились данные.
+    """
+    if old_guess is not None:
+        return old_role if old_role != old_guess else new_guess
+    if old_role == recognize.SKIP and new_guess != recognize.SKIP:
+        return new_guess
+    return old_role
 
 
 def _header_key(header: str, index: str) -> str:
