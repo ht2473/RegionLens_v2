@@ -7,6 +7,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 import duckdb
 from django.conf import settings
@@ -20,6 +22,24 @@ REGION_FILTER = "territory_level = 'region' AND NOT is_aggregate"
 
 # Доля субъектов, при которой год пригоден для анализа (самый длинный отрезок ряда).
 YEAR_COVERAGE_THRESHOLD = 0.5
+
+
+@contextmanager
+def single_thread(connection: duckdb.DuckDBPyConnection) -> Iterator[None]:
+    """
+    Считать в один поток: суммы и разбросы с плавающей точкой — одинаковыми от сборки к сборке.
+
+    В несколько потоков частичные суммы складываются в случайном порядке, и доля субъекта
+    в сумме по стране расходилась между двумя сборками в 15-м знаке (проверка 19.11.2026).
+    """
+    threads = require_row(
+        connection.execute("SELECT current_setting('threads')").fetchone(), "threads"
+    )[0]
+    connection.execute("SET threads = 1")
+    try:
+        yield
+    finally:
+        connection.execute(f"SET threads = {int(threads)}")
 
 
 def build_coverage(connection: duckdb.DuckDBPyConnection) -> int:
@@ -136,6 +156,17 @@ def build_stats(connection: duckdb.DuckDBPyConnection) -> int:
 
     Индексы Джини, Тейла и Аткинсона считает аналитический слой: им нужен весь вектор.
     """
+    with single_thread(connection):
+        _insert_stats(connection)
+
+    count = require_row(
+        connection.execute("SELECT count(*) FROM mart_series_stats").fetchone(), "stats"
+    )[0]
+    logger.info("Витрина статистик: строк %d", count)
+    return count
+
+
+def _insert_stats(connection: duckdb.DuckDBPyConnection) -> None:
     connection.execute(
         f"""
         INSERT INTO mart_series_stats
@@ -205,15 +236,18 @@ def build_stats(connection: duckdb.DuckDBPyConnection) -> int:
         """
     )
 
-    count = require_row(
-        connection.execute("SELECT count(*) FROM mart_series_stats").fetchone(), "stats"
-    )[0]
-    logger.info("Витрина статистик: строк %d", count)
-    return count
-
 
 def build_ranks(connection: duckdb.DuckDBPyConnection) -> int:
     """Рассчитать ранги субъектов по ряду и году в обоих направлениях."""
+    with single_thread(connection):
+        _insert_ranks(connection)
+
+    count = require_row(connection.execute("SELECT count(*) FROM mart_rank").fetchone(), "ranks")[0]
+    logger.info("Витрина рангов: строк %d", count)
+    return count
+
+
+def _insert_ranks(connection: duckdb.DuckDBPyConnection) -> None:
     connection.execute(
         f"""
         INSERT INTO mart_rank
@@ -234,20 +268,34 @@ def build_ranks(connection: duckdb.DuckDBPyConnection) -> int:
             FROM fact_observation
             WHERE territory_level = 'country' AND value IS NOT NULL
             GROUP BY 1, 2
+        ),
+        positioned AS (
+            SELECT
+                *,
+                rank() OVER (PARTITION BY series_key, year ORDER BY value DESC) - 1 AS position,
+                count(*) OVER (PARTITION BY series_key, year) AS ranked
+            FROM region_values
         )
         SELECT
             r.series_key,
             r.year,
             r.territory_code,
             r.value,
-            CAST(rank() OVER (PARTITION BY r.series_key, r.year ORDER BY r.value DESC)
-                 AS SMALLINT) AS rank_desc,
+            CAST(r.position + 1 AS SMALLINT) AS rank_desc,
             CAST(rank() OVER (PARTITION BY r.series_key, r.year ORDER BY r.value ASC)
                  AS SMALLINT) AS rank_asc,
             percent_rank() OVER (PARTITION BY r.series_key, r.year ORDER BY r.value ASC)
                            AS percentile,
-            CAST(ntile(5) OVER (PARTITION BY r.series_key, r.year ORDER BY r.value DESC)
-                 AS TINYINT) AS quintile,
+            -- Квинтиль как у ntile(5), но равные значения получают общий квинтиль — тот,
+            -- что ntile дал бы первому из них: иначе порядок внутри равных случаен.
+            CAST(
+                CASE
+                    WHEN r.position < (r.ranked // 5 + 1) * (r.ranked % 5)
+                        THEN r.position // (r.ranked // 5 + 1) + 1
+                    ELSE (r.position - (r.ranked // 5 + 1) * (r.ranked % 5))
+                         // nullif(r.ranked // 5, 0) + r.ranked % 5 + 1
+                END AS TINYINT
+            ) AS quintile,
             CASE
                 WHEN t.total_value IS NULL OR t.total_value = 0 OR r.value < 0 THEN NULL
                 ELSE r.value / t.total_value
@@ -256,7 +304,7 @@ def build_ranks(connection: duckdb.DuckDBPyConnection) -> int:
                 WHEN c.country_value IS NULL OR c.country_value = 0 THEN NULL
                 ELSE r.value / c.country_value
             END AS ratio_to_country
-        FROM region_values     AS r
+        FROM positioned        AS r
         LEFT JOIN totals         AS t USING (series_key, year)
         LEFT JOIN country_values AS c USING (series_key, year)
         -- Рейтинг запрашивается как «ряд + год целиком», поэтому строки одного года
@@ -264,10 +312,6 @@ def build_ranks(connection: duckdb.DuckDBPyConnection) -> int:
         ORDER BY r.series_key, r.year, r.territory_code
         """
     )
-
-    count = require_row(connection.execute("SELECT count(*) FROM mart_rank").fetchone(), "ranks")[0]
-    logger.info("Витрина рангов: строк %d", count)
-    return count
 
 
 # Индексов склад не содержит: планировщик DuckDB их не выбирает, отбор ускоряет
