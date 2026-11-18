@@ -88,6 +88,13 @@ def territory_positions(territory_code: str, series_keys: list[str]) -> list[dic
             FROM mart_rank AS r
             JOIN latest    AS l ON l.series_key = r.series_key AND l.year = r.year
             GROUP BY r.series_key, r.year
+        ),
+        -- Последний год ряда по всем субъектам: у территории он может быть старше.
+        series_years AS (
+            SELECT r.series_key, max(r.year) AS series_year
+            FROM mart_rank AS r
+            JOIN latest    AS l ON l.series_key = r.series_key
+            GROUP BY r.series_key
         )
         SELECT
             l.series_key,
@@ -98,6 +105,7 @@ def territory_positions(territory_code: str, series_keys: list[str]) -> list[dic
             l.percentile,
             l.ratio_to_country,
             s.territories,
+            sy.series_year,
             country.value AS country_value,
             past.year     AS past_year,
             past.value    AS past_value,
@@ -105,6 +113,7 @@ def territory_positions(territory_code: str, series_keys: list[str]) -> list[dic
             coalesce(own.flags, 0) AS flags
         FROM latest AS l
         JOIN sizes  AS s ON s.series_key = l.series_key AND s.year = l.year
+        JOIN series_years AS sy ON sy.series_key = l.series_key
         LEFT JOIN fact_observation AS own
                ON own.series_key = l.series_key
               AND own.year = l.year

@@ -121,6 +121,12 @@ class TestStanding:
         """Место записано порядковым числительным."""
         assert position().place_text == "20-е место из 85"
 
+    def test_year_is_shown_only_when_behind_the_series(self) -> None:
+        """Год территории старше последнего года ряда — его показывают рядом со значением."""
+        assert position(year=2022, series_year=2024).is_behind
+        assert not position(year=2024, series_year=2024).is_behind
+        assert not position(year=2024).is_behind
+
 
 class TestVersusCountry:
     """Сравнение со значением по России."""
