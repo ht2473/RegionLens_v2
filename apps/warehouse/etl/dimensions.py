@@ -26,11 +26,16 @@ from .catalog_names import (
     unit_short_name_en,
 )
 from .classify import (
+    RELATIVE_UNIT_KINDS,
     UnitClassification,
     classify_unit,
+    declared_percent,
     detect_polarity,
     make_code,
     make_series_key,
+    text_country_scale,
+    unit_base,
+    unit_moment,
 )
 from .typography import fix_subsection
 
@@ -171,6 +176,15 @@ def build_unit_scales(connection: duckdb.DuckDBPyConnection) -> int:
     classifications = [classify_unit(value) for value in frame["source_unit"]]
     frame["country_scale"] = [item.country_scale for item in classifications]
     frame["country_scale_unknown"] = [item.country_scale_unknown for item in classifications]
+    # По этим признакам строка приводится к единице своего ряда (facts.load_vintages).
+    bases = [unit_base(value) for value in frame["source_unit"]]
+    frame["unit_kind"] = [kind for kind, _label, _multiplier in bases]
+    frame["base_label"] = [label for _kind, label, _multiplier in bases]
+    # Не названный множитель — NULL, а не NaN: тип с пропуском, иначе DuckDB получит NaN.
+    frame["multiplier"] = pd.array(
+        [multiplier for _kind, _label, multiplier in bases], dtype="Float64"
+    )
+    frame["moment"] = [unit_moment(value) for value in frame["source_unit"]]
 
     connection.register("tmp_unit_scales", frame)
     connection.execute("CREATE OR REPLACE TABLE map_unit_scale AS SELECT * FROM tmp_unit_scales")
@@ -185,40 +199,32 @@ def build_series(connection: duckdb.DuckDBPyConnection) -> tuple[pd.DataFrame, p
     """
     Построить измерения показателей, рядов и единиц измерения.
 
-    Единица ряда — самое частое непустое объявление в нём, заглушки ``ND`` не в счёт.
+    Единица ряда — самое частое непустое объявление в нём, заглушки ``ND`` не в счёт;
+    при равенстве уровень («млн рублей») берёт верх над относительной величиной
+    («% к предыдущему году»), если разрез сам не называет проценты.
     """
-    # --- Наиболее частая единица измерения в пределах ряда ------------------------------
-    raw = connection.execute(
+    per_unit = connection.execute(
         """
-        WITH per_unit AS (
-            SELECT indicator_code,
-                   coalesce(subsection, '') AS subsection,
-                   any_value(indicator_name) AS indicator_name,
-                   any_value(section)        AS section,
-                   indicator_unit,
-                   count(*)                  AS n
-            FROM src
-            GROUP BY 1, 2, 5
-        ),
-        ranked AS (
-            SELECT *,
-                   row_number() OVER (
-                       PARTITION BY indicator_code, subsection
-                       -- Заглушка ND уступает любому явно указанному значению.
-                       ORDER BY (indicator_unit = 'ND') ASC, n DESC, indicator_unit ASC
-                   ) AS priority
-            FROM per_unit
-        )
-        SELECT indicator_code, subsection, indicator_name, section, indicator_unit
-        FROM ranked
-        WHERE priority = 1
-        ORDER BY indicator_code, subsection
+        SELECT indicator_code,
+               coalesce(subsection, '') AS subsection,
+               any_value(indicator_name) AS indicator_name,
+               any_value(section)        AS section,
+               coalesce(indicator_unit, 'ND') AS indicator_unit,
+               count(*)                  AS n
+        FROM src
+        GROUP BY 1, 2, 5
+        ORDER BY 1, 2, 5
         """
     ).df()
+    per_unit["subsection_clean"] = per_unit["subsection"].map(_clean_subsection)
+    per_unit["series_key"] = [
+        make_series_key(row.indicator_code, row.subsection_clean) for row in per_unit.itertuples()
+    ]
+    raw = per_unit.drop_duplicates(subset=["indicator_code", "subsection"]).copy()
+    raw["indicator_unit"] = raw["series_key"].map(_series_units(per_unit))
 
     raw["indicator_name"] = raw["indicator_name"].map(normalize_text)
     raw["section"] = raw["section"].map(normalize_text)
-    raw["subsection_clean"] = raw["subsection"].map(_clean_subsection)
 
     # --- Классификация единиц измерения ---------------------------------------------------
     classifications = [
@@ -322,10 +328,17 @@ def build_series(connection: duckdb.DuckDBPyConnection) -> tuple[pd.DataFrame, p
     connection.unregister("tmp_series")
 
     # Соответствие пары «показатель + разрез» источника ключу ряда, вычисленному на Python.
+    # Единица ряда в записи источника: строки других единиц приводятся к ней или не грузятся.
+    # Приведение значения по России, объявленное в тексте: «(по Российской Федерации — млрд)».
+    raw["source_unit"] = raw["indicator_unit"]
+    raw["country_scale"] = pd.array(
+        [text_country_scale(row.subsection_clean, row.indicator_name) for row in raw.itertuples()],
+        dtype="Float64",
+    )
     mapping = (
-        raw[["indicator_code", "subsection", "series_key"]]
+        raw[["indicator_code", "subsection", "series_key", "source_unit", "country_scale"]]
         .rename(columns={"subsection": "subsection_raw"})
-        .drop_duplicates()
+        .drop_duplicates(subset=["indicator_code", "subsection_raw"])
     )
     connection.register("tmp_map_series", mapping)
     connection.execute("CREATE OR REPLACE TABLE map_series AS SELECT * FROM tmp_map_series")
@@ -427,6 +440,32 @@ def refresh_dimension_counters(connection: duckdb.DuckDBPyConnection) -> None:
 
 # Разрезы-части итога: «В том числе в возрасте, лет: 15-19» при итоге «Всего, тыс. человек».
 _PART_PREFIXES = ("в том числе", "из них", "из него")
+
+
+def _series_units(per_unit: pd.DataFrame) -> dict[str, str]:
+    """
+    Выбрать единицу каждого ряда по числу строк источника.
+
+    ``ND`` уступает названной единице. При равном числе строк уровень берёт верх над
+    относительной величиной, а если разрез называет проценты — наоборот: так ряд
+    «млн рублей» с тем же числом строк «% к предыдущему году» остаётся рядом рублей.
+    """
+    totals = (
+        per_unit.groupby(["series_key", "indicator_unit"], sort=False)
+        .agg(n=("n", "sum"), subsection=("subsection_clean", "first"))
+        .reset_index()
+    )
+    kinds = {unit: unit_base(unit)[0] for unit in totals["indicator_unit"].unique()}
+    totals["placeholder"] = totals["indicator_unit"] == "ND"
+    totals["mismatch"] = [
+        (kinds[row.indicator_unit] in RELATIVE_UNIT_KINDS) != bool(declared_percent(row.subsection))
+        for row in totals.itertuples()
+    ]
+    chosen = totals.sort_values(
+        ["series_key", "placeholder", "n", "mismatch", "indicator_unit"],
+        ascending=[True, True, False, True, True],
+    ).drop_duplicates(subset=["series_key"])
+    return dict(zip(chosen["series_key"], chosen["indicator_unit"], strict=True))
 
 
 def _inherit_total_units(raw: pd.DataFrame, classifications: list[UnitClassification]) -> None:

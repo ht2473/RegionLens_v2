@@ -23,6 +23,10 @@ logger = logging.getLogger(__name__)
 # Поправки к исходному набору в справочниках проекта.
 CORRECTIONS_FILE = "source_corrections.json"
 
+# Категории единиц для SQL: у уровня значение зависит от множителя, у относительной — нет.
+LEVEL_KINDS = ", ".join(f"'{kind}'" for kind in ("currency", "physical", "absolute"))
+RELATIVE_KINDS = ", ".join(f"'{kind}'" for kind in ("share", "index", "rate"))
+
 
 def load_vintages(connection: duckdb.DuckDBPyConnection) -> int:
     """
@@ -36,18 +40,32 @@ def load_vintages(connection: duckdb.DuckDBPyConnection) -> int:
         SELECT
             m.series_key,
             t.territory_code,
-            CAST(s.year AS SMALLINT)                    AS year,
+            -- «На 31 декабря» и «на 1 января» следующего года — одна дата: строка выпуска
+            -- с другим моментом наблюдения ставится в год, принятый в ряду.
+            CAST(s.year + CASE
+                    WHEN su.moment = 'jan1' AND us.moment = 'dec31' THEN 1
+                    WHEN su.moment = 'dec31' AND us.moment = 'jan1' THEN -1
+                    ELSE 0
+                END AS SMALLINT)                        AS year,
             e.edition_code,
             CAST(e.edition_year AS SMALLINT)            AS edition_year,
             -- Значение сохраняется только для действительных наблюдений и приводится
             -- к единице измерения территорий: для страны в целом источник может
             -- объявлять укрупнённую единицу, и без приведения сумма регионов
-            -- расходится с итогом по России в тысячу раз.
+            -- расходится с итогом по России в тысячу раз. Строка в той же единице
+            -- с другим множителем («человек» при ряде в тысячах) приводится к ряду.
             max(CASE
                     WHEN s.indicator_value IN ({SENTINEL_NO_DATA}, {SENTINEL_HIDDEN}) THEN NULL
-                    WHEN t.level = 'country'
-                        THEN s.indicator_value * coalesce(us.country_scale, 1)
                     ELSE s.indicator_value
+                        * CASE WHEN t.level = 'country'
+                               THEN coalesce(m.country_scale, us.country_scale, 1)
+                               ELSE 1 END
+                        * CASE WHEN us.unit_kind IN ({LEVEL_KINDS})
+                                AND us.unit_kind = su.unit_kind
+                                AND us.base_label <> ''
+                                AND us.base_label = su.base_label
+                               THEN coalesce(us.multiplier, 1) / coalesce(su.multiplier, 1)
+                               ELSE 1 END
                 END)                                    AS value,
             -- Признак качества: наименьший код соответствует наиболее полному сведению.
             CAST(min(CASE
@@ -65,6 +83,14 @@ def load_vintages(connection: duckdb.DuckDBPyConnection) -> int:
         -- Коэффициент берётся по единице конкретного наблюдения, а не по единице ряда:
         -- выпуски одного издания объявляют единицу для России в целом по-разному.
         LEFT JOIN map_unit_scale AS us ON us.source_unit = s.indicator_unit
+        LEFT JOIN map_unit_scale AS su ON su.source_unit = m.source_unit
+        -- Уровень и относительная величина под одним ключом («млн рублей» и «% к предыдущему
+        -- году»): в ряд идут только строки его единицы, иначе max() смешал бы их.
+        WHERE NOT (
+            coalesce(us.unit_kind, 'unknown') <> 'unknown'
+            AND coalesce(su.unit_kind, 'unknown') <> 'unknown'
+            AND (us.unit_kind IN ({RELATIVE_KINDS})) <> (su.unit_kind IN ({RELATIVE_KINDS}))
+        )
         GROUP BY 1, 2, 3, 4, 5
         -- Упорядочивание задаёт физическое размещение строк в группах: страница
         -- пересмотров запрашивает все версии одного наблюдения, и они должны лежать рядом.
