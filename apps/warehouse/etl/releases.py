@@ -175,10 +175,12 @@ def _stitch(
                     continue
                 if not _revises(link, item, known):
                     continue
-            elif mode == "supersede" and not _revises(link, item, known):
+            elif mode == "supersede" and (item.value is None or pd.isna(item.value)):
+                # Замена берёт всю редакцию таблицы, и совпадающие в пределах допуска значения
+                # тоже: иначе в ряду смешиваются издания и темп между годами искажается.
                 continue
             if (item.territory_code, year) in known.index and year <= last_year:
-                outcome.revised_count += info is latest
+                outcome.revised_count += info is latest and _revises(link, item, known)
             outcome.rows.append(_vintage(link.series, info, item, preliminary=year == newest))
     years_after = [row["year"] for row in outcome.rows if row["year"] > last_year]
     outcome.junction_year = last_year + 1 if years_after else None

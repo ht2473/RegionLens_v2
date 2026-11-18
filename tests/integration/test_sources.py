@@ -444,6 +444,34 @@ class TestSourceNotes:
         assert rows == [("supersede", GRP_PER_CAPITA_KEY, 0, GRP_FOOTNOTE)]
 
 
+class TestSupersede:
+    """Замена берёт всю редакцию таблицы, и совпадающие с набором значения тоже."""
+
+    def test_no_year_mixes_editions(self, grp_warehouse: Path) -> None:
+        """В одном году ряда — значения одного издания: иначе темп между годами искажён."""
+        mixed, replaced = _query(
+            grp_warehouse,
+            "WITH y AS (SELECT year, bool_or(edition_code LIKE 'rel_%') AS rel, "
+            "bool_and(edition_code LIKE 'rel_%') AS only_rel FROM fact_observation "
+            "WHERE series_key = ? AND territory_level = 'region' AND value IS NOT NULL "
+            "GROUP BY year) "
+            "SELECT count(*) FILTER (WHERE rel AND NOT only_rel), count(*) FILTER (WHERE rel) "
+            "FROM y",
+            [GRP_PER_CAPITA_KEY],
+        )[0]
+        assert replaced > 0
+        assert mixed == 0
+
+    def test_equal_values_are_not_counted_as_revisions(self, grp_warehouse: Path) -> None:
+        """Таблица совпадает с набором — уточнённых значений нет."""
+        revised = _query(
+            grp_warehouse,
+            "SELECT revised_count FROM mart_source_link WHERE series_key = ?",
+            [GRP_PER_CAPITA_KEY],
+        )[0][0]
+        assert revised == 0
+
+
 @pytest.fixture
 def release_catalog(
     db: None, settings: Any, release_warehouse: dict[str, Any]
