@@ -157,6 +157,8 @@ def setup_project() -> int:
     steps: tuple[tuple[str, ...], ...] = (
         ("migrate", "--noinput"),
         ("seed_reference",),
+        # Журнал выпусков источников по разобранным файлам из репозитория.
+        ("collect", "--restore"),
     )
     if warehouse.exists():
         print(f"[i] Склад уже собран ({warehouse.name}), сборка пропущена.")

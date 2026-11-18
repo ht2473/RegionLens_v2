@@ -15,7 +15,7 @@ import tempfile
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -134,6 +134,49 @@ def run(
             errors=[f"{item.source}: {item.error}" for item in outcomes if item.error],
         )
     return outcomes
+
+
+def restore_journal(progress: Callable[[str], None] | None = None) -> int:
+    """
+    Завести журнал выпусков по разобранным файлам; вернуть число новых записей.
+
+    Разобранные выпуски лежат в репозитории вместе со сведениями о себе, журнал — в базе:
+    на свежей установке он пуст, и ``--reparse`` с панелью выпусков его не видят. Запись
+    получает код, даты и отпечаток из файла, путь в архиве — по описи, если архив на месте.
+    Выпуски, уже известные журналу, не трогаются.
+    """
+    report = progress or logger.info
+    known = set(Release.objects.values_list("sha256", flat=True))
+    sources: dict[str, Source] = {}
+    created = 0
+    for info, path in parsed.releases():
+        if info.source not in SOURCES or info.sha256 in known:
+            continue
+        if info.source not in sources:
+            sources[info.source] = sync_source(info.source)
+        record = archive.find(info.sha256)
+        values = pd.read_parquet(path, columns=["value"])["value"]
+        Release.objects.create(
+            source=sources[info.source],
+            code=info.code,
+            title=info.title,
+            reference_year=info.reference_year,
+            published_on=info.published,
+            url=info.url,
+            file_name=record.original_name if record else Path(info.url).name or info.code,
+            archive_path=record.path if record else "",
+            sha256=info.sha256,
+            size_bytes=record.size if record else 0,
+            fetched_at=datetime.fromisoformat(info.fetched_at),
+            status=Release.Status.PARSED,
+            parser_version=info.parser_version,
+            parsed_at=timezone.now(),
+            row_count=int(values.notna().sum()),
+        )
+        known.add(info.sha256)
+        created += 1
+    report(f"журнал выпусков: заведено по разобранным файлам {created}")
+    return created
 
 
 def _collect_one(
