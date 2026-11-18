@@ -11,7 +11,7 @@ from django.urls import reverse
 
 from apps.core.models import TimeStampedModel
 
-from ..constants import Polarity, is_unnormalised_title
+from ..constants import Polarity, is_size_dependent
 from .base import BilingualDescriptionModel, BilingualNameModel
 from .classification import Section, SourceEdition, Unit
 
@@ -229,4 +229,4 @@ class Series(BilingualNameModel, TimeStampedModel):
         parts = [self.indicator.name, self.name or ""]
         if self.unit:
             parts.append(self.unit.short_name)
-        return is_unnormalised_title(" ".join(parts), self.unit.kind if self.unit else "unknown")
+        return is_size_dependent(" ".join(parts), self.unit.kind if self.unit else "unknown")
