@@ -4,6 +4,10 @@
 Российской Федерации: данные Росстата за 2001–2025 годы, свежие месячные данные ведомств
 и свои таблицы пользователя на одной карте.
 
+> Ветка `kmzi-attest`: сайт подписывает выдаваемые документы и опись архива выпусков —
+> задание по дисциплине «Криптографические методы защиты информации». Как запустить
+> и что проверить — раздел [«Подпись документов»](#подпись-документов-задание-по-кмзи).
+
 [![Проверки](https://github.com/ht2473/RegionLens_v2/actions/workflows/ci.yml/badge.svg)](https://github.com/ht2473/RegionLens_v2/actions/workflows/ci.yml)
 [![Выпуск](https://img.shields.io/github/v/release/ht2473/RegionLens_v2?label=выпуск)](https://github.com/ht2473/RegionLens_v2/releases)
 ![Python 3.14](https://img.shields.io/badge/Python-3.14-3776ab)
@@ -230,7 +234,7 @@ Trivy.
 и Valkey).
 
 ```powershell
-git clone https://github.com/ht2473/RegionLens_v2.git
+git clone -b kmzi-attest https://github.com/ht2473/RegionLens_v2.git
 cd RegionLens_v2
 uv sync
 docker compose -f docker/compose.dev.yml up -d
@@ -293,6 +297,74 @@ uv run python manage.py collect rosstat_bulletin rosstat_grp cbr fns_sme --repar
 createsuperuser`; панель управления `/manage/` откроется после того, как в разделе
 «Безопасность» кабинета будет включён вход с одноразовым кодом (приложение-генератор кодов).
 
+## Подпись документов (задание по КМЗИ)
+
+Сайт подписывает каждый выданный документ с данными склада (CSV, XLSX, PDF) и вершину
+дерева хэшей над описью архива выпусков. Подпись и проверка — библиотека
+[doc-provenance](https://github.com/ht2473/doc-provenance) v0.1.0: CMS (RFC 5652), ECDSA
+P-256 и SHA-256, сертификаты X.509 своего центра, дерево хэшей по RFC 6962. Устройство
+и принятые ограничения — [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), раздел 4.4.1.
+
+Отдельной установки не нужно: библиотеку ставит `uv sync` из «Быстрого старта»,
+а `main.py --setup` создаёт учебный удостоверяющий центр (команда `attest_demo_ca`,
+только в разработке):
+
+| Файл | Что это |
+|---|---|
+| `data/attest/ca/root.key`, `data/attest/ca/root.crt` | корневой ключ и сертификат учебного центра |
+| `data/attest/signer.key`, `data/attest/signer.crt` | ключ и сертификат службы подписи: ими сайт подписывает |
+| `data/attest/root.crt`, `data/attest/crl.pem` | корневой сертификат и список отзыва, которым верит проверка |
+
+Центр свой у каждой установки: документ, скачанный с другой копии RegionLens, он
+не подтвердит.
+
+### Что проверить
+
+1. **Подпись выгрузки.** Скачать документ с данными: кнопка «Скачать» на странице
+   показателя, рейтинга или паспорта региона, формат CSV, XLSX или PDF.
+2. **Проверка на сайте.** «Проверить документ» — ссылка в подвале, раздел «Данные»
+   (<http://127.0.0.1:8000/ru/verify/>). Загрузить файл: «Документ подлинный», кто
+   и когда подписал, номер сертификата. Там же — «Скачать подпись (.p7s)».
+3. **Изменённый документ.** Поменять в файле одно число и загрузить снова: «Такого
+   документа сайт не выдавал». Вместе с файлом подписи — «Подлинность не подтверждена»
+   и причина: документ изменён после подписи.
+4. **Проверка без сайта.** Скачать со страницы проверки корневой сертификат
+   (`regionlens-root.crt`), затем (OpenSSL в Windows есть в Git Bash):
+
+   ```bash
+   openssl cms -verify -binary -inform DER -in ФАЙЛ.p7s -content ФАЙЛ -CAfile regionlens-root.crt -purpose any -out /dev/null
+   ```
+
+   Подлинный файл — `CMS Verification successful`, изменённый — `CMS Verification failure`.
+   То же без OpenSSL: `uv run provenance verify ФАЙЛ --root regionlens-root.crt`.
+5. **Отзыв сертификата службы.**
+
+   ```powershell
+   uv run provenance ca revoke data/attest/ca data/attest/signer.crt
+   Copy-Item data/attest/ca/crl.pem data/attest/crl.pem
+   ```
+
+   Тот же документ теперь не проходит: сертификат отозван. Доверенной метки времени нет,
+   поэтому отозванному сертификату не верят и за прошлое. Вернуть подпись — удалить
+   каталог `data/attest` и выполнить `uv run python manage.py attest_demo_ca`: будет новый
+   центр, прежние документы он не подтверждает.
+6. **Подписанная опись архива.** Скачать и распаковать архив выпусков (раздел «Исходные
+   файлы выпусков», первые три команды), затем:
+
+   ```powershell
+   uv run python manage.py archive_seal
+   uv run python manage.py collect --verify
+   ```
+
+   Сохранить копию описи (`Copy-Item data/archive/MANIFEST.csv manifest.bak`), удалить
+   из `data/archive/MANIFEST.csv` любую строку, кроме первой, и повторить
+   `collect --verify`: сверка назовёт подмену, а `collect fns_sme --reparse` не станет
+   пересобирать склад по такому архиву. Вернуть опись — `Copy-Item manifest.bak
+   data/archive/MANIFEST.csv`.
+
+Библиотека отдельно и её показ с пятью атаками (`python demo/run_demo.py`) — в репозитории
+[doc-provenance](https://github.com/ht2473/doc-provenance).
+
 ## Команды управления
 
 | Команда | Назначение |
@@ -305,6 +377,8 @@ createsuperuser`; панель управления `/manage/` откроетс�
 | `python manage.py seed_catalog_names` | Английские названия разделов, показателей, разрезов, единиц, изданий и переводы примечаний (`--check` — перечень непереведённого) |
 | `python manage.py build_boundaries` | Подготовка границ субъектов для карты (`--input FILE` — из скачанного файла) |
 | `python manage.py collect --all` | Сбор выпусков источников: в архив, разбор, пересборка склада; с `--due` и `--all` — ещё и проверка новой версии набора (`--due` — кому пора, `--url`, `--file`, `--reparse`, `--no-build`, `--verify`; `--restore` — журнал выпусков по разобранным файлам) |
+| `python manage.py attest_demo_ca` | Учебный удостоверяющий центр и ключ службы подписи в `data/attest` (только в разработке; ключи есть — ничего не меняет) |
+| `python manage.py archive_seal` | Подписать вершину описи архива выпусков: первый раз и после смены ключа подписи |
 | `python manage.py visits` | Статистика посещений по журналу Caddy (GoAccess из образа; на стенде — таймер раз в час) |
 | `python manage.py prune_personal_data` | Удаление персональных данных по сроку из политики обработки (на стенде — таймер раз в сутки) |
 | `python manage.py reset_two_factor ПОЧТА` | Выключить вход с кодом у учётной записи, потерявшей телефон и резервные коды |
