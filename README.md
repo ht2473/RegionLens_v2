@@ -4,6 +4,10 @@
 Российской Федерации: данные Росстата за 2001–2025 годы, свежие месячные данные ведомств
 и свои таблицы пользователя на одной карте.
 
+Подпись выдаваемых документов и описи архива выпусков (задание по дисциплине
+«Криптографические методы защиты информации») — в ветке
+[`kmzi-attest`](https://github.com/ht2473/RegionLens_v2/tree/kmzi-attest).
+
 [![Проверки](https://github.com/ht2473/RegionLens_v2/actions/workflows/ci.yml/badge.svg)](https://github.com/ht2473/RegionLens_v2/actions/workflows/ci.yml)
 [![Выпуск](https://img.shields.io/github/v/release/ht2473/RegionLens_v2?label=выпуск)](https://github.com/ht2473/RegionLens_v2/releases)
 ![Python 3.14](https://img.shields.io/badge/Python-3.14-3776ab)
