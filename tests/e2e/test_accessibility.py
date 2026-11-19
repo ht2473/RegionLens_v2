@@ -544,6 +544,9 @@ class TestCodeStepTimeLimit:
         page.fill("input[name='password']", TEST_PASSWORD)
         page.click("form button[type='submit']")
         page.wait_for_url("**/login/code/")
+        # Сценарий таймера подгружается отдельным модулем: перемотка до его подключения
+        # сдвигает отсчёт вперёд, и предупреждение не появляется.
+        page.wait_for_selector("[data-login-timer][data-timer-ready='true']", state="attached")
 
         box = page.locator("[data-login-timer]")
         page.fill("input[name='code']", "123")

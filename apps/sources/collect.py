@@ -23,6 +23,7 @@ from typing import Any
 import pandas as pd
 from django.conf import settings
 from django.db import connection
+from django.db.models import QuerySet
 from django.utils import timezone
 
 from apps.core import alerts
@@ -246,11 +247,7 @@ def _collect_one(
             status=Release.Status.PARSED, parser_version__gte=module.parser_version
         )
     )
-    for release in pending.order_by("reference_year", "published_on", "fetched_at"):
-        if parse_release(release, module, report):
-            outcome.parsed.append(release.code)
-        else:
-            outcome.failed.append(release.code)
+    _parse_pending(source.code, module, pending, outcome, report)
 
     source.checked_at = timezone.now()
     source.running_since = None
@@ -258,6 +255,31 @@ def _collect_one(
         update_fields=["checked_at", "check_ok", "check_error", "running_since", "updated_at"]
     )
     return outcome
+
+
+def _parse_pending(
+    code: str,
+    module: ModuleType,
+    pending: QuerySet[Release],
+    outcome: Outcome,
+    report: Callable[[str], None],
+) -> None:
+    """Разобрать выпуски из архива; выпуски без файла в архиве не трогать."""
+    missing = []
+    for release in pending.order_by("reference_year", "published_on", "fetched_at"):
+        if not _archived(release):
+            missing.append(release.code)
+        elif parse_release(release, module, report):
+            outcome.parsed.append(release.code)
+        else:
+            outcome.failed.append(release.code)
+    if missing:
+        outcome.failed.extend(missing)
+        report(
+            f"{code}: файлов выпусков нет в архиве ({len(missing)}), они не разобраны заново, "
+            "прежний разбор оставлен. Архив подключают распаковкой в data/archive и командой "
+            "collect --restore (README, «Исходные файлы выпусков»)"
+        )
 
 
 def _new_candidates(
@@ -409,6 +431,11 @@ def rebuild_warehouse(report: Callable[[str], None]) -> bool:
     return True
 
 
+def _archived(release: Release) -> bool:
+    """Файл выпуска лежит в архиве: журнал, заведённый без архива, пути к нему не знает."""
+    return bool(release.archive_path) and (archive.archive_root() / release.archive_path).is_file()
+
+
 def parse_release(
     release: Release, module: ModuleType | None = None, report: Callable[[str], None] | None = None
 ) -> bool:
@@ -416,6 +443,10 @@ def parse_release(
     module = module or SOURCES[release.source.code]
     say = report or logger.info
     path = archive.archive_root() / release.archive_path
+    if not _archived(release):
+        # Разбирать нечего — это не сбой разбора: прежний разбор и запись журнала остаются.
+        say(f"{release.source.code}: выпуск {release.code} не разобран: файла нет в архиве")
+        return False
     try:
         with tempfile.TemporaryDirectory(prefix="regionlens-release-") as directory:
             result = module.parse(unpack(path, Path(directory)))
