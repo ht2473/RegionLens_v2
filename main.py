@@ -25,11 +25,21 @@ REQUIRED_FILES: tuple[tuple[Path, str], ...] = (
 )
 
 
+def child_environment() -> dict[str, str]:
+    """
+    Окружение дочерних команд с выводом в UTF-8.
+
+    В консоли Windows кодировка по умолчанию — cp1251 или cp866: русские сообщения
+    сборки склада и сводки в ней обрывали бы команду ошибкой кодирования.
+    """
+    return {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
+
+
 def run_manage(*args: str) -> int:
     """Выполнить команду manage.py в текущем интерпретаторе и вернуть код возврата."""
     command = [sys.executable, str(BASE_DIR / "manage.py"), *args]
     print(f"→ {' '.join(args)}")
-    return subprocess.call(command, cwd=BASE_DIR)  # noqa: S603
+    return subprocess.call(command, cwd=BASE_DIR, env=child_environment())  # noqa: S603
 
 
 def check_environment() -> bool:
@@ -147,6 +157,8 @@ def setup_project() -> int:
     steps: tuple[tuple[str, ...], ...] = (
         ("migrate", "--noinput"),
         ("seed_reference",),
+        # Журнал выпусков источников по разобранным файлам из репозитория.
+        ("collect", "--restore"),
     )
     if warehouse.exists():
         print(f"[i] Склад уже собран ({warehouse.name}), сборка пропущена.")
@@ -173,6 +185,7 @@ def setup_project() -> int:
     subprocess.call(  # noqa: S603
         [sys.executable, str(BASE_DIR / "scripts" / "i18n_tools.py"), "compile"],
         cwd=BASE_DIR,
+        env=child_environment(),
     )
 
     print("\n[+] Подготовка завершена. Запустите приложение: python main.py")

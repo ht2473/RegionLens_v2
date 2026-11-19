@@ -134,3 +134,14 @@ def region_codes() -> frozenset[str]:
     path = settings.REFERENCE_DIR / "territories.json"
     payload = json.loads(path.read_bytes().decode("utf-8"))
     return frozenset(record["code"] for record in payload["regions"])
+
+
+@lru_cache(maxsize=1)
+def district_members() -> dict[str, frozenset[str]]:
+    """Субъекты каждого федерального округа в нынешнем составе справочника."""
+    path = settings.REFERENCE_DIR / "territories.json"
+    payload = json.loads(path.read_bytes().decode("utf-8"))
+    members: dict[str, set[str]] = {}
+    for record in payload["regions"]:
+        members.setdefault(record["district"], set()).add(record["code"])
+    return {district: frozenset(codes) for district, codes in members.items()}

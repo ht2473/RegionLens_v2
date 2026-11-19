@@ -274,6 +274,16 @@ class Pipeline:
 
         self._report("Загрузка наблюдений")
         self._step("vintages", lambda: facts.load_vintages(connection))
+        copies = self._step("year_copies", lambda: facts.drop_year_copies(connection)).detail
+        self._report(
+            "Копии лет в сборниках набора: рядов {series}, лет {years}, значений {rows}".format(
+                **copies
+            )
+        )
+        country = self._step(
+            "country_scale", lambda: facts.reconcile_country_scale(connection)
+        ).detail
+        self._report(f"Россия приведена к единице субъектов по сумме: значений {country}")
         self._report("Выпуски внешних источников и сшивка с набором")
         release_statistics = self._step(
             "releases", lambda: releases.load_releases(connection)

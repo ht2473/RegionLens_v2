@@ -15,7 +15,7 @@ from django.utils import translation
 from apps.catalog.monthly import MonthlySpec, compare, monthly_spec, period_text, value_text
 from apps.sources.base import PARSED_COLUMNS
 from apps.sources.registry import POPULATION, registry
-from apps.sources.territories import region_codes
+from apps.sources.territories import district_members, region_codes
 from apps.warehouse.etl import monthly
 from apps.warehouse.queries import featured_set
 
@@ -144,6 +144,25 @@ class TestMonths:
             _frame(_rows("sme_count", values)), _series("RL_SME_COUNT:00"), pd.DataFrame()
         )["RL_SME_COUNT:00"].set_index("territory_code")
         assert np.isnan(months.loc["RU", "level"])
+
+    def test_district_is_the_sum_of_its_current_regions(self) -> None:
+        """Округ ФНС в составе своего времени заменяется суммой субъектов справочника."""
+        members = district_members()
+        codes = sorted(region_codes())
+        values: dict[tuple[str, int, int], float | None] = {(code, 2018, 9): 1.0 for code in codes}
+        values[("FD-DFO", 2018, 9)] = 999.0
+        months = monthly.build_months(
+            _frame(_rows("sme_count", values)), _series("RL_SME_COUNT:00"), pd.DataFrame()
+        )["RL_SME_COUNT:00"].set_index("territory_code")
+        assert months.loc["FD-DFO", "level"] == pytest.approx(len(members["FD-DFO"]))
+        assert months.loc["FD-DFO", "computed"]
+        # Без одного субъекта округ не складывается, остальные округа — складываются.
+        values.pop((sorted(members["FD-DFO"])[0], 2018, 9))
+        months = monthly.build_months(
+            _frame(_rows("sme_count", values)), _series("RL_SME_COUNT:00"), pd.DataFrame()
+        )["RL_SME_COUNT:00"].set_index("territory_code")
+        assert np.isnan(months.loc["FD-DFO", "level"])
+        assert months.loc["FD-SFO", "level"] == pytest.approx(len(members["FD-SFO"]))
 
     def test_unknown_reference_is_an_error(self) -> None:
         with pytest.raises(monthly.SourceSeriesError, match="неизвестные"):

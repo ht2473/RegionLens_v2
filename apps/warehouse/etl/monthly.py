@@ -18,7 +18,7 @@ import pandas as pd
 from apps.catalog.constants import ValueFlag, ValueQuality
 from apps.sources import parsed
 from apps.sources.registry import POPULATION, DatasetMonthly, Registry, SourceSeries, registry
-from apps.sources.territories import region_codes
+from apps.sources.territories import district_members, region_codes
 
 from ..population import population_frame
 from ..queries.common import COUNTRY_CODE, featured_set
@@ -264,7 +264,7 @@ def _measure_months(frame: pd.DataFrame, item: SourceSeries) -> pd.DataFrame:
     ).reset_index(drop=True)
     months.loc[months["hidden"], "level"] = np.nan
     if item.country_sum:
-        months = _country_as_sum(months)
+        months = _districts_as_sum(_country_as_sum(months))
     return months
 
 
@@ -287,6 +287,35 @@ def _country_as_sum(months: pd.DataFrame) -> pd.DataFrame:
     country["frozen"] = False
     others = months[months["territory_code"] != COUNTRY_CODE]
     return pd.concat([others, country[others.columns]], ignore_index=True)
+
+
+def _districts_as_sum(months: pd.DataFrame) -> pd.DataFrame:
+    """
+    Значения федеральных округов — суммы их субъектов в нынешнем составе справочника.
+
+    ФНС публикует округа в составе своего времени: до ноября 2018 года Бурятия и Забайкалье
+    в Сибирском округе. Без замены ряд округа ломается на смене состава, а сумма субъектов
+    округа на странице с ним не сходится. Округ без всех субъектов за месяц не складывается.
+    """
+    rows = []
+    for district, members in sorted(district_members().items()):
+        own = months[months["territory_code"].isin(members)]
+        size = len(members)
+        summed = own.groupby(["year", "month"]).agg(
+            level=("level", lambda values, size=size: values.sum(min_count=size)),
+            hidden=("hidden", "any"),
+            preliminary=("preliminary", "any"),
+        )
+        frame = summed.reset_index()
+        frame["territory_code"] = district
+        rows.append(frame)
+    if not rows:
+        return months
+    districts = pd.concat(rows, ignore_index=True)
+    districts["computed"] = True
+    districts["frozen"] = False
+    others = months[~months["territory_code"].isin(district_members())]
+    return pd.concat([others, districts[others.columns]], ignore_index=True)
 
 
 def _ratio_months(

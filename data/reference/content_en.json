@@ -14,6 +14,14 @@
       "body": "The code −99999999 means “no data”. The code −77777777 means “value withheld for confidentiality”. On loading, both marks become an empty value, and the reason is kept as a quality flag. Zero is never put in place of a gap: zero is a valid value of many indicators.\n\nOn charts a gap is not bridged by a line. On the map a region without a value is hatched.",
       "source": "1907298bd07fa2c3e5aa0ef1aa06e4a5607c0b43"
     },
+    "dataset-checks": {
+      "title": "Checking the dataset on loading",
+      "summary": "On loading, the dataset is checked for typical errors of the compendia: mixed units and dates, copied years, a different unit for the Russia value.",
+      "formula": "",
+      "limitations": "An error of another kind is not corrected: the value stays as it is in the dataset.\nA deleted copied year is shown in the series as a gap.\nThe check against the sum of the regions is possible only if values of 60 or more regions are known.",
+      "body": "A series keeps values of one unit. A row in the same unit with another multiplier is brought to the unit of the series, for example “persons” to “thousand persons”. Rows in percent in a series in roubles are not loaded.\n\n“As of 31 December” and “as of 1 January” of the next year are the same date. Such a row is put in the year used in the series.\n\nSometimes a year in a compendium repeats the values of another year. A year counts as a copy if at least 90 % of values match over 10 or more regions and the years are 5 or more years apart. The copy is deleted. If it is unclear which of the two years is right, both are deleted.\n\nThe Russia value is checked against the sum of the regions. If they agree within 5 % only after a change of multiplier, for example by 1000, the value is brought to the unit of the regions.",
+      "source": "8bcc32d6975c251e4f5a54158eb674e02a1dc819"
+    },
     "deduplication": {
       "title": "One observation in different issues",
       "summary": "If issues of publications disagree, the value from the latest one is in force, and earlier ones are kept in “Revisions”.",
@@ -50,9 +58,9 @@
       "title": "Monthly data: Bank of Russia, Federal Tax Service and Rosstat’s bulletin",
       "summary": "Mortgages, loans and small business are RegionLens series built from Bank of Russia and Federal Tax Service data, while wages, prices, unemployment and industry are also shown by month.",
       "formula": "levels and sums: <math display=\"block\"><mi>Δ</mi><mo>=</mo><mfrac><mrow><mi>x</mi><mo>(</mo><mi>t</mi><mo>)</mo></mrow><mrow><mi>x</mi><mo>(</mo><mi>t</mi><mo>−</mo><mn>12</mn><mo>)</mo></mrow></mfrac><mo>−</mo><mn>1</mn></math>\nshares, rates and indices: <math display=\"block\"><mi>Δ</mi><mo>=</mo><mi>x</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo>−</mo><mi>x</mi><mo>(</mo><mi>t</mi><mo>−</mo><mn>12</mn><mo>)</mo></math>",
-      "limitations": "The Russia value of the SME register is the sum of the 85 regions of the directory, while the Federal Tax Service total is wider.\nBank of Russia series start in 2019, so five years are enough for comparisons.",
+      "limitations": "Russia and the federal districts in the SME register are sums of the directory’s regions in the current composition, while the Federal Tax Service total is wider.\nBank of Russia series start in 2019, so five years are enough for comparisons.",
       "body": "The Bank of Russia publishes lending and debt on loans to households and businesses by region. The Federal Tax Service SME register gives the number of SMEs and their employees on the 10th of each month. From Rosstat’s bulletin, wages, the price index, industrial production and unemployment are shown by month.\n\nThe annual value is built from the months of one release. Lending over a year is the sum of twelve months. Debt is taken as of 1 January of the following year. Term and rate are averaged over the months weighted by lending. An incomplete year gets no annual value. Month t is compared with the same month of the previous year.",
-      "source": "cb9097c19bc4d839d46b8ef2f46e98ca71c90628"
+      "source": "c6d740d891dc4e55828a42026a020bf3b103bae8"
     },
     "own-data": {
       "title": "Your own data",

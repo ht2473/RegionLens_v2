@@ -146,8 +146,9 @@ def save_answers(
     ``answers``: ``roles`` (номер столбца → роль), ``year``, ``repeats`` (что в повторах
     регионов), ``slices`` (номер → значения),
     ``territories`` и ``nested`` (подпись → код, «outside» или «none»), ``remember``.
-    Рядом — шапки столбцов и подписи, о которых спрашивали: новая версия файла переносит
-    роли по шапке и спрашивает только о новом (``renew``).
+    Рядом — шапки столбцов, догадки распознавателя и подписи, о которых спрашивали: новая
+    версия файла переносит по шапке роли, выбранные человеком, и спрашивает только о новом
+    (``renew``).
     """
     recipe = dict(version.recipe)
     roles = {str(column.index): column.role for column in result.columns}
@@ -156,6 +157,8 @@ def save_answers(
             roles[str(index)] = role
     recipe["roles"] = roles
     recipe["headers"] = {str(column.index): column.header for column in result.columns}
+    # Роль, совпадающая с догадкой, — вывод из данных этого файла, а не решение человека.
+    recipe["guessed"] = {str(column.index): column.guessed for column in result.columns}
     recipe["form"] = result.form
     year = answers.get("year")
     recipe["year"] = int(year) if year else None
