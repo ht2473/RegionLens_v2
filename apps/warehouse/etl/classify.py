@@ -41,7 +41,7 @@ _COUNTRY_UNIT_PATTERN = re.compile(
 )
 
 # Признаки категорий единиц измерения.
-_CURRENCY_MARKERS = ("рубл", "доллар", "евро")
+_CURRENCY_MARKERS = ("рубл", "руб.", "доллар", "евро")
 _INDEX_MARKERS = (
     "в процентах к предыдущ",
     "к декабрю предыдущ",
@@ -50,6 +50,7 @@ _INDEX_MARKERS = (
     "индекс",
     "в постоянных ценах, в процентах",
     "в сопоставимых ценах, в процентах",
+    "к концу предыдущ",
 )
 _SHARE_MARKERS = ("в процентах", "процент", "в % ", "к итогу", "удельный вес")
 _RATE_MARKERS = (
@@ -82,8 +83,30 @@ _PHYSICAL_MARKERS = (
 )
 _PEOPLE_MARKERS = ("человек", "чел.", "работник", "занятых", "жител")
 
+# Разрез прямо называет проценты: «…, процентов», «…: в процентах от общего числа».
+# «Процент износа: от 0 до 30» и «по 20-процентным группам» — группировка, а не единица.
+_DECLARED_PERCENT_PATTERN = re.compile(
+    r"(?:^|[,:]\s*)((?:в\s+процентах|процентов)\b[^,;:()]*)", re.IGNORECASE
+)
+# Составное объявление в разрезе: «Миллионов рублей (по Российской Федерации — млрд рублей)».
+_COUNTRY_IN_TEXT_PATTERN = re.compile(
+    r"\(\s*по\s+Российской\s+Федерации\s*[—–-]\s*(?P<unit>[^()]+)\)", re.IGNORECASE
+)
+# Момент наблюдения: «на 31 декабря 2023» и «на 1 января 2024» — одна дата.
+_MOMENT_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"\bна\s+1\s+января\b", re.IGNORECASE), "jan1"),
+    (re.compile(r"\bна\s+31\s+декабря\b", re.IGNORECASE), "dec31"),
+)
+# Относительные категории: значение не зависит от множителя и не сравнимо с уровнем.
+RELATIVE_UNIT_KINDS = frozenset({UnitKind.SHARE, UnitKind.INDEX, UnitKind.RATE})
+
 # Наибольшая длина фрагмента названия, восстанавливаемого как единица.
 MAX_RECOVERED_UNIT_LENGTH = 60
+# Единица последним звеном разреза — короткое слово: «лет», «месяцев», «тыс. человек».
+MAX_TRAILING_UNIT_LENGTH = 30
+# Единицы уровня, которые распознаёт категория, и единицы времени, которых она не знает.
+LEVEL_UNIT_KINDS = frozenset({UnitKind.ABSOLUTE, UnitKind.CURRENCY, UnitKind.PHYSICAL})
+TRAILING_TIME_UNITS = frozenset({"лет", "месяцев", "дней", "часов"})
 
 # Признаки единицы во фрагменте после последней запятой. «Занятых» и «работник»
 # сюда не входят: в формулировках это предмет счёта, а не единица.
@@ -98,7 +121,9 @@ _RECOVERABLE_UNIT_MARKERS = (
 # «на 1000 человек населения», «на 10000 человек населения соответствующего возраста».
 _PER_POPULATION_PATTERN = re.compile(r"на\s+1[\d\s]*\s+(?:человек|жител)[^,;:()]*")
 # Единица последним словом: «Распределение мигрантов человек»; число коек — в койках.
-_TRAILING_UNIT_PATTERN = re.compile(r"(?:тыс\.?\s+)?человек$|(?<=^число больничных )коек")
+_TRAILING_UNIT_PATTERN = re.compile(
+    r"(?:(?:тыс\.?|тысяч|млн\.?|миллионов)\s+)?человек$|(?<=^число больничных )коек"
+)
 # Единица в скобках в конце фрагмента: «…выданных организациями (единиц)».
 _BRACKETED_PATTERN = re.compile(r"\(([^()]+)\)\s*$")
 # Предлог, оставшийся от продолжения фразы: «на 100 000 человек населения от: болезней».
@@ -141,6 +166,26 @@ def classify_unit(
         recovered = _recover_unit_from_text(subsection, indicator_name)
         raw = recovered or UNSPECIFIED_UNIT_NAME
         derived = True
+    elif (declared := declared_percent(subsection)) and (
+        _detect_unit_kind(raw.lower()) not in RELATIVE_UNIT_KINDS
+    ):
+        # Разрез называет проценты, а единица набора — рубли или тонны: верен разрез.
+        raw = declared if short_unit_label(raw) else f"{raw}, {declared[:1].lower()}{declared[1:]}"
+        country_unit = ""
+        derived = True
+    elif _detect_unit_kind(raw.lower()) in RELATIVE_UNIT_KINDS and (
+        trailing := declared_trailing_unit(subsection)
+    ):
+        # «Средний возраст, лет» при единице набора «% к итогу»: значения — годы, верен разрез.
+        raw = trailing
+        country_unit = ""
+        derived = True
+    elif not short_unit_label(raw) and (
+        recovered := _recover_unit_from_text(subsection, indicator_name)
+    ):
+        # Единица набора — одно уточнение («На конец года»): единица — из формулировки.
+        raw = f"{raw}, {recovered[:1].lower()}{recovered[1:]}"
+        derived = True
 
     lowered = raw.lower()
     kind = _detect_unit_kind(lowered)
@@ -159,6 +204,87 @@ def classify_unit(
         country_scale=country_scale,
         country_scale_unknown=country_scale_unknown,
     )
+
+
+def declared_percent(subsection: object) -> str:
+    """Проценты, названные в разрезе как единица: «В процентах от общего числа»; иначе пусто."""
+    text = normalize_text(subsection)
+    if not text:
+        return ""
+    found = list(_DECLARED_PERCENT_PATTERN.finditer(text))
+    if not found:
+        return ""
+    fragment = found[-1].group(1).strip()
+    return fragment[:1].upper() + fragment[1:]
+
+
+def declared_trailing_unit(subsection: object) -> str:
+    """
+    Единица уровня последним звеном разреза: «Средний возраст, лет» — «Лет»; иначе пусто.
+
+    Звено с двоеточием — подпись группы («в возрасте, лет: 20-29»), а не единица значения.
+    """
+    text = normalize_text(subsection)
+    if "," not in text:
+        return ""
+    candidate = text.rsplit(",", 1)[-1].strip()
+    lowered = candidate.lower()
+    if (
+        not candidate
+        or ":" in candidate
+        or len(candidate) > MAX_TRAILING_UNIT_LENGTH
+        or "процент" in lowered
+    ):
+        return ""
+    if lowered not in TRAILING_TIME_UNITS and _detect_unit_kind(lowered) not in LEVEL_UNIT_KINDS:
+        return ""
+    return candidate[:1].upper() + candidate[1:]
+
+
+def text_country_scale(*texts: object) -> float | None:
+    """
+    Приведение значения по России, объявленное в разрезе или названии показателя.
+
+    «Миллионов рублей (по Российской Федерации — млрд рублей)» — 1000; нет объявления — None.
+    """
+    for text in texts:
+        normalized = normalize_text(text)
+        if not normalized:
+            continue
+        match = _COUNTRY_IN_TEXT_PATTERN.search(normalized)
+        if match is None:
+            continue
+        base = _detect_multiplier(normalized[: match.start()].lower())
+        country = _detect_multiplier(match.group("unit").lower())
+        if base is not None and country is not None:
+            return country / base
+    return None
+
+
+def unit_moment(source_name: object) -> str:
+    """Момент наблюдения в объявлении единицы: ``jan1``, ``dec31`` или пусто."""
+    text = normalize_text(source_name)
+    for pattern, moment in _MOMENT_PATTERNS:
+        if text and pattern.search(text):
+            return moment
+    return ""
+
+
+def unit_base(source_name: object) -> tuple[str, str, float | None]:
+    """
+    Категория, подпись основной единицы без множителя и явный множитель объявления.
+
+    По ним строки одного ряда приводятся к единице ряда: «человек» и «тыс. человек» —
+    одна единица с разным множителем, «млн рублей» и «% к предыдущему году» — разные.
+    """
+    raw, _country = _parse_compound_unit(normalize_text(source_name))
+    lowered = raw.lower()
+    label = short_unit_label(raw)
+    for prefix in ("трлн ", "млрд ", "млн ", "тыс. "):
+        if label.startswith(prefix):
+            label = label[len(prefix) :]
+            break
+    return _detect_unit_kind(lowered), label, _detect_multiplier(lowered)
 
 
 def _country_scale(base_multiplier: float | None, country_unit: str) -> tuple[float, bool]:
@@ -239,6 +365,21 @@ def _unit_in_phrase(text: str) -> str:
         lowered = candidate.lower()
         if len(candidate) <= MAX_RECOVERED_UNIT_LENGTH and any(
             marker in lowered for marker in _RECOVERABLE_UNIT_MARKERS
+        ):
+            return candidate
+    if ":" in text:
+        # «Оборот общественного питания: млн руб.» — единица после двоеточия.
+        candidate = text.rsplit(":", 1)[-1].strip()
+        lowered = candidate.lower()
+        if len(candidate) <= MAX_TRAILING_UNIT_LENGTH and any(
+            marker in lowered for marker in _RECOVERABLE_UNIT_MARKERS
+        ):
+            return candidate
+    if compound := _COUNTRY_IN_TEXT_PATTERN.search(text):
+        # «Миллионов рублей (по Российской Федерации — млрд рублей)» — единица целиком.
+        candidate = text[: compound.start()].strip()
+        if len(candidate) <= MAX_RECOVERED_UNIT_LENGTH and any(
+            marker in candidate.lower() for marker in _RECOVERABLE_UNIT_MARKERS
         ):
             return candidate
     lowered = text.lower()

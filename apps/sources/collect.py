@@ -15,7 +15,7 @@ import tempfile
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -135,6 +135,70 @@ def run(
             errors=[f"{item.source}: {item.error}" for item in outcomes if item.error],
         )
     return outcomes
+
+
+def restore_journal(progress: Callable[[str], None] | None = None) -> int:
+    """
+    Завести журнал выпусков по разобранным файлам; вернуть число новых записей.
+
+    Разобранные выпуски лежат в репозитории вместе со сведениями о себе, журнал — в базе:
+    на свежей установке он пуст, и ``--reparse`` с панелью выпусков его не видят. Запись
+    получает код, даты и отпечаток из файла, путь в архиве — по описи, если архив на месте.
+    У выпуска, уже известного журналу, дописывается только путь в архиве, если его не было:
+    архив распакован после первого восстановления.
+    """
+    report = progress or logger.info
+    known = set(Release.objects.values_list("sha256", flat=True))
+    linked = _link_archive()
+    sources: dict[str, Source] = {}
+    created = 0
+    for info, path in parsed.releases():
+        if info.source not in SOURCES or info.sha256 in known:
+            continue
+        if info.source not in sources:
+            sources[info.source] = sync_source(info.source)
+        record = archive.find(info.sha256)
+        if record is not None and not record.absolute_path.exists():
+            record = None
+        values = pd.read_parquet(path, columns=["value"])["value"]
+        Release.objects.create(
+            source=sources[info.source],
+            code=info.code,
+            title=info.title,
+            reference_year=info.reference_year,
+            published_on=info.published,
+            url=info.url,
+            file_name=record.original_name if record else Path(info.url).name or info.code,
+            archive_path=record.path if record else "",
+            sha256=info.sha256,
+            size_bytes=record.size if record else 0,
+            fetched_at=datetime.fromisoformat(info.fetched_at),
+            status=Release.Status.PARSED,
+            parser_version=info.parser_version,
+            parsed_at=timezone.now(),
+            row_count=int(values.notna().sum()),
+        )
+        known.add(info.sha256)
+        created += 1
+    report(
+        f"журнал выпусков: заведено по разобранным файлам {created}, путь в архиве дописан {linked}"
+    )
+    return created
+
+
+def _link_archive() -> int:
+    """Дописать путь в архиве выпускам журнала, у которых его нет, а файл в описи есть."""
+    linked = 0
+    for release in Release.objects.filter(archive_path=""):
+        record = archive.find(release.sha256)
+        if record is None or not record.absolute_path.exists():
+            continue
+        release.archive_path = record.path
+        release.file_name = record.original_name
+        release.size_bytes = record.size
+        release.save(update_fields=["archive_path", "file_name", "size_bytes", "updated_at"])
+        linked += 1
+    return linked
 
 
 def _collect_one(

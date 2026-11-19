@@ -69,6 +69,15 @@ def _table(
     return "\n".join(lines).encode("utf-8")
 
 
+def _wide(filled: tuple[int, ...], years: tuple[int, ...] = (2021, 2022, 2023)) -> bytes:
+    """Годы в столбцах, как в бюллетене: у незаполненного года клетки пустые."""
+    lines = ["Регион;" + ";".join(f"{year} год" for year in years)]
+    for number, name in enumerate(REGIONS, start=1):
+        cells = [str(number * 10 + year - 2000) if year in filled else "" for year in years]
+        lines.append(";".join([name, *cells]))
+    return "\n".join(lines).encode("utf-8")
+
+
 def _first_version(client: Client) -> Dataset:
     dataset = _upload(client, "accidents.csv", _table())
     _describe(client, dataset)
@@ -157,6 +166,42 @@ class TestRenewal:
         assert built["Location"] == reverse("userdata:version", args=[dataset.public_id, 2])
         dataset.refresh_from_db()
         assert dataset.current_version_id == draft.pk
+
+    def test_empty_column_gets_values(self, member_client: Client, warehouse: Any) -> None:
+        """Пустой в прежнем выпуске год — «пропустить» по данным; в новом выпуске он собирается."""
+        dataset = _upload(member_client, "bulletin.csv", _wide(filled=(2021, 2022)))
+        _describe(member_client, dataset)
+        assert _build(member_client, dataset, kind="relative", per=()).status_code == 302
+        dataset.refresh_from_db()
+        first = _version(dataset)
+        assert first.recipe["roles"]["3"] == first.recipe["guessed"]["3"]
+        response = _new_version(
+            member_client, dataset, _wide(filled=(2021, 2022, 2023)), name="bulletin_2.csv"
+        )
+        assert response["Location"] == reverse("userdata:version", args=[dataset.public_id, 2])
+        dataset.refresh_from_db()
+        version = _version(dataset)
+        assert version.number == 2
+        assert version.report["changes"]["new_years"] == [2023]
+        assert version.report["changes"]["added"] == len(REGIONS)
+        assert version.values_count == len(REGIONS) * 3
+
+    def test_human_role_is_carried(self, member_client: Client, warehouse: Any) -> None:
+        """Роль, выбранная человеком, переносится на новую версию, хотя данные говорят иное."""
+        dataset = _upload(member_client, "bulletin.csv", _wide(filled=(2021, 2022, 2023)))
+        _describe(member_client, dataset, {"role-2": "skip"})
+        assert _build(member_client, dataset, kind="relative", per=()).status_code == 302
+        dataset.refresh_from_db()
+        first = _version(dataset)
+        assert first.recipe["roles"]["2"] == "skip" != first.recipe["guessed"]["2"]
+        bumped = _wide(filled=(2021, 2022, 2023)).replace(b";32;", b";999;")  # Москва, 2022
+        assert bumped != _wide(filled=(2021, 2022, 2023))
+        _new_version(member_client, dataset, bumped, name="bulletin_2.csv")
+        dataset.refresh_from_db()
+        version = _version(dataset)
+        assert version.number == 2
+        assert version.recipe["roles"]["2"] == "skip"
+        assert version.values_count == len(REGIONS) * 2
 
     def test_same_file_refused(self, member_client: Client, warehouse: Any) -> None:
         dataset = _first_version(member_client)

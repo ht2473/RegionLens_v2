@@ -257,6 +257,13 @@ class Position:
     country_real_ratio: float | None = None
     # Признаки значения из внешнего источника (ValueFlag).
     flags: int = 0
+    # Последний год ряда по всем субъектам: у территории значение бывает только раньше.
+    series_year: int | None = None
+
+    @property
+    def is_behind(self) -> bool:
+        """Год территории старше последнего года ряда: год показывается рядом со значением."""
+        return self.series_year is not None and self.year < self.series_year
 
     # --- Положение среди регионов ------------------------------------------------------
 
@@ -849,4 +856,5 @@ def _position(item: FeaturedSeries, row: dict[str, Any]) -> Position:
         past_value=row.get("past_value"),
         country_past_value=row.get("country_past_value"),
         flags=int(row.get("flags") or 0),
+        series_year=row.get("series_year"),
     )

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from apps.catalog.constants import is_unnormalised_title
+from apps.catalog.constants import is_size_dependent, is_unnormalised_title
 
 pytestmark = pytest.mark.unit
 
@@ -72,3 +72,38 @@ class TestIsUnnormalisedTitle:
         # Неразрывный и узкий неразрывный пробелы — кодами: в тексте они неотличимы от обычного.
         title = f"Число коек на{chr(0x00A0)}1{chr(0x202F)}000 человек шт."
         assert is_unnormalised_title(title, "absolute") is False
+
+
+class TestIsSizeDependent:
+    """Складываемая величина ряда каталога: доля в сумме регионов имеет смысл."""
+
+    @pytest.mark.parametrize(
+        ("title", "unit_kind"),
+        [
+            ("Средние цены на первичном рынке жилья руб.", "currency"),
+            ("Средний возраст населения на 1 января лет", "unknown"),
+            ("Ожидаемая продолжительность жизни при рождении лет", "unknown"),
+            ("Средний размер назначенных пенсий руб.", "currency"),
+            ("Средняя начисленная заработная плата работников организаций руб.", "currency"),
+            ("Размер минимальной оплаты труда", "unknown"),
+            ("Средний годовой настриг шерсти с одной овцы кг", "unknown"),
+            ("Стоимость 1 кв. метра модельного жилья тыс. руб.", "unknown"),
+            ("Отношение заработной платы женщин и мужчин %", "unknown"),
+        ],
+    )
+    def test_averages_and_prices_are_not_additive(self, title: str, unit_kind: str) -> None:
+        """Средние, цены, сроки и отношения не складываются по регионам."""
+        assert is_size_dependent(title, unit_kind) is False
+
+    @pytest.mark.parametrize(
+        ("title", "unit_kind"),
+        [
+            ("Валовой региональный продукт млн руб.", "currency"),
+            ("Оборот средних предприятий млрд руб.", "currency"),
+            ("Итоги сплошных наблюдений: Средняя численность работников тыс. чел.", "absolute"),
+            ("Численность безработных по возрастным группам тыс. чел.", "absolute"),
+        ],
+    )
+    def test_totals_stay_additive(self, title: str, unit_kind: str) -> None:
+        """Итоги, в том числе по средним предприятиям и средней численности, складываются."""
+        assert is_size_dependent(title, unit_kind) is True

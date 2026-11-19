@@ -118,6 +118,49 @@ class TestCollect:
         assert source.check_ok
         assert source.running_since is None
 
+    def test_restore_journal_from_parsed_files(
+        self, reference_seed: None, source_dirs: Path, fake_site: Any
+    ) -> None:
+        """Свежая установка: журнал заводится по разобранным файлам с теми же сведениями."""
+        collect.run(["rosstat_bulletin"])
+        original = Release.objects.get()
+        Release.objects.all().delete()
+
+        call_command("collect", "--restore", stdout=io.StringIO())
+        restored = Release.objects.get()
+        for field in ("code", "title", "reference_year", "published_on", "url", "sha256"):
+            assert getattr(restored, field) == getattr(original, field)
+        assert restored.fetched_at == original.fetched_at
+        assert restored.archive_path == original.archive_path
+        assert restored.size_bytes == original.size_bytes
+        assert restored.status == Release.Status.PARSED
+        assert restored.parser_version == original.parser_version
+        assert restored.row_count == original.row_count
+        # Повторный запуск записей не умножает.
+        assert collect.restore_journal() == 0
+
+    def test_restore_journal_without_archive(
+        self, reference_seed: None, source_dirs: Path, fake_site: Any
+    ) -> None:
+        """Без архива журнал заводится без пути к файлу, архив, распакованный позже, его даёт."""
+        collect.run(["rosstat_bulletin"])
+        original = Release.objects.get()
+        Release.objects.all().delete()
+        manifest = archive.archive_root() / archive.MANIFEST_NAME
+        aside = manifest.with_name("aside.csv")
+        manifest.rename(aside)
+
+        assert collect.restore_journal() == 1
+        restored = Release.objects.get()
+        assert restored.archive_path == ""
+        assert restored.file_name == "info-stat-07-2026.zip"
+
+        aside.rename(manifest)
+        assert collect.restore_journal() == 0
+        restored.refresh_from_db()
+        assert restored.archive_path == original.archive_path
+        assert restored.size_bytes == original.size_bytes
+
     def test_same_release_is_not_fetched_again(
         self, reference_seed: None, source_dirs: Path, fake_site: Any
     ) -> None:
@@ -442,6 +485,34 @@ class TestSourceNotes:
             "JOIN mart_source_link AS l USING (series_key)",
         )
         assert rows == [("supersede", GRP_PER_CAPITA_KEY, 0, GRP_FOOTNOTE)]
+
+
+class TestSupersede:
+    """Замена берёт всю редакцию таблицы, и совпадающие с набором значения тоже."""
+
+    def test_no_year_mixes_editions(self, grp_warehouse: Path) -> None:
+        """В одном году ряда — значения одного издания: иначе темп между годами искажён."""
+        mixed, replaced = _query(
+            grp_warehouse,
+            "WITH y AS (SELECT year, bool_or(edition_code LIKE 'rel_%') AS rel, "
+            "bool_and(edition_code LIKE 'rel_%') AS only_rel FROM fact_observation "
+            "WHERE series_key = ? AND territory_level = 'region' AND value IS NOT NULL "
+            "GROUP BY year) "
+            "SELECT count(*) FILTER (WHERE rel AND NOT only_rel), count(*) FILTER (WHERE rel) "
+            "FROM y",
+            [GRP_PER_CAPITA_KEY],
+        )[0]
+        assert replaced > 0
+        assert mixed == 0
+
+    def test_equal_values_are_not_counted_as_revisions(self, grp_warehouse: Path) -> None:
+        """Таблица совпадает с набором — уточнённых значений нет."""
+        revised = _query(
+            grp_warehouse,
+            "SELECT revised_count FROM mart_source_link WHERE series_key = ?",
+            [GRP_PER_CAPITA_KEY],
+        )[0][0]
+        assert revised == 0
 
 
 @pytest.fixture

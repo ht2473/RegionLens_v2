@@ -12,7 +12,7 @@ from typing import Any
 from django.urls import reverse
 from django.utils.translation import get_language, gettext
 
-from apps.catalog.constants import is_unnormalised_title
+from apps.catalog.constants import is_size_dependent
 from apps.catalog.models import Series
 from apps.catalog.passport import times_phrase
 from apps.catalog.provenance import Origin, origin_of_year
@@ -104,7 +104,7 @@ def describe_series(series: Series) -> FeaturedSeries:
         title_ru = f"{title_ru} — {series.name_ru}"
         if title_en and series.name_en:
             title_en = f"{title_en} — {series.name_en}"
-    absolute = is_unnormalised_title(
+    absolute = is_size_dependent(
         f"{indicator.name_ru} {series.name_ru or ''} {unit_ru}",
         metadata.get("unit_kind") or "unknown",
     )

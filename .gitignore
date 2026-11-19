@@ -27,11 +27,12 @@ data/warehouse/parquet/
 data/raw/*.csv
 data/raw/*.xlsx
 data/tmp/
-# Наборы, загруженные из панели управления; архив выпусков источников и их разбор.
+# Наборы, загруженные из панели управления, и архив выпусков источников. Разобранные
+# выпуски (data/sources) — в репозитории: склад из них собирается без архива и сети.
 data/uploads/
 data/archive/
 data/attest/
-data/sources/
+data/sources/**/*.part
 data/visits/
 # Таблицы пользователей («Свои данные»).
 data/userdata/

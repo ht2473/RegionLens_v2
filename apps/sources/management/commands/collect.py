@@ -2,7 +2,8 @@
 Сбор выпусков внешних источников: ``collect <источник>…``, ``--due``, ``--all``.
 
 Новый разобранный выпуск пересобирает склад (кроме ``--no-build``). ``--file`` и ``--url``
-кладут в архив названный файл; ``--reparse`` разбирает архив заново после правки разбора.
+кладут в архив названный файл; ``--reparse`` разбирает архив заново после правки разбора;
+``--restore`` заводит журнал по разобранным выпускам из репозитория на свежей установке.
 С ``--due`` и ``--all`` заодно проверяется, не вышла ли новая версия набора; новая
 скачивается и проверяется сборкой рядом с рабочим складом.
 """
@@ -43,27 +44,22 @@ class Command(BaseCommand):
             "--no-build", action="store_true", help="не пересобирать склад после разбора"
         )
         parser.add_argument("--verify", action="store_true", help="сверить архив с описью и выйти")
+        parser.add_argument(
+            "--restore",
+            action="store_true",
+            help="завести журнал выпусков по разобранным файлам и выйти",
+        )
 
     def handle(self, *args: Any, **options: Any) -> None:  # noqa: ARG002
         """Точка входа команды."""
         if options["verify"]:
             self._verify()
             return
+        if options["restore"]:
+            collect.restore_journal(self._report)
+            return
 
-        codes: list[str] = options["sources"]
-        if options["all"] or options["due"]:
-            codes = list(collect.SOURCES)
-        unknown = [code for code in codes if code not in collect.SOURCES]
-        if unknown or not codes:
-            raise CommandError(
-                f"Укажите источник: {', '.join(collect.SOURCES)}, --all или --due"
-                + (f"; неизвестны: {', '.join(unknown)}" if unknown else "")
-            )
-        if (options["file"] or options["url"]) and len(codes) != 1:
-            raise CommandError("--file и --url относятся к одному источнику")
-        if options["file"] is not None and not options["file"].exists():
-            raise CommandError(f"Файл не найден: {options['file']}")
-
+        codes = self._codes(options)
         try:
             outcomes = collect.run(
                 codes,
@@ -95,6 +91,23 @@ class Command(BaseCommand):
                 raise CommandError("Склад не пересобран; действует прежний")
         if not all(outcome.ok for outcome in outcomes):
             raise CommandError("Сбор завершён с ошибками; подробности — в журнале выпусков")
+
+    def _codes(self, options: dict[str, Any]) -> list[str]:
+        """Источники сбора по параметрам; противоречивые параметры — ошибка команды."""
+        codes: list[str] = options["sources"]
+        if options["all"] or options["due"]:
+            codes = list(collect.SOURCES)
+        unknown = [code for code in codes if code not in collect.SOURCES]
+        if unknown or not codes:
+            raise CommandError(
+                f"Укажите источник: {', '.join(collect.SOURCES)}, --all или --due"
+                + (f"; неизвестны: {', '.join(unknown)}" if unknown else "")
+            )
+        if (options["file"] or options["url"]) and len(codes) != 1:
+            raise CommandError("--file и --url относятся к одному источнику")
+        if options["file"] is not None and not options["file"].exists():
+            raise CommandError(f"Файл не найден: {options['file']}")
+        return codes
 
     def _check_dataset(self) -> None:
         """
