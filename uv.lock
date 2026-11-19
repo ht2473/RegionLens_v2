@@ -615,6 +615,14 @@ wheels = [
 ]
 
 [[package]]
+name = "doc-provenance"
+version = "0.1.0"
+source = { git = "https://github.com/ht2473/doc-provenance?rev=v0.1.0#c623eb00d1f188b11ad81c4fe8cf05d51d1dad03" }
+dependencies = [
+    { name = "cryptography" },
+]
+
+[[package]]
 name = "drf-spectacular"
 version = "0.30.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1732,6 +1740,9 @@ dev = [
     { name = "ruff" },
     { name = "types-python-slugify" },
 ]
+kmzi = [
+    { name = "doc-provenance" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -1783,6 +1794,7 @@ dev = [
     { name = "ruff", specifier = ">=0.13" },
     { name = "types-python-slugify", specifier = ">=8.0" },
 ]
+kmzi = [{ name = "doc-provenance", git = "https://github.com/ht2473/doc-provenance?rev=v0.1.0" }]
 
 [[package]]
 name = "reportlab"

@@ -19,10 +19,12 @@ ENV UV_COMPILE_BYTECODE=1 \
 
 WORKDIR /app
 
-# Слой зависимостей пересобирается только при изменении uv.lock.
+# Слой зависимостей пересобирается только при изменении uv.lock. Группы по умолчанию
+# (разработка и библиотека подписи документов) в образ не входят: подпись на стенде
+# не включена, а библиотека ставится из git, которого в образе нет.
 COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev --extra production
+    uv sync --frozen --no-install-project --no-default-groups --extra production
 
 # --- Этап 2: рабочий образ ------------------------------------------------------------
 FROM python:3.14-slim-trixie AS runtime

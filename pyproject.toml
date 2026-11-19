@@ -77,9 +77,14 @@ dev = [
     "django-extensions>=4.1",
     "ipython>=9.5",
 ]
+# Подпись документов и описи архива (apps/attest) — библиотека учебной работы по КМЗИ.
+# Ставится обычным `uv sync`; образ стенда собирается без неё (docker/Dockerfile).
+kmzi = [
+    "doc-provenance @ git+https://github.com/ht2473/doc-provenance@v0.1.0",
+]
 
 [tool.uv]
-default-groups = ["dev"]
+default-groups = ["dev", "kmzi"]
 
 # --------------------------------------------------------------------------------------
 # Ruff: линтер и форматирование.
