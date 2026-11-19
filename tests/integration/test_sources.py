@@ -142,15 +142,24 @@ class TestCollect:
     def test_restore_journal_without_archive(
         self, reference_seed: None, source_dirs: Path, fake_site: Any
     ) -> None:
-        """Без архива журнал заводится всё равно, но без пути к файлу."""
+        """Без архива журнал заводится без пути к файлу, архив, распакованный позже, его даёт."""
         collect.run(["rosstat_bulletin"])
+        original = Release.objects.get()
         Release.objects.all().delete()
-        (archive.archive_root() / archive.MANIFEST_NAME).unlink()
+        manifest = archive.archive_root() / archive.MANIFEST_NAME
+        aside = manifest.with_name("aside.csv")
+        manifest.rename(aside)
 
         assert collect.restore_journal() == 1
         restored = Release.objects.get()
         assert restored.archive_path == ""
         assert restored.file_name == "info-stat-07-2026.zip"
+
+        aside.rename(manifest)
+        assert collect.restore_journal() == 0
+        restored.refresh_from_db()
+        assert restored.archive_path == original.archive_path
+        assert restored.size_bytes == original.size_bytes
 
     def test_same_release_is_not_fetched_again(
         self, reference_seed: None, source_dirs: Path, fake_site: Any

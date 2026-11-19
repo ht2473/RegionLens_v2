@@ -226,20 +226,49 @@ Trivy.
 
 ## Быстрый старт
 
-Нужны Python 3.14, [uv](https://docs.astral.sh/uv/) и Docker (для PostgreSQL и Valkey).
+Нужны Git, Python 3.14, [uv](https://docs.astral.sh/uv/) и Docker (для PostgreSQL
+и Valkey).
 
 ```powershell
+git clone https://github.com/ht2473/RegionLens_v2.git
+cd RegionLens_v2
 uv sync
 docker compose -f docker/compose.dev.yml up -d
 uv run python main.py --setup
 uv run python main.py
 ```
 
-Исходный набор (`data/raw/data_regions_collection_102_v20260313.parquet`) и разобранные
-выпуски Росстата, Банка России и ФНС (`data/sources/`) лежат в репозитории: склад
-собирается таким же, как на сайте, без сети и без архива исходных файлов. Порты
-PostgreSQL и Valkey — 5432 и 6379: если они заняты своими службами, поменяйте их
-в `docker/compose.dev.yml` и в `.env`.
+Всё, что нужно для сайта, лежит в репозитории: склад собирается таким же, как на сайте,
+без сети. Порты PostgreSQL и Valkey — 5432 и 6379: если они заняты своими службами,
+поменяйте их в `docker/compose.dev.yml` и в `.env`.
+
+| Что | Откуда |
+|---|---|
+| Исходный набор «Если быть точным» | `data/raw/data_regions_collection_102_v20260313.parquet` — в репозитории |
+| Выпуски Росстата, Банка России и ФНС, разобранные в таблицы | `data/sources/` — в репозитории |
+| Справочники: территории, единицы, связи рядов, поправки, переводы | `data/reference/` — в репозитории |
+| Границы субъектов для карты | `static/geo/russia-regions.geojson` — в репозитории |
+| Склад DuckDB, база PostgreSQL, тексты методики | собирает и наполняет `main.py --setup` |
+| Исходные файлы выпусков (необязательно) | вложение к выпуску [`data-2026-11-19`](https://github.com/ht2473/RegionLens_v2/releases/tag/data-2026-11-19) на GitHub |
+| Таблицы и учётные записи пользователей | не публикуются |
+
+### Исходные файлы выпусков
+
+Сайту они не нужны: нужны, чтобы проверить разбор или разобрать выпуски заново. Часть
+файлов Росстата на его сайте больше не открывается, поэтому архив приложен к выпуску
+на GitHub вместе с описью и суммой SHA-256:
+
+```powershell
+Invoke-WebRequest https://github.com/ht2473/RegionLens_v2/releases/download/data-2026-11-19/regionlens-archive-2026-11-19.zip -OutFile archive.zip
+Expand-Archive archive.zip -DestinationPath data/archive
+uv run python manage.py collect --verify
+uv run python manage.py collect --restore
+uv run python manage.py collect rosstat_bulletin rosstat_grp cbr fns_sme --reparse
+```
+
+`collect --verify` сверяет каждый файл с описью, `collect --restore` дописывает журналу
+выпусков пути к файлам, последняя команда разбирает все выпуски заново и пересобирает
+склад. Склад получается тем же, что после `main.py --setup`.
 
 `main.py --setup` создаёт `.env` со свежим ключом, применяет миграции, загружает
 справочник территорий, заводит журнал выпусков по разобранным файлам, собирает склад,
