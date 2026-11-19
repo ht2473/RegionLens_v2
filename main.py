@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import os
 import subprocess  # запускаются только собственные команды manage.py
 import sys
@@ -173,6 +174,9 @@ def setup_project() -> int:
         # Английские названия справочников: переводы данных — в самих записях.
         ("seed_catalog_names",),
     )
+    if importlib.util.find_spec("provenance") is not None:
+        # Учебный центр подписи документов — только в разработке; есть ключи — не трогается.
+        steps += (("attest_demo_ca",),)
 
     for step in steps:
         code = run_manage(*step)

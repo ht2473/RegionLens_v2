@@ -450,3 +450,59 @@ class TestArchiveSeal:
         assert collect.parse_release(release, report=lambda message: None) is False
         release.refresh_from_db()
         assert "изменён после получения" in release.error
+
+
+class TestDemoCenter:
+    """Учебный центр для проверки подписи на своей машине (``attest_demo_ca``)."""
+
+    @pytest.fixture
+    def empty_dir(self, settings: Any, tmp_path: Path) -> Path:
+        """Каталог подписи пуст, настройки разработки."""
+        settings.DEBUG = True
+        settings.ATTEST_DIR = tmp_path / "attest"
+        return settings.ATTEST_DIR
+
+    def test_creates_center_and_signs_at_once(self, empty_dir: Path) -> None:
+        """После команды сайт подписывает документы, корневой ключ лежит отдельно."""
+        call_command("attest_demo_ca")
+
+        assert keys.configured()
+        assert (empty_dir / "ca" / "root.key").exists()
+        assert not (empty_dir / "root.key").exists()
+        record = services.issue(DOCUMENT, kind="series", export_format="csv", filename="a.csv")
+        assert record is not None
+        assert services.check(DOCUMENT).status == services.Status.AUTHENTIC
+
+    def test_existing_keys_are_kept(self, empty_dir: Path) -> None:
+        """Второй запуск ничего не меняет: прежние подписи остаются проверяемыми."""
+        call_command("attest_demo_ca")
+        before = (empty_dir / keys.SIGNER_CERTIFICATE).read_bytes()
+
+        call_command("attest_demo_ca")
+
+        assert (empty_dir / keys.SIGNER_CERTIFICATE).read_bytes() == before
+
+    def test_not_created_outside_development(self, empty_dir: Path, settings: Any) -> None:
+        """Без DEBUG центр не создаётся: на стенде ключи выпускают вне сервера."""
+        settings.DEBUG = False
+
+        call_command("attest_demo_ca")
+
+        assert not empty_dir.exists() or not any(empty_dir.iterdir())
+        assert not keys.configured()
+
+    def test_revoked_by_provenance_command(self, empty_dir: Path) -> None:
+        """Отзыв командой ``provenance`` и новый список отзыва в каталоге — подпись отклоняется."""
+        from provenance import cli
+
+        call_command("attest_demo_ca")
+        services.issue(DOCUMENT, kind="series", export_format="csv", filename="a.csv")
+        authority = empty_dir / "ca"
+
+        code = cli.main(["ca", "revoke", str(authority), str(empty_dir / keys.SIGNER_CERTIFICATE)])
+        (empty_dir / keys.CRL).write_bytes((authority / keys.CRL).read_bytes())
+
+        assert code == 0
+        outcome = services.check(DOCUMENT)
+        assert outcome.status == services.Status.REFUSED
+        assert outcome.code == "revoked"
