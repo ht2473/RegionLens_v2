@@ -161,6 +161,25 @@ class TestCollect:
         assert restored.archive_path == original.archive_path
         assert restored.size_bytes == original.size_bytes
 
+    def test_reparse_without_archive_keeps_parsed_release(
+        self, reference_seed: None, source_dirs: Path, fake_site: Any
+    ) -> None:
+        """Повторный разбор без файла в архиве — не сбой: разбор и запись журнала остаются."""
+        collect.run(["rosstat_bulletin"])
+        Release.objects.all().delete()
+        manifest = archive.archive_root() / archive.MANIFEST_NAME
+        manifest.rename(manifest.with_name("aside.csv"))
+        collect.restore_journal()
+        messages: list[str] = []
+
+        outcomes = collect.run(["rosstat_bulletin"], reparse=True, progress=messages.append)
+
+        assert outcomes[0].failed == ["07-2026"]
+        assert [info.code for info, _path in parsed.releases()] == ["07-2026"]
+        assert Release.objects.get().status == Release.Status.PARSED
+        assert any("нет в архиве" in message for message in messages)
+        assert mail.outbox == []
+
     def test_same_release_is_not_fetched_again(
         self, reference_seed: None, source_dirs: Path, fake_site: Any
     ) -> None:
